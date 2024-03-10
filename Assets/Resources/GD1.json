@@ -1,49 +1,48 @@
 [
   {
-    "_Name": "!GDRoot",
-    "_Type": "GDDB.GDRoot",
+    ".Name": "!GDRoot",
+    ".Type": "GDDB.GDRoot",
     "Id": "GD1",
     "Version": 0,
+    "TestVector3":[1.1,2.0,3.5],
     "Components": []
   },
   {
-    "_Name": "EmptyGDObject",
-    "_Type": "GDDB.GDObject",
-    "_name": "",
+    ".Name": "EmptyGDObject",
+    ".Type": "GDDB.GDObject",
     "Components": []
   },
   {
-    "_Name": "GDObject",
-    "_Type": "GDDB.GDObject",
-    "_name": "",
+    ".Name": "GDObject",
+    ".Type": "GDDB.GDObject",
     "Components": [
       {
-        "_Type": "GDDB.GDComponentChild1, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-        "IntValue": 42,
-        "ClassValue1": {
-          "_Type": "GDDB.TestEmbeddedClassParent, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-          "IntValue2": 11
-        },
-        "ClassValue2": {
-          "_Type": "GDDB.TestEmbeddedClassChild, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-          "IntValue3": 33,
-          "IntValue2": 22
+        ".Type": "GDDB.GDComponentChild1, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+        ".Value": {
+          "IntValue": 42,
+          "ClassValue1": {
+            "IntValue2": 11
+          },
+          "ClassValue2": {
+            "IntValue3": 33,
+            "IntValue2": 22
+          }
         }
       },
       {
-        "_Type": "GDDB.GDComponentChild2, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-        "StrValue": "test",
-        "Vector3Value": {
-          "_Type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-          "x": 1.0,
-          "y": 2.0,
-          "z": 3.5
+        ".Type": "GDDB.GDComponentChild2, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+        ".Value": {
+          "StrValue": "test",
+          "Vector3Value":[1.0,2.0,3.5]
         }
       },
       {
-        "_Type": "GDDB.GDComponentChild3, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-        "TexValue": {
-          "_Type": "UnityEngine.Texture2D, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null"
+        ".Type": "GDDB.GDComponentChild3, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+        ".Value": {
+          "TexValue": {
+            ".Type": "UnityEngine.Texture2D, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+            ".Value": {}
+          }
         }
       }
     ]

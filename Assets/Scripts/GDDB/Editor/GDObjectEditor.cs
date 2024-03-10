@@ -27,13 +27,15 @@ namespace GDDB.Editor
             var compsProp = so.FindProperty( "Components" );
 
             //Draw properties of GDObject descendants
+
+
             var gdObjectProp = so.GetIterator();
             for (var enterChildren = true; gdObjectProp.NextVisible(enterChildren); enterChildren = false)
             {
                 //Hide completely, custom draw
                 if ( SerializedProperty.EqualContents( gdObjectProp, compsProp) )
                     continue;
-
+            
                 using (new EditorGUI.DisabledScope("m_Script" == gdObjectProp.propertyPath))
                     EditorGUILayout.PropertyField(gdObjectProp, true);
             }
@@ -45,9 +47,13 @@ namespace GDDB.Editor
 
                 var compProp = compsProp.GetArrayElementAtIndex( i );
                 var compEndProp = compProp.GetEndProperty();
-                while (compProp.NextVisible(true) && !SerializedProperty.EqualContents(compProp, compEndProp))
+                if ( compProp.NextVisible( true ) )
                 {
-                    EditorGUILayout.PropertyField( compProp );
+                    do
+                    {
+                        EditorGUILayout.PropertyField( compProp );
+                    }   
+                    while ( compProp.NextVisible( false ) && !SerializedProperty.EqualContents( compProp, compEndProp ) );
                 }
             }
 
