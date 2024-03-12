@@ -3,17 +3,23 @@ using UnityEngine;
 
 namespace GDDB
 {
-    public class GDComponentChild1 : GDComponent
+    public class Primitives : GDComponent
     {
-        public Int32                   IntValue;
-        public TestEmbeddedClassParent ClassValue1;
-        public TestEmbeddedClassChild  ClassValue2;
+        public Int32  IntValue    = 1;
+        public Single FloatValue  = -1.0f;
+        public Double DoubleValue = Double.MaxValue;
+        public Single NANValue    = Single.NaN;
+        public String StrValue = "Test \"string\"";
+        public Boolean BoolValue = true;
     }
 
-    public class GDComponentChild2 : GDComponent
+    public class Classes : GDComponent
     {
-        public String  StrValue;
-        public Vector3 Vector3Value = new Vector3( 1, 2, 3.5f );
+        public TestEmbeddedClassParent ParentClassPolymord;
+        public TestEmbeddedClassChild  ChildClass;
+
+        public TestStruct                Struct1;
+        public NonSerializableTestStruct NonSerializableStruct;
     }
 
     public class GDComponentChild3 : GDComponent
@@ -31,6 +37,20 @@ namespace GDDB
     public class TestEmbeddedClassChild  : TestEmbeddedClassParent
     {
         public Int32 IntValue3;
+    }
+
+    [Serializable]
+    public struct TestStruct
+    {
+        public Int32 IntValue;
+
+        public TestEmbeddedClassParent EmbeddedClass;
+        public TestEmbeddedClassParent EmbeddedClassPolymorf;
+    }
+
+    public struct NonSerializableTestStruct
+    {
+        public Int32 IntValue;
     }
 
 }

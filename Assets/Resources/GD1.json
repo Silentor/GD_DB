@@ -3,8 +3,12 @@
     ".Name": "!GDRoot",
     ".Type": "GDDB.GDRoot",
     "Id": "GD1",
-    "Version": 0,
-    "TestVector3":[1.1,2.0,3.5],
+    "Version": 3,
+    "TestVector3": {
+      "x": 1.1,
+      "y": 2.0,
+      "z": 3.5
+    },
     "Components": []
   },
   {
@@ -13,35 +17,44 @@
     "Components": []
   },
   {
-    ".Name": "GDObject",
-    ".Type": "GDDB.GDObject",
+    ".Name": "TestGDObject",
+    ".Type": "GDDB.TestGDObject, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+    "NullObject": {
+      "IntValue2": 0
+    },
     "Components": [
       {
-        ".Type": "GDDB.GDComponentChild1, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+        ".Type": "GDDB.Primitives, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
         ".Value": {
-          "IntValue": 42,
-          "ClassValue1": {
-            "IntValue2": 11
+          "IntValue": 1,
+          "FloatValue": -1.0,
+          "DoubleValue": 1.7976931348623157E+308,
+          "NANValue": "NaN",
+          "StrValue": "Test \"string\"",
+          "BoolValue": true
+        }
+      },
+      {
+        ".Type": "GDDB.Classes, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+        ".Value": {
+          "ParentClassPolymord": {
+            "IntValue2": 0
           },
-          "ClassValue2": {
-            "IntValue3": 33,
-            "IntValue2": 22
-          }
-        }
-      },
-      {
-        ".Type": "GDDB.GDComponentChild2, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-        ".Value": {
-          "StrValue": "test",
-          "Vector3Value":[1.0,2.0,3.5]
-        }
-      },
-      {
-        ".Type": "GDDB.GDComponentChild3, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-        ".Value": {
-          "TexValue": {
-            ".Type": "UnityEngine.Texture2D, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-            ".Value": {}
+          "ChildClass": {
+            "IntValue3": 0,
+            "IntValue2": 0
+          },
+          "Struct1": {
+            "IntValue": 4,
+            "EmbeddedClass": {
+              "IntValue2": 5
+            },
+            "EmbeddedClassPolymorf": {
+              "IntValue2": 6
+            }
+          },
+          "NonSerializableStruct": {
+            "IntValue": 0
           }
         }
       }

@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 258fa77c429347f3a571a7c99e6da8a5, type: 3}
+  m_Name: TestGDObject
+  m_EditorClassIdentifier: 
+  Components:
+  - rid: 6870417446341181460
+  - rid: 6870417446341181461
+  NullObject:
+    IntValue2: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: 6870417446341181460
+      type: {class: Primitives, ns: GDDB, asm: Assembly-CSharp}
+      data:
+        IntValue: 1
+        FloatValue: -1
+        DoubleValue: 1.7976931348623157e+308
+        NANValue: NaN
+        StrValue: Test "string"
+        BoolValue: 1
+    - rid: 6870417446341181461
+      type: {class: Classes, ns: GDDB, asm: Assembly-CSharp}
+      data:
+        ParentClass:
+          IntValue2: 1
+        ChildClassPolymorf:
+          IntValue2: 2
+          IntValue3: 3
+        Struct1:
+          IntValue: 4
+          EmbeddedClass:
+            IntValue2: 5
+          EmbeddedClassPolymorf:
+            IntValue2: 6

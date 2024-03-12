@@ -24,26 +24,17 @@ namespace GDDB
 
         public String GDToJson( GdLoader gdLoader )
         {
-            StringWriter sw = new StringWriter( CultureInfo.InvariantCulture );
-            using (JsonWriter writer = new JsonTextWriter(sw))
+            JArray resulObjects = new JArray();
+
+            foreach ( var gdObj in gdLoader.AllObjects )
             {
-                writer.Formatting = Formatting.Indented;
-
-                writer.WriteStartArray();
-
-                foreach ( var gdObj in gdLoader.AllObjects )
-                {
-                    WriteObjectToJson( gdObj, writer );                    
-                }
-
-                writer.WriteEndArray();
+                resulObjects.Add(  WriteObjectToJson( gdObj ) );                    
             }
 
-            var result = sw.ToString();
-
+            var result = resulObjects.ToString();
             Debug.Log( $"Written {gdLoader.AllObjects.Count} gd objects to json string {result.Length} symbols" );
 
-            return sw.ToString();
+            return result;
         }
 
         private void WriteNullPropertyToJson( String name, JsonWriter writer )
@@ -54,103 +45,102 @@ namespace GDDB
 
         
 
-        private void WriteObjectToJson( GDObject obj, JsonWriter writer )
+        private JObject WriteObjectToJson( GDObject obj )
         {
-            writer.WriteStartObject();
-
-            writer.WritePropertyName( ".Name" );
-            writer.WriteValue( obj.name );
-            writer.WritePropertyName( ".Type" );
+            var result = new JObject();
+            result.Add( ".Name", obj.name );
             var type = obj.GetType();
-            writer.WriteValue( type.Assembly == GetType().Assembly ? type.FullName : type.AssemblyQualifiedName );
+            result.Add( ".Type", type.Assembly == GetType().Assembly ? type.FullName : type.AssemblyQualifiedName );
 
-            WriteObjectContent( type, obj, writer );
+            WriteObjectContent( type, obj, result );
 
-            writer.WriteEndObject();
+            return result;
         }
 
-        private void WriteObjectToJson( Type propertyType, Object obj, JsonWriter writer )
+        private JObject WriteObjectToJson( Type propertyType, Object obj )
         {
+            var result = new JObject();
+            var value  = result;
+
             var actualType = obj.GetType();
 
             //Check for polymorphic object
             if ( propertyType != actualType )
             {
-                writer.WriteStartObject();
-                writer.WritePropertyName( ".Type" );
-                writer.WriteValue( actualType.Assembly == GetType().Assembly ? actualType.FullName : actualType.AssemblyQualifiedName );
-                writer.WritePropertyName( ".Value" );
+                result.Add( ".Type", actualType.Assembly == GetType().Assembly ? actualType.FullName : actualType.AssemblyQualifiedName );
+                value = new JObject();
+                result.Add( ".Value", value );
             }
 
-            if( _serializers.TryGetValue( obj.GetType(), out var serializer ) )
+            // if( _serializers.TryGetValue( obj.GetType(), out var serializer ) )
+            // {
+            //     serializer.Serialize( obj, writer ) ;
+            //     return;
+            // }
+            // else
             {
-                serializer.Serialize( obj, writer ) ;
-                return;
+                WriteObjectContent( actualType, obj, value );
             }
-            else
-            {
-                writer.WriteStartObject();
-                WriteObjectContent( actualType, obj, writer );
-                writer.WriteEndObject();
-            }
-                        
-            //Check for polymorphic object
-            if ( propertyType != actualType )
-            {
-                writer.WriteEndObject();
-            }
-            
+
+            return result;
         }
 
-        private void WriteObjectContent( Type actualType, Object obj, JsonWriter writer )
+        private void WriteObjectContent( Type actualType, Object obj, JObject writer )
         {
             foreach (var field in actualType.GetFields( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance ))
             {
-                if( field.IsPublic || field.IsDefined( typeof(SerializeField), false ))
+                //Skip readonly and const fields
+                if( field.IsInitOnly || field.IsLiteral )
+                    continue;
+
+                if( IsFieldSerializable( field ))
                 {
                     var value = field.GetValue(obj);
-                    WritePropertyToJson( field.Name, field.FieldType, value, value.GetType(), writer );
+                    var property = WritePropertyToJson( field.Name, field.FieldType, value, value.GetType() );
+                    writer.Add( property );
                 }
             }
         }
 
-        private void WritePropertyToJson( String propertyName, Type propertyType, Object value, Type valueType, JsonWriter writer )
+       
+        private JProperty WritePropertyToJson( String propertyName, Type propertyType, Object value, Type valueType )
         {
-            writer.WritePropertyName(propertyName);
-
-            WriteSomethingToJson( propertyType, value, valueType, writer );
+            var result = new JProperty( propertyName );
+            result.Value = WriteSomethingToJson( propertyType, value, valueType );
+            return result;
         }
 
-        private void WriteSomethingToJson(Type propertyType, Object value, Type valueType, JsonWriter writer )
+        private JToken WriteSomethingToJson(Type propertyType, Object value, Type valueType )
         {
             if( valueType.IsPrimitive || valueType == typeof(String) )
             {
-                writer.WriteValue(value);
+                return new JValue( value );
             }
             else if( valueType.IsArray)
             {
                 var elementType = valueType.GetElementType();
-                WriteCollectionToJson( elementType, (IEnumerable)value, writer );
+                return WriteCollectionToJson( elementType, (IEnumerable)value );
             }
             else if( valueType.IsGenericType && valueType.GetGenericTypeDefinition() ==  typeof(List<>))
             {
                 var elementType = valueType.GetGenericArguments()[0];
-                WriteCollectionToJson( elementType, (IEnumerable)value, writer );
+                return WriteCollectionToJson( elementType, (IEnumerable)value );
             }
             else
             {
-                WriteObjectToJson( propertyType, value, writer );
+                return WriteObjectToJson( propertyType, value );
             }
         }
 
-        private void WriteCollectionToJson( Type elementType, IEnumerable collection, JsonWriter writer )
+        private JArray WriteCollectionToJson( Type elementType, IEnumerable collection )
         {
-            writer.WriteStartArray();
+            var result = new JArray();
             foreach (var obj in collection)
             {
-                WriteSomethingToJson( elementType, obj, obj.GetType(), writer );
+                result.Add( WriteSomethingToJson( elementType, obj, obj.GetType() ) );
             }
-            writer.WriteEndArray();
+
+            return result;
         }
 
 
@@ -160,13 +150,13 @@ namespace GDDB
         {
             using (var reader = new StringReader( json ) )
             {
-                var o       = JToken.ReadFrom(new JsonTextReader(reader));
-                var content = o.Children();
+                var o       = (JArray)JToken.ReadFrom(new JsonTextReader(reader));
+                var content = o.Children<JObject>();
                 var result  = new List<GDObject>();
         
                 foreach ( var gdObject in content )
                 {
-                    var resultObj = ReadGDObjectFromJson( (JObject)gdObject );
+                    var resultObj = ReadGDObjectFromJson( gdObject );
                     result.Add( resultObj );
                 }
         
@@ -183,94 +173,95 @@ namespace GDDB
             var obj  = (GDObject)ScriptableObject.CreateInstance( type );
             obj.name = name;
         
-            foreach (var field in type.GetFields( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance ))
-            {
-                if( field.IsPublic || field.IsDefined( typeof(SerializeField), false ))
-                {
-                    var prop = gdObjToken.Property(field.Name);
-                    if( prop == null )
-                        field.SetValue( obj, null );
-                    else
-                    {
-                        try
-                        {
-                            field.SetValue( obj, ReadPropertyFromJson( prop, field.FieldType ) );
-                        }
-                        catch ( Exception ex )  
-                        {
-                            Debug.LogError( $"Error settings field {field} from jtoken {prop.Type} value {prop}, exception: {ex}" );                            
-                        }
-                    }
-                }
-            }
+            ReadContentFromJson( gdObjToken, obj );
         
             return obj;
         }
-        
-        private Object ReadPropertyFromJson( JProperty token, Type propertyType )
-        {
-            if( propertyType.IsPrimitive || propertyType == typeof(String) )
-            {
-                return Convert.ChangeType( token.Value<Object>(), propertyType );
-            }
-            else if( propertyType.IsArray || (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() ==  typeof(List<>) ))
-            {
-                return ReadCollectionFromJson( (JArray)token.Value, propertyType );
-            }
-            else
-            {
-                return ReadObjectFromJson( (JObject)token.Value, propertyType );
-            }
-        }
-        
-        private Object ReadObjectFromJson( JObject token, Type propertyType )
+
+        private Object ReadObjectFromJson( JObject jObject, Type propertyType )
         {
             var objectType = propertyType;
 
-            var typeProp   = token.Property(".Type");
+            //Check polymorphic object
+            var valueObj = jObject;
+            var typeProp = jObject.Property(".Type");
             if ( typeProp != null )
             {
-                objectType = Type.GetType( token[".Type"].Value<String>() );
+                objectType = Type.GetType( jObject[".Type"].Value<String>() );
+                valueObj = (JObject)jObject[".Value"];
             }
 
-            if ( _serializers.TryGetValue( objectType, out var serializer ) )
-            {
-                return serializer.Deserialize( token );
-            }
+            // if ( _serializers.TryGetValue( objectType, out var serializer ) )
+            // {
+            //     return serializer.Deserialize( token );
+            // }
 
             var defaultConstructor = objectType.GetConstructor( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, Array.Empty<Type>(), null );
             if ( defaultConstructor == null )
             {
-                Debug.LogError( $"Default constructor not found for type {objectType}" );
+                Debug.LogError( $"Default constructor not found for type {objectType} read null object" );
                 return null;
             }
-            var obj  = Activator.CreateInstance( objectType );
+            var obj = Activator.CreateInstance( objectType );
         
-            foreach (var field in objectType.GetFields( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance ))
-            {
-                if( field.IsPublic || field.IsDefined( typeof(SerializeField), false ))
-                {
-                    var value = token[field.Name];
-                    if( value == null )
-                        field.SetValue( obj, null );
-                    else
-                        field.SetValue( obj, ReadPropertyFromJson( value, field.FieldType ) );
-                }
-            }
+            ReadContentFromJson( valueObj, obj );
         
             return obj;
         }
+
+        private void ReadContentFromJson( JObject jObject, Object obj )
+        {
+            foreach (var field in obj.GetType().GetFields( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance ))
+            {
+                if( IsFieldSerializable( field ) )
+                {
+                    var valueToken = jObject[field.Name];
+                    if( valueToken == null )
+                        field.SetValue( obj, null );
+                    else
+                        try
+                        {
+                            var value = ReadSomethingFromJson( valueToken, field.FieldType );
+                            field.SetValue( obj, value );
+                        }
+                        catch ( Exception ex )  
+                        {
+                            Debug.LogError( $"Error settings field {field} from jtoken {valueToken.Type} value {valueToken}, exception: {ex}" );                            
+                        }
+                }
+            }
+        }
+        
+        private Object ReadSomethingFromJson( JToken value, Type propertyType )
+        {
+            if( propertyType.IsPrimitive || propertyType == typeof(String) )
+            {
+                return Convert.ChangeType( value.Value<Object>(), propertyType );
+            }
+            else if( propertyType.IsArray || (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() ==  typeof(List<>) ))
+            {
+                return ReadCollectionFromJson( (JArray)value, propertyType );
+            }
+            else
+            {
+                return ReadObjectFromJson( (JObject)value, propertyType );
+            }
+        }
+        
+        
         
         private Object ReadCollectionFromJson(JArray token, Type type )
         {
             if ( type.IsArray )
             {
-                var values = token.Children().ToArray();
-                var array  = Array.CreateInstance( type.GetElementType(), values.Length );
-        
+                var values      = token.Children().ToArray();
+                var array       = Array.CreateInstance( type.GetElementType(), values.Length );
+                var elementType = type.GetElementType();
+
                 for ( int i = 0; i < values.Length; i++ )
                 {
-                    array.SetValue( ReadPropertyFromJson( values[i], type.GetElementType() ), i );
+                    
+                    array.SetValue( ReadSomethingFromJson( values[i], elementType ), i );
                 }
         
                 return array;
@@ -279,21 +270,11 @@ namespace GDDB
             {
                 var values = token.Children().ToArray();
                 var list = (IList)Activator.CreateInstance( type );    
-                var elementTypes = type.GetGenericArguments()[0];
+                var elementType = type.GetGenericArguments()[0];
         
                 foreach ( var valueToken in values )
                 {
-
-                    var itemTypeToken = valueToken[ ".Type" ];
-                    if ( itemTypeToken != null )
-                    {
-                        var itemType = Type.GetType( itemTypeToken.Value<String>() );
-                        list.Add( ReadPropertyFromJson( valueToken, itemType ) );
-                    }
-                    else
-                    {
-                        list.Add( ReadPropertyFromJson( valueToken, type.GetElementType() ) );
-                    }
+                    list.Add( ReadSomethingFromJson( valueToken, elementType ) );
                 }
         
                 return list;
@@ -438,6 +419,10 @@ namespace GDDB
 
     #endregion
 
-        
+        private static Boolean IsFieldSerializable(FieldInfo field )
+        {
+            return (field.IsPublic && !field.IsDefined( typeof(NonSerializedAttribute), false )) || field.IsDefined( typeof(SerializeField), false );
+        }
+
     }
 }
