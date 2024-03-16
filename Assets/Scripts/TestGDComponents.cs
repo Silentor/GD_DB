@@ -5,12 +5,15 @@ namespace GDDB
 {
     public class Primitives : GDComponent
     {
-        public Int32  IntValue    = 1;
-        public Single FloatValue  = -1.0f;
-        public Double DoubleValue = Double.MaxValue;
-        public Single NANValue    = Single.NaN;
-        public String StrValue = "Test \"string\"";
-        public Boolean BoolValue = true;
+        public Int32   IntValue    = 1;
+        public Int64   BigIntValue = Int64.MaxValue;
+        public Single  FloatValue  = -1.0f;
+        public Double  DoubleValue = Double.MaxValue;
+        public Single  NANValue    = Single.NaN;
+        public String  StrValue    = "Test \"string\"";
+        public Boolean BoolValue   = true;
+        public Char CharValue      = 'A';
+        public Decimal DecimalValue = Decimal.MaxValue;
     }
 
     public class Classes : GDComponent

@@ -13,33 +13,55 @@ MonoBehaviour:
   m_Name: TestGDObject
   m_EditorClassIdentifier: 
   Components:
-  - rid: 6870417446341181460
-  - rid: 6870417446341181461
-  NullObject:
-    IntValue2: 0
+  - rid: 6870417494477373444
+  - rid: 6870417494477373448
+  - rid: 6870417513993469958
+  - rid: 6870417513993469971
   references:
     version: 2
     RefIds:
-    - rid: 6870417446341181460
-      type: {class: Primitives, ns: GDDB, asm: Assembly-CSharp}
+    - rid: 6870417494477373444
+      type: {class: NotSerializableContentComponent, ns: GDDB.Tests, asm: Tests}
+      data: 
+    - rid: 6870417494477373448
+      type: {class: PrimitivesComponent, ns: GDDB.Tests, asm: Tests}
       data:
-        IntValue: 1
-        FloatValue: -1
-        DoubleValue: 1.7976931348623157e+308
-        NANValue: NaN
-        StrValue: Test "string"
-        BoolValue: 1
-    - rid: 6870417446341181461
-      type: {class: Classes, ns: GDDB, asm: Assembly-CSharp}
+        SByteField: -90
+        IntField: 2147483647
+        BigIntField: -9223372036854775808
+        FloatField: Infinity
+        DoubleField: NaN
+        BoolField: 0
+        StringField: some text
+        ByteEnumField: 1
+        IntEnumField: 4294967295
+        CharField: 97
+    - rid: 6870417513993469958
+      type: {class: NullReferencesAsEmptyComponent, ns: GDDB.Tests, asm: Tests}
       data:
-        ParentClass:
-          IntValue2: 1
-        ChildClassPolymorf:
-          IntValue2: 2
-          IntValue3: 3
-        Struct1:
-          IntValue: 4
-          EmbeddedClass:
-            IntValue2: 5
-          EmbeddedClassPolymorf:
-            IntValue2: 6
+        StringMustBeEmpty: 
+        NestedClassMustBeEmpty:
+          IntParam: 42
+          StringMustBeEmpty: 
+        NestedClassMustBeEmptyWithoutConstructor:
+          StringMustBeEmpty: 
+          IntParam: 99
+          NestedClassMustBeEmpty:
+            IntParam: 42
+            StringMustBeEmpty: 
+    - rid: 6870417513993469971
+      type: {class: CollectionTestComponent, ns: GDDB.Tests, asm: Tests}
+      data:
+        IntArray: 0100000002000000030000000400000005000000
+        StrArray:
+        - 
+        - 
+        - 3
+        ClassList1:
+        - IntField: 66
+        - IntField: 99
+        - IntField: 43
+        ClassListPolymorf2:
+        - IntField: 66
+        - IntField: 99
+        - IntField: 42

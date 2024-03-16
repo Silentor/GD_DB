@@ -22,17 +22,17 @@ namespace GDDB
             _serializers.Add( typeof(Vector3), new Vector3Serializer() );
         }
 
-        public String GDToJson( GdLoader gdLoader )
+        public String GDToJson( IEnumerable<GDObject> objects )
         {
             JArray resulObjects = new JArray();
 
-            foreach ( var gdObj in gdLoader.AllObjects )
+            foreach ( var gdObj in objects )
             {
                 resulObjects.Add(  WriteObjectToJson( gdObj ) );                    
             }
 
             var result = resulObjects.ToString();
-            Debug.Log( $"Written {gdLoader.AllObjects.Count} gd objects to json string {result.Length} symbols" );
+            Debug.Log( $"Written {objects.Count()} gd objects to json string {result.Length} symbols" );
 
             return result;
         }
@@ -89,15 +89,19 @@ namespace GDDB
         {
             foreach (var field in actualType.GetFields( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance ))
             {
-                //Skip readonly and const fields
-                if( field.IsInitOnly || field.IsLiteral )
-                    continue;
-
                 if( IsFieldSerializable( field ))
                 {
                     var value = field.GetValue(obj);
-                    var property = WritePropertyToJson( field.Name, field.FieldType, value, value.GetType() );
-                    writer.Add( property );
+                    if ( value != null )
+                    {
+                        var property = WritePropertyToJson( field.Name, field.FieldType, value, value.GetType() );
+                        writer.Add( property );
+                    }
+                    else
+                    {
+                        var property = WriteNullPropertyToJson( field.Name, field.FieldType );
+                        writer.Add( property );
+                    }
                 }
             }
         }
@@ -110,9 +114,24 @@ namespace GDDB
             return result;
         }
 
+        private JProperty WriteNullPropertyToJson( String propertyName, Type propertyType )
+        {
+            var result = new JProperty( propertyName );
+            result.Value = WriteSomethingNullToJson( propertyType );
+            return result;
+        }
+
         private JToken WriteSomethingToJson(Type propertyType, Object value, Type valueType )
         {
-            if( valueType.IsPrimitive || valueType == typeof(String) )
+            if ( valueType == typeof(Char) )
+            {
+                return new JValue( Convert.ToUInt16( value) );
+            }
+            else if( valueType.IsPrimitive || valueType == typeof(String) )
+            {
+                return new JValue( value );
+            }
+            else if ( valueType.IsEnum )
             {
                 return new JValue( value );
             }
@@ -132,14 +151,46 @@ namespace GDDB
             }
         }
 
+        private JToken WriteSomethingNullToJson(Type propertyType )
+        {
+            if( propertyType == typeof(String) )
+                return new JValue( String.Empty );
+            else if( propertyType.IsArray || (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() ==  typeof(List<>)))
+                return new JArray();
+            else
+            {
+                //Create and serialize empty object
+                var emptyObject  = CreateEmptyObject( propertyType );
+                var jEmptyObject = WriteObjectToJson( propertyType, emptyObject );
+                return jEmptyObject;
+            }
+        }
+
         private JArray WriteCollectionToJson( Type elementType, IEnumerable collection )
         {
             var result = new JArray();
             foreach (var obj in collection)
             {
-                result.Add( WriteSomethingToJson( elementType, obj, obj.GetType() ) );
+                if( obj != null )
+                    result.Add( WriteSomethingToJson( elementType, obj, obj.GetType() ) );
+                else
+                    result.Add( WriteSomethingNullToJson( elementType ) );
             }
 
+            return result;
+        }
+
+        private Object CreateEmptyObject( Type type )
+        {
+            var defaultConstructor = type.GetConstructor( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, Array.Empty<Type>(), null );
+            if ( defaultConstructor == null )
+            {
+                Debug.LogError( $"Default constructor not found for type {type} return null" );
+                return null;
+            }
+
+            //Null fields will be 'inited' by serializer
+            var result = defaultConstructor.Invoke( Array.Empty<Object>() );
             return result;
         }
 
@@ -171,6 +222,7 @@ namespace GDDB
             var name = gdObjToken[".Name"].Value<String>();
             var type = Type.GetType( gdObjToken[".Type"].Value<String>() );
             var obj  = (GDObject)ScriptableObject.CreateInstance( type );
+            obj.hideFlags = HideFlags.HideAndDontSave;
             obj.name = name;
         
             ReadContentFromJson( gdObjToken, obj );
@@ -202,7 +254,7 @@ namespace GDDB
                 Debug.LogError( $"Default constructor not found for type {objectType} read null object" );
                 return null;
             }
-            var obj = Activator.CreateInstance( objectType );
+            var obj = defaultConstructor.Invoke( Array.Empty<Object>() );
         
             ReadContentFromJson( valueObj, obj );
         
@@ -234,9 +286,17 @@ namespace GDDB
         
         private Object ReadSomethingFromJson( JToken value, Type propertyType )
         {
-            if( propertyType.IsPrimitive || propertyType == typeof(String) )
+            if ( propertyType == typeof(Char) )
+            {
+                return Convert.ChangeType( value.Value<Object>(), typeof(Char) ); 
+            }
+            else if( propertyType.IsPrimitive || propertyType == typeof(String) )
             {
                 return Convert.ChangeType( value.Value<Object>(), propertyType );
+            }
+            else if ( propertyType.IsEnum )
+            {
+                return Convert.ChangeType( value.Value<Object>(), propertyType ); 
             }
             else if( propertyType.IsArray || (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() ==  typeof(List<>) ))
             {
@@ -419,9 +479,57 @@ namespace GDDB
 
     #endregion
 
-        private static Boolean IsFieldSerializable(FieldInfo field )
+        private static Boolean IsFieldSerializable( FieldInfo field )
         {
-            return (field.IsPublic && !field.IsDefined( typeof(NonSerializedAttribute), false )) || field.IsDefined( typeof(SerializeField), false );
+            if( field.IsInitOnly || field.IsLiteral || field.IsStatic || field.IsNotSerialized )
+                return false;
+
+            if ( field.IsPrivate && !field.IsDefined( typeof(SerializeField), false ) )
+                return false;
+
+            if ( field.IsPublic && field.IsDefined( typeof(NonSerializedAttribute), false ) )
+                return false;
+
+            var fieldType = field.FieldType;
+            if ( !IsTypeSerializable( fieldType ) && !field.IsDefined( typeof(SerializeReference) ))
+                return false;
+
+            return true;
+        }
+
+        private static Boolean IsTypeSerializable( Type type )
+        {
+            //Fast pass
+            if( type == typeof(String) || type.IsEnum )
+                return true;
+
+            //Unity serializer do not support all primitives
+            if ( type.IsPrimitive )
+                return !( type == typeof(Decimal) || type == typeof(IntPtr) || type == typeof(UIntPtr) );
+
+            //Discard structures without Serializable attribute
+            if ( !type.IsPrimitive && !type.IsEnum && type.IsValueType && !type.IsDefined( typeof(SerializableAttribute ) ) )
+                return false;
+
+            if ( type.IsAbstract || type.IsInterface )
+                return false;
+
+            //Discard classes without Serializable attribute
+            if( type.IsClass && !type.IsDefined( typeof(SerializableAttribute ) ) )
+                return false;
+
+            if( type.IsArray )
+                return IsTypeSerializable( type.GetElementType() );
+
+            if( type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>) )
+                return IsTypeSerializable( type.GetGenericArguments()[0] );
+
+            //Check serializable fields for serialization support
+            var fields = type.GetFields( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance );
+            if( !fields.Any( IsFieldSerializable ) )
+                return false;
+
+            return true;
         }
 
     }

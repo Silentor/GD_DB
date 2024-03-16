@@ -28,7 +28,6 @@ namespace GDDB.Editor
 
             //Draw properties of GDObject descendants
 
-
             var gdObjectProp = so.GetIterator();
             for (var enterChildren = true; gdObjectProp.NextVisible(enterChildren); enterChildren = false)
             {
@@ -38,6 +37,12 @@ namespace GDDB.Editor
             
                 using (new EditorGUI.DisabledScope("m_Script" == gdObjectProp.propertyPath))
                     EditorGUILayout.PropertyField(gdObjectProp, true);
+            }
+
+            if ( GUILayout.Button( "Dirty and save", GUILayout.Width( 100 ) ) )
+            {
+                EditorUtility.SetDirty( _target );
+                AssetDatabase.SaveAssetIfDirty( _target );
             }
             
             //Draw GDComponents list
@@ -75,13 +80,15 @@ namespace GDDB.Editor
             var compProp = components.GetArrayElementAtIndex( componentIndex );
 
             GUILayout.BeginHorizontal(  );
+            var compType          = compProp.managedReferenceValue.GetType();
             var componentTypeName = compProp.managedReferenceFullTypename;
             componentTypeName = !String.IsNullOrEmpty(componentTypeName) ? componentTypeName.Split('.').Last() : "Null";
-            GUILayout.Label( componentTypeName, EditorStyles.boldLabel );
+            GUILayout.Label( componentTypeName, Styles.BoldLabel );
             GUILayout.FlexibleSpace();
+            GUILayout.Label( $"({compType.FullName}, {compType.Assembly.GetName().Name})", Styles.ItalicLabel );
             if( GUILayout.Button( "X" ) )
             {
-                components.DeleteArrayElementAtIndex( componentIndex );
+                RemoveComponent( componentIndex );
             }
             GUILayout.EndHorizontal();
         }
@@ -103,13 +110,32 @@ namespace GDDB.Editor
                 {
                     if( _lastSelectedComponentIndex >= 0 )
                     {
-                        var newComponent = Activator.CreateInstance( allProperComponents[_lastSelectedComponentIndex] );
-                        _target.Components.Add( (GDComponent)newComponent );
+                        var typeToAdd = allProperComponents[ _lastSelectedComponentIndex ];
+                        AddComponent( typeToAdd );
                     }
                 }
             }
 
             GUILayout.EndHorizontal();
+        }
+
+        private void AddComponent( Type componentType )
+        {
+            var newComponent = Activator.CreateInstance( componentType );
+            _target.Components.Add( (GDComponent)newComponent );
+            EditorUtility.SetDirty( _target );
+        }
+
+        private void RemoveComponent( Int32 componentIndex )
+        {
+            _target.Components.RemoveAt( componentIndex );
+            EditorUtility.SetDirty( _target );
+        }
+
+        private static class Styles
+        {
+            public static readonly GUIStyle ItalicLabel = new ( EditorStyles.label ) { fontStyle = FontStyle.Italic };
+            public static readonly GUIStyle BoldLabel   = EditorStyles.boldLabel;
         }
     }
 }

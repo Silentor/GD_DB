@@ -45,8 +45,8 @@ namespace GDDB
             var _gddb2 = GetGD( "GD2" );
             Debug.Log( $"GD DB {_gddb2.Root.Id} loaded, objects count {_gddb2.AllObjects.Count}" );
 
-            var jsongddb = new GdJsonLoader( "GD1" );
-            Debug.Log( $"Read from json {jsongddb.Root.TestVector3}" );
+            //var jsongddb = new GdJsonLoader( "GD1" );
+            //Debug.Log( $"Read from json {jsongddb.Root.TestVector3}" );
 
             
         }

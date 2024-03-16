@@ -27,7 +27,7 @@ namespace GDDB.Editor
             if ( GUILayout.Button( "ToJson", GUILayout.Width( 100 ) ) )
             {
                 var gddb = new GdEditorLoader( _target.Id );
-                var json = new GDJson().GDToJson( gddb );
+                var json = new GDJson().GDToJson( gddb.AllObjects );
                 var path = Path.Combine( Application.dataPath, $"Resources/{_target.Id}.json" );
                 File.WriteAllText( path, json );
                 AssetDatabase.Refresh();
