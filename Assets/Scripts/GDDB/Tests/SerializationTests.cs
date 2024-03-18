@@ -177,6 +177,7 @@ namespace GDDB.Tests
             copy.ClassListNonSerializable.Should().BeEquivalentTo( collComp.ClassListNonSerializable );
         }
 
+        [Test]
         public void GDObjectReferenceTest( )
         {
                 //Arrange
@@ -196,6 +197,24 @@ namespace GDDB.Tests
                 //Assert
                 var copy = serializer.JsonToGD( jsonString );
                 obj1.ObjReference.Should().BeSameAs( obj2.ObjReference );
-        }                                  
+        }
+
+        [Test]
+        public void ISerializationCallbackReceiverTest( )
+        {
+                throw new NotImplementedException();
+        }
+
+        [Test]
+        public void AssetReferenceTest( )
+        {
+                throw new NotImplementedException();
+        }
+
+        [Test]
+        public void UnityTypesSupportTest( )
+        {
+                throw new NotImplementedException();
+        }
     }
 }
