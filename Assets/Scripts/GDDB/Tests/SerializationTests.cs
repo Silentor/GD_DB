@@ -32,18 +32,30 @@ namespace GDDB.Tests
             Assert.That( jsonSerComp.Children(), Is.Empty );
         }
 
-        [TestCase( false, 0D,              0F,              0, 0,              0, "", 'a', PrimitivesComponent.EByteEnum.Zero, PrimitivesComponent.EIntEnum.Zero )]
-        [TestCase( true,  Double.MinValue, Single.MinValue, SByte.MinValue, Int32.MinValue, Int64.MinValue, "", 'Я', PrimitivesComponent.EByteEnum.One,
+        [TestCase( false, 0D,              0F,              0, 0,              0, "", 'a',
+                PrimitivesComponent.EByteEnum.Zero, PrimitivesComponent.EIntEnum.Zero )]
+        [TestCase( true,  Double.MinValue, Single.MinValue, SByte.MinValue, Int32.MinValue, Int64.MinValue, "",
+                'Я',
+                PrimitivesComponent.EByteEnum.One,
                 PrimitivesComponent.EIntEnum.One )]
-        [TestCase( true, Double.MaxValue, Single.MaxValue, SByte.MaxValue, Int32.MaxValue, Int64.MaxValue, "some ansi text", '\uD846', PrimitivesComponent.EByteEnum.Last,
+        [TestCase( true, Double.MaxValue, Single.MaxValue, SByte.MaxValue, Int32.MaxValue, Int64.MaxValue,
+                "some ansi text", '\uD846', PrimitivesComponent.EByteEnum.Last,
                 PrimitivesComponent.EIntEnum.Last )]
-        [TestCase( true, Double.NegativeInfinity, Single.NegativeInfinity, 0, 0, 0, "кирилиця", Char.MinValue, PrimitivesComponent.EByteEnum.Last,
+        [TestCase( true, Double.NegativeInfinity, Single.NegativeInfinity, 0, 0, 0, "кирилиця", Char.MinValue,
+                PrimitivesComponent.EByteEnum.Last,
                 PrimitivesComponent.EIntEnum.Last )]
-        [TestCase( true, Double.PositiveInfinity, Single.PositiveInfinity, 0, 0, 0, "some chinese \uD846", Char.MaxValue, PrimitivesComponent.EByteEnum.Last,
+        [TestCase( true, Double.PositiveInfinity, Single.PositiveInfinity, 0, 0, 0,
+                "some chinese \uD846",
+                Char.MaxValue, PrimitivesComponent.EByteEnum.Last,
                 PrimitivesComponent.EIntEnum.Last )]
-        [TestCase( true, Double.NaN, Single.NaN, 0, 0, 0, "some smile \uD83D", '!', PrimitivesComponent.EByteEnum.Last, PrimitivesComponent.EIntEnum.Last )]
-        public void PrimitivesComponentTest( Boolean boolParam, Double  doubleParam, Single floatParam, SByte sbyteParam, Int32 intParam, Int64 bigIntParam,
-                                             String  strParam,  Char charParam, PrimitivesComponent.EByteEnum byteEnumParam, PrimitivesComponent.EIntEnum intEnumParam  )
+        [TestCase( true, Double.NaN, Single.NaN, 0, 0, 0, "some smile \uD83D", '!',
+                PrimitivesComponent.EByteEnum.Last,
+                PrimitivesComponent.EIntEnum.Last )]
+        public void PrimitivesComponentTest( Boolean boolParam, Double  doubleParam, Single floatParam,
+                                             SByte sbyteParam, Int32 intParam, Int64 bigIntParam,
+                                             String  strParam,  Char charParam,
+                                             PrimitivesComponent.EByteEnum byteEnumParam,
+                                             PrimitivesComponent.EIntEnum intEnumParam  )
         {
             //Arrange
             var comp = new PrimitivesComponent()
@@ -56,7 +68,7 @@ namespace GDDB.Tests
                                StringField   = strParam,
                                ByteEnumField = byteEnumParam,
                                IntEnumField  = intEnumParam,
-                               CharField     = charParam,
+                               CharField     = charParam
                        };
             var testObj = ScriptableObject.CreateInstance<GDRoot>();
             testObj.Components.Add( comp );
@@ -79,7 +91,7 @@ namespace GDDB.Tests
             var nullComp = new NullReferencesAsEmptyComponent()
                            {
                                    StringMustBeEmpty      = null,
-                                   NestedClassMustBeEmpty = null,
+                                   NestedClassMustBeEmpty = null
                            };
             var testObj = ScriptableObject.CreateInstance<GDRoot>();
             testObj.Components.Add( nullComp );
@@ -91,13 +103,18 @@ namespace GDDB.Tests
             Debug.Log( jsonString );
 
             //Assert
-            var copy = serializer.JsonToGD( jsonString ).First().Components.First() as NullReferencesAsEmptyComponent;
+            var copy =
+                    serializer.JsonToGD( jsonString ).First().Components.First() as
+                            NullReferencesAsEmptyComponent;
             copy.StringMustBeEmpty.Should().BeEmpty(  );
             copy.NestedClassMustBeEmpty.StringMustBeEmpty.Should().BeEmpty(  );
-            copy.NestedClassMustBeEmpty.IntParam.Should().Be( 42, because: "default value from field init" );
+            copy.NestedClassMustBeEmpty.IntParam.Should()
+                .Be( 42, "default value from field init" );
             copy.NestedClassMustBeEmptyWithoutConstructor.StringMustBeEmpty.Should().BeEmpty(  );
-            copy.NestedClassMustBeEmptyWithoutConstructor.IntParam.Should().Be( 99, because: "value from private constructor" );
-            copy.NestedClassMustBeEmptyWithoutConstructor.NestedClassMustBeEmpty.Should().BeEquivalentTo( copy.NestedClassMustBeEmpty );
+            copy.NestedClassMustBeEmptyWithoutConstructor.IntParam.Should()
+                .Be( 99, "value from private constructor" );
+            copy.NestedClassMustBeEmptyWithoutConstructor.NestedClassMustBeEmpty.Should()
+                .BeEquivalentTo( copy.NestedClassMustBeEmpty );
             copy.NonSerializableClassMustStillBeNull.Should().BeNull();
         }
 
@@ -108,13 +125,14 @@ namespace GDDB.Tests
             var collComp = new CollectionTestComponent()
                            {
                                    OldIntArray = new Single[] { 1, 2, 3 },     //Mutate
-                                   IntArray = new Int32[] { 3, 2, 1 },         //Mutate
-                          };
-            collComp.ClassListPolymorf2[ 2 ] = new CollectionTestComponent.NestedSerializableChildClass()   //Mutate
-                                               {
-                                                       IntField  = 1,
-                                                       IntField2 = 2,
-                                               };
+                                   IntArray    = new Int32[] { 3, 2, 1 }         //Mutate
+                           };
+            collComp.ClassListPolymorf2[ 2 ] =
+                    new CollectionTestComponent.NestedSerializableChildClass()   //Mutate
+                    {
+                            IntField  = 1,
+                            IntField2 = 2
+                    };
             var testObj = ScriptableObject.CreateInstance<GDRoot>();
             testObj.Components.Add( collComp );
 
@@ -130,27 +148,54 @@ namespace GDDB.Tests
             var jComponents = (JArray)jRoot[ "Components" ];
             var jsonSerComp = (JObject)jComponents[ 0 ][ ".Value" ];
 
-            Assert.IsNull( jsonSerComp[nameof(CollectionTestComponent.OldIntArray)] );
-            Assert.IsNull( jsonSerComp[nameof(CollectionTestComponent.ClassListNonSerializable)] );
+            Assert.IsNull( jsonSerComp[ nameof(CollectionTestComponent.OldIntArray) ] );
+            Assert.IsNull( jsonSerComp[ nameof(CollectionTestComponent.ClassListNonSerializable) ] );
 
             //Asset deserialized data
-            var copy = serializer.JsonToGD( jsonString ).First().Components.First() as CollectionTestComponent;
+            var copy =
+                    serializer.JsonToGD( jsonString ).First().Components.First() as
+                            CollectionTestComponent;
             copy.OldIntArray.Should().BeEquivalentTo( new CollectionTestComponent().OldIntArray );
             copy.IntArray.Should().BeEquivalentTo( collComp.IntArray );
-            copy.StrArray.Should().BeEquivalentTo( new String[]{String.Empty, String.Empty, "3"} ); 
-            copy.ClassList1.Should().BeEquivalentTo( new System.Collections.Generic.List<CollectionTestComponent.NestedSerializableClass>()
-                                                     {
-                                                             collComp.ClassList1[0],    
-                                                             collComp.ClassList1[1],
-                                                             new ()
-                                                     }, because: "null elements deserialized as empty objects" ); 
-            copy.ClassListPolymorf2.Should().BeEquivalentTo( new System.Collections.Generic.List<CollectionTestComponent.NestedSerializableClass>()
-                                                             {
-                                                                    collComp.ClassListPolymorf2[0],
-                                                                    collComp.ClassListPolymorf2[1],
-                                                                    new (){ IntField = 1 },                    
-                                                             } , because: "polymorphism is lost");
+            copy.StrArray.Should().BeEquivalentTo( new String[] { String.Empty, String.Empty, "3" } );
+            copy.ClassList1.Should().BeEquivalentTo(
+                    new System.Collections.Generic.List<
+                            CollectionTestComponent.NestedSerializableClass>()
+                    {
+                            collComp.ClassList1[ 0 ],
+                            collComp.ClassList1[ 1 ],
+                            new ()
+                    }, "null elements deserialized as empty objects" );
+            copy.ClassListPolymorf2.Should().BeEquivalentTo(
+                    new System.Collections.Generic.List<
+                            CollectionTestComponent.NestedSerializableClass>()
+                    {
+                            collComp.ClassListPolymorf2[ 0 ],
+                            collComp.ClassListPolymorf2[ 1 ],
+                            new () { IntField = 1 }
+                    } , "polymorphism is lost" );
             copy.ClassListNonSerializable.Should().BeEquivalentTo( collComp.ClassListNonSerializable );
         }
+
+        public void GDObjectReferenceTest( )
+        {
+                //Arrange
+                var obj1 = ScriptableObject.CreateInstance<TestObject1>();
+                var obj2 = ScriptableObject.CreateInstance<TestObject2>();
+                var obj3 = ScriptableObject.CreateInstance<TestObject3Referenced>();
+
+                obj1.ObjReference = obj3;
+                obj2.ObjReference = obj3;
+
+                //Act
+                var serializer = new GDJson();
+                var jsonString = serializer.GDToJson( new GDObject[] { obj1, obj2, obj3 } );
+
+                Debug.Log( jsonString );
+
+                //Assert
+                var copy = serializer.JsonToGD( jsonString );
+                obj1.ObjReference.Should().BeSameAs( obj2.ObjReference );
+        }                                  
     }
 }
