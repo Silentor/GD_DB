@@ -178,12 +178,29 @@ namespace GDDB.Tests
         }
 
         [Test]
+        public void RuntimeGDO( )
+        {
+             //Arrange
+             var obj = GDObject.CreateInstance<GDObject>();
+
+             //Act
+             var serializer = new GDJson();
+             var jsonString = serializer.GDToJson( new GDObject[] { obj } );
+             Debug.Log( jsonString );
+             var copyObj = serializer.JsonToGD( jsonString )[0];
+
+             //Assert
+             obj.Guid.Should().NotBe( default(Guid) );
+             copyObj.Guid.Should().Be( obj.Guid );
+        }
+
+        [Test]
         public void GDObjectReferenceTest( )
         {
                 //Arrange
-                var obj1 = ScriptableObject.CreateInstance<TestObject1>();
-                var obj2 = ScriptableObject.CreateInstance<TestObject2>();
-                var obj3 = ScriptableObject.CreateInstance<TestObject3Referenced>();
+                var obj1 = ScriptableObject.CreateInstance<TestObjectWithReference>();
+                var obj2 = ScriptableObject.CreateInstance<TestObjectWithReference>();
+                var obj3 = ScriptableObject.CreateInstance<TestObjectReferenced>();
 
                 obj1.ObjReference = obj3;
                 obj2.ObjReference = obj3;
@@ -191,12 +208,15 @@ namespace GDDB.Tests
                 //Act
                 var serializer = new GDJson();
                 var jsonString = serializer.GDToJson( new GDObject[] { obj1, obj2, obj3 } );
-
                 Debug.Log( jsonString );
+                var copyObjects = serializer.JsonToGD( jsonString );
 
                 //Assert
-                var copy = serializer.JsonToGD( jsonString );
-                obj1.ObjReference.Should().BeSameAs( obj2.ObjReference );
+                
+                var obj1_copy   = (TestObjectWithReference)copyObjects[ 0 ];
+                var obj2_copy   = (TestObjectWithReference)copyObjects[ 1 ];
+                obj1_copy.ObjReference.Should().NotBeNull(  );
+                obj1_copy.ObjReference.Should().BeSameAs( obj2_copy.ObjReference );
         }
 
         [Test]

@@ -28,7 +28,7 @@ namespace GDDB
 
             foreach ( var gdObj in objects )
             {
-                resulObjects.Add(  WriteObjectToJson( gdObj ) );                    
+                resulObjects.Add(  WriteGDObjectToJson( gdObj ) );                    
             }
 
             var result = resulObjects.ToString();
@@ -45,12 +45,13 @@ namespace GDDB
 
         
 
-        private JObject WriteObjectToJson( GDObject obj )
+        private JObject WriteGDObjectToJson( GDObject obj )
         {
             var result = new JObject();
             result.Add( ".Name", obj.name );
             var type = obj.GetType();
             result.Add( ".Type", type.Assembly == GetType().Assembly ? type.FullName : type.AssemblyQualifiedName );
+            result.Add( ".Ref", obj.Guid.ToString() );
 
             WriteObjectContent( type, obj, result );
 
@@ -221,7 +222,8 @@ namespace GDDB
         {
             var name = gdObjToken[".Name"].Value<String>();
             var type = Type.GetType( gdObjToken[".Type"].Value<String>() );
-            var obj  = (GDObject)ScriptableObject.CreateInstance( type );
+            var guid = Guid.Parse( gdObjToken[".Ref"].Value<String>() );
+            var obj  = GDObject.CreateInstance( type ).WithGuid( guid );
             obj.hideFlags = HideFlags.HideAndDontSave;
             obj.name = name;
         
@@ -514,8 +516,8 @@ namespace GDDB
             if ( type.IsAbstract || type.IsInterface )
                 return false;
 
-            //Discard classes without Serializable attribute
-            if( type.IsClass && !type.IsDefined( typeof(SerializableAttribute ) ) )
+            //Discard classes without Serializable attribute or not derived from GDObject (GDObject reference)
+            if( type.IsClass && !(type.IsDefined( typeof(SerializableAttribute )) || typeof(GDObject).IsAssignableFrom( type ) )) 
                 return false;
 
             if( type.IsArray )

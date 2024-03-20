@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 using UnityEngine.Windows;
 using File = System.IO.File;
 using Random = UnityEngine.Random;
@@ -14,8 +15,10 @@ namespace GDDB.Editor
     {
         private GDRoot _target;
 
-        private void OnEnable( )
+        protected override void OnEnable( )
         {
+            base.OnEnable();
+
             _target = (GDRoot)target;
         }
 

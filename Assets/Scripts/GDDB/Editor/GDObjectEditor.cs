@@ -12,7 +12,7 @@ namespace GDDB.Editor
         private GDObject _target;
         private Int32 _lastSelectedComponentIndex = -1;
 
-        private void OnEnable( )
+        protected virtual void OnEnable( )
         {
             _target = (GDObject)target;
         }
@@ -24,7 +24,22 @@ namespace GDDB.Editor
             var so        = serializedObject;
             so.UpdateIfRequiredOrScript();
 
+            var scriptProp = so.FindProperty( "m_Script" );
+            var guidProp = so.FindProperty( "SerGuid" );
             var compsProp = so.FindProperty( "Components" );
+
+            //Draw GDObject properties
+            using (new EditorGUI.DisabledScope( true )  )
+                EditorGUILayout.PropertyField(scriptProp, true);
+
+            // var bytes  = _target.Guid.ToByteArray();
+            // var hexStr = String.Empty;
+            // foreach ( var b in bytes )
+            // {
+            //     hexStr += b.ToString( "x2" );
+            // }
+            //EditorGUILayout.LabelField( "Guid", $"{_target.Guid.ToString()} {hexStr}" );
+            EditorGUILayout.LabelField( "Guid", $"{_target.Guid.ToString()}" );
 
             //Draw properties of GDObject descendants
 
@@ -32,17 +47,17 @@ namespace GDDB.Editor
             for (var enterChildren = true; gdObjectProp.NextVisible(enterChildren); enterChildren = false)
             {
                 //Hide completely, custom draw
-                if ( SerializedProperty.EqualContents( gdObjectProp, compsProp) )
+                if ( SerializedProperty.EqualContents( gdObjectProp, compsProp) || SerializedProperty.EqualContents( gdObjectProp, scriptProp ) )
                     continue;
             
-                using (new EditorGUI.DisabledScope("m_Script" == gdObjectProp.propertyPath))
-                    EditorGUILayout.PropertyField(gdObjectProp, true);
+                EditorGUILayout.PropertyField(gdObjectProp, true);
             }
 
             if ( GUILayout.Button( "Dirty and save", GUILayout.Width( 100 ) ) )
             {
                 EditorUtility.SetDirty( _target );
                 AssetDatabase.SaveAssetIfDirty( _target );
+                return;
             }
             
             //Draw GDComponents list

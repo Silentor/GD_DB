@@ -1,16 +1,11 @@
 ﻿namespace GDDB.Tests
 {
-    public class TestObject1 : GDObject
+    public class TestObjectWithReference : GDObject
     {
-        public TestObject3Referenced ObjReference;
+        public TestObjectReferenced ObjReference;
     }
 
-    public class TestObject2 : GDObject
-    {
-        public TestObject3Referenced ObjReference;
-    }
-
-    public class TestObject3Referenced : GDObject
+    public class TestObjectReferenced : GDObject
     {
         
     }
