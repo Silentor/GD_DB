@@ -37,6 +37,8 @@ namespace GDDB
             return result;
         }
 
+        private List<GDObject> _headers = new();
+
         private void WriteNullPropertyToJson( String name, JsonWriter writer )
         {
             writer.WritePropertyName(name);
@@ -85,6 +87,14 @@ namespace GDDB
 
             return result;
         }
+
+        private JObject WriteReferenceToJson( Type propertyType, Guid guid )
+        {
+            var result = new JObject();
+            result.Add( ".Ref", guid.ToString() );
+            return result;
+        }
+
 
         private void WriteObjectContent( Type actualType, Object obj, JObject writer )
         {
@@ -146,6 +156,11 @@ namespace GDDB
                 var elementType = valueType.GetGenericArguments()[0];
                 return WriteCollectionToJson( elementType, (IEnumerable)value );
             }
+            else if( typeof(GDObject).IsAssignableFrom( valueType) )
+            {
+                var gdObject = (GDObject)value;
+                return WriteReferenceToJson( propertyType, gdObject.Guid );
+            }
             else
             {
                 return WriteObjectToJson( propertyType, value );
@@ -200,35 +215,47 @@ namespace GDDB
 
        public List<GDObject> JsonToGD( String json )
         {
+            _headers.Clear();
+
             using (var reader = new StringReader( json ) )
             {
                 var o       = (JArray)JToken.ReadFrom(new JsonTextReader(reader));
-                var content = o.Children<JObject>();
+                var content = o.Children<JObject>().ToArray();
                 var result  = new List<GDObject>();
         
+                //Read GDObject headers
                 foreach ( var gdObject in content )
                 {
-                    var resultObj = ReadGDObjectFromJson( gdObject );
-                    result.Add( resultObj );
+                    var objHeader = ReadGDObjectHeaderFromJson( gdObject );
+                    _headers.Add( objHeader );
                 }
         
+                //Read GDObject content (and resolve references)
+                for ( var i = 0; i < content.Length; i++ )
+                {
+                    result.Add( ReadGDObjectContentFromJson( content[i], _headers[i] ) );                    
+                }
+
                 return result;
             }
         }
 
-        
-
-        private GDObject ReadGDObjectFromJson( JObject gdObjToken )
+        private GDObject ReadGDObjectHeaderFromJson( JObject gdObjToken )
         {
             var name = gdObjToken[".Name"].Value<String>();
             var type = Type.GetType( gdObjToken[".Type"].Value<String>() );
             var guid = Guid.Parse( gdObjToken[".Ref"].Value<String>() );
             var obj  = GDObject.CreateInstance( type ).WithGuid( guid );
             obj.hideFlags = HideFlags.HideAndDontSave;
-            obj.name = name;
+            obj.name      = name;
         
+            return obj;
+        }
+        
+
+        private GDObject ReadGDObjectContentFromJson( JObject gdObjToken, GDObject obj )
+        {
             ReadContentFromJson( gdObjToken, obj );
-        
             return obj;
         }
 
@@ -304,6 +331,10 @@ namespace GDDB
             {
                 return ReadCollectionFromJson( (JArray)value, propertyType );
             }
+            else if ( typeof(GDObject).IsAssignableFrom( propertyType ) )
+            {
+                return ReadGDObjectReferenceFromJson( (JObject)value );
+            }
             else
             {
                 return ReadObjectFromJson( (JObject)value, propertyType );
@@ -344,6 +375,12 @@ namespace GDDB
         
             return null;
         } 
+
+        public GDObject ReadGDObjectReferenceFromJson( JObject jObject )
+        {
+            var guid = Guid.Parse( jObject[".Ref"].Value<String>() );
+            return _headers.Find( o => o.Guid == guid );
+        }
 
     #endregion
 
@@ -533,6 +570,5 @@ namespace GDDB
 
             return true;
         }
-
     }
 }

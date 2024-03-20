@@ -198,11 +198,13 @@ namespace GDDB.Tests
         public void GDObjectReferenceTest( )
         {
                 //Arrange
-                var obj1 = ScriptableObject.CreateInstance<TestObjectWithReference>();
-                var obj2 = ScriptableObject.CreateInstance<TestObjectWithReference>();
-                var obj3 = ScriptableObject.CreateInstance<TestObjectReferenced>();
+                var obj1 = GDObject.CreateInstance<TestObjectWithReference>();
+                var obj2 = GDObject.CreateInstance<TestObjectWithReference>();
+                var obj3 = GDObject.CreateInstance<GDObject>();
 
                 obj1.ObjReference = obj3;
+                var refComp = new GDObjectReferenceComponent         { ReferencedObject = obj3 };
+                obj1.Components.Add( refComp );
                 obj2.ObjReference = obj3;
 
                 //Act
@@ -212,11 +214,13 @@ namespace GDDB.Tests
                 var copyObjects = serializer.JsonToGD( jsonString );
 
                 //Assert
-                
                 var obj1_copy   = (TestObjectWithReference)copyObjects[ 0 ];
                 var obj2_copy   = (TestObjectWithReference)copyObjects[ 1 ];
+                var obj3_copy   = copyObjects[ 2 ];
                 obj1_copy.ObjReference.Should().NotBeNull(  );
                 obj1_copy.ObjReference.Should().BeSameAs( obj2_copy.ObjReference );
+                obj1_copy.ObjReference.Should().BeSameAs( obj3_copy );
+                obj1_copy.GetComponent<GDObjectReferenceComponent>().ReferencedObject.Should().BeSameAs( obj3_copy );
         }
 
         [Test]

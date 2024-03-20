@@ -114,4 +114,9 @@ namespace GDDB.Tests
         }
 
     }
+
+    public class GDObjectReferenceComponent : GDComponent
+    {
+        public GDObject ReferencedObject;
+    }
 }

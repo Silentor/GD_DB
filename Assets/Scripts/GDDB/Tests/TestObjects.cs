@@ -1,12 +1,10 @@
-﻿namespace GDDB.Tests
+﻿using UnityEngine;
+
+namespace GDDB.Tests
 {
     public class TestObjectWithReference : GDObject
     {
-        public TestObjectReferenced ObjReference;
+        public GDObject ObjReference;
     }
 
-    public class TestObjectReferenced : GDObject
-    {
-        
-    }
 }
