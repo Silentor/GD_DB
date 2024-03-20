@@ -135,4 +135,18 @@ namespace GDDB.Tests
             NonSerialized = Serialized;
         }
     }
+
+    public class UnitySimpleTypesComponent : GDComponent
+    {
+        public Vector3        Vector3    = Vector3.one;
+        public Vector2        Vector2    = Vector2.one;
+        public Vector3Int     Vector3Int = Vector3Int.one;
+        public Vector2Int     Vector2Int = Vector2Int.one;
+        public Bounds         Bounds     = new Bounds( UnityEngine.Vector3.forward, Vector3.one );
+        public Rect           Rect       = new Rect( UnityEngine.Vector2.up, Vector2.one );
+        public Quaternion     Quaternion = Quaternion.Euler( 1, 2, 3 );
+        public Color          Color      = Color.red;
+        public Color32        Color32    = new ( 100, 100, 100, 100 );
+        public AnimationCurve AnimCurve  = new (new Keyframe( 0, 0 ), new Keyframe( 0.5f, 1 ), new Keyframe( 1, 0 ));
+    }
 }

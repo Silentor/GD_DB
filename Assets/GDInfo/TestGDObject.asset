@@ -17,6 +17,7 @@ MonoBehaviour:
   - rid: 6870417494477373448
   - rid: 6870417513993469958
   - rid: 6870417513993469971
+  - rid: 6870417603641212953
   references:
     version: 2
     RefIds:
@@ -65,3 +66,57 @@ MonoBehaviour:
         - IntField: 66
         - IntField: 99
         - IntField: 42
+    - rid: 6870417603641212953
+      type: {class: UnitySimpleTypesComponent, ns: GDDB.Tests, asm: Tests}
+      data:
+        Vector3: {x: 1, y: 1, z: 1}
+        Vector2: {x: 1, y: 1}
+        Vector3Int: {x: 44, y: 1, z: 1}
+        Vector2Int: {x: 1, y: 1}
+        Bounds:
+          m_Center: {x: 0, y: 0, z: 1}
+          m_Extent: {x: 0.5, y: 0.5, z: 0.5}
+        Rect:
+          serializedVersion: 2
+          x: 0
+          y: 1
+          width: 1
+          height: 1
+        Quaternion: {x: 0.00917905, y: 0.01721736, z: 0.02601972, w: 0.999471}
+        Color: {r: 1, g: 0, b: 0, a: 1}
+        Color32:
+          serializedVersion: 2
+          rgba: 1684300900
+        AnimCurve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 0.5
+            value: 1
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4

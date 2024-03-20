@@ -15,11 +15,25 @@ namespace GDDB
 {
     public class GDJson
     {
-        public Dictionary<Type, GdJsonCustomSerializer> _serializers = new();
+        public readonly Dictionary<Type, GdJsonCustomSerializer> _serializers = new();
 
         public GDJson( )
         {
-            _serializers.Add( typeof(Vector3), new Vector3Serializer() );
+            AddSerializer( new Vector3Serializer() );
+            AddSerializer( new Vector3IntSerializer() );
+            AddSerializer( new Vector2Serializer() );
+            AddSerializer( new Vector2IntSerializer() );
+            AddSerializer( new QuaternionSerializer() );
+            AddSerializer( new RectSerializer() );
+            AddSerializer( new BoundsSerializer() );
+            AddSerializer( new Color32Serializer() );
+            AddSerializer( new ColorSerializer() );
+            AddSerializer( new AnimationCurveSerializer() );
+        }
+
+        public void AddSerializer( GdJsonCustomSerializer serializer )
+        {
+            _serializers.Add( serializer.SerializedType, serializer );
         }
 
         public String GDToJson( IEnumerable<GDObject> objects )
@@ -167,6 +181,10 @@ namespace GDDB
             {
                 var gdObject = (GDObject)value;
                 return WriteReferenceToJson( propertyType, gdObject.Guid );
+            }
+            else if ( _serializers.TryGetValue( propertyType, out var serializer ) )
+            {
+                return serializer.Serialize( value );
             }
             else
             {
@@ -353,6 +371,10 @@ namespace GDDB
             {
                 return ReadGDObjectReferenceFromJson( (JObject)value );
             }
+            else if ( _serializers.TryGetValue( propertyType, out var deserializer ) )
+            {
+                return deserializer.Deserialize( value );
+            }
             else
             {
                 return ReadObjectFromJson( (JObject)value, propertyType );
@@ -536,7 +558,7 @@ namespace GDDB
 
     #endregion
 
-        private static Boolean IsFieldSerializable( FieldInfo field )
+        private Boolean IsFieldSerializable( FieldInfo field )
         {
             if( field.IsInitOnly || field.IsLiteral || field.IsStatic || field.IsNotSerialized )
                 return false;
@@ -554,10 +576,10 @@ namespace GDDB
             return true;
         }
 
-        private static Boolean IsTypeSerializable( Type type )
+        private Boolean IsTypeSerializable( Type type )
         {
             //Fast pass
-            if( type == typeof(String) || type.IsEnum )
+            if( type == typeof(String) || type.IsEnum || _serializers.ContainsKey( type ) )
                 return true;
 
             //Unity serializer do not support all primitives

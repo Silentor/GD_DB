@@ -253,7 +253,32 @@ namespace GDDB.Tests
         [Test]
         public void UnityTypesSupportTest( )
         {
-                throw new NotImplementedException();
+                //Arrange
+                var obj1 = GDObject.CreateInstance<GDObject>();
+                var comp = new  UnitySimpleTypesComponent
+                           {
+                                           Vector3    = -Vector3.one,
+                                           Quaternion = Quaternion.Euler( 100, 200, 300 ),
+                                           Color      = Color.green,
+                                           Color32    = new Color32( 200, 200, 200, 200 ),
+                                           AnimCurve  = new (new Keyframe( 0, 1 ), new Keyframe( 0.5f, 0 ), new Keyframe( 1, 1 )),
+                                           Bounds = new Bounds( Vector3.back, Vector3.down ),
+                                           Rect = new Rect( 4, 3,2,1 ),
+                                           Vector2 = -Vector2.one,
+                                           Vector2Int = Vector2Int.up,
+                                           Vector3Int = Vector3Int.up,
+                           };
+                obj1.Components.Add( comp );
+
+                //Act
+                var serializer = new GDJson();
+                var jsonString = serializer.GDToJson( new GDObject[] { obj1 } );
+                Debug.Log( jsonString );
+                var copyObjects = serializer.JsonToGD( jsonString );
+
+                //Assert
+                var obj1_copy = (GDObject)copyObjects[ 0 ];
+                obj1_copy.GetComponent<UnitySimpleTypesComponent>().Should().BeEquivalentTo( comp );
         }
     }
 }
