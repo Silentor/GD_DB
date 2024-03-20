@@ -28,6 +28,13 @@ namespace GDDB
 
             foreach ( var gdObj in objects )
             {
+                if( gdObj is ISerializationCallbackReceiver serializationCallbackReceiver)
+                    serializationCallbackReceiver.OnBeforeSerialize();
+
+                foreach ( var gdComponent in gdObj.Components )
+                    if( gdComponent is ISerializationCallbackReceiver componentSerializationCallbackReceiver )
+                        componentSerializationCallbackReceiver.OnBeforeSerialize();
+
                 resulObjects.Add(  WriteGDObjectToJson( gdObj ) );                    
             }
 
@@ -234,6 +241,17 @@ namespace GDDB
                 for ( var i = 0; i < content.Length; i++ )
                 {
                     result.Add( ReadGDObjectContentFromJson( content[i], _headers[i] ) );                    
+                }
+
+                foreach ( var gdObject in result )
+                {
+                    if( gdObject is ISerializationCallbackReceiver serializationCallbackReceiver)
+                        serializationCallbackReceiver.OnAfterDeserialize();
+
+                    foreach ( var gdComponent in gdObject.Components )
+                        if( gdComponent is ISerializationCallbackReceiver componentSerializationCallbackReceiver )
+                            componentSerializationCallbackReceiver.OnAfterDeserialize();
+
                 }
 
                 return result;

@@ -119,4 +119,20 @@ namespace GDDB.Tests
     {
         public GDObject ReferencedObject;
     }
+
+    public class SerializationCallbackComponent : GDComponent, ISerializationCallbackReceiver
+    {
+        public String NonSerialized { get; set; }
+        public String Serialized;
+
+        public void OnBeforeSerialize( )
+        {
+            Serialized = NonSerialized;
+        }
+
+        public void OnAfterDeserialize( )
+        {
+            NonSerialized = Serialized;
+        }
+    }
 }

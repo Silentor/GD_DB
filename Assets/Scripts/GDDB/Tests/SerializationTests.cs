@@ -226,7 +226,22 @@ namespace GDDB.Tests
         [Test]
         public void ISerializationCallbackReceiverTest( )
         {
-                throw new NotImplementedException();
+                //Arrange
+                var obj1 = GDObject.CreateInstance<TestObjectSerializationCallback>();
+                obj1.NonSerialized = "some text";
+                var comp = new  SerializationCallbackComponent        { NonSerialized = "some other text"};
+                obj1.Components.Add( comp );
+
+                //Act
+                var serializer = new GDJson();
+                var jsonString = serializer.GDToJson( new GDObject[] { obj1 } );
+                Debug.Log( jsonString );
+                var copyObjects = serializer.JsonToGD( jsonString );
+
+                //Assert
+                var obj1_copy = (TestObjectSerializationCallback)copyObjects[ 0 ];
+                obj1_copy.NonSerialized.Should().Be( obj1.NonSerialized );
+                obj1_copy.GetComponent<SerializationCallbackComponent>().NonSerialized.Should().Be( comp.NonSerialized );
         }
 
         [Test]
