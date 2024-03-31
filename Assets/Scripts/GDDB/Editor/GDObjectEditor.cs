@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.UIElements;
 using Object = System.Object;
 using Random = UnityEngine.Random;
 
@@ -10,198 +12,180 @@ namespace GDDB.Editor
     [CustomEditor( typeof(GDObject), true )]
     public class GDObjectEditor : UnityEditor.Editor
     {
-        private GDObject _target;
-        private Int32    _lastSelectedComponentIndex = -1;
-        private Material _componentDelimiterMat;
+        private GDObject        _target;
+        private Int32           _lastSelectedComponentIndex = -1;
+        private Type[]          _allProperComponents;
+        private VisualElement _componentsContainer;
+        private VisualTreeAsset _gdcVisualTreeAsset;
+        private VisualTreeAsset _gdoVisualTreeAsset;
 
         protected virtual void OnEnable( )
         {
             _target = (GDObject)target;
-            var shader = Shader.Find("Hidden/Internal-Colored");
-            _componentDelimiterMat    = new Material(shader);
         }
 
         protected virtual void OnDisable( )
         {
-            DestroyImmediate( _componentDelimiterMat );
         }
 
-        public override void OnInspectorGUI( )
+        public override VisualElement CreateInspectorGUI( )
         {
-            //base.OnInspectorGUI();
+            var gdoVisualTreeAsset = Resources.Load<VisualTreeAsset>(("GDObjectEditor"));
+            var   gdoVisualTree      = gdoVisualTreeAsset.Instantiate();
+        
+            //GD Object name field with renaming support
+            var gdoName = gdoVisualTree.Q<TextField>( "Name" );
+            gdoName.value = _target.name;
+            gdoName.RegisterCallback<ChangeEvent<String>>( GDOName_Changed );
+            
+            //GD Object guid label
+            var guid = gdoVisualTree.Q<Label>( "Guid" );
+            guid.text = _target.Guid.ToString();
 
-            var so        = serializedObject;
-            so.UpdateIfRequiredOrScript();
-
-            var scriptProp = so.FindProperty( "m_Script" );
-            var guidProp = so.FindProperty( "SerGuid" );
-            var compsProp = so.FindProperty( "Components" );
-
-            //Draw GDObject properties
-            using (new EditorGUI.DisabledScope( true )  )
-                EditorGUILayout.PropertyField(scriptProp, true);
-
-            // var bytes  = _target.Guid.ToByteArray();
-            // var hexStr = String.Empty;
-            // foreach ( var b in bytes )
-            // {
-            //     hexStr += b.ToString( "x2" );
-            // }
-            //EditorGUILayout.LabelField( "Guid", $"{_target.Guid.ToString()} {hexStr}" );
-            EditorGUILayout.LabelField( "Guid", $"{_target.Guid.ToString()}" );
-
-            //Draw properties of GDObject descendants
-
-            var gdObjectProp = so.GetIterator();
+            //Disabled GD Object script reference field
+            var script = gdoVisualTree.Q<PropertyField>( "Script" );
+            script.SetEnabled( false );
+        
+            //GD Object custom properties
+            var properties   = gdoVisualTree.Q<VisualElement>( "Properties" );
+            var scriptProp   = serializedObject.FindProperty( "m_Script" );
+            var compsProp    = serializedObject.FindProperty( "Components" );
+            var enabledProp    = serializedObject.FindProperty( "Enabled" );
+            var gdObjectProp = serializedObject.GetIterator();
             for (var enterChildren = true; gdObjectProp.NextVisible(enterChildren); enterChildren = false)
             {
                 //Hide completely, custom draw
-                if ( SerializedProperty.EqualContents( gdObjectProp, compsProp) || SerializedProperty.EqualContents( gdObjectProp, scriptProp ) )
+                if ( SerializedProperty.EqualContents( gdObjectProp, compsProp) || SerializedProperty.EqualContents( gdObjectProp, scriptProp ) 
+                  || SerializedProperty.EqualContents( gdObjectProp, enabledProp ) )
                     continue;
             
-                EditorGUILayout.PropertyField(gdObjectProp, true);
+                //Draw GDObject properties
+                properties.Add( new PropertyField( gdObjectProp ) );
             }
 
-            if ( GUILayout.Button( "Dirty and save", GUILayout.Width( 100 ) ) )
+            //Components widgets
+            _componentsContainer = gdoVisualTree.Q<VisualElement>( "Components" );
+            for ( var i = 0; i < compsProp.arraySize; i++ )
             {
-                EditorUtility.SetDirty( _target );
-                AssetDatabase.SaveAssetIfDirty( _target );
-                return;
+                CreateComponentGUI( compsProp , i );
             }
 
-            DrawDelimiter( 10, 5 );
+            //New component add button
+            CreateComponentAddButton( compsProp, gdoVisualTree );
 
-            //Draw GDComponents list
-            for ( int i = 0; i < compsProp.arraySize; i++ )
-            {
-                var foldoutStatus = DrawComponentHeader( compsProp, i );
-
-                if ( foldoutStatus )
-                {
-                    var compProp    = compsProp.GetArrayElementAtIndex( i );
-                    var compEndProp = compProp.GetEndProperty();
-                    if ( compProp.NextVisible( true ) && !SerializedProperty.EqualContents( compProp, compEndProp ) )
-                    {
-                        do
-                        {
-                            EditorGUILayout.PropertyField( compProp );
-                        }   
-                        while ( compProp.NextVisible( false ) && !SerializedProperty.EqualContents( compProp, compEndProp ) );
-                    }
-
-                    DrawDelimiter( 10, 5 );
-                }
-            }
-
-            so.ApplyModifiedProperties();
-
-            DrawComponentAddBtn();
+            gdoVisualTree.Bind( serializedObject );
+            return gdoVisualTree;
         }
 
-        private Boolean DrawComponentHeader( SerializedProperty components, Int32 componentIndex )
+        private void CreateComponentGUI( SerializedProperty componentsProp, Int32 index )
         {
-            var compProp = components.GetArrayElementAtIndex( componentIndex );
-
-            GUILayout.BeginHorizontal(  );
-
-            var foldStatus = true;
-
-            if ( compProp.managedReferenceValue != null )
+            var componentProp = componentsProp.GetArrayElementAtIndex( index );
+            VisualElement result  ;
+            if ( componentProp.managedReferenceValue != null )
             {
-                var compType = compProp.managedReferenceValue.GetType();
+                result = GetGDComponentEditorTemplate().Instantiate();
 
-                foldStatus = IsComponentFoldout( compProp.managedReferenceValue.GetType() );
-                EditorGUI.BeginChangeCheck();
-                foldStatus = EditorGUILayout.Foldout( foldStatus, /*GUIContent.none*/compType.Name, true , Styles.Foldout );
-                if( EditorGUI.EndChangeCheck() )
-                    SetComponentFoldout( compProp.managedReferenceValue.GetType(), foldStatus );
+                //Draw header
+                var compType  = componentProp.managedReferenceValue.GetType();
+                var typeFoldout = result.Q<Foldout>( "Type" );
+                typeFoldout.text = compType.Name;
                 
-                //var componentTypeName = compProp.managedReferenceFullTypename;
-                //componentTypeName = !String.IsNullOrEmpty(componentTypeName) ? componentTypeName.Split('.').Last() : "Null";
-                //GUILayout.Label( componentTypeName, Styles.BoldLabel );
-                GUILayout.FlexibleSpace();
-                GUILayout.Label( $"({compType.FullName}, {compType.Assembly.GetName().Name})", Styles.ItalicLabel );
-                if( GUILayout.Button( "X" ) )
+                var typeInfoLabel = result.Q<Label>( "TypeInfo" );
+                typeInfoLabel.text = $"({compType.FullName}, {compType.Assembly.GetName().Name})";
+
+                var removeBtn     = result.Q<Button>( "Remove" );
+                removeBtn.clicked += () => RemoveComponent( componentsProp , index );
+
+                //Draw body
+                var propertiesContainer = result.Q<VisualElement>( "Properties" );
+                var compEndProp         = componentProp.GetEndProperty();
+                if ( componentProp.NextVisible( true ) && !SerializedProperty.EqualContents( componentProp, compEndProp ) )
                 {
-                    RemoveComponent( componentIndex );
+                    do
+                    {
+                        propertiesContainer.Add( new PropertyField( componentProp ) );
+                    }   
+                    while ( componentProp.NextVisible( false ) && !SerializedProperty.EqualContents( componentProp, compEndProp ) );
                 }
+                typeFoldout.SetValueWithoutNotify( IsComponentFoldout( compType ) );
+                SetComponentFoldout( propertiesContainer, compType, typeFoldout.value );
+                typeFoldout.RegisterValueChangedCallback( evt => SetComponentFoldout( propertiesContainer, compType, evt.newValue ) );
             }
             else
             {
-                if( String.IsNullOrEmpty( compProp.managedReferenceFullTypename) )
-                    EditorGUILayout.HelpBox( "Component type cannot be found", MessageType.Error, wide: true);
+                result = GetGDComponentEditorTemplate().Instantiate();
+
+                var typeFoldout = result.Q<Foldout>( "Type" );
+                typeFoldout.AddToClassList( "component__type--error" );
+                typeFoldout.RemoveFromClassList( "component__type" );
+
+                if( String.IsNullOrEmpty( componentProp.managedReferenceFullTypename) )
+                    typeFoldout.text = "Component type cannot be found, look at the asset file";
                 else
-                    EditorGUILayout.HelpBox( "Component is null", MessageType.Error, wide: true);
+                    typeFoldout.text = "Component somehow is null";
 
-                GUILayout.FlexibleSpace();
-                if( GUILayout.Button( "X" ) )
-                {
-                    RemoveComponent( componentIndex );
-                }
+                var removeBtn = result.Q<Button>( "Remove" );
+                removeBtn.clicked += () => RemoveComponent( componentsProp , index );
             }
-            GUILayout.EndHorizontal();
 
-            return foldStatus;
+            _componentsContainer.Add( result );
         }
 
-        private void DrawComponentAddBtn( )
+        private void RemoveComponentGUI( Int32 index )
         {
-            GUILayout.BeginHorizontal(  );
+            _componentsContainer.RemoveAt( index );
+        }
 
-            GUILayout.Label( "Add component", EditorStyles.boldLabel );
-
+        private void CreateComponentAddButton( SerializedProperty componentsProp, VisualElement gdObjectVisualTree)
+        {
             var allComponentTypes   = TypeCache.GetTypesDerivedFrom( typeof(GDComponent) );
-            var allProperComponents = allComponentTypes.Where( t => !t.IsAbstract ).OrderBy( t => t.Name ).ToArray();
-            var allProperNames = allProperComponents.Select( t => t.Name ).ToArray();
-            _lastSelectedComponentIndex = EditorGUILayout.Popup( _lastSelectedComponentIndex, allProperNames );
+            _allProperComponents = allComponentTypes.Where( t => !t.IsAbstract ).OrderBy( t => t.Name ).ToArray();
+            var allProperNames      = _allProperComponents.Select( t => t.Name ).ToList();
 
-            using (new EditorGUI.DisabledScope( _lastSelectedComponentIndex < 0 ))
+            var componentsList = gdObjectVisualTree.Q<DropdownField>( "ComponentsList" );
+            componentsList.choices = allProperNames;
+            componentsList.RegisterValueChangedCallback( ComponentsList_Changed );
+
+            var addComponentBtn = gdObjectVisualTree.Q<Button>( "AddComponentBtn" );
+            addComponentBtn.clicked += ( ) =>
             {
-                if ( GUILayout.Button( "Add", GUILayout.Width( 100 ) ) )
+                if ( _lastSelectedComponentIndex >= 0 && _lastSelectedComponentIndex < _allProperComponents.Length )
                 {
-                    if( _lastSelectedComponentIndex >= 0 )
-                    {
-                        var typeToAdd = allProperComponents[ _lastSelectedComponentIndex ];
-                        AddComponent( typeToAdd );
-                    }
+                    var typeToAdd = _allProperComponents[ _lastSelectedComponentIndex ];
+                    AddComponent( componentsProp, typeToAdd );
                 }
-            }
-
-            GUILayout.EndHorizontal();
-        }         
-
-        private void DrawDelimiter( Single spaceBefore, Single spaceAfter )
-        {
-            Rect rect = GUILayoutUtility.GetRect(10, 1000, spaceBefore + spaceAfter, spaceBefore + spaceAfter);
-            if ( Event.current.type == EventType.Repaint )
-            {
-                GUI.BeginClip( rect );
-                GL.PushMatrix();
-                GL.Clear( true, false, Color.black );
-
-                _componentDelimiterMat.SetPass(0);
-                GL.Begin(GL.LINES);
-                GL.Color(GUI.skin.settings.cursorColor);
-                GL.Vertex3(0,          spaceBefore, 0);
-                GL.Vertex3(rect.width, spaceBefore, 0);
-                GL.End();
-
-                GL.PopMatrix();
-                GUI.EndClip();
-            }
+            };
         }
 
-        private void AddComponent( Type componentType )
+        private void ComponentsList_Changed( ChangeEvent<String> evt )
+        {
+            _lastSelectedComponentIndex = ((DropdownField)evt.target).index;
+        }
+
+        private void GDOName_Changed( ChangeEvent<String> newName )
+        {
+            if( newName.newValue != _target.name )
+                AssetDatabase.RenameAsset( AssetDatabase.GetAssetPath( _target ), newName.newValue );
+        }
+
+        private void AddComponent( SerializedProperty components, Type componentType )
         {
             var newComponent = Activator.CreateInstance( componentType );
-            _target.Components.Add( (GDComponent)newComponent );
-            EditorUtility.SetDirty( _target );
+
+            var lastIndex = components.arraySize;
+            components.InsertArrayElementAtIndex( lastIndex );
+            components.GetArrayElementAtIndex( lastIndex ).managedReferenceValue = newComponent;
+            CreateComponentGUI( components, lastIndex );
+
+            serializedObject.ApplyModifiedProperties();
         }
 
-        private void RemoveComponent( Int32 componentIndex )
+        private void RemoveComponent( SerializedProperty components, Int32 componentIndex )
         {
-            _target.Components.RemoveAt( componentIndex );
-            EditorUtility.SetDirty( _target );
+            components.DeleteArrayElementAtIndex( componentIndex );
+            RemoveComponentGUI( componentIndex );
+
+            serializedObject.ApplyModifiedProperties();
         }
 
         private Boolean IsComponentFoldout( Type componentType )
@@ -209,18 +193,24 @@ namespace GDDB.Editor
             return  EditorPrefs.GetBool( componentType.Name, true );
         }
 
-        private void SetComponentFoldout( Type componentType, Boolean state )
+        private void SetComponentFoldout( VisualElement propertiesContainer, Type componentType, Boolean state )
         {
+            propertiesContainer.style.display = state ? DisplayStyle.Flex : DisplayStyle.None;
             EditorPrefs.SetBool( componentType.Name, state );
         }
 
-
-        private static class Styles
+        private VisualTreeAsset GetGDOObjectEditorTemplate( )
         {
-            public static readonly GUIStyle ItalicLabel        = new ( EditorStyles.label ) { fontStyle = FontStyle.Italic };
-            public static readonly GUIStyle BoldLabel          = EditorStyles.boldLabel;
-            public static readonly GUIStyle ComponentDelimiter = new ( GUI.skin.box ) { padding = new RectOffset()/*normal = new GUIStyleState(){background = Texture2D.blackTexture} */};
-            public static readonly GUIStyle Foldout = new ( EditorStyles.foldout ) { fontStyle = FontStyle.Bold };
+            if( _gdoVisualTreeAsset == null )
+                _gdoVisualTreeAsset = Resources.Load<VisualTreeAsset>(("GDObjectEditor"));
+            return _gdoVisualTreeAsset;
+        }
+
+        private VisualTreeAsset GetGDComponentEditorTemplate( )
+        {
+            if( _gdcVisualTreeAsset == null )
+                _gdcVisualTreeAsset = Resources.Load<VisualTreeAsset>(("GDComponentEditor"));
+            return _gdcVisualTreeAsset;
         }
     }
 }

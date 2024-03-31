@@ -1,0 +1,11 @@
+.delimiter {
+    border-bottom-color: var(--unity-colors-separator-background);
+    border-bottom-width: 1px;
+    padding-bottom: 10px;
+}
+
+.hor-line {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+}

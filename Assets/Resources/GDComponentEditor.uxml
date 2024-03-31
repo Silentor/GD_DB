@@ -1,0 +1,15 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <Style src="project://database/Assets/Resources/GDC.uss?fileID=7433441132597879392&amp;guid=f6a538357270200428e41a9206d90cad&amp;type=3#GDC" />
+    <ui:VisualElement name="Editor" class="component">
+        <ui:VisualElement name="Header" class="component__header">
+            <ui:VisualElement name="TypeBox" style="flex-direction: row;">
+                <ui:Foldout name="Type" text="GDComponent" class="component__type" />
+            </ui:VisualElement>
+            <ui:VisualElement name="Menu" style="flex-direction: row; align-items: center;">
+                <ui:Label tabindex="-1" text="typeinfo" parse-escape-sequences="true" display-tooltip-when-elided="true" name="TypeInfo" style="-unity-font-style: italic;" />
+                <ui:Button text="X" parse-escape-sequences="true" display-tooltip-when-elided="true" name="Remove" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="Properties" style="margin-bottom: 10px;" />
+    </ui:VisualElement>
+</ui:UXML>

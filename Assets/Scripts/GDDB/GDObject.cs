@@ -9,6 +9,8 @@ namespace GDDB
     [CreateAssetMenu( menuName = "Create GDObject", fileName = "GDObject", order = 0 )]
     public class GDObject : ScriptableObject
     {
+        public Boolean Enabled = true;
+
         public Guid Guid
         {
             get

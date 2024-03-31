@@ -1,0 +1,27 @@
+.component {
+    border-bottom-color: var(--unity-colors-inspector_titlebar-border);
+    border-bottom-width: 1px;
+}
+
+.component__header {
+    flex-grow: 0;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--unity-colors-highlight-background-hover);
+    background-color: var(--unity-colors-inspector_titlebar-background);
+}
+
+.component__header:hover {
+    background-color: var(--unity-colors-inspector_titlebar-background-hover);
+}
+
+.component__type {
+    -unity-font-style: bold;
+}
+
+.component__type--error {
+    -unity-font-style: bold;
+    color: rgb(255, 0, 0);
+}
