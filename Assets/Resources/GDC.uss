@@ -23,5 +23,5 @@
 
 .component__type--error {
     -unity-font-style: bold;
-    color: rgb(255, 0, 0);
+    color: var(--unity-colors-error-text);
 }
