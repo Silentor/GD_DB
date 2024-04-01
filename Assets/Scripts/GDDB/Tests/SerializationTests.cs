@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using FluentAssertions;
 using Newtonsoft.Json.Linq;
@@ -279,6 +280,26 @@ namespace GDDB.Tests
                 //Assert
                 var obj1_copy = (GDObject)copyObjects[ 0 ];
                 obj1_copy.GetComponent<UnitySimpleTypesComponent>().Should().BeEquivalentTo( comp );
+        }
+
+        [Test]
+        public void DisabledGDObjectTest( )
+        {
+                //Arrange
+                var root = GDObject.CreateInstance<GDRoot>();
+                root.Id = "TestRoot";
+                var enabledObj = GDObject.CreateInstance<GDObject>();
+                var disabledObj = GDObject.CreateInstance<GDObject>();
+                disabledObj.Enabled = false;
+
+                //Act
+                var serializer = new GDJson();
+                var jsonString = serializer.GDToJson( new GDObject[] { root, enabledObj, disabledObj } );
+                Debug.Log( jsonString );
+                var gddb = new GdJsonLoader( new StringReader( jsonString ) );
+
+                //Assert
+                gddb.AllObjects.Count( gdo => !gdo.Enabled ).Should().Be( 1 );
         }
     }
 }

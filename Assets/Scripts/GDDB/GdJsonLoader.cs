@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace GDDB
@@ -21,6 +23,17 @@ namespace GDDB
             var content = gdJson.JsonToGD( jsonAsset.text );
 
             Root = content.First( gd => gd is GDRoot ) as GDRoot;
+            _allObjects = content;
+        }
+        
+        public GdJsonLoader( [NotNull] TextReader jsonContent )
+        {
+            if ( jsonContent == null ) throw new ArgumentNullException( nameof(jsonContent) );
+
+            var gdJson  = new GDJson();
+            var content = gdJson.JsonToGD( jsonContent.ReadToEnd() );
+
+            Root        = content.First( gd => gd is GDRoot ) as GDRoot;
             _allObjects = content;
         } 
     }

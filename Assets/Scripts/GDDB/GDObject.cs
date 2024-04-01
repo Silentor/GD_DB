@@ -9,7 +9,7 @@ namespace GDDB
     [CreateAssetMenu( menuName = "Create GDObject", fileName = "GDObject", order = 0 )]
     public class GDObject : ScriptableObject
     {
-        public Boolean Enabled = true;
+        public Boolean Enabled { get; set; } = true;
 
         public Guid Guid
         {
@@ -25,8 +25,6 @@ namespace GDDB
                 return _guid;
             }
         }
-
-        //[SerializeField]public Byte[] SerGuid;
 
         public String Name => name;
 
@@ -64,11 +62,6 @@ namespace GDDB
             //Set runtime temporary guid, do not equal to asset guid if saved as asset
             result._guid = Guid.NewGuid();
             return result;
-        }
-
-        protected virtual void OnEnable( )
-        {
-            Debug.Log( $"OnEnable GDObject {name} guid {Guid}" );
         }
 
         private Guid GetAssetGuid( )
