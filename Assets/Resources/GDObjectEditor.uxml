@@ -4,6 +4,7 @@
         <ui:VisualElement name="GDObject" class="delimiter" style="flex-grow: 1;">
             <ui:VisualElement name="GDOHeader1" class="hor-line">
                 <ui:Toggle name="Enabled" binding-path="Enabled" value="true" />
+                <ui:Label tabindex="-1" text="*" parse-escape-sequences="true" display-tooltip-when-elided="true" name="Flags" style="width: 15px; max-width: 15px; -unity-font-style: bold; -unity-text-align: upper-right;" />
                 <ui:TextField picking-mode="Ignore" value="Name" name="Name" is-delayed="true" style="flex-grow: 1; flex-shrink: 1; -unity-font-style: bold;" />
             </ui:VisualElement>
             <ui:Label tabindex="-1" text="Guid" parse-escape-sequences="true" display-tooltip-when-elided="true" name="Guid" style="-unity-font-style: italic;" />

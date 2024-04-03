@@ -75,7 +75,7 @@ namespace GDDB
             var type = obj.GetType();
             result.Add( ".Type", type.Assembly == GetType().Assembly ? type.FullName : type.AssemblyQualifiedName );
             result.Add( ".Ref", obj.Guid.ToString() );
-            if( !obj.Enabled )
+            if( !obj.EnabledObject )
                 result.Add( ".Enabled", false );
 
             WriteObjectContent( type, obj, result );
@@ -287,7 +287,7 @@ namespace GDDB
             var obj  = GDObject.CreateInstance( type ).WithGuid( guid );
             obj.hideFlags = HideFlags.HideAndDontSave;
             obj.name      = name;
-            obj.Enabled   = enabled;
+            obj.EnabledObject   = enabled;
         
             return obj;
         }
@@ -571,6 +571,10 @@ namespace GDDB
                 return false;
 
             if ( field.IsPublic && field.IsDefined( typeof(NonSerializedAttribute), false ) )
+                return false;
+
+            //Reserved fields
+            if ( field.Name == nameof(GDObject.EnabledObject) )
                 return false;
 
             var fieldType = field.FieldType;

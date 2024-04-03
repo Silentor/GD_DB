@@ -9,7 +9,7 @@ namespace GDDB
     [CreateAssetMenu( menuName = "Create GDObject", fileName = "GDObject", order = 0 )]
     public class GDObject : ScriptableObject
     {
-        public Boolean Enabled { get; set; } = true;
+        public Boolean EnabledObject            = true;           //To temporary disable object in GD_DB queries
 
         public Guid Guid
         {

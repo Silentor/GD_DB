@@ -7,7 +7,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 258fa77c429347f3a571a7c99e6da8a5, type: 3}
   m_Name: TestGDObject
@@ -18,16 +18,24 @@ MonoBehaviour:
   - rid: 6870417513993469958
   - rid: 6870417513993469971
   - rid: 6870417603641212953
+  - rid: 2631727306663526400
   references:
     version: 2
     RefIds:
+    - rid: 2631727306663526400
+      type: {class: UnityAssetReferenceComponent, ns: GDDB.Tests, asm: Tests}
+      data:
+        Texture2D: {fileID: 0}
+        Material: {fileID: 0}
+        GameObject: {fileID: 0}
+        Component: {fileID: 0}
     - rid: 6870417494477373444
       type: {class: NotSerializableContentComponent, ns: GDDB.Tests, asm: Tests}
       data: 
     - rid: 6870417494477373448
       type: {class: PrimitivesComponent, ns: GDDB.Tests, asm: Tests}
       data:
-        SByteField: -90
+        SByteField: -94
         IntField: 2147483647
         BigIntField: -9223372036854775808
         FloatField: Infinity
@@ -69,7 +77,7 @@ MonoBehaviour:
     - rid: 6870417603641212953
       type: {class: UnitySimpleTypesComponent, ns: GDDB.Tests, asm: Tests}
       data:
-        Vector3: {x: 1, y: 1, z: 1}
+        Vector3: {x: 2, y: 1, z: 1}
         Vector2: {x: 1, y: 1}
         Vector3Int: {x: 44, y: 1, z: 1}
         Vector2Int: {x: 1, y: 1}
@@ -80,8 +88,8 @@ MonoBehaviour:
           serializedVersion: 2
           x: 0
           y: 1
-          width: 1
-          height: 1
+          width: 2.98
+          height: 3
         Quaternion: {x: 0.00917905, y: 0.01721736, z: 0.02601972, w: 0.999471}
         Color: {r: 1, g: 0, b: 0, a: 1}
         Color32:

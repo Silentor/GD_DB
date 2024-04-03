@@ -33,11 +33,20 @@ namespace GDDB.Editor
             var gdoVisualTreeAsset = Resources.Load<VisualTreeAsset>(("GDObjectEditor"));
             var   gdoVisualTree      = gdoVisualTreeAsset.Instantiate();
         
+            //Enabled tooggle
+            var enabledTgl = gdoVisualTree.Q<Toggle>( "Enabled" );
+            enabledTgl.value = _target.EnabledObject;
+            enabledTgl.RegisterValueChangedCallback( EnabledToggle_Changed );
+
             //GD Object name field with renaming support
             var gdoName = gdoVisualTree.Q<TextField>( "Name" );
             gdoName.value = _target.name;
-            gdoName.RegisterCallback<ChangeEvent<String>>( GDOName_Changed );
+            gdoName.RegisterCallback<ChangeEvent<String>>( ( newValue ) => GDOName_Changed( gdoName, newValue ) );
             
+            var flagsLbl = gdoVisualTree.Q<Label>( "Flags" );
+            flagsLbl.TrackSerializedObjectValue( serializedObject, (so) => Flags_SerializedObjectChangedCallback( flagsLbl, so ) );
+            Flags_SerializedObjectChangedCallback( flagsLbl, serializedObject );
+
             //GD Object guid label
             var guid = gdoVisualTree.Q<Label>( "Guid" );
             guid.text = _target.Guid.ToString();
@@ -73,10 +82,11 @@ namespace GDDB.Editor
             //New component add button
             CreateComponentAddButton( compsProp, gdoVisualTree );
 
-            gdoVisualTree.Bind( serializedObject );
+            //gdoVisualTree.Bind( serializedObject );
             return gdoVisualTree;
         }
 
+        
         private void CreateComponentGUI( SerializedProperty componentsProp, Int32 index )
         {
             var componentProp = componentsProp.GetArrayElementAtIndex( index );
@@ -162,10 +172,27 @@ namespace GDDB.Editor
             _lastSelectedComponentIndex = ((DropdownField)evt.target).index;
         }
 
-        private void GDOName_Changed( ChangeEvent<String> newName )
+        private void EnabledToggle_Changed(ChangeEvent<Boolean> evt )
         {
-            if( newName.newValue != _target.name )
-                AssetDatabase.RenameAsset( AssetDatabase.GetAssetPath( _target ), newName.newValue );
+            _target.EnabledObject = evt.newValue;
+        }
+
+        private void GDOName_Changed( TextField sender, ChangeEvent<String> newName )
+        {
+            if ( newName.newValue != _target.name )
+            {
+                ObjectNames.SetNameSmart( _target, newName.newValue );
+                if( _target.name != newName.newValue )
+                    sender.SetValueWithoutNotify( _target.name );                           //Incorrect symbols in name
+            }
+        }
+
+        private void Flags_SerializedObjectChangedCallback( Label sender, SerializedObject target )
+        {
+            if ( EditorUtility.IsDirty( _target ) )
+                sender.text = "*";
+            else
+                sender.text = String.Empty;
         }
 
         private void AddComponent( SerializedProperty components, Type componentType )

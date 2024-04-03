@@ -149,4 +149,12 @@ namespace GDDB.Tests
         public Color32        Color32    = new ( 100, 100, 100, 100 );
         public AnimationCurve AnimCurve  = new (new Keyframe( 0, 0 ), new Keyframe( 0.5f, 1 ), new Keyframe( 1, 0 ));
     }
+
+    public class UnityAssetReferenceComponent : GDComponent
+    {
+        public Texture2D  Texture2D;
+        public Material   Material;
+        public GameObject GameObject;
+        public Camera     Component;
+    }
 }

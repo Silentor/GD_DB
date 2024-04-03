@@ -290,7 +290,7 @@ namespace GDDB.Tests
                 root.Id = "TestRoot";
                 var enabledObj = GDObject.CreateInstance<GDObject>();
                 var disabledObj = GDObject.CreateInstance<GDObject>();
-                disabledObj.Enabled = false;
+                disabledObj.EnabledObject = false;
 
                 //Act
                 var serializer = new GDJson();
@@ -299,7 +299,13 @@ namespace GDDB.Tests
                 var gddb = new GdJsonLoader( new StringReader( jsonString ) );
 
                 //Assert
-                gddb.AllObjects.Count( gdo => !gdo.Enabled ).Should().Be( 1 );
+                gddb.AllObjects.Count( gdo => gdo.EnabledObject ).Should().Be( 2 );
+        }
+
+        [Test]
+        public void AwakeEnableAfterJsonTest( )
+        {
+                throw new NotImplementedException();
         }
     }
 }
