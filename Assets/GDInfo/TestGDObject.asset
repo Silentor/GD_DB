@@ -13,6 +13,11 @@ MonoBehaviour:
   m_Name: TestGDObject
   m_EditorClassIdentifier: 
   EnabledObject: 1
+  Type:
+    Cat1: 255
+    Cat2: 0
+    Cat3: 0
+    Element: 0
   Components:
   - rid: 6870417494477373444
   - rid: 6870417494477373448

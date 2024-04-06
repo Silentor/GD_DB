@@ -12,6 +12,8 @@ namespace GDDB
         [HideInInspector]
         public Boolean EnabledObject            = true;           //To temporary disable object in GD_DB queries
 
+        public GdType Type;
+
         public Guid Guid
         {
             get

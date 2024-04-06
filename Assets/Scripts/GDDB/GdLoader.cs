@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace GDDB
 {
@@ -18,5 +20,21 @@ namespace GDDB
                 }
             }
         }
+
+        public GDObject GetObject( GdType type )
+        {
+            return AllObjects.First( o => o.Type == type );
+        }
+
+        public IEnumerable<GDObject> GetObjects( Int32 category1 )
+        {
+            return AllObjects.Where( o => o.Type.Cat1 == category1 );
+        }
+
+        public IEnumerable<GDObject> GetObjects( Int32 category1, Int32 category2 )
+        {
+            return AllObjects.Where( o => o.Type.Cat1 == category1 && o.Type.Cat2 == category2 );
+        }
+
     }
 }
