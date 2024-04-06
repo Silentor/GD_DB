@@ -4,6 +4,7 @@ using System.Linq;
 using FluentAssertions;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 
 namespace GDDB.Tests
@@ -246,12 +247,6 @@ namespace GDDB.Tests
         }
 
         [Test]
-        public void AssetReferenceTest( )
-        {
-                throw new NotImplementedException();
-        }
-
-        [Test]
         public void UnityTypesSupportTest( )
         {
                 //Arrange
@@ -305,7 +300,53 @@ namespace GDDB.Tests
         [Test]
         public void AwakeEnableAfterJsonTest( )
         {
-                throw new NotImplementedException();
+                //Arrange
+                var obj = GDObject.CreateInstance<TestObjectAwakeEnable>();
+
+                //Act
+                var serializer = new GDJson();
+                var jsonString = serializer.GDToJson( new GDObject[] { obj } );
+                Debug.Log( jsonString );
+                var copyObjects = serializer.JsonToGD( jsonString );
+                var copy = (TestObjectAwakeEnable)copyObjects[ 0 ];
+
+                //Assert
+                copy.IsAwaked.Should().BeTrue();
+                copy.IsEnabled.Should().BeTrue();
+        }
+
+        [Test]
+        public void UnityAssetsSerializationTest_SOAssetResolver( )
+        {
+                //Arrange
+                var obj           = GDObject.CreateInstance<GDObject>();
+                var testTexture   = Resources.FindObjectsOfTypeAll<Texture2D>().First( AssetDatabase.Contains );
+                var testMat       = Resources.FindObjectsOfTypeAll<Material>().First( AssetDatabase.Contains );
+                var testGO        = Resources.Load<GameObject>( "TestPrefab" );
+                var testComponent = testGO.GetComponent<MeshFilter>();
+
+                var goComp = new UnityAssetReferenceComponent
+                           {
+                                   Texture2D  = testTexture,
+                                   Material   = testMat,
+                                   GameObject = testGO,
+                                   Component = testComponent,
+                           };
+                obj.Components.Add( goComp );
+                var testAssetResolver = ScriptableObject.CreateInstance<GdAssetReference>();
+
+                //Act
+                var serializer = new GDJson();
+                var jsonString = serializer.GDToJson( new GDObject[] { obj }, testAssetResolver );
+                Debug.Log( jsonString );
+                var copyObjects = serializer.JsonToGD( jsonString, testAssetResolver );
+
+                //Assert
+                var copyComp = copyObjects[ 0 ].GetComponent<UnityAssetReferenceComponent>();
+                copyComp.Texture2D.Should().BeSameAs( testTexture );
+                copyComp.Material.Should().BeSameAs( testMat );
+                copyComp.GameObject.Should().BeSameAs( testGO );
+                copyComp.Component.Should().BeSameAs( testComponent );
         }
     }
 }

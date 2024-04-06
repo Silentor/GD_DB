@@ -24,4 +24,20 @@ namespace GDDB.Tests
         }
     }
 
+    public class TestObjectAwakeEnable : GDObject
+    {
+        public Boolean IsAwaked  { get; private set; }
+        public Boolean IsEnabled { get; private set; }
+
+        private void Awake( )
+        {
+            IsAwaked = true;
+        }
+
+        private void OnEnable( )
+        {
+            IsEnabled = true;
+        }
+    }
+
 }

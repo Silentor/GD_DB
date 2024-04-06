@@ -9,6 +9,9 @@ using UnityEditor;
 
 namespace GDDB
 {
+    /// <summary>
+    /// GD DB loader from AssetDatabase in Unity Editor
+    /// </summary>
     public class GdEditorLoader : GdLoader
     {
         public override IReadOnlyList<GDObject> AllObjects => _allObjects;

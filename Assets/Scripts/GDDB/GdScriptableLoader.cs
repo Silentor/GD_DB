@@ -4,6 +4,9 @@ using UnityEngine;
 
 namespace GDDB
 {
+    /// <summary>
+    /// GD DB laoder from Scriptable Objects in Resources folder 
+    /// </summary>
     public class GdScriptableLoader : GdLoader
     {
         public override IReadOnlyList<GDObject> AllObjects => _allObjects;

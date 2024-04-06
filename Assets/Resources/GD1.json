@@ -2,59 +2,212 @@
   {
     ".Name": "!GDRoot",
     ".Type": "GDDB.GDRoot",
+    ".Ref": "c9d1f11f-7bd5-5224-4be0-31c883375f18",
     "Id": "GD1",
     "Version": 3,
-    "TestVector3": {
-      "x": 1.1,
-      "y": 2.0,
-      "z": 3.5
-    },
     "Components": []
   },
   {
     ".Name": "EmptyGDObject",
     ".Type": "GDDB.GDObject",
+    ".Ref": "111656a2-f4d0-68a4-5bbd-af8070ee74b0",
     "Components": []
   },
   {
     ".Name": "TestGDObject",
     ".Type": "GDDB.TestGDObject, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-    "NullObject": {
-      "IntValue2": 0
-    },
+    ".Ref": "cb595db9-ada0-d114-d80d-c074b374f7d4",
     "Components": [
       {
-        ".Type": "GDDB.Primitives, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+        ".Type": "GDDB.Tests.NotSerializableContentComponent, Tests, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+        ".Value": {}
+      },
+      {
+        ".Type": "GDDB.Tests.PrimitivesComponent, Tests, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
         ".Value": {
-          "IntValue": 1,
-          "FloatValue": -1.0,
-          "DoubleValue": 1.7976931348623157E+308,
-          "NANValue": "NaN",
-          "StrValue": "Test \"string\"",
-          "BoolValue": true
+          "SByteField": -94,
+          "IntField": 2147483647,
+          "BigIntField": -9223372036854775808,
+          "FloatField": "Infinity",
+          "DoubleField": "NaN",
+          "BoolField": false,
+          "StringField": "some text",
+          "ByteEnumField": 1,
+          "IntEnumField": 4294967295,
+          "CharField": 97
         }
       },
       {
-        ".Type": "GDDB.Classes, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+        ".Type": "GDDB.Tests.NullReferencesAsEmptyComponent, Tests, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
         ".Value": {
-          "ParentClassPolymord": {
-            "IntValue2": 0
+          "StringMustBeEmpty": "",
+          "NestedClassMustBeEmpty": {
+            "IntParam": 42,
+            "StringMustBeEmpty": ""
           },
-          "ChildClass": {
-            "IntValue3": 0,
-            "IntValue2": 0
-          },
-          "Struct1": {
-            "IntValue": 4,
-            "EmbeddedClass": {
-              "IntValue2": 5
-            },
-            "EmbeddedClassPolymorf": {
-              "IntValue2": 6
+          "NestedClassMustBeEmptyWithoutConstructor": {
+            "StringMustBeEmpty": "",
+            "IntParam": 99,
+            "NestedClassMustBeEmpty": {
+              "IntParam": 42,
+              "StringMustBeEmpty": ""
             }
+          }
+        }
+      },
+      {
+        ".Type": "GDDB.Tests.CollectionTestComponent, Tests, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+        ".Value": {
+          "IntArray": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "StrArray": [
+            "",
+            "",
+            "3"
+          ],
+          "ClassList1": [
+            {
+              "IntField": 66
+            },
+            {
+              "IntField": 99
+            },
+            {
+              "IntField": 43
+            }
+          ],
+          "ClassListPolymorf2": [
+            {
+              "IntField": 66
+            },
+            {
+              "IntField": 99
+            },
+            {
+              ".Type": "GDDB.Tests.CollectionTestComponent+NestedSerializableChildClass, Tests, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+              ".Value": {
+                "IntField2": 100,
+                "IntField": 42
+              }
+            }
+          ]
+        }
+      },
+      {
+        ".Type": "GDDB.Tests.UnitySimpleTypesComponent, Tests, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+        ".Value": {
+          "Vector3": [
+            2.0,
+            1.0,
+            1.0
+          ],
+          "Vector2": [
+            1.0,
+            1.0
+          ],
+          "Vector3Int": [
+            44,
+            1,
+            1
+          ],
+          "Vector2Int": [
+            1,
+            1
+          ],
+          "Bounds": [
+            0.0,
+            0.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Rect": [
+            0.0,
+            1.0,
+            2.98,
+            3.0
+          ],
+          "Quaternion": [
+            0.00917905,
+            0.01721736,
+            0.02601972,
+            0.999471
+          ],
+          "Color": [
+            1.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "Color32": [
+            100,
+            100,
+            100,
+            100
+          ],
+          "AnimCurve": {
+            "Keys": [
+              {
+                "Time": 0.0,
+                "Value": 0.0,
+                "InTangent": 0.0,
+                "OutTangent": 0.0,
+                "InWeight": 0.0,
+                "OutWeight": 0.0,
+                "WeightedMode": 0
+              },
+              {
+                "Time": 0.5,
+                "Value": 1.0,
+                "InTangent": 0.0,
+                "OutTangent": 0.0,
+                "InWeight": 0.0,
+                "OutWeight": 0.0,
+                "WeightedMode": 0
+              },
+              {
+                "Time": 1.0,
+                "Value": 0.0,
+                "InTangent": 0.0,
+                "OutTangent": 0.0,
+                "InWeight": 0.0,
+                "OutWeight": 0.0,
+                "WeightedMode": 0
+              }
+            ],
+            "PreWrapMode": 8,
+            "PostWrapMode": 8
+          }
+        }
+      }
+    ]
+  },
+  {
+    ".Name": "TestUnityAssetsRef",
+    ".Type": "GDDB.GDObject",
+    ".Ref": "43679cf1-65c8-96d4-790d-6b241c499fe4",
+    "Components": [
+      {
+        ".Type": "GDDB.Tests.UnityAssetReferenceComponent, Tests, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+        ".Value": {
+          "Texture2D": {
+            ".Ref": "0000000000000000f000000000000000",
+            ".Id": 10300
           },
-          "NonSerializableStruct": {
-            "IntValue": 0
+          "Material": {},
+          "GameObject": {
+            ".Ref": "260be3ae7188a404b91972cc00114e34",
+            ".Id": 6211874546738034317
+          },
+          "Component": {
+            ".Ref": "260be3ae7188a404b91972cc00114e34",
+            ".Id": 6362591528722712133
           }
         }
       }

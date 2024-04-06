@@ -7,6 +7,9 @@ using UnityEngine;
 
 namespace GDDB
 {
+    /// <summary>
+    /// GD DB loader from JSON file in Resources folder or from any TextReader
+    /// </summary>
     public class GdJsonLoader : GdLoader
     {
         public override IReadOnlyList<GDObject> AllObjects => _allObjects;

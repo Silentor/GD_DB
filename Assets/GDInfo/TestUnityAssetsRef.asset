@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ebd1bfc4a076ec4ea41fbabfe03ccbb, type: 3}
+  m_Name: TestUnityAssetsRef
+  m_EditorClassIdentifier: 
+  EnabledObject: 1
+  Components:
+  - rid: 2631727329348419584
+  references:
+    version: 2
+    RefIds:
+    - rid: 2631727329348419584
+      type: {class: UnityAssetReferenceComponent, ns: GDDB.Tests, asm: Tests}
+      data:
+        Texture2D: {fileID: 10300, guid: 0000000000000000f000000000000000, type: 0}
+        Material: {fileID: 2100000, guid: e5d490a742d0f014f880cb47ab835955, type: 2}
+        GameObject: {fileID: 6211874546738034317, guid: 260be3ae7188a404b91972cc00114e34, type: 3}
+        Component: {fileID: 6362591528722712133, guid: 260be3ae7188a404b91972cc00114e34, type: 3}
+        NotAsUnityAsset: {fileID: 11400000, guid: 111656a2f4d068a45bbdaf8070ee74b0, type: 2}

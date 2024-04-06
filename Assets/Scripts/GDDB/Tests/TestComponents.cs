@@ -155,6 +155,6 @@ namespace GDDB.Tests
         public Texture2D  Texture2D;
         public Material   Material;
         public GameObject GameObject;
-        public Camera     Component;
+        public Component  Component;
     }
 }

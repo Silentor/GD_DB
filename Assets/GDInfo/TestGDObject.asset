@@ -12,23 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 258fa77c429347f3a571a7c99e6da8a5, type: 3}
   m_Name: TestGDObject
   m_EditorClassIdentifier: 
+  EnabledObject: 1
   Components:
   - rid: 6870417494477373444
   - rid: 6870417494477373448
   - rid: 6870417513993469958
   - rid: 6870417513993469971
   - rid: 6870417603641212953
-  - rid: 2631727306663526400
   references:
     version: 2
     RefIds:
-    - rid: 2631727306663526400
-      type: {class: UnityAssetReferenceComponent, ns: GDDB.Tests, asm: Tests}
-      data:
-        Texture2D: {fileID: 0}
-        Material: {fileID: 0}
-        GameObject: {fileID: 0}
-        Component: {fileID: 0}
     - rid: 6870417494477373444
       type: {class: NotSerializableContentComponent, ns: GDDB.Tests, asm: Tests}
       data: 

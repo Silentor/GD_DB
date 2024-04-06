@@ -82,7 +82,22 @@ namespace GDDB.Editor
             //New component add button
             CreateComponentAddButton( compsProp, gdoVisualTree );
 
-            //gdoVisualTree.Bind( serializedObject );
+            //Debug write to json button
+            var debugToolbar = new Box()
+                          {
+                                  style = { flexDirection = FlexDirection.Row, justifyContent = Justify.SpaceBetween }
+                          };
+            gdoVisualTree.Add( debugToolbar );
+
+            var toJsonBtn = new Button( ( ) => {
+                var json = new GDJson().GDToJson( new []{ _target } );
+                Debug.Log( json );
+            } );
+            toJsonBtn.text         = "To Json";
+            toJsonBtn.style.width  = 100;
+            toJsonBtn.style.height = 20;
+            debugToolbar.Add( toJsonBtn );
+
             return gdoVisualTree;
         }
 

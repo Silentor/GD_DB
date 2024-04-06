@@ -15,7 +15,7 @@ namespace GDDB
 {
     public class GDJson
     {
-        public readonly Dictionary<Type, GdJsonCustomSerializer> _serializers = new();
+        
 
         public GDJson( )
         {
@@ -36,9 +36,10 @@ namespace GDDB
             _serializers.Add( serializer.SerializedType, serializer );
         }
 
-        public String GDToJson( IEnumerable<GDObject> objects )
+        public String GDToJson( IEnumerable<GDObject> objects, GdAssetReference assetReference = null )
         {
             JArray resulObjects = new JArray();
+            _assetReference = assetReference ? assetReference : ScriptableObject.CreateInstance<GdAssetReference>();
 
             foreach ( var gdObj in objects )
             {
@@ -53,12 +54,14 @@ namespace GDDB
             }
 
             var result = resulObjects.ToString();
-            Debug.Log( $"Written {objects.Count()} gd objects to json string {result.Length} symbols" );
+            Debug.Log( $"Written {objects.Count()} gd objects to json string {result.Length} symbols. Referenced {_assetReference.Assets.Count} assets, resolver {_assetReference.GetType().Name}" );
 
             return result;
         }
 
-        private List<GDObject> _headers = new();
+        private readonly Dictionary<Type, GdJsonCustomSerializer> _serializers = new();
+        private readonly List<GDObject>                           _headers     = new();
+        private          GdAssetReference                         _assetReference;
 
         private void WriteNullPropertyToJson( String name, JsonWriter writer )
         {
@@ -188,6 +191,10 @@ namespace GDDB
             {
                 return serializer.Serialize( value );
             }
+            else if ( value is UnityEngine.Object unityObj && AssetDatabase.Contains( unityObj ) )      //Write Unity asset reference
+            {
+                return WriteUnityObjectToJson( unityObj );
+            }
             else
             {
                 return WriteObjectToJson( propertyType, value );
@@ -223,6 +230,25 @@ namespace GDDB
             return result;
         }
 
+        private JObject WriteUnityObjectToJson( UnityEngine.Object unityAsset )
+        {
+            JObject result = new JObject();
+            if ( AssetDatabase.TryGetGUIDAndLocalFileIdentifier( unityAsset, out var guid, out long localId ))
+            {
+                result = new JObject();
+                result.Add( ".Ref", guid );
+                result.Add( ".Id", localId );
+                _assetReference.AddAsset( unityAsset, guid, localId );
+            }
+            else
+            {
+                result.Add( ".Error", $"Error serializing {unityAsset.name} ({unityAsset.GetType()}), can not find asset guid" );
+                Debug.LogError( $"Error serializing {unityAsset.name} ({unityAsset.GetType()}), can not find asset guid" );
+            }
+
+            return result;
+        }                                
+
         private Object CreateEmptyObject( Type type )
         {
             var defaultConstructor = type.GetConstructor( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, Array.Empty<Type>(), null );
@@ -240,9 +266,10 @@ namespace GDDB
 
     #region JSON-LINQ reader
 
-       public List<GDObject> JsonToGD( String json )
+       public List<GDObject> JsonToGD( String json, GdAssetReference assetResolver = null )
         {
             _headers.Clear();
+            _assetReference = assetResolver ? assetResolver : ScriptableObject.CreateInstance<GdAssetReference>();
 
             using (var reader = new StringReader( json ) )
             {
@@ -379,6 +406,15 @@ namespace GDDB
             {
                 return deserializer.Deserialize( value );
             }
+            else if (typeof(UnityEngine.Object).IsAssignableFrom( propertyType ) )      //Read Unity asset by reference
+            {
+                var guid = value[".Ref"].Value<String>();
+                var localId = value[".Id"].Value<long>();
+                var asset = _assetReference.Assets.Find( a => a.Guid.Equals( guid ) && a.LocalId == localId )?.Asset;
+                if( asset == null )
+                    Debug.LogError( $"Error resolving Unity asset reference {guid} : {localId}, type {propertyType}" );
+                return asset;
+            }
             else
             {
                 return ReadObjectFromJson( (JObject)value, propertyType );
@@ -418,9 +454,9 @@ namespace GDDB
             }
         
             return null;
-        } 
+        }
 
-        public GDObject ReadGDObjectReferenceFromJson( JObject jObject )
+        private GDObject ReadGDObjectReferenceFromJson( JObject jObject )
         {
             var guid = Guid.Parse( jObject[".Ref"].Value<String>() );
             return _headers.Find( o => o.Guid == guid );
@@ -601,8 +637,9 @@ namespace GDDB
             if ( type.IsAbstract || type.IsInterface )
                 return false;
 
-            //Discard classes without Serializable attribute or not derived from GDObject (GDObject reference)
-            if( type.IsClass && !(type.IsDefined( typeof(SerializableAttribute )) || typeof(GDObject).IsAssignableFrom( type ) )) 
+            //Discard classes without Serializable attribute or not derived from Unity Object (we try to serialize Unity Assets )
+            var isUnityAssetType = typeof(UnityEngine.Object).IsAssignableFrom( type );
+            if( type.IsClass && !(type.IsDefined( typeof(SerializableAttribute )) || isUnityAssetType )) 
                 return false;
 
             if( type.IsArray )
@@ -611,10 +648,13 @@ namespace GDDB
             if( type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>) )
                 return IsTypeSerializable( type.GetGenericArguments()[0] );
 
-            //Check serializable fields for serialization support
-            var fields = type.GetFields( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance );
-            if( !fields.Any( IsFieldSerializable ) )
-                return false;
+            if ( !isUnityAssetType )
+            {
+                //Check serializable fields for serialization support
+                var fields = type.GetFields( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance );
+                if( !fields.Any( IsFieldSerializable ) )
+                    return false;
+            }
 
             return true;
         }

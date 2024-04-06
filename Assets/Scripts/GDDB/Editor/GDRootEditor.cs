@@ -32,12 +32,15 @@ namespace GDDB.Editor
             result.Add( toolbar );
 
             var toJsonBtn = new Button( ( ) => {
-                var gddb = new GdEditorLoader( _target.Id );
-                var json = new GDJson().GDToJson( gddb.AllObjects );
-                var path = Path.Combine( Application.dataPath, $"Resources/{_target.Id}.json" );
-                File.WriteAllText( path, json );
+                var gddb       = new GdEditorLoader( _target.Id );
+                var assets     = ScriptableObject.CreateInstance<GdAssetReference>();
+                var json       = new GDJson().GDToJson( gddb.AllObjects, assets );
+                var jsonPath   = Path.Combine( Application.dataPath, $"Resources/{_target.Id}.json" );
+                var assetsPath = $"Assets/Resources/{_target.Id}_assets.asset";
+                File.WriteAllText( jsonPath, json );
+                AssetDatabase.CreateAsset( assets, assetsPath );
                 AssetDatabase.Refresh();
-                Debug.Log( $"Saved gd DB to json file at {path}" );
+                Debug.Log( $"Saved gd DB to json file at {jsonPath}, asset resolver at {assetsPath}" );
             } );
             toJsonBtn.text = "To Json";
             toJsonBtn.style.width = 100;
