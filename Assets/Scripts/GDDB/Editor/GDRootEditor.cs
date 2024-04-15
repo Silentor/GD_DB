@@ -32,7 +32,7 @@ namespace GDDB.Editor
             result.Add( toolbar );
 
             var toJsonBtn = new Button( ( ) => {
-                var gddb       = new GdEditorLoader( _target.Id );
+                var gddb       = new GdEditorLoader( _target.Id ).GetGameDataBase();
                 var assets     = ScriptableObject.CreateInstance<GdAssetReference>();
                 var json       = new GDJson().GDToJson( gddb.AllObjects, assets );
                 var jsonPath   = Path.Combine( Application.dataPath, $"Resources/{_target.Id}.json" );
@@ -48,7 +48,7 @@ namespace GDDB.Editor
             toolbar.Add( toJsonBtn );
 
             var toSoBtn = new Button( ( ) => {
-                GdScriptablePreprocessBuild.PrepareResourceReference( new GdEditorLoader( _target.Id ) );
+                GdScriptablePreprocessBuild.PrepareResourceReference( new GdEditorLoader( _target.Id ).GetGameDataBase() );
             } );
             toSoBtn.text       = "To SO";
             toSoBtn.style.width  = 100;
@@ -56,7 +56,7 @@ namespace GDDB.Editor
             toolbar.Add( toSoBtn );
 
             var fromJsonBtn = new Button( ( ) => {
-                var gdJson = new GdJsonLoader( _target.Id );
+                var gdJson = new GdJsonLoader( _target.Id ).GetGameDataBase();
                 Debug.Log( $"Loaded gd DB {gdJson.Root.Id}, total objects {gdJson.AllObjects.Count}" );
             } );
             fromJsonBtn.text           = "From Json";

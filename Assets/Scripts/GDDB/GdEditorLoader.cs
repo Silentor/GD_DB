@@ -14,17 +14,16 @@ namespace GDDB
     /// </summary>
     public class GdEditorLoader : GdLoader
     {
-        public override IReadOnlyList<GDObject> AllObjects => _allObjects;
 
         private readonly String         _gddbPath;
-        private readonly List<GDObject> _allObjects = new List<GDObject>();
-
 
         public GdEditorLoader( String name )
         {
  #if !UNITY_EDITOR
                 throw new NotSupportedException( "GdEditorLoader can be used only in editor" );            
  #else
+                GDRoot root = null;
+
                 var gdiRootsGuids = AssetDatabase.FindAssets( "t:GDRoot" );
                 foreach ( var gdiRootGuid in gdiRootsGuids )
                 {
@@ -34,15 +33,17 @@ namespace GDDB
                     if( gdiRoot && String.Equals( gdiRoot.Id, name, StringComparison.OrdinalIgnoreCase ) )
                     {
                         _gddbPath = Path.GetDirectoryName( path );
-                        Root      = gdiRoot;
+                        root      = gdiRoot;
                         break;
                     }
                 }
 
-                if ( Root == null )
+                if ( !root )
                     throw new ArgumentException( $"GdDB name {name} is incorrect" );
 
                 //Load all gd objects
+                var allObjects = new List<GDObject>();
+
                 var gdObjectGuids = AssetDatabase.FindAssets( "t:GDObject", new[] { _gddbPath });
                 foreach ( var gdObjectGuid in gdObjectGuids )
                 {
@@ -52,11 +53,12 @@ namespace GDDB
                     {
                         var gdObject = AssetDatabase.LoadAssetAtPath<GDObject>( path );
                         if( gdObject )
-                            _allObjects.Add( gdObject );
+                            allObjects.Add( gdObject );
                     }
                 }
 
-#endif
+                _db = new GdDb( allObjects );
+#endif           
 
         } 
     }

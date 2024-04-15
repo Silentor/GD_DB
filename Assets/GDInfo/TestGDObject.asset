@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   EnabledObject: 1
   Type:
-    Cat1: 255
+    Cat1: 0
     Cat2: 0
     Cat3: 0
     Element: 0

@@ -1,19 +1,18 @@
 using System;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using Newtonsoft.Json;
+using GDDB;
 using UnityEngine;
-using UnityEngine.UI;
 
-namespace GDDB
+namespace GDDB_User
 {
     public class Runner : MonoBehaviour
     {
 
         private void Awake( )
         {
-            var soLoader = new GdJsonLoader( "GD1" );
+            var loader = new GdJsonLoader( "GD1" );
+
+            var gdb         = loader.GetGameDataBase();
+            //var testGetMobs = gdb.GetMobs(  );          //Source generated
         }
 
         private GdLoader GetGD( String name )

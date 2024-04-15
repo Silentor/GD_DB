@@ -23,7 +23,7 @@ namespace GDDB.Editor
 
                 if( gdiRoot )
                 {
-                    var gddb = new GdEditorLoader( gdiRoot.Id );
+                    var gddb = new GdEditorLoader( gdiRoot.Id ).GetGameDataBase();
                     PrepareResourceReference( gddb );
 
                     // if( AssetDatabase.CopyAsset( path, $"Assets/Resources/{gdiRoot.Id}.asset" ) )
@@ -40,7 +40,7 @@ namespace GDDB.Editor
             }
         }
 
-        public static void PrepareResourceReference( GdLoader gddb )
+        public static void PrepareResourceReference( GdDb gddb )
         {
             var gdReference = ScriptableObject.CreateInstance<GdScriptableReference>();
             gdReference.Root    = gddb.Root;

@@ -291,7 +291,7 @@ namespace GDDB.Tests
                 var serializer = new GDJson();
                 var jsonString = serializer.GDToJson( new GDObject[] { root, enabledObj, disabledObj } );
                 Debug.Log( jsonString );
-                var gddb = new GdJsonLoader( new StringReader( jsonString ) );
+                var gddb = new GdJsonLoader( new StringReader( jsonString ) ).GetGameDataBase();
 
                 //Assert
                 gddb.AllObjects.Count( gdo => gdo.EnabledObject ).Should().Be( 2 );

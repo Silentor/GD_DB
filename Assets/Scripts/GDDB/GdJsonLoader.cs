@@ -12,10 +12,6 @@ namespace GDDB
     /// </summary>
     public class GdJsonLoader : GdLoader
     {
-        public override IReadOnlyList<GDObject> AllObjects => _allObjects;
-
-        private readonly List<GDObject> _allObjects ;
-
         public GdJsonLoader( String name )
         {
             var jsonAsset = Resources.Load<TextAsset>( $"{name}" );
@@ -25,8 +21,7 @@ namespace GDDB
             var gdJson = new GDJson();
             var content = gdJson.JsonToGD( jsonAsset.text );
 
-            Root = content.First( gd => gd is GDRoot ) as GDRoot;
-            _allObjects = content;
+            _db = new GdDb( content );
         }
         
         public GdJsonLoader( [NotNull] TextReader jsonContent )
@@ -36,8 +31,7 @@ namespace GDDB
             var gdJson  = new GDJson();
             var content = gdJson.JsonToGD( jsonContent.ReadToEnd() );
 
-            Root        = content.First( gd => gd is GDRoot ) as GDRoot;
-            _allObjects = content;
+            _db  = new GdDb( content );
         } 
     }
 }

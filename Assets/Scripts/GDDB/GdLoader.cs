@@ -6,35 +6,14 @@ namespace GDDB
 {
     public abstract class GdLoader
     {
-        public         GDRoot                  Root       { get; protected set; }
-        public virtual IReadOnlyList<GDObject> AllObjects { get; }
-
-        public IEnumerable<T> GetComponents<T>() where T : GDComponent
+        public GdDb GetGameDataBase( )
         {
-            foreach ( var gdObject in AllObjects )
-            {
-                foreach ( var component in gdObject.Components )
-                {
-                    if ( component is T t )
-                        yield return t;
-                }
-            }
+            return _db;
         }
 
-        public GDObject GetObject( GdType type )
-        {
-            return AllObjects.First( o => o.Type == type );
-        }
+        
 
-        public IEnumerable<GDObject> GetObjects( Int32 category1 )
-        {
-            return AllObjects.Where( o => o.Type.Cat1 == category1 );
-        }
-
-        public IEnumerable<GDObject> GetObjects( Int32 category1, Int32 category2 )
-        {
-            return AllObjects.Where( o => o.Type.Cat1 == category1 && o.Type.Cat2 == category2 );
-        }
+        protected GdDb _db;
 
     }
 }
