@@ -19,6 +19,7 @@ namespace GDDB.Editor
         private VisualElement       _typeWidgetsContainer;
 
         private SerializedObject _serializedObject;
+        private VisualElement    _buttonsContainer;
 
         public GdTypeDrawer( )
         {
@@ -38,7 +39,8 @@ namespace GDDB.Editor
 
             root.style.flexDirection = FlexDirection.Row;
             var label = new Label( property.displayName );
-            label.style.flexBasis = new StyleLength( new Length( 40, LengthUnit.Percent ) );
+            label.style.flexBasis = new StyleLength( new Length( 41, LengthUnit.Percent ) );
+            label.style.minWidth = 130;
             root.Add( label );
 
             _typeWidgetsContainer                     = new VisualElement();
@@ -52,9 +54,42 @@ namespace GDDB.Editor
             //label.AddToClassList( "unity-object-field__label" );
             //container.Add( label );
 
-            CreateWidgets( 0, _root );
+            _buttonsContainer = new VisualElement();
+            _buttonsContainer.style.flexDirection = FlexDirection.Row;
+            root.Add( _buttonsContainer );
+
+            RecreateProperty();
 
             return root;
+        }
+
+        private void RecreateProperty( )
+        {
+            _typeWidgetsContainer.Clear();
+            _buttonsContainer.Clear();
+
+            if( _catProperties[0].intValue    == 0 && _catProperties[1].intValue == 0 && _catProperties[2].intValue == 0
+                && _catProperties[3].intValue == 0 )
+            {
+                CreateNoneType( _typeWidgetsContainer );
+            }
+            else
+            {
+                CreateWidgets( 0, _root );
+                var clearTypeBtn = new Button( ClearType );
+                clearTypeBtn.text = "X";
+                _buttonsContainer.Add( clearTypeBtn );
+            }
+        }
+
+        private void CreateNoneType( VisualElement root )
+        {
+            var noneLabel = new Label("None");
+            _typeWidgetsContainer.Add( noneLabel );
+
+            var addTypeBtn = new Button( AssignType );
+            addTypeBtn.text = "+";
+            _buttonsContainer.Add( addTypeBtn );
         }
 
         private void CreateWidgets( Int32 index, Category category )
@@ -112,7 +147,22 @@ namespace GDDB.Editor
             }
         }
 
-        
+        private void AssignType( )
+        {
+            _serializedObject.Update();
+            _catProperties.Last().intValue = 1;
+            _serializedObject.ApplyModifiedProperties();
+            RecreateProperty();
+        }
+
+        private void ClearType( )
+        {
+            _serializedObject.Update();
+            foreach ( var catProperty in _catProperties )            
+                catProperty.intValue = 0;
+            _serializedObject.ApplyModifiedProperties();
+            RecreateProperty();
+        }
 
         Category GetOrBuildCategory( Type categoryType )
         {
