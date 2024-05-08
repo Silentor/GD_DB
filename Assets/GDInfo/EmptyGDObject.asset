@@ -12,6 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5ebd1bfc4a076ec4ea41fbabfe03ccbb, type: 3}
   m_Name: EmptyGDObject
   m_EditorClassIdentifier: 
+  EnabledObject: 1
+  Type:
+    Data: 0
   Components: []
   references:
     version: 2

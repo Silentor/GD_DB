@@ -12,6 +12,8 @@ namespace GDDB.Editor
     [CustomEditor( typeof(GDObject), true )]
     public class GDObjectEditor : UnityEditor.Editor
     {
+        public static event Action<GDObject> Changed;
+
         private GDObject        _target;
         private Int32           _lastSelectedComponentIndex = -1;
         private Type[]          _allProperComponents;
@@ -208,6 +210,8 @@ namespace GDDB.Editor
                 sender.text = "*";
             else
                 sender.text = String.Empty;
+
+            Changed?.Invoke( _target );
         }
 
         private void AddComponent( SerializedProperty components, Type componentType )

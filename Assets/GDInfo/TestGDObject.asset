@@ -14,10 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   EnabledObject: 1
   Type:
-    Cat1: 0
-    Cat2: 1
-    Cat3: 2
-    Element: 11
+    Data: 2
   Components:
   - rid: 6870417494477373444
   - rid: 6870417494477373448

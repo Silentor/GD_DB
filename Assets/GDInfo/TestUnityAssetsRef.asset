@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: TestUnityAssetsRef
   m_EditorClassIdentifier: 
   EnabledObject: 1
+  Type:
+    Data: 0
   Components:
   - rid: 2631727329348419584
   references:
@@ -25,4 +27,3 @@ MonoBehaviour:
         Material: {fileID: 2100000, guid: e5d490a742d0f014f880cb47ab835955, type: 2}
         GameObject: {fileID: 6211874546738034317, guid: 260be3ae7188a404b91972cc00114e34, type: 3}
         Component: {fileID: 6362591528722712133, guid: 260be3ae7188a404b91972cc00114e34, type: 3}
-        NotAsUnityAsset: {fileID: 11400000, guid: 111656a2f4d068a45bbdaf8070ee74b0, type: 2}

@@ -35,12 +35,12 @@ namespace GDDB
 
         public IEnumerable<GDObject> GetObjects( Int32 category1 )
         {
-            return AllObjects.Where( o => o.Type.Cat1 == category1 );
+            return AllObjects.Where( o => o.Type[0] == category1 );
         }
 
         public IEnumerable<GDObject> GetObjects( Int32 category1, Int32 category2 )
         {
-            return AllObjects.Where( o => o.Type.Cat1 == category1 && o.Type.Cat2 == category2 );
+            return AllObjects.Where( o => o.Type[0] == category1 && o.Type[1] == category2 );
         }
     }
 }
