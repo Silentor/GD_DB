@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
 using UnityEditor;
+using UnityEngine;
 using UnityEngine.UIElements;
-using Debug = UnityEngine.Debug;
+using Object = System.Object;
 
 namespace GDDB.Editor
 {
@@ -15,35 +13,44 @@ namespace GDDB.Editor
         private VisualElement       _typeWidgetsContainer;
 
         private          SerializedObject         _serializedObject;
-        private SerializedProperty                _dataProp;
+        private          SerializedProperty       _dataProp;
         private          VisualElement            _buttonsContainer;
         private readonly GDTypeHierarchy          _typeHierarchy;
-        private readonly GDTypeHierarchy.Category _root;
+        private readonly GDTypeHierarchy.Category _typesRoot;
+        private readonly StyleSheet               _gdTypeStyles;
+        private          VisualElement            _root;
+        private readonly GDObjectsFinder          _gdoFinder;
+        private          GDObject                 _owner;
 
         public GdTypeDrawer( )
         {
             _typeHierarchy = new GDTypeHierarchy();
-            _root = _typeHierarchy.Root;
+            _typesRoot = _typeHierarchy.Root;
+            _gdTypeStyles = Resources.Load<StyleSheet>( "GDType" );
+            _gdoFinder = new GDObjectsFinder();
         }
 
         public override VisualElement CreatePropertyGUI( SerializedProperty property )
         {
             _serializedObject = property.serializedObject;
+            _owner            = (GDObject)_serializedObject.targetObject;
             _dataProp         = property.FindPropertyRelative( nameof(GdType.Data) );
-      
-            var root = new VisualElement();
 
-            root.style.flexDirection = FlexDirection.Row;
+            _root = new VisualElement();
+            _root.name = "Root";
+            _root.style.flexDirection = FlexDirection.Row;
+            _root.styleSheets.Add( _gdTypeStyles );
+
             var label = new Label( property.displayName );
             label.style.flexBasis = new StyleLength( new Length( 41, LengthUnit.Percent ) );
             label.style.minWidth = 130;
-            root.Add( label );
+            _root.Add( label );
 
             _typeWidgetsContainer                     = new VisualElement();
             _typeWidgetsContainer.style.flexDirection = FlexDirection.Row;
             _typeWidgetsContainer.style.flexGrow      = 1;
             //_typeWidgetsContainer.AddToClassList( "unity-base-field__aligned" );        
-            root.Add( _typeWidgetsContainer );
+            _root.Add( _typeWidgetsContainer );
             //var label = new Label( property.displayName );
             //label.AddToClassList( "unity-property-field__label" );
             //label.AddToClassList( "unity-base-field__label" );
@@ -52,17 +59,18 @@ namespace GDDB.Editor
 
             _buttonsContainer = new VisualElement();
             _buttonsContainer.style.flexDirection = FlexDirection.Row;
-            root.Add( _buttonsContainer );
+            _root.Add( _buttonsContainer );
 
             RecreateProperty();
 
-            return root;
+            return _root;
         }
 
         private void RecreateProperty( )
         {
             _typeWidgetsContainer.Clear();
             _buttonsContainer.Clear();
+            _root.RemoveFromClassList( "duplicateType" );
 
             if( _dataProp.intValue == 0 )
             {
@@ -70,10 +78,14 @@ namespace GDDB.Editor
             }
             else
             {
-                CreateWidgets( 0, _root );
+                CreateWidgets( 0, _typesRoot );
                 var clearTypeBtn = new Button( ClearType );
                 clearTypeBtn.text = "X";
                 _buttonsContainer.Add( clearTypeBtn );
+
+                var myType = new GdType( _dataProp.intValue );
+                if( _gdoFinder.GDTypedObjects.Any( o => o.Type == myType && o != _owner ) )
+                    _root.AddToClassList( "duplicateType" );
             }
         }
 
@@ -92,7 +104,7 @@ namespace GDDB.Editor
             if( index >= 4 )
                 return;
 
-            Debug.Log( $"Creating widget at {index} position" );
+            //Debug.Log( $"Creating widget at {index} position" );
 
             //Clear this widget and all next
             while ( _typeWidgetsContainer.childCount > index )
@@ -117,7 +129,7 @@ namespace GDDB.Editor
                 result.style.flexGrow = 1;
                 result.RegisterCallback<ChangeEvent<Int32>, Int32>( OnChangeEnumWidget, index  );
 
-                Debug.Log( $"Created int field, value {value}" );
+                //Debug.Log( $"Created int field, value {value}" );
             }
             else if ( category.Type == GDTypeHierarchy.CategoryType.Enum )
             {
@@ -126,7 +138,7 @@ namespace GDDB.Editor
                 result.style.flexGrow = 1;
                 result.RegisterCallback<ChangeEvent<Int32>, Int32>( OnChangeEnumWidget, index  );
 
-                Debug.Log( $"Created popup field for {category.UnderlyingType} category, value {category.FindItem( value ).Name}" );
+                //Debug.Log( $"Created popup field for {category.UnderlyingType} category, value {category.FindItem( value ).Name}" );
             }
 
             return result;

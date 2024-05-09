@@ -37,6 +37,18 @@ namespace GDDB
             Data = (UInt32)rawData;
         }
 
+        public GdType WithCategory( Int32 categoryIndex, Int32 value )
+        {
+            CheckIndex( categoryIndex );
+            var copy = this;
+            copy[ categoryIndex ] = value;
+            return copy;
+        }
+
+        public override String ToString( )
+        {
+            return $"{this[ 0 ]}.{this[ 1 ]}.{this[ 2 ]}.{this[ 3 ]}";
+        }
 
         public bool Equals(GdType other)
         {

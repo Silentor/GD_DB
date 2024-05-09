@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using Object = System.Object;
@@ -9,19 +10,22 @@ namespace GDDB.Editor
     [InitializeOnLoad]
     public static class ProjectWindowsTypeDrawer 
     {
-        private static readonly GDTypeHierarchy TypeHierarchy;
+        private static readonly GDTypeHierarchy           TypeHierarchy;
         private static readonly Dictionary<Int32, String> GdTypeStrCache = new ();
+        private static readonly GDObjectsFinder           GDOFinder;
 
         static ProjectWindowsTypeDrawer()
         {
             EditorApplication.projectWindowItemInstanceOnGUI += DrawGDTypeString;
             GDObjectEditor.Changed += GDObjectEditorOnChanged;
             TypeHierarchy = new GDTypeHierarchy();
+            GDOFinder = new GDObjectsFinder();
         }
 
         private static void GDObjectEditorOnChanged( GDObject obj )
         {
             GdTypeStrCache.Clear();
+            GDOFinder.Reload();
         }
 
         private static void DrawGDTypeString(Int32 instanceid, Rect rect )
@@ -47,10 +51,15 @@ namespace GDDB.Editor
                 GdTypeStrCache.Add( instanceid, gdTypeStr );
             }
 
-            if( Selection.activeObject == asset )
-                GUI.Label( rect, gdTypeStr, Styles.GDTypeStrLabelSelected );
+            if( GDOFinder.IsDuplicatedType( asset ) )
+                GUI.Label( rect, gdTypeStr, Styles.GDTypeStrLabelError );
             else
-                GUI.Label( rect, gdTypeStr, Styles.GDTypeStrLabel );
+            {
+                if( Selection.objects.Contains( asset ) )
+                    GUI.Label( rect, gdTypeStr, Styles.GDTypeStrLabelSelected );
+                else
+                    GUI.Label( rect, gdTypeStr, Styles.GDTypeStrLabel );
+            }
         }
 
         private static bool IsMainListRect(Rect rect)
@@ -88,6 +97,15 @@ namespace GDDB.Editor
                                                                      fontSize  = 11,
                                                                      padding   = new RectOffset(0, 2, 0, 0),
                                                              };
+            public static readonly GUIStyle GDTypeStrLabelError = new (EditorStyles.label)
+                                                                     {
+                                                                             alignment = TextAnchor.MiddleRight, 
+                                                                             normal    = {textColor = Color.red},
+                                                                             hover     = {textColor = Color.red},
+                                                                             fontSize  = 11,
+                                                                             padding   = new RectOffset(0, 2, 0, 0),
+                                                                     };
+
 
         }
     }

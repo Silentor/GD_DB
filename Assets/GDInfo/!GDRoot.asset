@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   EnabledObject: 1
   Type:
-    Data: 65537
+    Data: 0
   Components: []
   Id: GD1
   Version: 3

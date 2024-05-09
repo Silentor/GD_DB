@@ -14,7 +14,6 @@ namespace GDDB
     /// </summary>
     public class GdEditorLoader : GdLoader
     {
-
         private readonly String         _gddbPath;
 
         public GdEditorLoader( String name )
@@ -41,7 +40,7 @@ namespace GDDB
                 if ( !root )
                     throw new ArgumentException( $"GdDB name {name} is incorrect" );
 
-                //Load all gd objects
+                //Load all internal gd objects
                 var allObjects = new List<GDObject>();
 
                 var gdObjectGuids = AssetDatabase.FindAssets( "t:GDObject", new[] { _gddbPath });
