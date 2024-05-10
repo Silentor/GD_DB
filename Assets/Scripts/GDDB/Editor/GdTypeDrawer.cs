@@ -58,7 +58,7 @@ namespace GDDB.Editor
             //container.Add( label );
 
             _buttonsContainer = new VisualElement();
-            _buttonsContainer.style.flexDirection = FlexDirection.Row;
+            _buttonsContainer.AddToClassList( "toolbar" );
             _root.Add( _buttonsContainer );
 
             RecreateProperty();
@@ -79,8 +79,22 @@ namespace GDDB.Editor
             else
             {
                 CreateWidgets( 0, _typesRoot );
+
+                if ( _gdoFinder.IsDuplicatedType( _owner ) )
+                {
+                    var fixTypeBtn = new Button( FixType );
+                    fixTypeBtn.text                  = "";
+                    fixTypeBtn.style.backgroundImage = new StyleBackground( Resources.Load<Sprite>( "build_24dp" ) );
+                    fixTypeBtn.tooltip               = "Fix type";
+                    fixTypeBtn.AddToClassList( "toolbar-square-button" );
+                    _buttonsContainer.Add( fixTypeBtn );
+                }
+
                 var clearTypeBtn = new Button( ClearType );
-                clearTypeBtn.text = "X";
+                clearTypeBtn.text                  = "";
+                clearTypeBtn.style.backgroundImage = new StyleBackground( Resources.Load<Sprite>( "delete_forever_24dp" ) );
+                clearTypeBtn.tooltip               = "Clear type";
+                clearTypeBtn.AddToClassList( "toolbar-square-button" );
                 _buttonsContainer.Add( clearTypeBtn );
 
                 var myType = new GdType( _dataProp.intValue );
@@ -89,13 +103,17 @@ namespace GDDB.Editor
             }
         }
 
+
         private void CreateNoneType( VisualElement root )
         {
             var noneLabel = new Label("None");
             _typeWidgetsContainer.Add( noneLabel );
 
             var addTypeBtn = new Button( AssignType );
-            addTypeBtn.text = "+";
+            addTypeBtn.text = "";
+            addTypeBtn.AddToClassList( "toolbar-square-button" );
+            addTypeBtn.style.backgroundImage = new StyleBackground( Resources.Load<Sprite>( "add_24dp" ) );
+            addTypeBtn.tooltip = "Assign type";
             _buttonsContainer.Add( addTypeBtn );
         }
 
@@ -172,6 +190,18 @@ namespace GDDB.Editor
             _serializedObject.ApplyModifiedProperties();
             RecreateProperty();
         }
+
+        private void FixType( )
+        {
+            _serializedObject.Update();
+            if ( _gdoFinder.FindFreeType( new GdType( _dataProp.intValue ), out var newType ) ) 
+            {
+                _dataProp.intValue = (Int32)newType.Data;
+                _serializedObject.ApplyModifiedProperties();
+                RecreateProperty();
+            }
+        }
+
     }
 
     
