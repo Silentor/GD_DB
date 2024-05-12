@@ -37,20 +37,29 @@ namespace GDDB.Editor
             if ( !asset )
                 return;
 
-            if( asset.Type == default )
-                return;
-
             // Right align label:
             const int width = 250;
             rect.x     += rect.width - width;
             rect.width =  width;
+
+            if ( !asset.EnabledObject )
+            {
+                if( Selection.objects.Contains( asset ) )
+                    GUI.Label( rect, "Disabled", Styles.GDTypeStrLabelDisabledSelected );
+                else
+                    GUI.Label( rect, "Disabled", Styles.GDTypeStrLabelDisabled );
+                return;
+            }
+
+            if( asset.Type == default )
+                return;
 
             if ( !GdTypeStrCache.TryGetValue( instanceid, out var gdTypeStr ) )
             {
                 gdTypeStr = TypeHierarchy.GetTypeString( asset.Type );
                 GdTypeStrCache.Add( instanceid, gdTypeStr );
             }
-
+            
             if( GDOFinder.IsDuplicatedType( asset ) || !TypeHierarchy.IsTypeCorrect( asset.Type, out _ ) )
                 GUI.Label( rect, gdTypeStr, Styles.GDTypeStrLabelError );
             else
@@ -104,6 +113,24 @@ namespace GDDB.Editor
                                                                              hover     = {textColor = Color.red},
                                                                              fontSize  = 11,
                                                                              padding   = new RectOffset(0, 2, 0, 0),
+                                                                     };
+            public static readonly GUIStyle GDTypeStrLabelDisabled = new (EditorStyles.label)
+                                                                  {
+                                                                          alignment = TextAnchor.MiddleRight, 
+                                                                          normal    = {textColor = Color.gray},
+                                                                          hover     = {textColor = Color.gray},
+                                                                          fontSize  = 11,
+                                                                          padding   = new RectOffset(0, 2, 0, 0),
+                                                                          fontStyle = FontStyle.Italic
+                                                                  };
+            public static readonly GUIStyle GDTypeStrLabelDisabledSelected = new (EditorStyles.label)
+                                                                     {
+                                                                             alignment = TextAnchor.MiddleRight, 
+                                                                             normal    = {textColor = Color.white},
+                                                                             hover     = {textColor = Color.white},
+                                                                             fontSize  = 11,
+                                                                             padding   = new RectOffset(0, 2, 0, 0),
+                                                                             fontStyle = FontStyle.Italic
                                                                      };
 
 
