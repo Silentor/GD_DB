@@ -89,26 +89,15 @@ namespace GDDB.Editor
             {
                 CreateWidgets( root, 0, _typesRoot );
 
-                if ( _gdoFinder.IsDuplicatedType( _owner ) )
-                {
-                    var fixTypeBtn = new Button( () => FixType(root) );
-                    fixTypeBtn.text                  = "";
-                    fixTypeBtn.style.backgroundImage = new StyleBackground( Resources.Load<Sprite>( "build_24dp" ) );
-                    fixTypeBtn.tooltip               = "Fix type";
-                    fixTypeBtn.AddToClassList( "toolbar-square-button" );
-                    toolbar.Add( fixTypeBtn );
-                }
-
                 var clearTypeBtn = new Button( () => ClearType(root) );
                 clearTypeBtn.text                  = "";
+                clearTypeBtn.tabIndex              = 10;
                 clearTypeBtn.style.backgroundImage = new StyleBackground( Resources.Load<Sprite>( "delete_forever_24dp" ) );
                 clearTypeBtn.tooltip               = "Clear type";
                 clearTypeBtn.AddToClassList( "toolbar-square-button" );
                 toolbar.Add( clearTypeBtn );
 
-                var myType = new GdType( _dataProp.intValue );
-                if( _gdoFinder.GDTypedObjects.Any( o => o.Type == myType && o != _owner ) )
-                    root.AddToClassList( "duplicateType" );
+                CheckDuplicateType( root );
             }
         }
 
@@ -120,7 +109,8 @@ namespace GDDB.Editor
             gdType.Add( noneLabel );
 
             var addTypeBtn = new Button( () => AssignType(root) );
-            addTypeBtn.text = "";
+            addTypeBtn.text     = "";
+            addTypeBtn.tabIndex = 1;
             addTypeBtn.AddToClassList( "toolbar-square-button" );
             addTypeBtn.style.backgroundImage = new StyleBackground( Resources.Load<Sprite>( "add_24dp" ) );
             addTypeBtn.tooltip = "Assign type";
@@ -184,6 +174,8 @@ namespace GDDB.Editor
 
                 var nextCategory = category?.FindItem( evt.newValue )?.Subcategory;
                 CreateWidgets( root, index + 1, nextCategory );
+
+                CheckDuplicateType( root );
             }
         }
 
@@ -212,6 +204,37 @@ namespace GDDB.Editor
                 _serializedObject.ApplyModifiedProperties();
                 RecreateProperty( root );
             }
+        }
+
+        private void CheckDuplicateType( VisualElement root )
+        {
+            if ( _gdoFinder.IsDuplicatedType( _owner ) )
+            {
+                root.AddToClassList( "duplicateType" );
+                var toolbar    = GetToolbarFromRoot( root );
+                var fixTypeBtn = new Button( () => FixType(root) );
+                fixTypeBtn.name                  = "FixType";
+                fixTypeBtn.text                  = "";
+                fixTypeBtn.style.backgroundImage = new StyleBackground( Resources.Load<Sprite>( "build_24dp" ) );
+                fixTypeBtn.tooltip               = "Fix type";
+                fixTypeBtn.AddToClassList( "toolbar-square-button" );
+                fixTypeBtn.tabIndex = 1;
+                toolbar.Add( fixTypeBtn );
+                toolbar.Sort( ToolbarSort );
+            }
+            else
+            {
+                root.RemoveFromClassList( "duplicateType" );
+                var toolbar    = GetToolbarFromRoot( root );
+                var fixBtn = toolbar.Q<Button>( "FixType" );
+                if( fixBtn != null )
+                    toolbar.Remove( fixBtn );
+            }
+        }
+
+        private Int32 ToolbarSort( VisualElement a, VisualElement b )
+        {
+            return a.tabIndex.CompareTo( b.tabIndex );
         }
 
         private VisualElement GetGDTypeFromRoot( VisualElement root )
