@@ -191,7 +191,10 @@ namespace GDDB.Editor
 
         private void EnabledToggle_Changed(ChangeEvent<Boolean> evt )
         {
-            _target.EnabledObject = evt.newValue;
+            serializedObject.Update();
+            var enabledObjProp = serializedObject.FindProperty( nameof(GDObject.EnabledObject) );
+            enabledObjProp.boolValue = evt.newValue;
+            serializedObject.ApplyModifiedProperties();
         }
 
         private void GDOName_Changed( TextField sender, ChangeEvent<String> newName )

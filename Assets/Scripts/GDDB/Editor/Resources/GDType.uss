@@ -1,6 +1,11 @@
 .duplicateType {
     background-color: red;
 }
+
+.incorrectValue > VisualElement{
+    background-color: red;
+}
+
 .toolbar{
     flex-direction: row;
     margin-left: 3;

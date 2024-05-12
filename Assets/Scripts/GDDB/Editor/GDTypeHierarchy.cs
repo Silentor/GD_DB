@@ -42,6 +42,38 @@ namespace GDDB.Editor
             return result;
         }
 
+        public Boolean IsTypeCorrect( GdType type, out Int32 incorrectIndex )
+        {
+            if ( type == default )
+            {
+                incorrectIndex = -1;
+                return true;
+            }
+
+            var category = Root;
+            for ( int i = 0; i < 4; i++ )
+            {
+                if ( category == null )
+                {
+                    incorrectIndex = -1;
+                    return true;
+                }
+
+                if ( !category.IsCorrectValue( type[ i ] ) )
+                {
+                    incorrectIndex = i;
+                    return false;
+                }
+                else
+                {
+                    category = category.FindItem( type[ i ] ).Subcategory;
+                }
+            }
+
+            incorrectIndex = -1;
+            return true;
+        }
+
         private String GetTypeString( GdType type, Int32 categoryIndex, Category category, String result )
         {
             var value = type[categoryIndex];
@@ -103,9 +135,19 @@ namespace GDDB.Editor
             public List<CategoryItem> Items;
             public Boolean            IsRoot;
 
+            public Boolean IsCorrectValue( Int32 value )
+            {
+                return Items.Any( i => i.Value == value );
+            }
+
             public CategoryItem FindItem( Int32 value )
             {
-                return Items.FirstOrDefault( i => i.Value == value );
+                if ( Items.TryFirst( i => i.Value == value, out var categoryItem ) )
+                {
+                    return categoryItem;
+                }
+
+                return new CategoryItem(){Name = $"{value}", Value = value};
             }
         }
 

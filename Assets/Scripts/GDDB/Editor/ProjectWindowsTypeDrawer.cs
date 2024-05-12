@@ -51,7 +51,7 @@ namespace GDDB.Editor
                 GdTypeStrCache.Add( instanceid, gdTypeStr );
             }
 
-            if( GDOFinder.IsDuplicatedType( asset ) )
+            if( GDOFinder.IsDuplicatedType( asset ) || !TypeHierarchy.IsTypeCorrect( asset.Type, out _ ) )
                 GUI.Label( rect, gdTypeStr, Styles.GDTypeStrLabelError );
             else
             {

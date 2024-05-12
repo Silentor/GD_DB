@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
@@ -133,6 +134,7 @@ namespace GDDB.Editor
             var gdTypeValue = new GdType( _dataProp.intValue );
             var widget = CreateCategoryField( root, category, gdTypeValue[ index ], index );
             gdType.Add( widget );
+            CheckIncorrectType( gdTypeValue, widget, index );
 
             //Create next widget(s)
             var nextCategory = category?.FindItem( gdTypeValue[ index ] )?.Subcategory;
@@ -153,12 +155,28 @@ namespace GDDB.Editor
             }
             else if ( category.Type == GDTypeHierarchy.CategoryType.Enum )
             {
-                result = new PopupField<Int32>( category.Items.Select( i => i.Value ).ToList(), value, i => category.FindItem( i ).Name,
-                        i => category.FindItem( i ).Name );
+                result = new PopupField<Int32>( GetValues( category, value ), value, i => ValueToString( category, i ),
+                        i => ValueToString( category, i ) );
                 result.style.flexGrow = 1;
                 result.RegisterCallback<ChangeEvent<Int32>>( OnChangeEnumWidget );
 
                 Debug.Log( $"Created popup field, index {index} for {category.UnderlyingType} category, value {category.FindItem( value ).Name}" );
+
+                List<Int32> GetValues( GDTypeHierarchy.Category category, Int32 selectedItem )
+                {
+                    var validValues = category.Items.Select( i => i.Value ).ToList();
+                    if( !validValues.Contains( selectedItem ) )
+                        validValues.Add( selectedItem );
+                    return validValues;
+                }
+
+                String ValueToString( GDTypeHierarchy.Category category, Int32 value )
+                {
+                    if( category.IsCorrectValue( value ) )
+                        return category.FindItem( value ).Name;
+
+                    return $"Incorrect value {value}";
+                }
             }
 
             return result;
@@ -176,6 +194,7 @@ namespace GDDB.Editor
                 CreateWidgets( root, index + 1, nextCategory );
 
                 CheckDuplicateType( root );
+                CheckIncorrectType( gdType, (VisualElement)evt.target, index );
             }
         }
 
@@ -212,15 +231,19 @@ namespace GDDB.Editor
             {
                 root.AddToClassList( "duplicateType" );
                 var toolbar    = GetToolbarFromRoot( root );
-                var fixTypeBtn = new Button( () => FixType(root) );
-                fixTypeBtn.name                  = "FixType";
-                fixTypeBtn.text                  = "";
-                fixTypeBtn.style.backgroundImage = new StyleBackground( Resources.Load<Sprite>( "build_24dp" ) );
-                fixTypeBtn.tooltip               = "Fix type";
-                fixTypeBtn.AddToClassList( "toolbar-square-button" );
-                fixTypeBtn.tabIndex = 1;
-                toolbar.Add( fixTypeBtn );
-                toolbar.Sort( ToolbarSort );
+                var fixBtn     = toolbar.Q<Button>( "FixType" );
+                if ( fixBtn == null )
+                {
+                    fixBtn                       = new Button( () => FixType(root) );
+                    fixBtn.name                  = "FixType";
+                    fixBtn.text                  = "";
+                    fixBtn.style.backgroundImage = new StyleBackground( Resources.Load<Sprite>( "build_24dp" ) );
+                    fixBtn.tooltip               = "Fix type";
+                    fixBtn.AddToClassList( "toolbar-square-button" );
+                    fixBtn.tabIndex = 1;
+                    toolbar.Add( fixBtn );
+                    toolbar.Sort( ToolbarSort );
+                }
             }
             else
             {
@@ -229,6 +252,18 @@ namespace GDDB.Editor
                 var fixBtn = toolbar.Q<Button>( "FixType" );
                 if( fixBtn != null )
                     toolbar.Remove( fixBtn );
+            }
+        }
+
+        private void CheckIncorrectType( GdType type, VisualElement widget, Int32 index )
+        {
+            if ( !_typeHierarchy.IsTypeCorrect( type, out var incorrectIndex ) && index == incorrectIndex )
+            {
+                widget.AddToClassList( "incorrectValue" );
+            }
+            else
+            {
+                widget.RemoveFromClassList( "incorrectValue" );
             }
         }
 
