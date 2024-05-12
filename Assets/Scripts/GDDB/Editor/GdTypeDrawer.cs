@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Object = System.Object;
+using PopupWindow = UnityEngine.UIElements.PopupWindow;
 
 namespace GDDB.Editor
 {
@@ -90,7 +91,16 @@ namespace GDDB.Editor
             {
                 CreateWidgets( root, 0, _typesRoot );
 
-                var clearTypeBtn = new Button( () => ClearType(root) );
+                var menuBtn = new Button( );
+                menuBtn.clicked += () => OpenContextMenu( root );
+                menuBtn.text                  = "";
+                menuBtn.tabIndex              = 2;
+                menuBtn.style.backgroundImage = new StyleBackground( Resources.Load<Sprite>( "menu_24dp" ) );
+                menuBtn.tooltip               = "Open context menu";
+                menuBtn.AddToClassList( "toolbar-square-button" );
+                toolbar.Add( menuBtn );
+
+                var clearTypeBtn = new Button( () => ClearType( root) );
                 clearTypeBtn.text                  = "";
                 clearTypeBtn.tabIndex              = 10;
                 clearTypeBtn.style.backgroundImage = new StyleBackground( Resources.Load<Sprite>( "delete_forever_24dp" ) );
@@ -101,6 +111,7 @@ namespace GDDB.Editor
                 CheckDuplicateType( root );
             }
         }
+
 
 
         private void CreateNoneType( VisualElement root )
@@ -223,6 +234,29 @@ namespace GDDB.Editor
                 _serializedObject.ApplyModifiedProperties();
                 RecreateProperty( root );
             }
+        }
+
+        private void OpenContextMenu( VisualElement root )
+        {
+            var menu = new GenericMenu();
+            menu.AddItem( new GUIContent( "Copy" ), false, () => EditorGUIUtility.systemCopyBuffer = _dataProp.intValue.ToString() );
+            if( Int32.TryParse( EditorGUIUtility.systemCopyBuffer, out _ ) )
+                menu.AddItem( new GUIContent( "Paste" ), false, () =>
+                {
+                    if ( Int32.TryParse( EditorGUIUtility.systemCopyBuffer, out var gdTypeRawValue ) )
+                    {
+                        _serializedObject.Update();
+                        _dataProp.intValue = gdTypeRawValue;
+                        _serializedObject.ApplyModifiedProperties();
+                        RecreateProperty( root );
+                    }  
+                } );
+            else
+                menu.AddDisabledItem( new GUIContent( "Paste" ), false );
+            menu.AddItem( new GUIContent("Edit as Categories"), true, null );
+            menu.AddItem( new GUIContent("Edit as decimal"), false, null );
+            menu.AddItem( new GUIContent("Edit as hex"), false, null );     
+            menu.ShowAsContext();
         }
 
         private void CheckDuplicateType( VisualElement root )
