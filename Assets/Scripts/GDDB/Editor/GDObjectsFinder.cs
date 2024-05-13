@@ -25,26 +25,65 @@ namespace GDDB.Editor
 
         public Boolean IsDuplicatedType( GDObject gdObject )
         {
-            if ( gdObject.Type == default )
+            return IsDuplicatedType( gdObject.Type );
+        }
+
+        public Boolean IsDuplicatedType( GdType type )
+        {
+            if ( type == default )
                 return false;
 
-            return GDTypedObjects.Exists( g => g.Type == gdObject.Type && g != gdObject );
+            var typeCount = 0;
+            for ( var i = 0; i < GDTypedObjects.Count; i++ )
+            {
+                if ( GDTypedObjects[ i ].Type == type )
+                {
+                    if ( typeCount > 0 )
+                        return true;
+                    else
+                        typeCount++;
+                }                
+            }
+
+            return false;
         }
+
 
         public Boolean FindFreeType( GdType fromType, out GdType result )
         {
-            for ( var i = fromType[3]; i <= 255; i++ )
+            var from  = fromType[3];
+            var range = Math.Max( 255 - from, from );
+            for ( var i = 1; i < range; i++ )
             {
-                var newType = fromType.WithCategory( 3, i );
-                if ( !GDTypedObjects.Exists( g => g.Type == newType ) )
+                var incValue = from + i;
+                if ( incValue <= 255 )
                 {
-                    result = newType;
-                    return true;
+                    if ( CheckValue( incValue ) )
+                    {
+                        result = fromType.WithCategory( 3, incValue );
+                        return true;
+                    }
+                }
+
+                var decValue = from - i;
+                if ( decValue >= 0 )
+                {
+                    if ( CheckValue( decValue ) )
+                    {
+                        result = fromType.WithCategory( 3, decValue );
+                        return true;
+                    }
                 }
             }
 
             result = default;
             return false;
+
+            Boolean CheckValue( Int32 newElem )
+            {
+                var newType = fromType.WithCategory( 3, newElem );
+                return !GDTypedObjects.Exists( g => g.Type == newType );
+            }
         }
 
         private void LoadGDObjects( )

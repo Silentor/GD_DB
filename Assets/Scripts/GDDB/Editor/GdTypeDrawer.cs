@@ -25,7 +25,6 @@ namespace GDDB.Editor
         private readonly StyleSheet               _gdTypeStyles;
         
         private readonly GDObjectsFinder          _gdoFinder;
-        private          GDObject                 _owner;
 
 
         public GdTypeDrawer( )
@@ -39,7 +38,6 @@ namespace GDDB.Editor
         public override VisualElement CreatePropertyGUI( SerializedProperty property )
         {
             _serializedObject = property.serializedObject;
-            _owner            = (GDObject)_serializedObject.targetObject;
             _dataProp         = property.FindPropertyRelative( nameof(GdType.Data) );
 
             var root      = new VisualElement();
@@ -261,7 +259,7 @@ namespace GDDB.Editor
 
         private void CheckDuplicateType( VisualElement root )
         {
-            if ( _gdoFinder.IsDuplicatedType( _owner ) )
+            if ( _gdoFinder.IsDuplicatedType( GetGDType() ) )
             {
                 root.AddToClassList( "duplicateType" );
                 var toolbar    = GetToolbarFromRoot( root );
@@ -314,6 +312,11 @@ namespace GDDB.Editor
         private VisualElement GetToolbarFromRoot( VisualElement root )
         {
             return root.Q<VisualElement>( "Toolbar" );
+        }
+
+        private GdType GetGDType( )
+        {
+            return new GdType( _dataProp.intValue );
         }
 
 
