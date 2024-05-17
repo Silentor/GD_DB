@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   EnabledObject: 1
   Type:
-    Data: 1
+    Data: 30978
   Components:
   - rid: 2631727329348419584
   references:
