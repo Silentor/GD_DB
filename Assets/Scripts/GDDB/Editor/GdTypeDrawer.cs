@@ -41,6 +41,7 @@ namespace GDDB.Editor
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label )
         {
             _serializedObject = property.serializedObject;
+            _serializedObject.Update();
 
             //base.OnGUI( position, property, label );
             _dataProp = property.FindPropertyRelative( nameof(GdType.Data) );
@@ -84,14 +85,12 @@ namespace GDDB.Editor
                                    }
                            }
                    };
-            var cat1 = _typeHierarchy.Root;
-            var cat2 = cat1.FindItem( gdType[ 0 ] )?.Subcategory;
-            var cat3 = cat2?.FindItem( gdType[ 1 ] )?.Subcategory;
-            var cat4 = cat3?.FindItem( gdType[ 2 ] )?.Subcategory;
-            result.Categories.Add( cat1 );
-            result.Categories.Add( cat2 );
-            result.Categories.Add( cat3 );
-            result.Categories.Add( cat4 );
+
+            var categories = _typeHierarchy.GetCategories( gdType );
+            result.Categories.Add( GetCategoryValue( categories[0], gdType[0] ) );
+            result.Categories.Add( GetCategoryValue( categories[1], gdType[1] ) );
+            result.Categories.Add( GetCategoryValue( categories[2], gdType[2] ) );
+            result.Categories.Add( GetCategoryValue( categories[3], gdType[3] ) );
 
             if( _gdoFinder.IsDuplicatedType( gdType ) )
             {
@@ -127,6 +126,18 @@ namespace GDDB.Editor
                                     },
 
                            }
+                   };
+        }
+
+        private State.CategoryValue GetCategoryValue( GDTypeHierarchy.Category category, Int32 value )
+        {
+            var isOutOfCategoryValue = category != null && !category.IsCorrectValue( value );
+            return new State.CategoryValue()
+                   {
+                           Category     = category,
+                           Value        = value,
+                           IsError      = isOutOfCategoryValue,
+                           ErrorMessage = isOutOfCategoryValue ? $"Incorrect value {value}" : String.Empty
                    };
         }
 
@@ -228,43 +239,49 @@ namespace GDDB.Editor
             
         }
 
-        private void DrawCategoryIMGUI( Rect categoryPosition, SerializedProperty prop, GDTypeHierarchy.Category category, Int32 index )
+        private void DrawCategoryIMGUI( Rect categoryPosition, SerializedProperty prop, State.CategoryValue category, Int32 index )
         {                 
             var gdType = new GdType( prop.intValue );
             var value = gdType[ index ];
 
-            if ( category != null && category.Type == GDTypeHierarchy.CategoryType.Enum )
+            if ( category.Category.Type == GDTypeHierarchy.CategoryType.Enum )
             {
-                var valueIndex = category.Items.FindIndex( i => i.Value == value );
-                var namesList  = category.Items.Select( i => i.Name ).ToList();
-                if( valueIndex < 0 )
+                var namesList  = category.Category.Items.Select( i => i.Name ).ToList();
+                var oldIndex = category.Category.Items.FindIndex( i => i.Value == value );
+                if ( category.IsError )
                 {
-                    namesList.Add( $"Incorrect value {value}" );
-                    valueIndex = namesList.Count - 1;
+                    namesList.Add( category.ErrorMessage );
+                    oldIndex = namesList.Count - 1;
                 }
                 var names      = namesList.ToArray();
                 
                 EditorGUI.BeginChangeCheck();
-                var newIndex = EditorGUI.Popup( categoryPosition, valueIndex, names );
+                var newIndex = EditorGUI.Popup( categoryPosition, oldIndex, names, category.IsError ? Resources.PopupErrorStyle : EditorStyles.popup );
                 if ( EditorGUI.EndChangeCheck() )
                 {
-                    value = category.Items[ newIndex ].Value;
+                    value = category.Category.Items[ newIndex ].Value;
                     gdType[ index ] = value;
-                    prop.intValue = (Int32)gdType.Data;
-                    prop.serializedObject.ApplyModifiedProperties();
-                    _state = null;
+                    if ( gdType != default )
+                    {
+                        prop.intValue = (Int32)gdType.Data;
+                        prop.serializedObject.ApplyModifiedProperties();
+                        _state = null;
+                    }
                 }
             }
             else
             {
                 EditorGUI.BeginChangeCheck();
-                var newValue = EditorGUI.IntField( categoryPosition, value );
+                var newValue = EditorGUI.DelayedIntField( categoryPosition, value );
                 if ( EditorGUI.EndChangeCheck() )
                 {
-                    gdType[ index ] = newValue;
-                    prop.intValue   = (Int32)gdType.Data;
-                    prop.serializedObject.ApplyModifiedProperties();
-                    _state = null;
+                    gdType[ index ] = category.Category.ClampValue( newValue );
+                    if ( gdType != default )
+                    {
+                        prop.intValue   = (Int32)gdType.Data;
+                        prop.serializedObject.ApplyModifiedProperties();
+                        _state = null;
+                    }
                 }
             }
         } 
@@ -551,11 +568,11 @@ namespace GDDB.Editor
 
         public class State
         {
-            public          String                         Label;
-            public          GdType                         Type;
-            public          String                         Value;
-            public readonly List<GDTypeHierarchy.Category> Categories = new();
-            public readonly List<Button>                   Buttons    = new ();
+            public          String                  Label;
+            public          GdType                  Type;
+            public          String                  Value;
+            public readonly List<CategoryValue>     Categories = new();
+            public readonly List<Button>            Buttons    = new ();
 
             public          Boolean                         IsError;
             public          String                          ErrorMessage;

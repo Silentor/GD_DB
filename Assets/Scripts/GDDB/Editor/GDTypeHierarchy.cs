@@ -74,6 +74,29 @@ namespace GDDB.Editor
             return true;
         }
 
+        public IReadOnlyList<Category> GetCategories( GdType type )
+        {
+            if ( type == default )
+                return Array.Empty<Category>();
+
+            var result = new Category[4];
+            var category = Root;
+            for ( int i = 0; i < 4; i++ )
+            {
+                if ( category != null )
+                {
+                    result[ i ] = category;
+                    category = category.FindItem( type[ i ] ).Subcategory;
+                }
+                else
+                {
+                    result[ i ] = new Category(){Type = CategoryType.Int8 };
+                }
+            }
+
+            return result;
+        }
+
         private String GetTypeString( GdType type, Int32 categoryIndex, Category category, String result )
         {
             var value = type[categoryIndex];
@@ -137,7 +160,24 @@ namespace GDDB.Editor
 
             public Boolean IsCorrectValue( Int32 value )
             {
-                return Items.Any( i => i.Value == value );
+                return Type switch
+                       {
+                               CategoryType.Int8  => value is >= 0 and <= 255,
+                               CategoryType.Int16 => value is >= 0 and <= 65535,
+                               CategoryType.Enum  => Items.Any( i => i.Value == value ),
+                               _                  => throw new ArgumentOutOfRangeException()
+                       };
+            }
+
+            public Int32 ClampValue( Int32 value )
+            {
+                return Type switch
+                       {
+                               CategoryType.Int8  => Math.Clamp( value, 0, 255 ),
+                               CategoryType.Int16 => Math.Clamp( value, 0, 65535 ),
+                               CategoryType.Enum  => value,
+                               _                  => throw new ArgumentOutOfRangeException()
+                       };
             }
 
             public CategoryItem FindItem( Int32 value )
