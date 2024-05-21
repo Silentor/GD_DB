@@ -53,7 +53,7 @@ namespace GDDB.Editor
             var category = Root;
             for ( int i = 0; i < 4; i++ )
             {
-                if ( category == null )
+                if ( category.IsNone )
                 {
                     incorrectIndex = -1;
                     return true;
@@ -83,14 +83,10 @@ namespace GDDB.Editor
             var category = Root;
             for ( int i = 0; i < 4; i++ )
             {
-                if ( category != null )
+                if ( !category.IsNone )
                 {
                     result[ i ] = category;
                     category = category.FindItem( type[ i ] ).Subcategory;
-                }
-                else
-                {
-                    result[ i ] = new Category(){Type = CategoryType.Int8 };
                 }
             }
 
@@ -100,63 +96,75 @@ namespace GDDB.Editor
         private String GetTypeString( GdType type, Int32 categoryIndex, Category category, String result )
         {
             var value = type[categoryIndex];
-            var cat   = category?.FindItem( value );
-            if( cat != null )
-                result += categoryIndex == 0 ? $"{cat.Name}" : $".{cat.Name}";
-            else
-                result += categoryIndex == 0 ? $"{value}" : $".{value}";
+            var cat   = category.FindItem( value );
+            result += categoryIndex == 0 ? $"{cat.Name}" : $".{cat.Name}";
 
             if( categoryIndex < 3 )
-                result = GetTypeString( type, categoryIndex + 1, cat?.Subcategory, result );
+                result = GetTypeString( type, categoryIndex + 1, cat.Subcategory, result );
 
             return result;
         }
 
         private Category BuildCategoryFromType( Type categoryEnum )
         {
-            var result = new Category(){Type = CategoryType.Enum, UnderlyingType = categoryEnum, Items = new List<CategoryItem>()};
-
+            var items = new List<CategoryItem>();
             foreach ( var enumCategoryField in categoryEnum.GetFields( BindingFlags.Public | BindingFlags.Static ) )
             {
                 var name     = enumCategoryField.Name;
                 var intValue = (Int32)enumCategoryField.GetValue( null );
-                var item     = new CategoryItem() { Name = name, Value = intValue };
-                result.Items.Add( item );
+                var item     = new CategoryItem( name, intValue );
+                items.Add( item );
             }
 
-            var attr = categoryEnum.GetCustomAttribute<CategoryAttribute>();
-            if ( attr.ParentCategory != null )
+            var attr   = categoryEnum.GetCustomAttribute<CategoryAttribute>();
+            if ( attr.ParentCategory != null )            //Link this Category with parent Category
             {
+                var result             = new Category( CategoryType.Enum, categoryEnum, items, false ); 
+
                 var parentCategoryType = attr.ParentCategory;
                 var parentValue        = attr.ParentValue;
                 var parentCategory     = GetOrBuildCategory( parentCategoryType );
                 var parentItem         = parentCategory.FindItem( parentValue );
-                parentItem.Subcategory = result;
+                _categories.Remove( parentCategory );
+                parentCategory         = parentCategory.WithCategoryItem( parentItem.WithSubcategory( result ) );
+                _categories.Add( parentCategory );
+                return result;
             }
             else
-                result.IsRoot = true;
-
-            _categories.Add( result );
-
-            return result;
+            {
+                var result = new Category( CategoryType.Enum, categoryEnum, items, true ); 
+                _categories.Add( result );
+                return result;
+            }
         }
 
         Category GetOrBuildCategory( Type categoryType )
         {
-            var result   = _categories.FirstOrDefault( c => c.UnderlyingType == categoryType );
-            if ( result == null )            
+            if ( !_categories.TryFirst( c => c.UnderlyingType == categoryType, out var result ) )
+            {
                 result = BuildCategoryFromType( categoryType );
+            }
 
             return result;
         }
 
         [DebuggerDisplay("{UnderlyingType.Name} ({Type}): {Items.Count}")]
-        public class Category
+        public readonly struct Category
         {
-            public Type               UnderlyingType;
-            public CategoryType       Type;
-            public List<CategoryItem> Items;
-            public Boolean            IsRoot;
+            public readonly Type                        UnderlyingType;
+            public readonly CategoryType                Type;
+            public readonly IReadOnlyList<CategoryItem> Items;
+            public readonly Boolean                     IsRoot;
+
+            public Boolean  IsNone                      => UnderlyingType == null;
+
+            public Category(   CategoryType type, Type underlyingType, IReadOnlyList<CategoryItem> items, Boolean isRoot )
+            {
+                UnderlyingType = underlyingType;
+                Type           = type;
+                Items          = items ?? Array.Empty<CategoryItem>();
+                IsRoot         = isRoot;
+            }
 
             public Boolean IsCorrectValue( Int32 value )
             {
@@ -187,16 +195,43 @@ namespace GDDB.Editor
                     return categoryItem;
                 }
 
-                return new CategoryItem(){Name = $"{value}", Value = value};
+                return new CategoryItem( $"{value}", value );
             }
+
+            public Category WithCategoryItem( CategoryItem categoryItem )
+            {
+                var items     = Items.ToList();
+                var itemIndex = items.FindIndex( ci => ci.Value == categoryItem.Value );
+                if ( itemIndex >= 0 )
+                {
+                    items.RemoveAt( itemIndex );
+                    items.Insert( itemIndex, categoryItem );
+                    return new Category( Type, UnderlyingType, items, IsRoot );
+                }
+
+                throw new ArgumentOutOfRangeException( nameof(categoryItem) );
+            } 
         }
 
         [DebuggerDisplay( "{Name} = {Value} => {Subcategory?.UnderlyingType.Name}" )]
-        public class CategoryItem
+        public readonly struct CategoryItem
         {
-            public String   Name;
-            public Int32    Value;
-            public Category Subcategory;
+            public readonly String   Name;
+            public readonly Int32    Value;
+            public readonly Category Subcategory;
+
+            public CategoryItem(String name, Int32 value, Category subcategory = default )
+            {
+                Name        = name;
+                Value       = value;
+                Subcategory = subcategory;
+            }
+
+            internal CategoryItem WithSubcategory( Category childCategory )
+            {
+                return new CategoryItem( Name, Value, childCategory );
+            }
+
         }
 
         public enum CategoryType

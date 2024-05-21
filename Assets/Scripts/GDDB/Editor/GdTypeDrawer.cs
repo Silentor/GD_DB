@@ -61,11 +61,14 @@ namespace GDDB.Editor
                 return CreateNoneTypeState( label, gdTypeProp );
             else
             {
-                return CreateTypeState( label, gdTypeProp, gdType );
+                //if ( _serializedObject.targetObject is GDObject )
+                    return CreateAssetTypeState( label, gdTypeProp, gdType );
+                // else
+                //     return CreateReferenceTypeState();
             }
         }   
 
-        private State CreateTypeState( String label, SerializedProperty gdTypeProp, GdType gdType )
+        private State CreateAssetTypeState( String label, SerializedProperty gdTypeProp, GdType gdType )
         {
             var result = new State()
                    {
@@ -106,6 +109,34 @@ namespace GDDB.Editor
             return result;
         }
 
+        // private State CreateReferenceTypeState( String label, SerializedProperty gdTypeProp, GdType gdType )
+        // {
+        //     var result = new State()
+        //                  {
+        //                          Label = label,
+        //                          Type  = gdType,
+        //                          Buttons =
+        //                          {
+        //                                  new State.Button()
+        //                                  {
+        //                                          Type  = State.EButton.ContextMenu,
+        //                                          Click = OpenContextMenu,
+        //                                  },
+        //                                  new State.Button()
+        //                                  {
+        //                                          Type  = State.EButton.ClearType,
+        //                                          Click = ClearType
+        //                                  }
+        //                          }
+        //                  };
+        //
+        //     var categories = _typeHierarchy.GetCategories( gdType );
+        //     result.Categories.Add( GetCategoryValue( categories[0], gdType[0] ) );
+        //     result.Categories.Add( GetCategoryValue( categories[1], gdType[1] ) );
+        //     result.Categories.Add( GetCategoryValue( categories[2], gdType[2] ) );
+        //     result.Categories.Add( GetCategoryValue( categories[3], gdType[3] ) );
+        // }
+
         private State CreateNoneTypeState( String label, SerializedProperty gdTypeProp )
         {
             return new State()
@@ -127,11 +158,13 @@ namespace GDDB.Editor
 
                            }
                    };
+
+            
         }
 
         private State.CategoryValue GetCategoryValue( GDTypeHierarchy.Category category, Int32 value )
         {
-            var isOutOfCategoryValue = category != null && !category.IsCorrectValue( value );
+            var isOutOfCategoryValue = !category.IsCorrectValue( value );
             return new State.CategoryValue()
                    {
                            Category     = category,
@@ -140,6 +173,17 @@ namespace GDDB.Editor
                            ErrorMessage = isOutOfCategoryValue ? $"Incorrect value {value}" : String.Empty
                    };
         }
+
+        // private void FilterCategoryValues( IReadOnlyList<GDTypeHierarchy.Category> categories, GdType type )
+        // {
+        //     var filteredTypes = _gdoFinder.GDTypedObjects.Select( g => g.Type ).ToList();
+        //     for ( var i = 0; i < categories.Count; i++ )
+        //     {
+        //         var categoryValue = type[ i ];
+        //         filteredTypes = filteredTypes.Where( t => t[ i ] == categoryValue ).ToList();
+        //         categories[i].Items.RemoveAll( ci => ci.Value )
+        //     }
+        // }
 
         private void AssignType( Action updateState )
         {
@@ -438,14 +482,14 @@ namespace GDDB.Editor
             CheckIncorrectType( gdTypeValue, widget, index );
 
             //Create next widget(s)
-            var nextCategory = category?.FindItem( gdTypeValue[ index ] )?.Subcategory;
+            var nextCategory = category.FindItem( gdTypeValue[ index ] ).Subcategory;
             CreateWidgets( root, index + 1, nextCategory );
         }
 
         private VisualElement CreateCategoryField( VisualElement root, GDTypeHierarchy.Category category, Int32 value, Int32 index )
         {
             VisualElement result = null;
-            if ( category == null )         //Default Int8 field
+            if ( category.IsNone )         //Default Int8 field
             {
                 result                = new IntegerField( 3 ){ value = value };
                 result.style.minWidth = 50;
@@ -491,7 +535,7 @@ namespace GDDB.Editor
                 _dataProp.intValue = (Int32)gdType.Data;
                 _serializedObject.ApplyModifiedProperties();
 
-                var nextCategory = category?.FindItem( evt.newValue )?.Subcategory;
+                var nextCategory = category.FindItem( evt.newValue ).Subcategory;
                 CreateWidgets( root, index + 1, nextCategory );
 
                 CheckDuplicateType( root );
