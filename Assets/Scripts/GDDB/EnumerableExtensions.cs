@@ -5,7 +5,7 @@ namespace GDDB
 {
     public static class EnumerableExtensions
     {
-        public static      Boolean TryFirst<T>( this IEnumerable<T> enumerable, Func<T, Boolean> predicate, out T value )
+        public static      Boolean TryFirst<T>( this IEnumerable<T> enumerable, Predicate<T> predicate, out T value )
         {
             foreach ( var item in enumerable )
             {
@@ -20,7 +20,7 @@ namespace GDDB
             return false;
         }
 
-        public static      Int32 FindIndex<T>( this IEnumerable<T> enumerable, Func<T, Boolean> predicate )
+        public static      Int32 FindIndex<T>( this IEnumerable<T> enumerable, Predicate<T> predicate )
         {
             var index = 0;
             foreach ( var item in enumerable )

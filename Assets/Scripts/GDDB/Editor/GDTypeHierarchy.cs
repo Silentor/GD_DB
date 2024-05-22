@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using JetBrains.Annotations;
 using UnityEditor;
 
 namespace GDDB.Editor
@@ -29,7 +30,7 @@ namespace GDDB.Editor
                 BuildCategoryFromType( categoryType );
             }
 
-            Root = _categories.First( c => c.IsRoot );
+            Root = _categories.First( c => c.Parent == null );
         }
 
         public String GetTypeString( GdType type )
@@ -42,6 +43,12 @@ namespace GDDB.Editor
             return result;
         }
 
+        /// <summary>
+        /// For given type check if every component is in proper category enum range
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="incorrectIndex"></param>
+        /// <returns></returns>
         public Boolean IsTypeCorrect( GdType type, out Int32 incorrectIndex )
         {
             if ( type == default )
@@ -53,7 +60,7 @@ namespace GDDB.Editor
             var category = Root;
             for ( int i = 0; i < 4; i++ )
             {
-                if ( category.IsNone )
+                if ( category == null )
                 {
                     incorrectIndex = -1;
                     return true;
@@ -83,7 +90,7 @@ namespace GDDB.Editor
             var category = Root;
             for ( int i = 0; i < 4; i++ )
             {
-                if ( !category.IsNone )
+                if ( category != null )
                 {
                     result[ i ] = category;
                     category = category.FindItem( type[ i ] ).Subcategory;
@@ -96,7 +103,7 @@ namespace GDDB.Editor
         private String GetTypeString( GdType type, Int32 categoryIndex, Category category, String result )
         {
             var value = type[categoryIndex];
-            var cat   = category.FindItem( value );
+            var cat   = category?.FindItem( value ) ?? new CategoryItem( $"{value}", value );
             result += categoryIndex == 0 ? $"{cat.Name}" : $".{cat.Name}";
 
             if( categoryIndex < 3 )
@@ -119,20 +126,23 @@ namespace GDDB.Editor
             var attr   = categoryEnum.GetCustomAttribute<CategoryAttribute>();
             if ( attr.ParentCategory != null )            //Link this Category with parent Category
             {
-                var result             = new Category( CategoryType.Enum, categoryEnum, items, false ); 
-
+                //Find and modify parent category to reference this child
                 var parentCategoryType = attr.ParentCategory;
                 var parentValue        = attr.ParentValue;
                 var parentCategory     = GetOrBuildCategory( parentCategoryType );
                 var parentItem         = parentCategory.FindItem( parentValue );
                 _categories.Remove( parentCategory );
+
+                var result             = new Category( CategoryType.Enum, categoryEnum, items, parentCategory ); 
                 parentCategory         = parentCategory.WithCategoryItem( parentItem.WithSubcategory( result ) );
+
                 _categories.Add( parentCategory );
+                _categories.Add( result );
                 return result;
             }
             else
             {
-                var result = new Category( CategoryType.Enum, categoryEnum, items, true ); 
+                var result = new Category( CategoryType.Enum, categoryEnum, items, null ); 
                 _categories.Add( result );
                 return result;
             }
@@ -149,30 +159,30 @@ namespace GDDB.Editor
         }
 
         [DebuggerDisplay("{UnderlyingType.Name} ({Type}): {Items.Count}")]
-        public readonly struct Category
+        public class Category
         {
-            public readonly Type                        UnderlyingType;
-            public readonly CategoryType                Type;
-            public readonly IReadOnlyList<CategoryItem> Items;
-            public readonly Boolean                     IsRoot;
+            public readonly Type                            UnderlyingType;
+            public readonly CategoryType                    Type;
+            public          IReadOnlyList<CategoryItem>     Items => _items;
+            public readonly Category                        Parent;
 
-            public Boolean  IsNone                      => UnderlyingType == null;
-
-            public Category(   CategoryType type, Type underlyingType, IReadOnlyList<CategoryItem> items, Boolean isRoot )
+            public Category(   CategoryType type, Type underlyingType, IEnumerable<CategoryItem> items, Category parent )
             {
                 UnderlyingType = underlyingType;
                 Type           = type;
-                Items          = items ?? Array.Empty<CategoryItem>();
-                IsRoot         = isRoot;
+                _items          = items != null ? items.ToArray() : Array.Empty<CategoryItem>();
+                Parent         = parent;
             }
 
             public Boolean IsCorrectValue( Int32 value )
             {
+                if ( Items.Count > 0 || Type == CategoryType.Enum )
+                    return Items.Any( i => i.Value == value ); 
+
                 return Type switch
                        {
                                CategoryType.Int8  => value is >= 0 and <= 255,
                                CategoryType.Int16 => value is >= 0 and <= 65535,
-                               CategoryType.Enum  => Items.Any( i => i.Value == value ),
                                _                  => throw new ArgumentOutOfRangeException()
                        };
             }
@@ -200,21 +210,30 @@ namespace GDDB.Editor
 
             public Category WithCategoryItem( CategoryItem categoryItem )
             {
-                var items     = Items.ToList();
-                var itemIndex = items.FindIndex( ci => ci.Value == categoryItem.Value );
+                var itemIndex = _items.FindIndex( ci => ci.Value == categoryItem.Value );
                 if ( itemIndex >= 0 )
                 {
-                    items.RemoveAt( itemIndex );
-                    items.Insert( itemIndex, categoryItem );
-                    return new Category( Type, UnderlyingType, items, IsRoot );
+                    var items = new CategoryItem[ _items.Length ];
+                    _items.CopyTo( items, 0 );
+                    items[  itemIndex ] = categoryItem;
+                    return new Category( Type, UnderlyingType, items, Parent );
                 }
 
                 throw new ArgumentOutOfRangeException( nameof(categoryItem) );
             } 
+
+            public Category WithCategoryItems( [NotNull] IEnumerable<CategoryItem> items )
+            {
+                if ( items == null ) throw new ArgumentNullException( nameof(items) );
+
+                return new Category( Type, UnderlyingType, items, Parent );
+            }
+
+            private readonly CategoryItem[] _items;
         }
 
         [DebuggerDisplay( "{Name} = {Value} => {Subcategory?.UnderlyingType.Name}" )]
-        public readonly struct CategoryItem
+        public readonly struct CategoryItem : IEquatable<CategoryItem>
         {
             public readonly String   Name;
             public readonly Int32    Value;
@@ -232,6 +251,30 @@ namespace GDDB.Editor
                 return new CategoryItem( Name, Value, childCategory );
             }
 
+            public bool Equals(CategoryItem other)
+            {
+                return Value == other.Value;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is CategoryItem other && Equals( other );
+            }
+
+            public override int GetHashCode( )
+            {
+                return Value;
+            }
+
+            public static bool operator ==(CategoryItem left, CategoryItem right)
+            {
+                return left.Equals( right );
+            }
+
+            public static bool operator !=(CategoryItem left, CategoryItem right)
+            {
+                return !left.Equals( right );
+            }
         }
 
         public enum CategoryType

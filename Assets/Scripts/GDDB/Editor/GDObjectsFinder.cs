@@ -48,7 +48,12 @@ namespace GDDB.Editor
             return false;
         }
 
-
+        /// <summary>
+        /// Find free 4th category for given type
+        /// </summary>
+        /// <param name="fromType"></param>
+        /// <param name="result"></param>
+        /// <returns></returns>
         public Boolean FindFreeType( GdType fromType, out GdType result )
         {
             var from  = fromType[3];
