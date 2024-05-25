@@ -187,27 +187,25 @@ namespace GDDB.Editor
                 
                 var distinctValues = filteredTypes.Select( t => t[ i ] ).Distinct().ToList();
 
-                var category       = categories[ i ];
-                GDTypeHierarchy.Category filteredCategory = null;
+                var  category         = categories[ i ];
+                List<GDTypeHierarchy.CategoryItem> filteredItems;
                 if ( category == null )
                 {
-                    filteredCategory = new GDTypeHierarchy.Category( GDTypeHierarchy.CategoryType.Int8, typeof(Byte),
-                            distinctValues.Select( v =>  new GDTypeHierarchy.CategoryItem( v.ToString(), v ) ),
-                            i > 0 ? result[ i - 1].Category : null );
+                    filteredItems = distinctValues.Select( v =>  new GDTypeHierarchy.CategoryItem( v.ToString(), v ) ).ToList();
                 }
                 else
                 {
-                    var filteredCategoryItems = category.Items.Where( ci => distinctValues.Contains( ci.Value ) );
-                    filteredCategory      = category.WithCategoryItems( filteredCategoryItems );
+                    filteredItems = category.Items.Where( ci => distinctValues.Contains( ci.Value ) ).ToList();
                 }
                 
-                var isError               = !filteredCategory.IsCorrectValue( type[ i ] );
-                var errorMessage          = isError ? $"Incorrect value {type[ i ]}" : String.Empty;
+                var isError      = filteredItems.All( ci => ci.Value != type[ i ] );
+                var errorMessage = isError ? $"Incorrect value {type[ i ]}" : String.Empty;
                 result.Add( new State.CategoryValue()
                             {
-                                    Category = filteredCategory,
-                                    Value = type[ i ],
-                                    IsError = isError,
+                                    Category     = category,
+                                    Value        = type[ i ],
+                                    ActualItems  = filteredItems,
+                                    IsError      = isError,
                                     ErrorMessage = errorMessage,
                             } );
             }
@@ -317,23 +315,20 @@ namespace GDDB.Editor
         {                 
             var gdType = new GdType( prop.intValue );
             var value = gdType[ index ];
+            var items = category.ActualItems ?? category.Category?.Items ?? Array.Empty<GDTypeHierarchy.CategoryItem>();
 
-            if ( category.Category != null && ( category.Category.Type == GDTypeHierarchy.CategoryType.Enum || category.Category.Items.Count > 0 ) )
+            //Several options - show popup
+            if ( items.Count > 0 )
             {
-                var namesList  = category.Category.Items.Select( i => i.Name ).ToList();
-                var oldIndex = category.Category.Items.FindIndex( i => i.Value == value );
-                if ( category.IsError )
-                {
-                    namesList.Add( category.ErrorMessage );
-                    oldIndex = namesList.Count - 1;
-                }
-                var names      = namesList.ToArray();
-                
+                var namesList = items.Select( i => i.Name ).ToList();
+                var oldIndex  = items.FindIndex( i => i.Value == value );
+                var names     = namesList.ToArray();
+
                 EditorGUI.BeginChangeCheck();
                 var newIndex = EditorGUI.Popup( categoryPosition, oldIndex, names, category.IsError ? Resources.PopupErrorStyle : EditorStyles.popup );
                 if ( EditorGUI.EndChangeCheck() )
                 {
-                    value = category.Category.Items[ newIndex ].Value;
+                    value           = category.Category.Items[ newIndex ].Value;
                     gdType[ index ] = value;
                     if ( gdType != default )
                     {
@@ -343,13 +338,30 @@ namespace GDDB.Editor
                     }
                 }
             }
-            else
+            else if ( category.Category?.Type == GDTypeHierarchy.CategoryType.Enum && items.Count == 0 )        //Enum but no options - show disabled enum
+            {
+                GUI.enabled = false;
+                EditorGUI.Popup( categoryPosition, 0, new [] { "No options" } );
+                GUI.enabled = true;
+            }
+            else if ( category.Category?.Type != GDTypeHierarchy.CategoryType.Enum && items.Count == 0 ) //No enum category and no options - show disabled text field
+            {
+                GUI.enabled = false;
+                EditorGUI.TextField( categoryPosition, "No options" );
+                GUI.enabled = true;
+            }
+            else    //Show num field 
             {
                 EditorGUI.BeginChangeCheck();
                 var newValue = EditorGUI.DelayedIntField( categoryPosition, value );
                 if ( EditorGUI.EndChangeCheck() )
                 {
-                    gdType[ index ] = category.Category.ClampValue( newValue );
+                    Int32 clampedValue = 0;
+                    if( category.Category != null )
+                        clampedValue = category.Category.ClampValue( newValue );
+                    else
+                        clampedValue = Math.Clamp( newValue, Byte.MinValue, Byte.MaxValue );
+                    gdType[ index ] = clampedValue;
                     if ( gdType != default )
                     {
                         prop.intValue   = (Int32)gdType.Data;
@@ -667,10 +679,11 @@ namespace GDDB.Editor
 
             public class CategoryValue
             {
-                public GDTypeHierarchy.Category Category;
-                public Int32                    Value;
-                public Boolean                  IsError;
-                public String                   ErrorMessage;
+                public GDTypeHierarchy.Category           Category;
+                public List<GDTypeHierarchy.CategoryItem> ActualItems;      //Or Category.Items if null
+                public Int32                              Value;
+                public Boolean                            IsError;
+                public String                             ErrorMessage;
             }
 
         }
