@@ -35,7 +35,7 @@ namespace GDDB.Editor
             _gdTypeStyles = UnityEngine.Resources.Load<StyleSheet>( "GDType" );
             _gdoFinder = new GDObjectsFinder();
 
-            Debug.Log( $"Constructor" );
+            //Debug.Log( $"Constructor" );
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label )
@@ -315,10 +315,18 @@ namespace GDDB.Editor
         {                 
             var gdType = new GdType( prop.intValue );
             var value = gdType[ index ];
-            var items = category.ActualItems ?? category.Category?.Items ?? Array.Empty<GDTypeHierarchy.CategoryItem>();
+            var items = category.ActualItems ?? category.Category?.Items;
 
-            //Several options - show popup
-            if ( items.Count > 0 )
+
+            if ( items == null )                 //Items null - use default category items range
+            {
+                if ( category.Category == null || category.Category.Type == GDTypeHierarchy.CategoryType.Int8 )
+                {
+
+                }
+            }
+
+            if ( items.Count > 0 )              //Several options - show popup
             {
                 var namesList = items.Select( i => i.Name ).ToList();
                 var oldIndex  = items.FindIndex( i => i.Value == value );
@@ -680,7 +688,7 @@ namespace GDDB.Editor
             public class CategoryValue
             {
                 public GDTypeHierarchy.Category           Category;
-                public List<GDTypeHierarchy.CategoryItem> ActualItems;      //Or Category.Items if null
+                public List<GDTypeHierarchy.CategoryItem> ActualItems;      //Has items - show popup, 0 items - show disabled field, null - use default items range from category
                 public Int32                              Value;
                 public Boolean                            IsError;
                 public String                             ErrorMessage;
