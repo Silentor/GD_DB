@@ -131,12 +131,9 @@ namespace GDDB.Editor
                 var parentValue        = attr.ParentValue;
                 var parentCategory     = GetOrBuildCategory( parentCategoryType );
                 var parentItem         = parentCategory.FindItem( parentValue );
-                _categories.Remove( parentCategory );
+                var result             = new Category( CategoryType.Enum, categoryEnum, items, parentCategory );
+                parentItem.Subcategory = result;
 
-                var result             = new Category( CategoryType.Enum, categoryEnum, items, parentCategory ); 
-                parentCategory         = parentCategory.WithCategoryItem( parentItem.WithSubcategory( result ) );
-
-                _categories.Add( parentCategory );
                 _categories.Add( result );
                 return result;
             }
@@ -161,16 +158,19 @@ namespace GDDB.Editor
         [DebuggerDisplay("{UnderlyingType.Name} ({Type}): {Items.Count}")]
         public class Category
         {
-            public readonly Type                            UnderlyingType;
-            public readonly CategoryType                    Type;
-            public          IReadOnlyList<CategoryItem>     Items => _items;
-            public readonly Category                        Parent;
+            public readonly Type               UnderlyingType;
+            public readonly CategoryType       Type;
+            public          List<CategoryItem> Items;  //Null - default values range
+            public readonly Category           Parent;
 
             public Category(   CategoryType type, Type underlyingType, IEnumerable<CategoryItem> items, Category parent )
             {
                 UnderlyingType = underlyingType;
                 Type           = type;
-                _items          = items != null ? items.ToArray() : Array.Empty<CategoryItem>();
+                if ( items != null )
+                {
+                    Items = new List<CategoryItem>( items );
+                }
                 Parent         = parent;
             }
 
@@ -208,36 +208,14 @@ namespace GDDB.Editor
                 return new CategoryItem( $"{value}", value );
             }
 
-            public Category WithCategoryItem( CategoryItem categoryItem )
-            {
-                var itemIndex = _items.FindIndex( ci => ci.Value == categoryItem.Value );
-                if ( itemIndex >= 0 )
-                {
-                    var items = new CategoryItem[ _items.Length ];
-                    _items.CopyTo( items, 0 );
-                    items[  itemIndex ] = categoryItem;
-                    return new Category( Type, UnderlyingType, items, Parent );
-                }
-
-                throw new ArgumentOutOfRangeException( nameof(categoryItem) );
-            } 
-
-            public Category WithCategoryItems( [NotNull] IEnumerable<CategoryItem> items )
-            {
-                if ( items == null ) throw new ArgumentNullException( nameof(items) );
-
-                return new Category( Type, UnderlyingType, items, Parent );
-            }
-
-            private readonly CategoryItem[] _items;
         }
 
         [DebuggerDisplay( "{Name} = {Value} => {Subcategory?.UnderlyingType.Name}" )]
-        public readonly struct CategoryItem : IEquatable<CategoryItem>
+        public class CategoryItem : IEquatable<CategoryItem>
         {
             public readonly String   Name;
             public readonly Int32    Value;
-            public readonly Category Subcategory;
+            public          Category Subcategory;
 
             public CategoryItem(String name, Int32 value, Category subcategory = default )
             {
@@ -245,15 +223,10 @@ namespace GDDB.Editor
                 Value       = value;
                 Subcategory = subcategory;
             }
-
-            internal CategoryItem WithSubcategory( Category childCategory )
-            {
-                return new CategoryItem( Name, Value, childCategory );
-            }
-
+            
             public bool Equals(CategoryItem other)
             {
-                return Value == other.Value;
+                return Value == other?.Value;
             }
 
             public override bool Equals(object obj)

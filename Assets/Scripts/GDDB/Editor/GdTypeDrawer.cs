@@ -318,47 +318,41 @@ namespace GDDB.Editor
             var items = category.ActualItems ?? category.Category?.Items;
 
 
-            if ( items == null )                 //Items null - use default category items range
+            if ( items == null )                 //Items null - use category default values
             {
                 if ( category.Category == null || category.Category.Type == GDTypeHierarchy.CategoryType.Int8 )
                 {
-
+                    DrawIntField( );
                 }
-            }
-
-            if ( items.Count > 0 )              //Several options - show popup
-            {
-                var namesList = items.Select( i => i.Name ).ToList();
-                var oldIndex  = items.FindIndex( i => i.Value == value );
-                var names     = namesList.ToArray();
-
-                EditorGUI.BeginChangeCheck();
-                var newIndex = EditorGUI.Popup( categoryPosition, oldIndex, names, category.IsError ? Resources.PopupErrorStyle : EditorStyles.popup );
-                if ( EditorGUI.EndChangeCheck() )
+                else
                 {
-                    value           = category.Category.Items[ newIndex ].Value;
-                    gdType[ index ] = value;
-                    if ( gdType != default )
-                    {
-                        prop.intValue = (Int32)gdType.Data;
-                        prop.serializedObject.ApplyModifiedProperties();
-                        _state = null;
-                    }
+                    DrawEmptyPopupField();
                 }
             }
-            else if ( category.Category?.Type == GDTypeHierarchy.CategoryType.Enum && items.Count == 0 )        //Enum but no options - show disabled enum
+            else if ( items.Count == 0 )              //Several options - show popup
             {
-                GUI.enabled = false;
-                EditorGUI.Popup( categoryPosition, 0, new [] { "No options" } );
-                GUI.enabled = true;
+                if ( category.Category == null || category.Category.Type == GDTypeHierarchy.CategoryType.Int8 )
+                {
+                    DrawDisabledIntField();
+                }
+                else
+                {
+                    DrawEmptyPopupField();
+                }
             }
-            else if ( category.Category?.Type != GDTypeHierarchy.CategoryType.Enum && items.Count == 0 ) //No enum category and no options - show disabled text field
+            else
             {
-                GUI.enabled = false;
-                EditorGUI.TextField( categoryPosition, "No options" );
-                GUI.enabled = true;
+                if ( category.Category == null || category.Category.Type == GDTypeHierarchy.CategoryType.Int8 )
+                {
+                    DrawPopupField();   //Int but with options list (gd reference)
+                }
+                else
+                {
+                    DrawPopupField();
+                }
             }
-            else    //Show num field 
+            
+            void DrawIntField( )
             {
                 EditorGUI.BeginChangeCheck();
                 var newValue = EditorGUI.DelayedIntField( categoryPosition, value );
@@ -377,6 +371,41 @@ namespace GDDB.Editor
                         _state = null;
                     }
                 }
+            }
+
+            void DrawPopupField( )
+            {
+                var namesList = items.Select( i => i.Name ).ToList();
+                var oldIndex  = items.FindIndex( i => i.Value == value );
+                var names     = namesList.ToArray();
+
+                EditorGUI.BeginChangeCheck();
+                var newIndex = EditorGUI.Popup( categoryPosition, oldIndex, names, category.IsError ? Resources.PopupErrorStyle : EditorStyles.popup );
+                if ( EditorGUI.EndChangeCheck() )
+                {
+                    value           = items[ newIndex ].Value;
+                    gdType[ index ] = value;
+                    if ( gdType != default )
+                    {
+                        prop.intValue = (Int32)gdType.Data;
+                        prop.serializedObject.ApplyModifiedProperties();
+                        _state = null;
+                    }
+                }
+            }
+
+            void DrawEmptyPopupField( )
+            {
+                GUI.enabled = false;
+                EditorGUI.Popup( categoryPosition, 0, new [] { "No options" } );
+                GUI.enabled = true;
+            }
+
+            void DrawDisabledIntField( )
+            {
+                GUI.enabled = false;
+                EditorGUI.TextField( categoryPosition, "No options" );
+                GUI.enabled = true;
             }
         } 
 
