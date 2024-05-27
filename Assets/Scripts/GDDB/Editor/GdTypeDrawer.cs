@@ -197,7 +197,7 @@ namespace GDDB.Editor
                 List<GDTypeHierarchy.CategoryItem> filteredItems;
                 if ( category == null )
                 {
-                    filteredItems = distinctValues.Select( v =>  new GDTypeHierarchy.CategoryItem( v.ToString(), v ) ).ToList();
+                    filteredItems = distinctValues.OrderBy( v => v ).Select( v =>  new GDTypeHierarchy.CategoryItem( v.ToString(), v ) ).ToList();
                 }
                 else
                 {
@@ -252,6 +252,8 @@ namespace GDDB.Editor
 
         private void OpenContextMenu( Action updateState )
         {
+            var gdType = new GdType( _dataProp.intValue );
+
             var menu = new GenericMenu();
             menu.AddItem( new GUIContent( "Copy" ), false, () => EditorGUIUtility.systemCopyBuffer = _dataProp.intValue.ToString() );
             if( Int32.TryParse( EditorGUIUtility.systemCopyBuffer, out var gdTypeRawValue ) )
@@ -268,6 +270,16 @@ namespace GDDB.Editor
             }
             else
                 menu.AddDisabledItem( new GUIContent( "Paste" ), false );
+
+            if ( gdType != default )
+            {
+                menu.AddItem( new GUIContent("Ping GD asset"),      false, () =>
+                {
+                    if( _gdoFinder.GDTypedObjects.TryFirst( g => g.Type == gdType, out var gdObject ) )
+                        EditorGUIUtility.PingObject( gdObject );
+                } );
+            }
+
             menu.AddItem( new GUIContent("Edit as Categories"), true,  null );
             menu.AddItem( new GUIContent("Edit as decimal"),    false, null );
             menu.AddItem( new GUIContent("Edit as hex"),        false, null );     
