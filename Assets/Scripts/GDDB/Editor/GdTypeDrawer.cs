@@ -134,6 +134,12 @@ namespace GDDB.Editor
             var filteredCategories = GetExistCategoryItems( categories, gdType );
             result.Categories.AddRange( filteredCategories );
 
+            if ( filteredCategories.TryFirst( c => c.IsError, out var errorCategory ) )
+            {
+                result.IsError = true;
+                result.ErrorMessage = errorCategory.ErrorMessage;
+            }
+
             return result;
         }
 
@@ -199,6 +205,10 @@ namespace GDDB.Editor
                 }
                 
                 var isError      = filteredItems.All( ci => ci.Value != type[ i ] );
+                if ( isError )
+                {
+                    filteredItems.Add( new GDTypeHierarchy.CategoryItem( $"Incorrect value {type[ i ]}", type[ i ] ) );
+                }
                 var errorMessage = isError ? $"Incorrect value {type[ i ]}" : String.Empty;
                 result.Add( new State.CategoryValue()
                             {
@@ -753,8 +763,8 @@ namespace GDDB.Editor
                                                                     };
             public static readonly GUIStyle PopupErrorStyle = new ( EditorStyles.popup )
                                                                     {
-                                                                            normal = new GUIStyleState(){background = SolidRedTexture },
-                                                                            hover = new GUIStyleState(){background = SolidRedTexture },
+                                                                            normal = new GUIStyleState(){ textColor = Color.red },
+                                                                            hover = new GUIStyleState(){ textColor = Color.red },
                                                                     };
 
             public static readonly Sprite AssignTypeSprite  = Sprite.Create( AssignTypeIcon, new Rect( 0, 0, AssignTypeIcon.width, AssignTypeIcon.height ), new Vector2( 0.5f, 0.5f ) );
