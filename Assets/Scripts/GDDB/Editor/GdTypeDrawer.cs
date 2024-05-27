@@ -48,7 +48,7 @@ namespace GDDB.Editor
             if ( _state == null )
                 _state = CreateState( label.text, _dataProp );
 
-            DrawStateIMGUI( position, _dataProp, _state );
+            DrawStateIMGUI( position, label, _dataProp, _state );
 
         }
 
@@ -269,11 +269,16 @@ namespace GDDB.Editor
 #endregion
 
 #region IMGUI
+        
+       private void DrawStateIMGUI( Rect position, GUIContent label, SerializedProperty prop, State state )
+       {
+           label = EditorGUI.BeginProperty( position, label, prop );
 
-       private void DrawStateIMGUI( Rect position, SerializedProperty prop, State state )
-        {
+           if ( state.IsError )
+               label.tooltip = state.ErrorMessage;
+
             //Draw label
-            position = EditorGUI.PrefixLabel( position, new GUIContent( state.Label, state.IsError ? state.ErrorMessage : String.Empty ), state.IsError ? Resources.PrefixLabelErrorStyle : Resources.PrefixLabelStyle );
+            position = EditorGUI.PrefixLabel( position, label, state.IsError ? Resources.PrefixLabelErrorStyle : Resources.PrefixLabelStyle );
 
             var toolbarWidth = 20 * state.Buttons.Count;
             var toolbarPosition = new Rect( position.x + position.width - toolbarWidth, position.y, toolbarWidth, position.height );
@@ -309,6 +314,7 @@ namespace GDDB.Editor
                 GUI.EndGroup();
             }
             
+            EditorGUI.EndProperty();
         }
 
         private void DrawCategoryIMGUI( Rect categoryPosition, SerializedProperty prop, State.CategoryValue category, Int32 index )

@@ -6,6 +6,7 @@ namespace GDDB_User
 {
     public class Runner : MonoBehaviour
     {
+        public Int32  TestField;
         public GdType TestType;
 
         private void Awake( )
