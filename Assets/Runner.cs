@@ -11,7 +11,7 @@ namespace GDDB_User
         public GdType TestType;
 
         [GdTypeFilter(MainCategory.Mobs, EMobs.Elves)]
-        [GdTypeFilter(MainCategory.Game)]       
+        [GdTypeFilter(MainCategory.Game)]                      
         public GdType TestTypeRestrictedMobs;
 
         private void Awake( )

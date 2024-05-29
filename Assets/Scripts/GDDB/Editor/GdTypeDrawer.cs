@@ -133,7 +133,7 @@ namespace GDDB.Editor
         
             var categories = _typeHierarchy.GetCategories( gdType );
             var existCategoryValues = GetExistCategoryItems( categories, gdType );
-            var filteredCategoryValues = GetFilteredItems( existCategoryValues );
+            var filteredCategoryValues = GetFilteredItems( existCategoryValues, gdType );
 
             var categoryValues = new List<State.CategoryValue>( filteredCategoryValues.Count );
             for ( var i = 0; i < filteredCategoryValues.Count; i++ )
@@ -242,24 +242,37 @@ namespace GDDB.Editor
             return result;
         }
 
-        private List<List<GDTypeHierarchy.CategoryItem>> GetFilteredItems( List<List<GDTypeHierarchy.CategoryItem>> categories )
+        private List<List<GDTypeHierarchy.CategoryItem>> GetFilteredItems( List<List<GDTypeHierarchy.CategoryItem>> categories, GdType typeValue )
         {
-            var filterAttributes = fieldInfo.GetCustomAttributes<GdTypeFilterAttribute>().ToArray();
+            var filterAttributes = fieldInfo.GetCustomAttributes<GdTypeFilterAttribute>().ToList();
 
-            if( filterAttributes.Length == 0 )
+            if( filterAttributes.Count == 0 )
                 return categories;
 
             var result = new List<List<GDTypeHierarchy.CategoryItem>>( categories.Count );
             for ( var i = 0; i < categories.Count; i++ )
             {
                 var categoryItems = new List<GDTypeHierarchy.CategoryItem>();
-                foreach ( var filterAttribute in filterAttributes )
+                for ( var j = 0; j < filterAttributes.Count; j++ )
                 {
+                    var filterAttribute = filterAttributes[ j ];
+
+                    if ( i > 0 && i - 1 < filterAttribute.FilterCategories.Length )            //Check is filter applicable
+                    {
+                        if ( typeValue[ i - 1 ] != filterAttribute.FilterCategories[ i - 1 ] )         //todo Get filter categories and compare categories
+                        {
+                            filterAttributes.RemoveAt( j );
+                            j--;
+                            continue;
+                        }
+                    }
+                    
                     if ( filterAttribute.FilterCategories.TryElementAt( i, out var filterValue ) )
                         categoryItems.AddRange( categories[ i ].Where( c => c.Value == filterValue ) );
                     else
-                        categoryItems.AddRange( categories[i] );
+                        categoryItems.AddRange( categories[ i ] );
                 }
+
                 result.Add( categoryItems );
             }
 
