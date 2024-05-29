@@ -1,24 +1,12 @@
 ﻿using System;
+using System.Linq;
+using UnityEngine.Animations;
 
 namespace GDDB
 {
-    [AttributeUsage(AttributeTargets.Enum)]
-    public class MainCategoryAttribute : System.Attribute
-    {
-        
-    }
-
-    [AttributeUsage(AttributeTargets.Field)]
-    public class SubcategoryAttribute : System.Attribute
-    {
-        public Type SubcategoryEnum { get; }
-
-        public SubcategoryAttribute( Type subcategoryEnum )
-        {
-            SubcategoryEnum = subcategoryEnum;
-        }
-    }
-
+    /// <summary>
+    /// To make gd types hierarchy
+    /// </summary>
     [AttributeUsage(AttributeTargets.Enum)]
     public class CategoryAttribute : System.Attribute
     {
@@ -36,12 +24,32 @@ namespace GDDB
             ParentValue = parentValue;
         }
 
+        public CategoryAttribute( Object parentEnumValue )
+        {
+            ParentCategory = parentEnumValue.GetType();
+            ParentValue    = (Int32)parentEnumValue;
+        }
+
         /// <summary>
         /// Main category
         /// </summary>
         public CategoryAttribute(  )
         {
 
+        }
+    }
+
+    /// <summary>
+    /// To restrict gd type value to specific categories 
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Field, AllowMultiple = true )]
+    public class GdTypeFilterAttribute : Attribute
+    {
+        public readonly Int32[] FilterCategories;
+
+        public GdTypeFilterAttribute( params Object[] filters )
+        {
+            FilterCategories = filters.Take( 4 ).Cast<Int32>().ToArray();
         }
     }
 

@@ -31,7 +31,7 @@ namespace TestGdDb
         Bucks
     }
 
-    [Category( typeof(MainCategory), (Int32)MainCategory.Mobs)]
+    [Category( MainCategory.Mobs )]
     public enum EMobs
     {
         Humans,
