@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using JetBrains.Annotations;
 using UnityEditor;
 using UnityEngine;
@@ -131,10 +132,35 @@ namespace GDDB.Editor
                          };
         
             var categories = _typeHierarchy.GetCategories( gdType );
-            var filteredCategories = GetExistCategoryItems( categories, gdType );
-            result.Categories.AddRange( filteredCategories );
+            var existCategoryValues = GetExistCategoryItems( categories, gdType );
+            var filteredCategoryValues = GetFilteredItems( existCategoryValues );
 
-            if ( filteredCategories.TryFirst( c => c.IsError, out var errorCategory ) )
+            var categoryValues = new List<State.CategoryValue>( filteredCategoryValues.Count );
+            for ( var i = 0; i < filteredCategoryValues.Count; i++ )
+            {
+                var value    = gdType[ i ];
+                var isError  = filteredCategoryValues[ i ].All( ci => ci.Value != value );
+                var errorMsg = String.Empty;
+                if ( isError )
+                {
+                    errorMsg      = categories
+                           .TryElementAt( i, out var category ) && category?.Type == GDTypeHierarchy.CategoryType.Enum && category.Items.TryFirst( ci => ci.Value == value, out var catItem ) 
+                                ? $"Invalid value {catItem.Name}" 
+                                : $"Invalid value {value}"; 
+                    filteredCategoryValues[ i ].Add( new GDTypeHierarchy.CategoryItem( errorMsg, value ) );
+                }
+                categoryValues.Add( new State.CategoryValue(  )
+                                      {
+                                              ActualItems = filteredCategoryValues[ i ],
+                                              Category = categories[ i ],
+                                              Value = value,
+                                              IsError = isError,
+                                              ErrorMessage = errorMsg,
+                                      } );
+            }
+            result.Categories.AddRange( categoryValues );
+
+            if ( result.Categories.TryFirst( c => c.IsError, out var errorCategory ) )
             {
                 result.IsError = true;
                 result.ErrorMessage = errorCategory.ErrorMessage;
@@ -180,18 +206,18 @@ namespace GDDB.Editor
                    };
         }
 
-        private List<State.CategoryValue> GetExistCategoryItems( IReadOnlyList<GDTypeHierarchy.Category> categories, GdType type )
+        private List<List<GDTypeHierarchy.CategoryItem>> GetExistCategoryItems( IReadOnlyList<GDTypeHierarchy.Category> categories, GdType type )
         {
-            var result = new List<State.CategoryValue>();
-            var filteredTypes = _gdoFinder.GDTypedObjects.Select( g => g.Type ).ToList();
+            var result     = new List<List<GDTypeHierarchy.CategoryItem>>();
+            var existTypes = _gdoFinder.GDTypedObjects.Select( g => g.Type ).ToList();
             for ( var i = 0; i < categories.Count; i++ )
             {
                 if( i > 0 )
                 {
-                    filteredTypes.RemoveAll( t => t[ i - 1 ] != type[ i - 1 ] );
+                    existTypes.RemoveAll( t => t[ i - 1 ] != type[ i - 1 ] );
                 }
                 
-                var distinctValues = filteredTypes.Select( t => t[ i ] ).Distinct().ToList();
+                var distinctValues = existTypes.Select( t => t[ i ] ).Distinct().ToList();
 
                 var  category         = categories[ i ];
                 List<GDTypeHierarchy.CategoryItem> filteredItems;
@@ -204,20 +230,37 @@ namespace GDDB.Editor
                     filteredItems = category.Items.Where( ci => distinctValues.Contains( ci.Value ) ).ToList();
                 }
                 
-                var isError      = filteredItems.All( ci => ci.Value != type[ i ] );
-                if ( isError )
+                // var isError      = filteredItems.All( ci => ci.Value != type[ i ] );
+                // if ( isError )
+                // {
+                //     filteredItems.Add( new GDTypeHierarchy.CategoryItem( $"Incorrect value {type[ i ]}", type[ i ] ) );
+                // }
+                //var errorMessage = isError ? $"Incorrect value {type[ i ]}" : String.Empty;
+                result.Add( filteredItems);
+            }
+
+            return result;
+        }
+
+        private List<List<GDTypeHierarchy.CategoryItem>> GetFilteredItems( List<List<GDTypeHierarchy.CategoryItem>> categories )
+        {
+            var filterAttributes = fieldInfo.GetCustomAttributes<GdTypeFilterAttribute>().ToArray();
+
+            if( filterAttributes.Length == 0 )
+                return categories;
+
+            var result = new List<List<GDTypeHierarchy.CategoryItem>>( categories.Count );
+            for ( var i = 0; i < categories.Count; i++ )
+            {
+                var categoryItems = new List<GDTypeHierarchy.CategoryItem>();
+                foreach ( var filterAttribute in filterAttributes )
                 {
-                    filteredItems.Add( new GDTypeHierarchy.CategoryItem( $"Incorrect value {type[ i ]}", type[ i ] ) );
+                    if ( filterAttribute.FilterCategories.TryElementAt( i, out var filterValue ) )
+                        categoryItems.AddRange( categories[ i ].Where( c => c.Value == filterValue ) );
+                    else
+                        categoryItems.AddRange( categories[i] );
                 }
-                var errorMessage = isError ? $"Incorrect value {type[ i ]}" : String.Empty;
-                result.Add( new State.CategoryValue()
-                            {
-                                    Category     = category,
-                                    Value        = type[ i ],
-                                    ActualItems  = filteredItems,
-                                    IsError      = isError,
-                                    ErrorMessage = errorMessage,
-                            } );
+                result.Add( categoryItems );
             }
 
             return result;
@@ -342,7 +385,7 @@ namespace GDDB.Editor
         private void DrawCategoryIMGUI( Rect categoryPosition, SerializedProperty prop, State.CategoryValue category, Int32 index )
         {                 
             var gdType = new GdType( prop.intValue );
-            var value = gdType[ index ];
+            var value = category.Value;
             var items = category.ActualItems ?? category.Category?.Items;
 
 
@@ -775,8 +818,9 @@ namespace GDDB.Editor
                                                                     };
             public static readonly GUIStyle PopupErrorStyle = new ( EditorStyles.popup )
                                                                     {
-                                                                            normal = new GUIStyleState(){ textColor = Color.red },
-                                                                            hover = new GUIStyleState(){ textColor = Color.red },
+                                                                            normal  = new GUIStyleState(){ textColor = Color.red },
+                                                                            hover   = new GUIStyleState(){ textColor = Color.red },
+                                                                            focused = new GUIStyleState(){ textColor = Color.red },
                                                                     };
 
             public static readonly Sprite AssignTypeSprite  = Sprite.Create( AssignTypeIcon, new Rect( 0, 0, AssignTypeIcon.width, AssignTypeIcon.height ), new Vector2( 0.5f, 0.5f ) );
