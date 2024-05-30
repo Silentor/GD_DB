@@ -13,7 +13,7 @@ namespace GDDB
             get
             {
                 CheckIndex( categoryIndex );
-                return (Int32)((Data >> ((3 - categoryIndex) * 8)) & 0xFF);   //Mask proper byte of Int32
+                return (Int32)((Data >> ((3 - categoryIndex) * 8)) & 0xFF);     //Mask proper byte of Int32
             }
             set
             {

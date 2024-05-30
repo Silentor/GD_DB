@@ -600,7 +600,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: TestType.Data
-      value: 16777219
+      value: 16843720
       objectReference: {fileID: 0}
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: TestType2.Data
@@ -608,7 +608,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: TestTypeRestrictedMobs.Data
-      value: 16908289
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6999935956975957650, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: m_Name

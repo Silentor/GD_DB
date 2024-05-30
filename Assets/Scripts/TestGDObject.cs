@@ -6,12 +6,12 @@ namespace GDDB
     {
         private void Awake( )
         {
-            Debug.Log( "Awake" );
+            //Debug.Log( "Awake" );
         }
 
         private void OnEnable( )
         {
-            Debug.Log( "OnEnable" );
+            //Debug.Log( "OnEnable" );
         }
     }
 }

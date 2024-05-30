@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using JetBrains.Annotations;
@@ -27,8 +28,8 @@ namespace GDDB.Editor
         
         private readonly GDObjectsFinder          _gdoFinder;
 
-        private State _state;
-
+        private State  _state;
+        private UInt32? _lastGdTypeValue;
 
         public GdTypeDrawer( )
         {
@@ -43,21 +44,26 @@ namespace GDDB.Editor
         {
             _serializedObject = property.serializedObject;
             _serializedObject.Update();
-
-            //base.OnGUI( position, property, label );
+            
             _dataProp = property.FindPropertyRelative( nameof(GdType.Data) );
+
+            if( _lastGdTypeValue != _dataProp.uintValue )
+            {
+                _state = null;
+                _lastGdTypeValue = _dataProp.uintValue;
+            }
+
             if ( _state == null )
                 _state = CreateState( label.text, _dataProp );
 
             DrawStateIMGUI( position, label, _dataProp, _state );
-
         }
 
 #region State
 
         private State CreateState( String label, SerializedProperty gdTypeProp )
         {
-            var gdType = new GdType( gdTypeProp.intValue );
+            var gdType = new GdType( gdTypeProp.uintValue );
             if ( gdType == default )
                 return CreateNoneTypeState( label, gdTypeProp );
             else
@@ -279,48 +285,44 @@ namespace GDDB.Editor
             return result;
         }
 
-        private void AssignType( Action updateState )
+        private void AssignType( )
         {
             _serializedObject.Update();
-            _dataProp.intValue = 1;
+            _dataProp.uintValue = 1;
             _serializedObject.ApplyModifiedProperties();
-            updateState();
         }
 
-        private void ClearType( Action updateState )
+        private void ClearType(  )
         {
             _serializedObject.Update();
-            _dataProp.intValue = 0;
+            _dataProp.uintValue = 0;
             _serializedObject.ApplyModifiedProperties();
-            updateState();
         }
 
-        private void FixType( Action updateState )
+        private void FixType(  )
         {
             _serializedObject.Update();
-            if ( _gdoFinder.FindFreeType( new GdType( _dataProp.intValue ), out var newType ) ) 
+            if ( _gdoFinder.FindFreeType( new GdType( _dataProp.uintValue ), out var newType ) ) 
             {
-                _dataProp.intValue = (Int32)newType.Data;
+                _dataProp.uintValue = newType.Data;
                 _serializedObject.ApplyModifiedProperties();
-                updateState();
             }
         }
 
-        private void OpenContextMenu( Action updateState )
+        private void OpenContextMenu( )
         {
-            var gdType = new GdType( _dataProp.intValue );
+            var gdType = new GdType( _dataProp.uintValue );
 
             var menu = new GenericMenu();
-            menu.AddItem( new GUIContent( "Copy" ), false, () => EditorGUIUtility.systemCopyBuffer = _dataProp.intValue.ToString() );
-            if( Int32.TryParse( EditorGUIUtility.systemCopyBuffer, out var gdTypeRawValue ) )
+            menu.AddItem( new GUIContent( "Copy" ), false, () => EditorGUIUtility.systemCopyBuffer = _dataProp.uintValue.ToString() );
+            if( UInt32.TryParse( EditorGUIUtility.systemCopyBuffer, out var gdTypeRawValue ) )
             {
                 var typeString = _typeHierarchy.GetTypeString( new GdType( gdTypeRawValue ) );
                 menu.AddItem( new GUIContent( $"Paste {typeString}" ), false, () =>
                 {
                     _serializedObject.Update();
-                    _dataProp.intValue = gdTypeRawValue;
+                    _dataProp.uintValue = gdTypeRawValue;
                     _serializedObject.ApplyModifiedProperties();
-                    updateState(); 
                 } );
 
             }
@@ -336,13 +338,23 @@ namespace GDDB.Editor
                 } );
             }
 
-            menu.AddItem( new GUIContent("Edit as Categories"), true,  null );
-            menu.AddItem( new GUIContent("Edit as decimal"),    false, null );
-            menu.AddItem( new GUIContent("Edit as hex"),        false, null );     
+            menu.AddItem( new GUIContent("Edit as Categories"), EditMode == EEditMode.Categories, () => SetEditMode(EEditMode.Categories) );
+            menu.AddItem( new GUIContent("Edit as raw"),        EditMode == EEditMode.Raw,        () => SetEditMode(EEditMode.Raw) );
 
             menu.ShowAsContext();
         }
 
+        private void SetEditMode( EEditMode mode )
+        {
+            EditMode = mode;
+            //Repaint property for UITookit mode but not for IMGUI
+        }
+
+        public EEditMode EditMode
+        {
+            get => (EEditMode)EditorPrefs.GetInt( "GDDB.Editor.GdTypeDrawer", 0 );
+            set => EditorPrefs.SetInt( "GDDB.Editor.GdTypeDrawer", (Int32)value );
+        }
 
 #endregion
 
@@ -353,7 +365,11 @@ namespace GDDB.Editor
            label = EditorGUI.BeginProperty( position, label, prop );
 
            if ( state.IsError )
+           {
                label.tooltip = state.ErrorMessage;
+               label.text    = $"{label.text} ({state.ErrorMessage})";
+               label.image   = Resources.ErrorIcon;
+           }
 
             //Draw label
             position = EditorGUI.PrefixLabel( position, label, state.IsError ? Resources.PrefixLabelErrorStyle : Resources.PrefixLabelStyle );
@@ -363,18 +379,88 @@ namespace GDDB.Editor
             var typeWidth = position.width - toolbarWidth;
             var typePosition = new Rect( position.x, position.y, typeWidth, position.height );
 
-            //Draw Categories or value
-            if( state.Value != null )
-                GUI.Label( typePosition, state.Value );
-            if ( state.Categories.Count > 0 )
+            
+            switch ( EditMode )
             {
-                var categoryWidth    = typeWidth / state.Categories.Count;
-                var categoryPosition = new Rect( position.x, position.y, categoryWidth, position.height );
-                for ( var i = 0; i < state.Categories.Count(); i++ )
+                //Draw Categories or special value
+                case EEditMode.Categories:
                 {
-                    DrawCategoryIMGUI( categoryPosition, prop, state.Categories[ i ], i );
-                    categoryPosition.x += categoryWidth;                    
+                    if( state.Value != null )
+                        GUI.Label( typePosition, state.Value );
+
+                    if ( state.Categories.Count > 0 )
+                    {
+                        var categoryWidth    = typeWidth / state.Categories.Count;
+                        var categoryPosition = new Rect( position.x, position.y, categoryWidth, position.height );
+                        for ( var i = 0; i < state.Categories.Count(); i++ )
+                        {
+                            DrawCategoryIMGUI( categoryPosition, prop, state.Categories[ i ], i );
+                            categoryPosition.x += categoryWidth;
+                        }
+                    }
+
+                    break;
                 }
+
+                //Draw developer mode hex/dec value fields
+                case EEditMode.Raw:
+                {
+                    //Hex mode
+                    var rawFieldPosition = new Rect( typePosition.x, typePosition.y, 80, typePosition.height );
+                    var oldValueStr = prop.uintValue.ToString( "X", Resources.NoGroupSeparatorFormat );
+                    EditorGUI.BeginChangeCheck();
+                    var newValueStr = GUI.TextField( rawFieldPosition, oldValueStr, 8, state.IsError ? Resources.TextFieldErrorStyle : GUI.skin.textField );
+                    if ( EditorGUI.EndChangeCheck() && UInt32.TryParse( newValueStr, NumberStyles.HexNumber, Resources.NoGroupSeparatorFormat, out var newValue ) )
+                    {
+                        prop.uintValue = newValue;
+                        prop.serializedObject.ApplyModifiedProperties();
+                    }
+                    rawFieldPosition.x += rawFieldPosition.width + 2;
+                    GUI.Label( rawFieldPosition, "hex" );
+
+                    //Dec mode
+                    rawFieldPosition.x += 30;
+                    rawFieldPosition.width = 100;
+                    oldValueStr        =  prop.uintValue.ToString( "N0", Resources.NoGroupSeparatorFormat );
+                    EditorGUI.BeginChangeCheck();
+                    newValueStr = GUI.TextField( rawFieldPosition, oldValueStr, 13, state.IsError ? Resources.TextFieldErrorStyle : GUI.skin.textField );
+                    if ( EditorGUI.EndChangeCheck() )
+                    {
+                        if ( String.IsNullOrWhiteSpace( newValueStr ) )
+                            newValueStr = "0";
+                        if ( UInt32.TryParse( newValueStr, NumberStyles.Integer, Resources.NoGroupSeparatorFormat, out newValue ) )
+                        {
+                            prop.uintValue = newValue;
+                            prop.serializedObject.ApplyModifiedProperties();
+                        }
+                    }
+                    rawFieldPosition.x += rawFieldPosition.width + 2;
+                    GUI.Label( rawFieldPosition, "dec" );
+
+                    //Dec mode by category
+                    rawFieldPosition.x += 30;
+                    rawFieldPosition.width = Math.Max( toolbarPosition.x - rawFieldPosition.x - 30, 0 );
+                    EditorGUI.BeginChangeCheck();
+                    var values = new Int32[]{state.Type[0], state.Type[1], state.Type[2], state.Type[3] };
+                    EditorGUI.MultiIntField( rawFieldPosition, Resources.ComponentLabels, values );
+                    if ( EditorGUI.EndChangeCheck() )
+                    {
+                        var newType = new GdType
+                                      {
+                                              [ 0 ] = values[0],
+                                              [ 1 ] = values[1],
+                                              [ 2 ] = values[2],
+                                              [ 3 ] = values[3]
+                                      };
+                        prop.uintValue = newType.Data;
+                        prop.serializedObject.ApplyModifiedProperties();
+                    }
+                    rawFieldPosition.x += rawFieldPosition.width + 2;
+                    GUI.Label( rawFieldPosition, "dec" );
+
+                    break;
+                }
+
             }
 
             if( state.Buttons.Count > 0 )
@@ -386,7 +472,7 @@ namespace GDDB.Editor
                     var button = state.Buttons[ i ];
                     if ( GUI.Button( new Rect( i * 20, 0, 20, 20 ), new GUIContent(String.Empty, GetButtonIcon( button.Type ), GetButtonTooltip( button.Type )), Resources.ToolbarButtonStyle ) )
                     {
-                        button.Click( () => _state = null );
+                        button.Click( );
                     }
                 }
                 GUI.EndGroup();
@@ -397,7 +483,7 @@ namespace GDDB.Editor
 
         private void DrawCategoryIMGUI( Rect categoryPosition, SerializedProperty prop, State.CategoryValue category, Int32 index )
         {                 
-            var gdType = new GdType( prop.intValue );
+            var gdType = new GdType( prop.uintValue );
             var value = category.Value;
             var items = category.ActualItems ?? category.Category?.Items;
 
@@ -450,9 +536,8 @@ namespace GDDB.Editor
                     gdType[ index ] = clampedValue;
                     if ( gdType != default )
                     {
-                        prop.intValue   = (Int32)gdType.Data;
+                        prop.uintValue   = gdType.Data;
                         prop.serializedObject.ApplyModifiedProperties();
-                        _state = null;
                     }
                 }
             }
@@ -471,9 +556,8 @@ namespace GDDB.Editor
                     gdType[ index ] = value;
                     if ( gdType != default )
                     {
-                        prop.intValue = (Int32)gdType.Data;
+                        prop.uintValue = gdType.Data;
                         prop.serializedObject.ApplyModifiedProperties();
-                        _state = null;
                     }
                 }
             }
@@ -582,7 +666,7 @@ namespace GDDB.Editor
             gdType.Clear();
             toolbar.Clear();
 
-            if( _dataProp.intValue == 0 )
+            if( _dataProp.uintValue == 0 )
             {
                 CreateNoneType( root );
             }
@@ -591,7 +675,7 @@ namespace GDDB.Editor
                 CreateWidgets( root, 0, _typeHierarchy.Root );
 
                 var menuBtn = new Button( );
-                menuBtn.clicked += () => OpenContextMenu( null /*root*/ );
+                menuBtn.clicked += OpenContextMenu;
                 menuBtn.text                  = "";
                 menuBtn.tabIndex              = 2;
                 menuBtn.style.backgroundImage = new StyleBackground( UnityEngine.Resources.Load<Sprite>( "menu_24dp" ) );
@@ -599,7 +683,7 @@ namespace GDDB.Editor
                 menuBtn.AddToClassList( "toolbar-square-button" );
                 toolbar.Add( menuBtn );
 
-                var clearTypeBtn = new Button( () => ClearType( null/*root*/) );
+                var clearTypeBtn = new Button( ClearType );
                 clearTypeBtn.text                  = "";
                 clearTypeBtn.tabIndex              = 10;
                 clearTypeBtn.style.backgroundImage = new StyleBackground( UnityEngine.Resources.Load<Sprite>( "delete_forever_24dp" ) );
@@ -639,7 +723,7 @@ namespace GDDB.Editor
             while ( gdType.childCount > index )
                 gdType.RemoveAt( index );
 
-            var gdTypeValue = new GdType( _dataProp.intValue );
+            var gdTypeValue = new GdType( _dataProp.uintValue );
             var widget = CreateCategoryField( root, category, gdTypeValue[ index ], index );
             gdType.Add( widget );
             CheckIncorrectType( gdTypeValue, widget, index );
@@ -693,9 +777,9 @@ namespace GDDB.Editor
             void OnChangeEnumWidget( ChangeEvent<Int32> evt )
             {
                 _serializedObject.Update();
-                var gdType = new GdType( _dataProp.intValue );
+                var gdType = new GdType( _dataProp.uintValue );
                 gdType[ index ] = evt.newValue;
-                _dataProp.intValue = (Int32)gdType.Data;
+                _dataProp.uintValue = gdType.Data;
                 _serializedObject.ApplyModifiedProperties();
 
                 var nextCategory = category.FindItem( evt.newValue ).Subcategory;
@@ -706,11 +790,6 @@ namespace GDDB.Editor
             }
         }
 
-        
-
-
-        
-
         private void CheckDuplicateType( VisualElement root )
         {
             if ( _gdoFinder.IsDuplicatedType( GetGDType() ) )
@@ -720,7 +799,7 @@ namespace GDDB.Editor
                 var fixBtn     = toolbar.Q<Button>( "FixType" );
                 if ( fixBtn == null )
                 {
-                    fixBtn                       = new Button( () => FixType(null) );
+                    fixBtn                       = new Button( FixType );
                     fixBtn.name                  = "FixType";
                     fixBtn.text                  = "";
                     fixBtn.style.backgroundImage = new StyleBackground( UnityEngine.Resources.Load<Sprite>( "build_24dp" ) );
@@ -770,7 +849,7 @@ namespace GDDB.Editor
 
         private GdType GetGDType( )
         {
-            return new GdType( _dataProp.intValue );
+            return new GdType( _dataProp.uintValue );
         }
 
         public class State
@@ -787,7 +866,7 @@ namespace GDDB.Editor
             public class Button
             {
                 public EButton          Type;
-                public Action<Action>   Click;
+                public Action           Click;
             }
 
             public enum EButton
@@ -811,10 +890,12 @@ namespace GDDB.Editor
 
         public static class Resources
         {
-            public static readonly Texture2D AssignTypeIcon = UnityEngine.Resources.Load<Texture2D>( "add_24dp" );
-            public static readonly Texture2D FixTypeIcon    = UnityEngine.Resources.Load<Texture2D>( "build_24dp" );
-            public static readonly Texture2D ClearTypeIcon  = UnityEngine.Resources.Load<Texture2D>( "delete_forever_24dp" );
-            public static readonly Texture2D ContextMenuIcon  = UnityEngine.Resources.Load<Texture2D>( "menu_24dp" );
+            public static readonly GUIContent[] ComponentLabels = { GUIContent.none, GUIContent.none,  GUIContent.none, GUIContent.none };
+            public static readonly Texture2D    AssignTypeIcon  = UnityEngine.Resources.Load<Texture2D>( "add_24dp" );
+            public static readonly Texture2D    FixTypeIcon     = UnityEngine.Resources.Load<Texture2D>( "build_24dp" );
+            public static readonly Texture2D    ClearTypeIcon   = UnityEngine.Resources.Load<Texture2D>( "delete_forever_24dp" );
+            public static readonly Texture2D    ContextMenuIcon = UnityEngine.Resources.Load<Texture2D>( "menu_24dp" );
+            public static readonly Texture2D    ErrorIcon       = UnityEngine.Resources.Load<Texture2D>( "error_24dp" );
 
             public static readonly Texture2D SolidRedTexture = UnityEngine.Resources.Load<Texture2D>( "solid_red" );
 
@@ -824,12 +905,22 @@ namespace GDDB.Editor
                                                                          padding = new RectOffset( 1, 1, 1, 1 ),
                                                                  };
 
-            public static readonly GUIStyle PrefixLabelStyle = new ( GUI.skin.label ) { };
+            public static readonly GUIStyle PrefixLabelStyle = new ( EditorStyles.label ) { };
             public static readonly GUIStyle PrefixLabelErrorStyle = new ( PrefixLabelStyle )
                                                                     {
-                                                                            normal = new GUIStyleState(){background = SolidRedTexture },
+                                                                            //normal = new GUIStyleState(){background = SolidRedTexture },
+                                                                            normal  = new GUIStyleState(){ textColor = Color.red },
+                                                                            hover   = new GUIStyleState(){ textColor = Color.red },
+                                                                            focused = new GUIStyleState(){ textColor = Color.red },
                                                                     };
             public static readonly GUIStyle PopupErrorStyle = new ( EditorStyles.popup )
+                                                                    {
+                                                                            normal  = new GUIStyleState(){ textColor = Color.red },
+                                                                            hover   = new GUIStyleState(){ textColor = Color.red },
+                                                                            focused = new GUIStyleState(){ textColor = Color.red },
+                                                                    };
+
+            public static readonly GUIStyle TextFieldErrorStyle = new (  GUI.skin.textField )
                                                                     {
                                                                             normal  = new GUIStyleState(){ textColor = Color.red },
                                                                             hover   = new GUIStyleState(){ textColor = Color.red },
@@ -844,8 +935,19 @@ namespace GDDB.Editor
             public static readonly String FixTypeTooltip = "Fix duplicate or incorrect type";
             public static readonly String ClearTypeTooltip = "Set type to None";
             public static readonly String ContextMenuTooltip = "Open menu";
+
+            public static readonly NumberFormatInfo NoGroupSeparatorFormat = new NumberFormatInfo( )
+                                                                      {
+                                                                              NumberGroupSeparator = "",
+                                                                              NumberDecimalSeparator = ".",
+                                                                      };
         }
 
+        public enum EEditMode
+        {
+            Categories,
+            Raw,
+        }
 
     }
 
