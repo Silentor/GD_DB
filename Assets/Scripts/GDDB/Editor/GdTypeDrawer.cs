@@ -263,7 +263,7 @@ namespace GDDB.Editor
                 {
                     var filterAttribute = filterAttributes[ j ];
 
-                    if ( i > 0 && i - 1 < filterAttribute.FilterCategories.Length )            //Check is filter applicable
+                    if ( i > 0 && i - 1 < filterAttribute.FilterCategories.Count )            //Check is filter applicable
                     {
                         if ( typeValue[ i - 1 ] != filterAttribute.FilterCategories[ i - 1 ] )         //todo Get filter categories and compare categories
                         {

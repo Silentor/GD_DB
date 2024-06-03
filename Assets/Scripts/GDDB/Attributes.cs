@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.Animations;
 
@@ -45,7 +46,7 @@ namespace GDDB
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = true )]
     public class GdTypeFilterAttribute : Attribute
     {
-        public readonly Int32[] FilterCategories;
+        public IReadOnlyList<Int32> FilterCategories { get; }
 
         public GdTypeFilterAttribute( params Object[] filters )
         {
@@ -53,5 +54,38 @@ namespace GDDB
         }
     }
 
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = true )]
+    public class RequireComponentAttribute : Attribute
+    {
+        public IReadOnlyList<Type> Components { get; }
+
+        public RequireComponentAttribute( params Type[] components )
+        {
+            foreach ( var component in components )
+            {
+                if ( !typeof(GDComponent).IsAssignableFrom( component ) )
+                    throw new ArgumentException( $"Type must be derived from GDComponent, but {component.Name} was not", nameof(components) );
+            }
+
+            Components = components;
+        }
+    }
+
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = true )]
+    public class ForbidComponentAttribute : Attribute
+    {
+        public IReadOnlyList<Type> Components { get; }
+
+        public ForbidComponentAttribute( params Type[] components )
+        {
+            foreach ( var component in components )
+            {
+                if ( !typeof(GDComponent).IsAssignableFrom( component ) )
+                    throw new ArgumentException( $"Type must be derived from GDComponent, but {component.Name} was not", nameof(components) );
+            }
+
+            Components = components;
+        }
+    }
 
 }

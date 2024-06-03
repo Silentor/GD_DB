@@ -10,9 +10,9 @@ namespace GDDB_User
         public Int32  TestField;
         public GdType TestType;
 
-        [GdTypeFilter(MainCategory.Mobs, EMobs.Elves)]
-        [GdTypeFilter(MainCategory.Game)]                      
-        public GdType TestTypeRestrictedMobs;
+        //[GdTypeFilter(MainCategory.Mobs, EMobs.Elves)]
+        //[GdTypeFilter(MainCategory.Game)]                      
+        //public GdType TestTypeRestrictedMobs;
 
         private void Awake( )
         {

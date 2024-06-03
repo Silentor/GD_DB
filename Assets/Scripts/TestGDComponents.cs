@@ -56,4 +56,19 @@ namespace GDDB
         public Int32 IntValue;
     }
 
+    public class RequiredGDOComponent : GDComponent
+    {
+
+    }
+
+    public class RequiredGDCComponent : GDComponent
+    {
+
+    }
+
+    public class DeniedGDCComponent : GDComponent
+    {
+
+    }
+
 }
