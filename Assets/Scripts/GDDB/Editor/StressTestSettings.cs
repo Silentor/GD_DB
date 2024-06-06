@@ -9,12 +9,17 @@ namespace GDDB.Editor
     public class StressTestSettings : ScriptableSingleton<StressTestSettings>
     {
         [Header("Scripts")]
-        public String OutputFolder                  = "Assets/GeneratedGDDB/Scripts/";
+        public String OutputFolderScripts            = "Assets/GeneratedGDDB/Scripts/";
         public String RootNamespace                  = "GeneratedGDDB";
         [Min(1)]
         public Int32 ComponentScriptsCount          = 500;
         [Min(1)]
         public Int32 ComponentNamespacesCount       = 100;
+
+        [Header("GD Objects")]
+        public String OutputFolderDB                = "Assets/GeneratedGDDB/DB/";
+        [Min(1)]
+        public Int32 GDObjectsCount                 = 100;
 
         public void Save( )
         {

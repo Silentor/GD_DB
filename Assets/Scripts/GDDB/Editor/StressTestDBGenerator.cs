@@ -17,6 +17,7 @@ namespace GDDB.Editor
         private String[]           _nouns;
         private String[]           _verbs;
         private StressTestSettings _settings;
+        private string[]           _types;
 
         [MenuItem( "GDDB/Generate GDDB" )]
         private static void ShowWindow( )
@@ -46,6 +47,7 @@ namespace GDDB.Editor
 
             _nouns = (Resources.Load( "NounsList" ) as TextAsset).text.Split( "\r\n" );
             _verbs = (Resources.Load( "VerbsList" ) as TextAsset).text.Split( "\r\n" );
+            _types = (Resources.Load( "TypesList" ) as TextAsset).text.Split( "\r\n" );
 
             if ( _nouns.Length < 10 || _verbs.Length < 10 )
                 Debug.LogError( "Nouns or Verbs list is too small" );
@@ -59,21 +61,67 @@ namespace GDDB.Editor
             var namespaces = GenerateNamespaces(  );
             var classNames = GenerateClassNames(  );
 
-            if ( !Directory.Exists( _settings.OutputFolder ) )
+            if ( !Directory.Exists( _settings.OutputFolderScripts ) )
             {
-                var dir = Directory.CreateDirectory( _settings.OutputFolder );
+                var dir = Directory.CreateDirectory( _settings.OutputFolderScripts );
                 Debug.Log( dir.FullName );
             }
 
+            var componentTypeNames = new List<String>();
             foreach ( var className in classNames )
             {
                 var ns            = namespaces[ rnd.Next( namespaces.Count ) ];
                 var componentCode = GenerateComponentScript( ns, className );
-                var path          = Path.Join( _settings.OutputFolder, $"{className}.cs" );
+                var path          = Path.Join( _settings.OutputFolderScripts, $"{className}.cs" );
                 File.WriteAllText( path, componentCode );
+                componentTypeNames.Add( $"{ns}.{className}" );
             }
 
             AssetDatabase.Refresh( ImportAssetOptions.ForceSynchronousImport );
+
+            //Wait for compiling and domain reload
+            EditorApplication.isCompiling
+
+
+            var gdos = new List<GDObject>();
+            var names = GenerateUniqueNouns( _settings.GDObjectsCount, new List<String>(), 2, 3 );
+            while ( gdos.Count < _settings.GDObjectsCount )
+            {
+                var go = ScriptableObject.CreateInstance<GDObject>();
+                go.name = names[ rnd.Next( names.Count ) ];
+                go.Components = new List<GDComponent>();
+
+                var componentsCount = rnd.Next( 1, 5 + 1 );
+                for ( var i = 0; i < componentsCount; i++ )
+                {
+                    var componentTypeName = componentTypeNames[ rnd.Next( componentTypeNames.Count ) ];
+                    var componentType     = Type.GetType( componentTypeName );
+                    var component         = (GDComponent)Activator.CreateInstance( componentType );
+                    go.Components.Add( component );
+                }
+
+                gdos.Add( go );
+            }
+
+            AssetDatabase.StartAssetEditing();
+            try
+            {
+                foreach ( var gdo in gdos )
+                {
+                    AssetDatabase.CreateAsset( gdo, Path.Join( _settings.OutputFolderDB, $"{gdo.name}.asset" ) );
+                }
+            }
+            finally
+            {
+                AssetDatabase.StopAssetEditing();
+            }
+        }
+
+        
+
+        private IReadOnlyList<String> GenerateClassNames(  )
+        {
+            return GenerateUniqueNouns( _settings.ComponentScriptsCount, new List<String>(), 2, 3 );
         }
 
         private IReadOnlyList<String> GenerateNamespaces( )
@@ -85,32 +133,6 @@ namespace GDDB.Editor
             while ( result.Count < _settings.ComponentNamespacesCount )
                 for ( var i = 0; i < 10; i++ )
                     GenerateNamespaceRecursive( _settings.RootNamespace, 1, rnd, result );
-
-            return result;
-        }
-
-        private IReadOnlyList<String> GenerateClassNames(  )
-        {
-            var rnd    = new Random();
-            var result = new List<String>( _settings.ComponentScriptsCount );
-
-            while ( result.Count < _settings.ComponentScriptsCount )
-            {
-                var nameLength = rnd.Next( 2, 3 + 1 );
-                var nameList   = new List<String>( nameLength );
-
-                for ( var j = 0; j < nameLength; j++ )
-                {
-                    var name = String.Empty;
-                    while ( nameList.Contains( name = _nouns[ rnd.Next( _nouns.Length ) ] ) )
-                        ;
-                    nameList.Add( name );
-                }
-
-                var className = String.Join( "", nameList );
-                if ( !result.Contains( className ) )
-                    result.Add( className );
-            }
 
             return result;
         }
@@ -144,10 +166,54 @@ namespace GDDB.Editor
             result.AppendLine( "{" );
             result.AppendLine( $"    public class {componentName} : GDComponent" );
             result.AppendLine( "    {" );
+            var members = GenerateMembers( componentName );
+            members.ForEach( m => result.AppendLine( $"        {m}" ) );
             result.AppendLine( "    }" );
             result.AppendLine( "}" );
 
             return result.ToString();
+        }
+
+        private List<String> GenerateMembers( String className )
+        {
+            var rnd = new Random();
+            var result = new List<String>();
+
+            var fieldsCount = rnd.Next( 1, 5 + 1 );
+            var fieldNames = GenerateUniqueNouns( fieldsCount, new String[]{className}, 1, 3 );
+
+            foreach ( var fieldName in fieldNames )
+            {
+                var fieldType = _types[ rnd.Next( _types.Length ) ];
+                result.Add( $"public {fieldType} {fieldName};" );
+            }
+
+            return result;
+        }
+
+        private List<String> GenerateUniqueNouns( Int32 count, IReadOnlyList<String> excludeList, Int32 minWordsCount, Int32 maxWordsCount )
+        {
+            var result = new List<String>( count );
+            var rnd    = new Random();
+
+            while( result.Count < count )
+            {
+                var nameLength = rnd.Next( minWordsCount, maxWordsCount + 1 );
+                var partsList   = new List<String>( nameLength );
+
+                while( partsList.Count < nameLength )
+                {
+                    var namePart = _nouns[ rnd.Next( _nouns.Length ) ];
+                    if( !partsList.Contains( namePart ) )
+                        partsList.Add( namePart );
+                }
+
+                var fullName = String.Join( "", partsList );
+                if ( !result.Contains( fullName ) && !excludeList.Contains( fullName ) )
+                    result.Add( fullName );
+            }
+
+            return result;
         }
     }
 }
