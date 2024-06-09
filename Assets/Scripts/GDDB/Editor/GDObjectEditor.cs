@@ -5,6 +5,7 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Object = System.Object;
+using PopupWindow = UnityEditor.PopupWindow;
 using Random = UnityEngine.Random;
 
 namespace GDDB.Editor
@@ -176,11 +177,13 @@ namespace GDDB.Editor
             var addComponentBtn = gdObjectVisualTree.Q<Button>( "AddComponentBtn" );
             addComponentBtn.clicked += ( ) =>
             {
-                if ( _lastSelectedComponentIndex >= 0 && _lastSelectedComponentIndex < _allProperComponents.Length )
-                {
-                    var typeToAdd = _allProperComponents[ _lastSelectedComponentIndex ];
-                    AddComponent( componentsProp, typeToAdd );
-                }
+                PopupWindow.Show( addComponentBtn.worldBound, new SearchPopup() );
+                //DEBUG
+                // if ( _lastSelectedComponentIndex >= 0 && _lastSelectedComponentIndex < _allProperComponents.Length )
+                // {
+                //     var typeToAdd = _allProperComponents[ _lastSelectedComponentIndex ];
+                //     AddComponent( componentsProp, typeToAdd );
+                // }
             };
         }
 

@@ -1,0 +1,9 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <ui:VisualElement name="SearchBox" style="flex-direction: row; height: 22px;">
+        <ui:VisualElement style="flex-grow: 0; background-image: resource(&apos;search_24dp&apos;); width: 22px; height: 22px; flex-shrink: 0;" />
+        <ui:TextField picking-mode="Ignore" name="SearchField" style="flex-grow: 1;" />
+    </ui:VisualElement>
+    <ui:VisualElement name="ResultsBox" style="flex-grow: 1;">
+        <ui:ListView name="ResultsList" />
+    </ui:VisualElement>
+</ui:UXML>

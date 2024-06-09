@@ -35,6 +35,8 @@ namespace GDDB.Editor
 
         private void CreateGUI( )
         {
+            Debug.Log( "Create GUI called" );
+
             var settings = StressTestSettings.instance;
             settings.Save();
             var so       = new SerializedObject( settings );
@@ -79,8 +81,9 @@ namespace GDDB.Editor
 
             AssetDatabase.Refresh( ImportAssetOptions.ForceSynchronousImport );
 
+            //Never gets here 
             //Wait for compiling and domain reload
-            EditorApplication.isCompiling
+            //EditorApplication.isCompiling
 
 
             var gdos = new List<GDObject>();
