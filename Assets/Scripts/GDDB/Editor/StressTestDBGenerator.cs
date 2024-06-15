@@ -35,8 +35,6 @@ namespace GDDB.Editor
 
         private void CreateGUI( )
         {
-            Debug.Log( "Create GUI called" );
-
             var settings = StressTestSettings.instance;
             settings.Save();
             var so       = new SerializedObject( settings );
@@ -44,8 +42,10 @@ namespace GDDB.Editor
             var settingsWidget = new InspectorElement( so );
             rootVisualElement.Add( settingsWidget );
 
-            var startBtn = new Button( ( ) => GenerateDB( settings ) ) { text = "Generate DB" };
-            rootVisualElement.Add( startBtn );
+            var generateScriptsBtn = new Button( ( ) => GenerateComponents( settings ) ) { text = "Generate GDComponents" };
+            rootVisualElement.Add( generateScriptsBtn );
+            var generateObjectsBtn = new Button( ( ) => GenerateGDObjects( settings ) ) { text = "Generate GDObjects" };
+            rootVisualElement.Add( generateObjectsBtn );
 
             _nouns = (Resources.Load( "NounsList" ) as TextAsset).text.Split( "\r\n" );
             _verbs = (Resources.Load( "VerbsList" ) as TextAsset).text.Split( "\r\n" );
@@ -55,7 +55,7 @@ namespace GDDB.Editor
                 Debug.LogError( "Nouns or Verbs list is too small" );
         }
 
-        private void GenerateDB(StressTestSettings settings )
+        private void GenerateComponents( StressTestSettings settings )
         {
             _settings = settings;
             var rnd = new Random();
@@ -86,19 +86,25 @@ namespace GDDB.Editor
             //EditorApplication.isCompiling
 
 
-            var gdos = new List<GDObject>();
+            
+        }
+
+        private void GenerateGDObjects( StressTestSettings settings )
+        {
+            var rnd = new Random();
+            var gdos  = new List<GDObject>();
             var names = GenerateUniqueNouns( _settings.GDObjectsCount, new List<String>(), 2, 3 );
+            var components = TypeCache.GetTypesDerivedFrom<GDComponent>().Where( t => t.Namespace.StartsWith( settings.RootNamespace ) && !t.IsAbstract ).ToList();
             while ( gdos.Count < _settings.GDObjectsCount )
             {
                 var go = ScriptableObject.CreateInstance<GDObject>();
-                go.name = names[ rnd.Next( names.Count ) ];
+                go.name       = names[ rnd.Next( names.Count ) ];
                 go.Components = new List<GDComponent>();
 
                 var componentsCount = rnd.Next( 1, 5 + 1 );
                 for ( var i = 0; i < componentsCount; i++ )
                 {
-                    var componentTypeName = componentTypeNames[ rnd.Next( componentTypeNames.Count ) ];
-                    var componentType     = Type.GetType( componentTypeName );
+                    var componentType = components[ rnd.Next( components.Count ) ];
                     var component         = (GDComponent)Activator.CreateInstance( componentType );
                     go.Components.Add( component );
                 }

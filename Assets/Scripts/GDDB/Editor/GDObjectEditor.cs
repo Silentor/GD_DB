@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -13,12 +14,12 @@ namespace GDDB.Editor
     [CustomEditor( typeof(GDObject), true )]
     public class GDObjectEditor : UnityEditor.Editor
     {
+        public VisualElement Components => _componentsContainer;
+
         public static event Action<GDObject> Changed;
 
         private GDObject        _target;
-        private Int32           _lastSelectedComponentIndex = -1;
-        private Type[]          _allProperComponents;
-        private VisualElement _componentsContainer;
+        private VisualElement   _componentsContainer;
         private VisualTreeAsset _gdcVisualTreeAsset;
         private VisualTreeAsset _gdoVisualTreeAsset;
 
@@ -36,7 +37,7 @@ namespace GDDB.Editor
             var gdoVisualTreeAsset = Resources.Load<VisualTreeAsset>(("GDObjectEditor"));
             var   gdoVisualTree      = gdoVisualTreeAsset.Instantiate();
         
-            //Enabled tooggle
+            //Enabled toggle
             var enabledTgl = gdoVisualTree.Q<Toggle>( "Enabled" );
             enabledTgl.value = _target.EnabledObject;
             enabledTgl.RegisterValueChangedCallback( EnabledToggle_Changed );
@@ -79,7 +80,7 @@ namespace GDDB.Editor
             _componentsContainer = gdoVisualTree.Q<VisualElement>( "Components" );
             for ( var i = 0; i < compsProp.arraySize; i++ )
             {
-                CreateComponentGUI( compsProp , i );
+                CreateComponentGUI( compsProp , compsProp.GetArrayElementAtIndex( i ) );
             }
 
             //New component add button
@@ -105,9 +106,8 @@ namespace GDDB.Editor
         }
 
         
-        private void CreateComponentGUI( SerializedProperty componentsProp, Int32 index )
+        private void CreateComponentGUI( SerializedProperty componentsProp, SerializedProperty componentProp )
         {
-            var componentProp = componentsProp.GetArrayElementAtIndex( index );
             VisualElement result  ;
             if ( componentProp.managedReferenceValue != null )
             {
@@ -122,7 +122,8 @@ namespace GDDB.Editor
                 typeInfoLabel.text = $"({compType.FullName}, {compType.Assembly.GetName().Name})";
 
                 var removeBtn     = result.Q<Button>( "Remove" );
-                removeBtn.clicked += () => RemoveComponent( componentsProp , index );
+                var catchId       = componentProp.managedReferenceId;
+                removeBtn.clicked += () => RemoveComponent( componentsProp, catchId );
 
                 //Draw body
                 var propertiesContainer = result.Q<VisualElement>( "Properties" );
@@ -131,7 +132,9 @@ namespace GDDB.Editor
                 {
                     do
                     {
-                        propertiesContainer.Add( new PropertyField( componentProp ) );
+                        var propertyField = new PropertyField( componentProp );
+                        propertyField.BindProperty( componentProp );                    //Because we can add component ui after editor creation, so auto bind not working
+                        propertiesContainer.Add( propertyField );
                     }   
                     while ( componentProp.NextVisible( false ) && !SerializedProperty.EqualContents( componentProp, compEndProp ) );
                 }
@@ -153,7 +156,8 @@ namespace GDDB.Editor
                     typeFoldout.text = "Component somehow is null";
 
                 var removeBtn = result.Q<Button>( "Remove" );
-                removeBtn.clicked += () => RemoveComponent( componentsProp , index );
+                var catchId   = componentProp.managedReferenceId;
+                removeBtn.clicked += () => RemoveComponent( componentsProp , catchId );
             }
 
             _componentsContainer.Add( result );
@@ -166,31 +170,12 @@ namespace GDDB.Editor
 
         private void CreateComponentAddButton( SerializedProperty componentsProp, VisualElement gdObjectVisualTree)
         {
-            var allComponentTypes   = TypeCache.GetTypesDerivedFrom( typeof(GDComponent) );
-            _allProperComponents = allComponentTypes.Where( t => !t.IsAbstract ).OrderBy( t => t.Name ).ToArray();
-            var allProperNames      = _allProperComponents.Select( t => t.Name ).ToList();
-
-            var componentsList = gdObjectVisualTree.Q<DropdownField>( "ComponentsList" );
-            componentsList.choices = allProperNames;
-            componentsList.RegisterValueChangedCallback( ComponentsList_Changed );
-
             var addComponentBtn = gdObjectVisualTree.Q<Button>( "AddComponentBtn" );
             addComponentBtn.clicked += ( ) =>
             {
-                PopupWindow.Show( addComponentBtn.worldBound, new SearchPopup() );
-                //DEBUG
-                // if ( _lastSelectedComponentIndex >= 0 && _lastSelectedComponentIndex < _allProperComponents.Length )
-                // {
-                //     var typeToAdd = _allProperComponents[ _lastSelectedComponentIndex ];
-                //     AddComponent( componentsProp, typeToAdd );
-                // }
+                PopupWindow.Show( addComponentBtn.worldBound, new SearchPopup( this, componentsProp ) );
             };
-        }
-
-        private void ComponentsList_Changed( ChangeEvent<String> evt )
-        {
-            _lastSelectedComponentIndex = ((DropdownField)evt.target).index;
-        }
+        }             
 
         private void EnabledToggle_Changed(ChangeEvent<Boolean> evt )
         {
@@ -220,24 +205,32 @@ namespace GDDB.Editor
             Changed?.Invoke( _target );
         }
 
-        private void AddComponent( SerializedProperty components, Type componentType )
+        public void AddComponent( SerializedProperty components, Type componentType )
         {
             var newComponent = Activator.CreateInstance( componentType );
 
             var lastIndex = components.arraySize;
             components.InsertArrayElementAtIndex( lastIndex );
-            components.GetArrayElementAtIndex( lastIndex ).managedReferenceValue = newComponent;
-            CreateComponentGUI( components, lastIndex );
+            var componentProp = components.GetArrayElementAtIndex( lastIndex );
+            componentProp.managedReferenceValue = newComponent;
+            CreateComponentGUI( components, componentProp );
 
             serializedObject.ApplyModifiedProperties();
         }
 
-        private void RemoveComponent( SerializedProperty components, Int32 componentIndex )
+        private void RemoveComponent( SerializedProperty components, Int64 id )
         {
-            components.DeleteArrayElementAtIndex( componentIndex );
-            RemoveComponentGUI( componentIndex );
+            for ( int index = 0; index < components.arraySize; index++ )
+            {
+                if ( components.GetArrayElementAtIndex( index ).managedReferenceId == id )
+                {
+                    components.DeleteArrayElementAtIndex( index );
+                    RemoveComponentGUI( index );
 
-            serializedObject.ApplyModifiedProperties();
+                    serializedObject.ApplyModifiedProperties();
+                }
+            }
+            
         }
 
         private Boolean IsComponentFoldout( Type componentType )

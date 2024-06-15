@@ -3,6 +3,9 @@
         <ui:VisualElement style="flex-grow: 0; background-image: resource(&apos;search_24dp&apos;); width: 22px; height: 22px; flex-shrink: 0;" />
         <ui:TextField picking-mode="Ignore" name="SearchField" style="flex-grow: 1;" />
     </ui:VisualElement>
+    <ui:VisualElement name="InfoBox" style="height: 22px;">
+        <ui:Label tabindex="-1" text="Results count: 100" parse-escape-sequences="true" display-tooltip-when-elided="true" name="ResultsCount" style="-unity-text-align: middle-center;" />
+    </ui:VisualElement>
     <ui:VisualElement name="ResultsBox" style="flex-grow: 1;">
         <ui:ListView name="ResultsList" />
     </ui:VisualElement>
