@@ -9,3 +9,9 @@
     align-items: center;
     justify-content: flex-start;
 }
+
+.search-popup__info-box {
+    height: 22px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--unity-colors-separator-background);
+}

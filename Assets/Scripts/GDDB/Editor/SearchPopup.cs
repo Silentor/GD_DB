@@ -40,8 +40,13 @@ namespace GDDB.Editor
 
             var searchField = instance.Q<TextField>( "SearchField" );
             searchField.RegisterValueChangedCallback( SearchFieldOnChanged );
+            searchField.RegisterCallback<AttachToPanelEvent>( _ => searchField.Focus() );
 
-            _resultsCountLabel = instance.Q<Label>( "ResultsCount" );
+            _resultsLabel         =  instance.Q<Label>( "ResultsLbl" );
+            _backNamespaceIcon    =  instance.Q<VisualElement>( "BackNamespaceIcon" );
+            _resultsBtn           =  instance.Q<Button>( "ResultsBtn" );
+            _resultsBtn.clicked += ResultsBtn_Clicked;
+            _resultsBtn.RemoveFromClassList( "unity-button" );
 
             _resultsList             = instance.Q<ListView>( "ResultsList" );
             _resultsList.makeItem    = ResultsList_MakeItem;
@@ -53,13 +58,15 @@ namespace GDDB.Editor
             var allProperComponents = allComponentTypes.Where( t => !t.IsAbstract ).OrderBy( t => t.Name ).ToArray();
             _allComponents = allProperComponents.Select( t => new Item
                                                               {
-                                                                      Namespace     = t.Namespace.Split( '.' ).ToList(),
+                                                                      Namespace     = t.Namespace == null ? Array.Empty<String>() : t.Namespace.Split( '.' ).ToList(),
                                                                       ComponentName = t.Name,
                                                                       Type          = t
                                                               } ).ToList();
 
             ProcessSearch( searchField.value );
         }
+
+        
 
 
         private readonly GDObjectEditor      _editor;
@@ -68,14 +75,17 @@ namespace GDDB.Editor
         private          ListView            _resultsList;
         private          IReadOnlyList<Item> _allComponents;
         private          VisualTreeAsset     _itemAsset;
-        private          Label               _resultsCountLabel;
+        private          Label               _resultsLabel;
         private          Result              _lastSearchResult;
+        private          VisualElement       _backNamespaceIcon;
+        private          Button              _resultsBtn;
 
         private VisualElement ResultsList_MakeItem( )
         {
             var result = _itemAsset.Instantiate();
             var btn    = result.Q<Button>( "ItemBtn" );
             btn.clicked += ( ) => OnItemClicked( (ResultItem) btn.userData );
+            btn.RemoveFromClassList( "unity-button" );
             return result;
         }
 
@@ -84,16 +94,16 @@ namespace GDDB.Editor
             var resultItem = _resultsToList[ i ];
             var itemBtn    = e.Q<Button>( "ItemBtn" );
             var label      = itemBtn.Q<Label>( "Label" );
-            label.text    = resultItem.Label;
+            label.text    = resultItem.LabelWithTags;
             if ( !resultItem.IsNamespace )
             {
-                label.tooltip = String.Concat( String.Join( ".", resultItem.Component.Namespace ), ".", resultItem.Component.ComponentName );
+                label.tooltip = String.Join( ".", resultItem.Component.Namespace.Append( resultItem.Component.ComponentName ) );
                 itemBtn.Q<VisualElement>( "NamespaceIcon" ).style.display = DisplayStyle.None;
                 itemBtn.Q<VisualElement>( "OpenNamespaceIcon" ).style.display = DisplayStyle.None;
             }
             else
             {
-                label.tooltip                                                 = String.Empty;
+                label.tooltip  = String.Join( ".", _lastSearchResult.InspectNamespace.Append( resultItem.Label ) );
                 itemBtn.Q<VisualElement>( "NamespaceIcon" ).style.display     = StyleKeyword.Null;
                 itemBtn.Q<VisualElement>( "OpenNamespaceIcon" ).style.display = StyleKeyword.Null;
             }
@@ -133,10 +143,11 @@ namespace GDDB.Editor
         private Result SearchItems( String searchString )
         {
             if ( String.IsNullOrWhiteSpace( searchString ) )
-                return new Result() { Items = _allComponents.ToList() };
+                return new Result() { SearchString = searchString, Items = _allComponents.ToList() };
             else
                 return new Result()
                        {
+                               SearchString = searchString,
                                Items = _allComponents.Where( i =>
                                        i.ComponentName.Contains( searchString, StringComparison.OrdinalIgnoreCase ) ).ToList()
                        };
@@ -207,9 +218,26 @@ namespace GDDB.Editor
         private void ShowResults( Result result )
         {
             if ( result.InspectNamespace.Any() )
-                _resultsCountLabel.text = String.Join( ".", result.InspectNamespace );
+            {
+                _resultsLabel.text = String.Join( ".", result.InspectNamespace );
+                _backNamespaceIcon.style.display = DisplayStyle.Flex;
+            }
             else
-                _resultsCountLabel.text = $"Results: {result.Items.Count}";
+            {
+                _resultsLabel.text               = $"Results: {result.Items.Count}";
+                _backNamespaceIcon.style.display = DisplayStyle.None;
+            }
+
+            //Highlight search string in component names
+            for ( var i = 0; i < result.View.Count; i++ )
+            {
+                var resultItem = result.View[ i ];
+                if ( !resultItem.IsNamespace )
+                {
+                    resultItem.LabelWithTags = resultItem.UseRichTextTags( result.SearchString, resultItem.Label );
+                    result.View[ i ]         = resultItem;
+                } 
+            }
 
             _resultsToList.Clear();
             _resultsToList.AddRange( result.View );
@@ -230,32 +258,71 @@ namespace GDDB.Editor
             return true;
         }
 
+        private void ResultsBtn_Clicked( )
+        {
+            if( _lastSearchResult != null && _lastSearchResult.InspectNamespace.Any() )
+            {
+                _lastSearchResult.InspectNamespace.RemoveAt( _lastSearchResult.InspectNamespace.Count - 1 );
+                PrepareResults( _lastSearchResult );
+                ShowResults( _lastSearchResult );
+            }
+        }
+
 
         public struct Item
         {
-            public List<String> Namespace;
+            public IReadOnlyList<String> Namespace;
             public String       ComponentName;
             public Type         Type;
         }
 
         public struct ResultItem
         {
-            public String  Label;
-            public Boolean IsNamespace;
+            public  String  Label;
+            public String LabelWithTags
+            {
+                get => String.IsNullOrEmpty( _labelWithTags ) ? Label : _labelWithTags;
+                set => _labelWithTags = value;
+            }
+            public  Boolean IsNamespace;
 
             //Namespace mode
             public Int32   SubitemsCount;
-            public List<String> Namespace;
+            public IReadOnlyList<String> Namespace;
 
             //Component mode
             public Item    Component;
+
+            public String UseRichTextTags( String substring, String label )
+            {
+                if ( String.IsNullOrWhiteSpace( substring ) )
+                    return label;
+                else
+                {
+                    var pos = label.IndexOf( substring, StringComparison.OrdinalIgnoreCase );
+                    try
+                    {
+                        return String.Concat( label[ ..pos ], "<b>", label[ pos..( pos + substring.Length ) ], "</b>", label[ (pos + substring.Length).. ] );
+                    }
+                    catch ( Exception e )
+                    {
+                        Debug.LogException( e );
+                        Debug.Log( $"label {label}, subs {substring}" );
+                        throw;
+                    }
+                    
+                }
+            }
+
+            private String  _labelWithTags;
         }
 
         public class Result
         {
-            public List<Item>       Items;
-            public List<ResultItem> View;
-            public List<String>     InspectNamespace = new();
+            public          String           SearchString;
+            public          List<Item>       Items;
+            public          List<ResultItem> View;
+            public readonly List<String>     InspectNamespace = new();
         }
     }
 }
