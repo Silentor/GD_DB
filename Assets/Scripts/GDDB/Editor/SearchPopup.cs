@@ -10,11 +10,14 @@ namespace GDDB.Editor
 {
     public class SearchPopup : PopupWindowContent
     {
-        public SearchPopup( GDObjectEditor editor, SerializedProperty componentsProp )
+        public SearchPopup( GDObjectEditor editor, SerializedProperty componentsProp, Settings settings )
         {
             _editor         = editor;
             _componentsProp = componentsProp;
+            _settings       = settings;
         }
+
+        public IReadOnlyList<Item> AllComponents => _allComponents;
 
         public override void OnGUI(Rect rect )
         {
@@ -37,6 +40,11 @@ namespace GDDB.Editor
             editorWindow.rootVisualElement.Add( instance );
 
             _itemAsset = Resources.Load<VisualTreeAsset>( "SearchPopupItem" );
+
+            _searchToolBtn = instance.Q<Button>( "SearchBtn" );
+            _searchToolBtn.clicked += SearchToolBtnOnclicked;
+            _recommendedToolBtn = instance.Q<Button>( "RecommendedBtn" );
+            _recommendedToolBtn.clicked += RecommendedToolBtnOnclicked;
 
             var searchField = instance.Q<TextField>( "SearchField" );
             searchField.RegisterValueChangedCallback( SearchFieldOnChanged );
@@ -63,7 +71,22 @@ namespace GDDB.Editor
                                                                       Type          = t
                                                               } ).ToList();
 
-            ProcessSearch( searchField.value );
+            //Restore prev state
+            _settings.LoadMRUComponents( _allComponents, _mrus );
+            _lastSearchResult = new Result() { SearchString = _settings.LastSearchString, Items = _allComponents.ToList() };
+            searchField.value = _settings.LastSearchString;
+
+            if( _settings.SearchListMode == EListMode.Recommended )
+                RecommendedToolBtnOnclicked();
+            else
+                SearchToolBtnOnclicked();
+        }
+
+        public override void OnClose( )
+        {
+            base.OnClose();
+
+            _settings.SaveMRUComponents( _mrus );
         }
 
         
@@ -79,6 +102,10 @@ namespace GDDB.Editor
         private          Result              _lastSearchResult;
         private          VisualElement       _backNamespaceIcon;
         private          Button              _resultsBtn;
+        private          Button              _searchToolBtn;
+        private          Button              _recommendedToolBtn;
+        private readonly Settings            _settings;
+        private readonly List<SearchPopup.Item> _mrus = new();
 
         private VisualElement ResultsList_MakeItem( )
         {
@@ -116,6 +143,7 @@ namespace GDDB.Editor
             if ( !resultItem.IsNamespace )
             {
                 _editor.AddComponent( _componentsProp, resultItem.Component.Type );
+                _mrus.Insert( 0, resultItem.Component );
                 editorWindow.Close();
             }
             else            //Show selected namespace classes
@@ -132,11 +160,41 @@ namespace GDDB.Editor
             ProcessSearch( ev.newValue );
         }
 
+        private void RecommendedToolBtnOnclicked( )
+        {
+            _searchToolBtn.RemoveFromClassList( "search-popup__toolbtn-toggled" );
+            _recommendedToolBtn.AddToClassList( "search-popup__toolbtn-toggled" );
+            _settings.SearchListMode = EListMode.Recommended;
+            ProcessRecommended();
+        }
+
+        private void SearchToolBtnOnclicked( )
+        {
+            _searchToolBtn.AddToClassList( "search-popup__toolbtn-toggled" );
+            _recommendedToolBtn.RemoveFromClassList( "search-popup__toolbtn-toggled" );
+            _settings.SearchListMode = EListMode.Search;
+            ProcessSearch( _lastSearchResult.SearchString );
+        }
+
         private void ProcessSearch( String searchString )
         {
+            _settings.LastSearchString = searchString;
             _lastSearchResult = SearchItems( searchString );
             PrepareResults( _lastSearchResult );
             ShowResults( _lastSearchResult );
+        }
+
+        private void ProcessRecommended( )
+        {
+            _resultsLabel.text = "Recommended";
+             var mruResultItems = _mrus.Take( _settings.MaxMRUItems ).Select( i => new ResultItem()
+                                                  {
+                                                          Component = i, 
+                                                          Label = i.ComponentName
+                                                  } ).ToList();
+             _resultsToList.Clear();
+             _resultsToList.AddRange( mruResultItems );
+             _resultsList.RefreshItems();
         }
 
 
@@ -260,6 +318,7 @@ namespace GDDB.Editor
 
         private void ResultsBtn_Clicked( )
         {
+            //Back one namespace level````````````````````                                                                  
             if( _lastSearchResult != null && _lastSearchResult.InspectNamespace.Any() )
             {
                 _lastSearchResult.InspectNamespace.RemoveAt( _lastSearchResult.InspectNamespace.Count - 1 );
@@ -323,6 +382,12 @@ namespace GDDB.Editor
             public          List<Item>       Items;
             public          List<ResultItem> View;
             public readonly List<String>     InspectNamespace = new();
+        }
+
+        public enum EListMode
+        {
+             Search,
+             Recommended
         }
     }
 }

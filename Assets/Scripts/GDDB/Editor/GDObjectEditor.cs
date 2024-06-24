@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using JetBrains.Annotations;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -22,10 +23,12 @@ namespace GDDB.Editor
         private VisualElement   _componentsContainer;
         private VisualTreeAsset _gdcVisualTreeAsset;
         private VisualTreeAsset _gdoVisualTreeAsset;
+        private Settings       _settings;
 
         protected virtual void OnEnable( )
         {
-            _target = (GDObject)target;
+            _target   = (GDObject)target;
+            _settings = new Settings();
         }
 
         protected virtual void OnDisable( )
@@ -173,7 +176,7 @@ namespace GDDB.Editor
             var addComponentBtn = gdObjectVisualTree.Q<Button>( "AddComponentBtn" );
             addComponentBtn.clicked += ( ) =>
             {
-                PopupWindow.Show( addComponentBtn.worldBound, new SearchPopup( this, componentsProp ) );
+                PopupWindow.Show( addComponentBtn.worldBound, new SearchPopup( this, componentsProp, _settings ) );
             };
         }             
 
@@ -205,8 +208,14 @@ namespace GDDB.Editor
             Changed?.Invoke( _target );
         }
 
-        public void AddComponent( SerializedProperty components, Type componentType )
+        public void AddComponent( SerializedProperty components, [NotNull] Type componentType )
         {
+            if ( componentType == null ) throw new ArgumentNullException( nameof(componentType) );
+            if( !componentType.IsSubclassOf( typeof(GDComponent) ) )
+                throw new ArgumentException( $"Type {componentType.FullName} must be inherited from GDComponent" );
+            if( componentType.IsAbstract )
+                throw new ArgumentException( $"Type {componentType.FullName} must be not abstract" );
+
             var newComponent = Activator.CreateInstance( componentType );
 
             var lastIndex = components.arraySize;
