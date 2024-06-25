@@ -10,12 +10,16 @@ namespace GDDB.Editor
 {
     public class Settings
     {
-        public Int32 MaxMRUItems => 10;
+        public Int32 MaxMRUViewItems                = 10;
+        public Int32 MaxMRUStoreItems               = 20;
+        public Int32 MaxFavoriteViewItems           = 10;
+        public Int32 MaxFavoriteStoreItems          = 20;
 
         public Settings( )
         {
             _settingsPrefix = $"GDDB.Editor.Settings.{Application.identifier}.";
             _mruKey = $"{_settingsPrefix}MRUComponents";
+            _favKey = $"{_settingsPrefix}FavoriteComponents";
             _listModeKey = $"{_settingsPrefix}SearchListMode";
             _lastSearchStringKey = $"{_settingsPrefix}LastSearchString";
         }
@@ -32,73 +36,64 @@ namespace GDDB.Editor
             set => EditorPrefs.SetInt( _listModeKey, (Int32)value );
         }
 
-        public void SaveMRUComponents( IReadOnlyList<SearchPopup.Item> items )
+        public void SaveMRUComponents( IReadOnlyList<Type> components )
         {
-            var mru = new String[ Math.Min( MaxMRUItems, items.Count ) ];
-            for ( int i = 0; i < mru.Length; i++ )
-            {
-                mru[i] = items[i].Namespace.Any() 
-                        ? String.Concat( String.Join( ".", items[i].Namespace ), ".", items[i].ComponentName ) 
-                        : items[i].ComponentName;
-            }
-            var serializedStr = JsonUtility.ToJson( new ItemsWrapper {Items = mru} );
-            EditorPrefs.SetString( _mruKey, serializedStr );
+            SaveComponentsList( components, MaxMRUStoreItems, _mruKey );
         } 
 
-        public void LoadMRUComponents( IReadOnlyList<SearchPopup.Item> allItems, [NotNull] List<SearchPopup.Item> result )
+        public void LoadMRUComponents( [NotNull] List<Type> result )
         {
             if ( result == null ) throw new ArgumentNullException( nameof(result) );
 
-            result.Clear();
-            var serializedStr = EditorPrefs.GetString( _mruKey, null );
-            if( String.IsNullOrEmpty( serializedStr ) )
-                return;
+            LoadComponentsList( _mruKey, MaxMRUStoreItems, result );
+        } 
 
-            var mru = JsonUtility.FromJson<ItemsWrapper>( serializedStr ).Items;
-            foreach ( var itemStr in mru.Take( MaxMRUItems ) )
-            {
-                var nsAndName = itemStr.Split( ".", StringSplitOptions.RemoveEmptyEntries );
-                if( nsAndName.Length == 0 )
-                    continue;
+        public void SaveFavoriteComponents( IReadOnlyList<Type> components )
+        {
+            SaveComponentsList( components, MaxFavoriteStoreItems, _favKey );
+        } 
 
-                foreach ( var item in allItems )
-                {
-                    if ( IsEqual( item, nsAndName ) )
-                    {
-                        result.Add( item );
-                        break;
-                    }
-                }
-            }
+        public void LoadFavoriteComponents( [NotNull] List<Type> result )
+        {
+            if ( result == null ) throw new ArgumentNullException( nameof(result) );
 
-            return;
-
-            static Boolean IsEqual( SearchPopup.Item item, String[] ns_name )
-            {
-                if ( ns_name.Length == 0 )
-                    return false;
-                var name = ns_name[ ^1 ];
-
-                if ( item.ComponentName ==  name && ns_name.Length - 1 == item.Namespace.Count )
-                {
-                    for ( int i = 0; i < item.Namespace.Count; i++ )
-                    {
-                        if ( item.Namespace[ i ] != ns_name[ i ] )
-                        {
-                            return false;
-                        }
-                    }
-                    return true;
-                }
-
-                return false;
-            }
+            LoadComponentsList( _favKey, MaxFavoriteStoreItems, result );
         } 
 
         private readonly String _settingsPrefix;
         private readonly String _mruKey;
+        private readonly String _favKey;
         private readonly string _listModeKey;
         private readonly string _lastSearchStringKey;
+
+        private void LoadComponentsList( String storeKey, Int32 maxCount, [NotNull] List<Type> result )
+        {
+            if ( result == null ) throw new ArgumentNullException( nameof(result) );
+
+            result.Clear();
+            var serializedStr = EditorPrefs.GetString( storeKey, null );
+            if( String.IsNullOrEmpty( serializedStr ) )
+                return;
+
+            var items = JsonUtility.FromJson<ItemsWrapper>( serializedStr );
+            foreach ( var typeFullName in items.Items.Take( maxCount ) )
+            {
+                var componentType = Type.GetType( typeFullName, false );
+                if( componentType != null )
+                    result.Add( componentType );
+            }
+        } 
+
+        public void SaveComponentsList( IReadOnlyList<Type> components, Int32 maxStoreCount, String storeKey )
+        {
+            var items = new String[ Math.Min( maxStoreCount, components.Count ) ];
+            for ( int i = 0; i < items.Length; i++ )
+            {
+                items[ i ] = components[ i ].AssemblyQualifiedName;
+            }
+            var serializedStr = JsonUtility.ToJson( new ItemsWrapper {Items = items} );
+            EditorPrefs.SetString( storeKey, serializedStr );
+        } 
 
         private class ItemsWrapper
         {
