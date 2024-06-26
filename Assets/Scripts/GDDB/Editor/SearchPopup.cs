@@ -82,9 +82,9 @@ namespace GDDB.Editor
             searchField.value = _settings.LastSearchString;
 
             if( _settings.SearchListMode == EListMode.Recommended )
-                RecommendedToolBtnOnclicked();
+                ProcessRecommended();
             else
-                SearchToolBtnOnclicked();
+                ProcessSearch();
         }
 
         public override void OnClose( )
@@ -160,7 +160,7 @@ namespace GDDB.Editor
             else                                    //Show classes from selected namespace 
             {
                 _lastSearchResult.InspectNamespace.AddRange( resultItem.Namespace );
-                PrepareResults( _lastSearchResult );
+                PrepareSearchResults( _lastSearchResult );
                 ShowResults( _lastSearchResult );
             }
         }
@@ -173,8 +173,10 @@ namespace GDDB.Editor
                 _favorites.Remove( resultItem.Component );
                 if( !resultItem.IsFavorite )
                     _favorites.Insert( 0, resultItem.Component );
-                PrepareResults( _lastSearchResult );
-                ShowResults( _lastSearchResult );
+                if ( _settings.SearchListMode == EListMode.Recommended )
+                    ProcessRecommended();
+                else
+                    ProcessSearch();
             }
         }
 
@@ -186,30 +188,41 @@ namespace GDDB.Editor
 
         private void RecommendedToolBtnOnclicked( )
         {
-            _searchToolBtn.RemoveFromClassList( "search-popup__toolbtn-toggled" );
-            _recommendedToolBtn.AddToClassList( "search-popup__toolbtn-toggled" );
-            _settings.SearchListMode = EListMode.Recommended;
             ProcessRecommended();
         }
 
         private void SearchToolBtnOnclicked( )
         {
-            _searchToolBtn.AddToClassList( "search-popup__toolbtn-toggled" );
-            _recommendedToolBtn.RemoveFromClassList( "search-popup__toolbtn-toggled" );
-            _settings.SearchListMode = EListMode.Search;
+            ProcessSearch(  );
+        }
+
+        private void ProcessSearch( )
+        {
             ProcessSearch( _lastSearchResult.SearchString );
         }
 
         private void ProcessSearch( String searchString )
         {
-            _settings.LastSearchString = searchString;
-            _lastSearchResult = SearchItems( searchString );
-            PrepareResults( _lastSearchResult );
+            _searchToolBtn.AddToClassList( "search-popup__toolbtn-toggled" );
+            _recommendedToolBtn.RemoveFromClassList( "search-popup__toolbtn-toggled" );
+            _settings.SearchListMode = EListMode.Search;
+
+            if ( !String.Equals( searchString, _lastSearchResult.SearchString ) )
+            {
+                _settings.LastSearchString = searchString;
+                _lastSearchResult          = SearchItems( searchString );
+            }
+            
+            PrepareSearchResults( _lastSearchResult );
             ShowResults( _lastSearchResult );
         }
 
         private void ProcessRecommended( )
         {
+            _searchToolBtn.RemoveFromClassList( "search-popup__toolbtn-toggled" );
+            _recommendedToolBtn.AddToClassList( "search-popup__toolbtn-toggled" );
+            _settings.SearchListMode = EListMode.Recommended;
+
             _resultsLabel.text = "Recommended";
             var favoriteItems = _favorites.Take( _settings.MaxFavoriteViewItems )
                                           .Select( i => new ResultItem()
@@ -227,6 +240,7 @@ namespace GDDB.Editor
                                          Label = i.ComponentName,
                                          Icon = Resources.RecentIcon,
                                  } ).ToList();
+
              _resultsToList.Clear();
              _resultsToList.AddRange( favoriteItems );
              _resultsToList.AddRange( mruItems );
@@ -247,7 +261,7 @@ namespace GDDB.Editor
                        };
         }
 
-        private void PrepareResults( Result result )
+        private void PrepareSearchResults( Result result )
         {
             if ( result.InspectNamespace.Any() )
             {
@@ -271,12 +285,23 @@ namespace GDDB.Editor
                                                         } ).ToList();
             }
 
-            CompactResultView( result );
+            CompactSearchResultView( result );
 
             result.View.Sort( (x, y) => String.Compare( x.Label, y.Label, StringComparison.Ordinal ) );
+
+            //Highlight search string in component names
+            for ( var i = 0; i < result.View.Count; i++ )
+            {
+                var resultItem = result.View[ i ];
+                if ( !resultItem.IsNamespace )
+                {
+                    resultItem.LabelWithTags = resultItem.UseRichTextTags( result.SearchString, resultItem.Label );
+                    result.View[ i ]         = resultItem;
+                } 
+            }
         }
 
-        private void CompactResultView( Result result )
+        private void CompactSearchResultView( Result result )
         {
             if ( result.View.Count > 20 )
             {
@@ -325,17 +350,6 @@ namespace GDDB.Editor
                 _backNamespaceIcon.style.display = DisplayStyle.None;
             }
 
-            //Highlight search string in component names
-            for ( var i = 0; i < result.View.Count; i++ )
-            {
-                var resultItem = result.View[ i ];
-                if ( !resultItem.IsNamespace )
-                {
-                    resultItem.LabelWithTags = resultItem.UseRichTextTags( result.SearchString, resultItem.Label );
-                    result.View[ i ]         = resultItem;
-                } 
-            }
-
             _resultsToList.Clear();
             _resultsToList.AddRange( result.View );
             _resultsList.RefreshItems();
@@ -361,7 +375,7 @@ namespace GDDB.Editor
             if( _lastSearchResult != null && _lastSearchResult.InspectNamespace.Any() )
             {
                 _lastSearchResult.InspectNamespace.RemoveAt( _lastSearchResult.InspectNamespace.Count - 1 );
-                PrepareResults( _lastSearchResult );
+                PrepareSearchResults( _lastSearchResult );
                 ShowResults( _lastSearchResult );
             }
         }
