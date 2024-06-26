@@ -10,9 +10,9 @@ namespace GDDB.Editor
     [InitializeOnLoad]
     public static class ProjectWindowsTypeDrawer 
     {
-        private static readonly GDTypeHierarchy           TypeHierarchy;
-        private static readonly Dictionary<Int32, String> GdTypeStrCache = new ();
-        private static readonly GDObjectsFinder           GDOFinder;
+        private static readonly GDTypeHierarchy             TypeHierarchy;
+        private static readonly Dictionary<Int32, ItemData> GdTypeCache = new ();
+        private static readonly GDObjectsFinder             GDOFinder;
 
         static ProjectWindowsTypeDrawer()
         {
@@ -24,7 +24,7 @@ namespace GDDB.Editor
 
         private static void GDObjectEditorOnChanged( GDObject obj )
         {
-            GdTypeStrCache.Clear();
+            GdTypeCache.Clear();
             GDOFinder.Reload();
         }
 
@@ -37,38 +37,89 @@ namespace GDDB.Editor
             if ( !asset )
                 return;
 
+            //Not enough free space
+            // if( rect.width < 250 )
+            //     return;
+
             // Right align label:
-            const int width = 250;
-            rect.x     += rect.width - width;
-            rect.width =  width;
+            // const int width = 250;
+            // rect.x     += rect.width - width;
+            // rect.width =  width;
+
+            //TEST
+            //GUI.skin.label.CalcMinMaxWidth( new GUIContent(asset.name), out var min, out var max );
+            //GUI.Label( rect, $"{min} / {max}, {rect.width - max}", Styles.GDTypeStrLabel );
+            //Test
+
+            var itemHash = HashCode.Combine( instanceid, asset.name.GetHashCode(), asset.Type.GetHashCode() );
+            if ( !GdTypeCache.TryGetValue( itemHash, out var itemData ) )
+            {
+                itemData = new ItemData() { GDTypeString = TypeHierarchy.GetTypeString( asset.Type ),  } ;
+                if( asset.Type != default )
+                    Styles.GDTypeStrLabel.CalcMinMaxWidth( new GUIContent( itemData.GDTypeString ), out _, out itemData.GDTypeStrWidth );
+                GUI.skin.label.CalcMinMaxWidth( new GUIContent( asset.name ), out _, out var objNameWidth );
+                itemData.GDObjectNameWidth = objNameWidth + 25;
+            }
 
             if ( !asset.EnabledObject )
             {
-                if( Selection.objects.Contains( asset ) )
-                    GUI.Label( rect, "Disabled", Styles.GDTypeStrLabelDisabledSelected );
-                else
-                    GUI.Label( rect, "Disabled", Styles.GDTypeStrLabelDisabled );
+                if ( rect.width > itemData.GDObjectNameWidth + 50 )
+                {
+                    if( Selection.objects.Contains( asset ) )
+                        GUI.Label( rect, "Disabled", Styles.GDTypeStrLabelDisabledSelected );
+                    else
+                        GUI.Label( rect, "Disabled", Styles.GDTypeStrLabelDisabled );
+                }
+                else if( rect.width > itemData.GDObjectNameWidth )
+                {
+                    if( Selection.objects.Contains( asset ) )
+                        GUI.Label( rect, "x", Styles.GDTypeStrLabelDisabledSelected );
+                    else
+                        GUI.Label( rect, "x", Styles.GDTypeStrLabelDisabled );
+                }
                 return;
             }
 
             if( asset.Type == default )
                 return;
 
-            if ( !GdTypeStrCache.TryGetValue( instanceid, out var gdTypeStr ) )
+            if( rect.width <= itemData.GDObjectNameWidth )
+                return;
+
+            var text = itemData.GDTypeString;
+            if ( rect.width < itemData.GDObjectNameWidth + itemData.GDTypeStrWidth )
             {
-                gdTypeStr = TypeHierarchy.GetTypeString( asset.Type );
-                GdTypeStrCache.Add( instanceid, gdTypeStr );
+                var pixelsPerChar = itemData.GDTypeStrWidth / itemData.GDTypeString.Length;
+                var remainChars   = Mathf.Clamp( Mathf.RoundToInt( (rect.width - itemData.GDObjectNameWidth ) / pixelsPerChar ), 0, itemData.GDTypeString.Length );
+                if( remainChars == 0 )
+                    return;
+                else if ( remainChars < itemData.GDTypeString.Length )
+                    text = text.Substring( itemData.GDTypeString.Length - remainChars );
             }
-            
+
             if( GDOFinder.IsDuplicatedType( asset ) || !TypeHierarchy.IsTypeCorrect( asset.Type, out _ ) )
-                GUI.Label( rect, gdTypeStr, Styles.GDTypeStrLabelError );
+                    GUI.Label( rect, text, Styles.GDTypeStrLabelError );
             else
             {
                 if( Selection.objects.Contains( asset ) )
-                    GUI.Label( rect, gdTypeStr, Styles.GDTypeStrLabelSelected );
+                    GUI.Label( rect, text, Styles.GDTypeStrLabelSelected );
                 else
-                    GUI.Label( rect, gdTypeStr, Styles.GDTypeStrLabel );
+                    GUI.Label( rect, text, Styles.GDTypeStrLabel );
             }
+            // else
+            // {
+            //     var gdTypeStr = asset.Type.ToString();
+            //     if( GDOFinder.IsDuplicatedType( asset ) || !TypeHierarchy.IsTypeCorrect( asset.Type, out _ ) )
+            //         GUI.Label( rect, gdTypeStr, Styles.GDTypeStrLabelError );
+            //     else
+            //     {
+            //         if( Selection.objects.Contains( asset ) )
+            //             GUI.Label( rect, gdTypeStr, Styles.GDTypeStrLabelSelected );
+            //         else
+            //             GUI.Label( rect, gdTypeStr, Styles.GDTypeStrLabel );
+            //     }
+            // }
+            
         }
 
         private static bool IsMainListRect(Rect rect)
@@ -134,6 +185,13 @@ namespace GDDB.Editor
                                                                      };
 
 
+        }
+
+        private struct ItemData
+        {
+            public String GDTypeString;
+            public Single GDObjectNameWidth;
+            public Single GDTypeStrWidth;
         }
     }
 }

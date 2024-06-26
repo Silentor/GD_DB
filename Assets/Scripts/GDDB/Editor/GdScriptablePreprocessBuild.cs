@@ -43,7 +43,7 @@ namespace GDDB.Editor
         {
             var gdReference = ScriptableObject.CreateInstance<GdScriptableReference>();
             gdReference.Root    = gddb.Root;
-            gdReference.Content = gddb.AllObjects.ToList();
+            gdReference.Content = gddb.AllObjects.ToArray();
             AssetDatabase.CreateAsset( gdReference, $"Assets/Resources/{gddb.Root.Id}.asset");
         }
     }

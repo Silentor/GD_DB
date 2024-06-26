@@ -9,7 +9,7 @@ using UnityEditor;
 namespace GDDB.Editor
 {
     /// <summary>
-    /// Provides an tree of Categories for GdType
+    /// Provides a tree of Categories for GdType
     /// </summary>
     public class GDTypeHierarchy
     {

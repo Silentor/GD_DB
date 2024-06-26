@@ -14,10 +14,13 @@ namespace GDDB.Editor
             for ( var i = 0; i < importedAssets.Length; i++ )
             {
                 var assetPath = importedAssets[ i ];
-                var gdObject  = AssetDatabase.LoadAssetAtPath<GDObject>( assetPath );
-                if ( gdObject )
+                if ( assetPath.EndsWith( ".asset" ) )
                 {
-                    gdObjects.Add( gdObject );
+                    var gdObject  = AssetDatabase.LoadAssetAtPath<GDObject>( assetPath );
+                    if ( gdObject )
+                    {
+                        gdObjects.Add( gdObject );
+                    }
                 }
             }
             
@@ -29,7 +32,7 @@ namespace GDDB.Editor
 
         private static void ProcessImportedGDObjects( List<GDObject> gdObjects )
         {
-            Debug.Log( $"Processing imported gdobjects, count {gdObjects.Count}" );
+            Debug.Log( $"Processing imported GDObjects, count {gdObjects.Count}" );
 
             var gdoFinder = new GDObjectsFinder();
             foreach ( var gdObject in gdObjects )
@@ -52,7 +55,7 @@ namespace GDDB.Editor
                     }
             }
 
-            Debug.Log( $"Finished processing imported gdobjects" );
+            Debug.Log( $"Finished processing imported GDObjects" );
         }
     }
 }
