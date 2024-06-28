@@ -12,6 +12,6 @@
         </ui:Button>
     </ui:VisualElement>
     <ui:VisualElement name="ResultsBox" style="flex-grow: 1;">
-        <ui:ListView name="ResultsList" />
+        <ui:ListView name="ResultsList" selection-type="None" focusable="false" show-bound-collection-size="false" />
     </ui:VisualElement>
 </ui:UXML>

@@ -50,3 +50,7 @@
     border-top-width: 0;
     border-bottom-width: 0;
 }
+
+.search-popup__item-selected {
+    background-color: var(--unity-colors-highlight-background);
+}
