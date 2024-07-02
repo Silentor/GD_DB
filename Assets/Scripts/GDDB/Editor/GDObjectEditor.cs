@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 using NUnit.Framework;
@@ -23,12 +24,14 @@ namespace GDDB.Editor
         private VisualElement   _componentsContainer;
         private VisualTreeAsset _gdcVisualTreeAsset;
         private VisualTreeAsset _gdoVisualTreeAsset;
-        private Settings       _settings;
+        private Settings        _settings;
+        private List<Type>      _favorites;
 
         protected virtual void OnEnable( )
         {
             _target   = (GDObject)target;
             _settings = new Settings();
+            LoadFavoriteComponents();
         }
 
         protected virtual void OnDisable( )
@@ -37,7 +40,7 @@ namespace GDDB.Editor
 
         public override VisualElement CreateInspectorGUI( )
         {
-            var gdoVisualTreeAsset = Resources.Load<VisualTreeAsset>(("GDObjectEditor"));
+            var gdoVisualTreeAsset = Resources.GDObjectEditorAsset;
             var   gdoVisualTree      = gdoVisualTreeAsset.Instantiate();
         
             //Enabled toggle
@@ -114,7 +117,7 @@ namespace GDDB.Editor
             VisualElement result  ;
             if ( componentProp.managedReferenceValue != null )
             {
-                result = GetGDComponentEditorTemplate().Instantiate();
+                result = Resources.GDComponentEditorAsset.Instantiate();
 
                 //Draw header
                 var compType  = componentProp.managedReferenceValue.GetType();
@@ -127,6 +130,10 @@ namespace GDDB.Editor
                 var removeBtn     = result.Q<Button>( "Remove" );
                 var catchId       = componentProp.managedReferenceId;
                 removeBtn.clicked += () => RemoveComponent( componentsProp, catchId );
+
+                var scriptIcon = result.Q<Button>( "ScriptIcon" );
+                scriptIcon.style.backgroundImage =  _favorites.Contains( compType ) ? Resources.FavoriteIcon : Resources.CSharpIcon;
+                scriptIcon.clicked               += ( ) => ComponentIconClicked( scriptIcon, compType ); 
 
                 //Draw body
                 var propertiesContainer = result.Q<VisualElement>( "Properties" );
@@ -147,7 +154,7 @@ namespace GDDB.Editor
             }
             else
             {
-                result = GetGDComponentEditorTemplate().Instantiate();
+                result = Resources.GDComponentEditorAsset.Instantiate();
 
                 var typeFoldout = result.Q<Foldout>( "Type" );
                 typeFoldout.AddToClassList( "component__type--error" );
@@ -176,7 +183,9 @@ namespace GDDB.Editor
             var addComponentBtn = gdObjectVisualTree.Q<Button>( "AddComponentBtn" );
             addComponentBtn.clicked += ( ) =>
             {
-                PopupWindow.Show( addComponentBtn.worldBound, new SearchPopup( this, componentsProp, _settings ) );
+                var searchPopupLogic = new SearchPopup( this, componentsProp, _settings );
+                searchPopupLogic.Closed += LoadFavoriteComponents;
+                PopupWindow.Show( addComponentBtn.worldBound, searchPopupLogic );
             };
         }             
 
@@ -239,7 +248,22 @@ namespace GDDB.Editor
                     serializedObject.ApplyModifiedProperties();
                 }
             }
-            
+        }
+
+        private void ComponentIconClicked( Button iconButton, Type componentType )
+        {
+            if ( _favorites.Contains( componentType ) )
+            {
+                _favorites.Remove( componentType );
+                iconButton.style.backgroundImage = Resources.CSharpIcon;
+            }
+            else
+            {
+                _favorites.Add( componentType );
+                iconButton.style.backgroundImage = Resources.FavoriteIcon;
+            }
+
+            _settings.SaveFavoriteComponents( _favorites );
         }
 
         private Boolean IsComponentFoldout( Type componentType )
@@ -253,18 +277,19 @@ namespace GDDB.Editor
             EditorPrefs.SetBool( componentType.Name, state );
         }
 
-        private VisualTreeAsset GetGDOObjectEditorTemplate( )
+        private void LoadFavoriteComponents( )
         {
-            if( _gdoVisualTreeAsset == null )
-                _gdoVisualTreeAsset = Resources.Load<VisualTreeAsset>(("GDObjectEditor"));
-            return _gdoVisualTreeAsset;
+            _favorites = new List<Type>();
+            _settings.LoadFavoriteComponents( _favorites );
         }
 
-        private VisualTreeAsset GetGDComponentEditorTemplate( )
+        private static class Resources
         {
-            if( _gdcVisualTreeAsset == null )
-                _gdcVisualTreeAsset = Resources.Load<VisualTreeAsset>(("GDComponentEditor"));
-            return _gdcVisualTreeAsset;
+            public static VisualTreeAsset GDObjectEditorAsset = UnityEngine.Resources.Load<VisualTreeAsset>( "GDObjectEditor" );
+            public static VisualTreeAsset GDComponentEditorAsset = UnityEngine.Resources.Load<VisualTreeAsset>( "GDComponentEditor" );
+
+            public static Texture2D CSharpIcon    = UnityEngine.Resources.Load<Texture2D>( "tag_24dp" );
+            public static Texture2D FavoriteIcon  = UnityEngine.Resources.Load<Texture2D>( "star_24dp" );
         }
     }
 }

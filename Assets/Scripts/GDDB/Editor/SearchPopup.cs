@@ -86,9 +86,9 @@ namespace GDDB.Editor
             //Restore prev state
             var types = new List<Type>();
             _settings.LoadMRUComponents( types );
-            _mru.AddRange( _allComponents.Where( c => types.Contains( c.Type ) ) );             
+            _mru.AddRange( types.Where( t => _allComponents.Any( a => a.Type == t ) ) );             
             _settings.LoadFavoriteComponents( types );
-            _favorites.AddRange( _allComponents.Where( c => types.Contains( c.Type ) ) );
+            _favorites.AddRange( types.Where( t => _allComponents.Any( a => a.Type == t ) ) );
 
             _lastSearchResult  = new Result() { SearchString = _settings.LastSearchString, Items = _allComponents.ToList() };
             _searchField.value = _settings.LastSearchString;
@@ -106,9 +106,13 @@ namespace GDDB.Editor
         {
             base.OnClose();
 
-            _settings.SaveMRUComponents( _mru.Select( c => c.Type ).ToArray() );
-            _settings.SaveFavoriteComponents( _favorites.Select( c => c.Type ).ToArray() );
+            _settings.SaveMRUComponents( _mru.ToArray() );
+            _settings.SaveFavoriteComponents( _favorites.ToArray() );
+
+            Closed?.Invoke();
         }
+
+        public event Action Closed;
 
         private readonly GDObjectEditor      _editor;
         private readonly SerializedProperty  _componentsProp;
@@ -126,8 +130,8 @@ namespace GDDB.Editor
         private readonly Settings            _settings;
         private          Int32               _selectedViewItem;
 
-        private readonly List<Item> _mru       = new();
-        private readonly List<Item> _favorites = new();
+        private readonly List<Type> _mru       = new();
+        private readonly List<Type> _favorites = new();
         
 
         private VisualElement ResultsList_MakeItem( )
@@ -201,9 +205,9 @@ namespace GDDB.Editor
             //Add/remove item from Favorite list
             if ( !resultItem.IsNamespace )
             {
-                _favorites.Remove( resultItem.Component );
+                _favorites.Remove( resultItem.Component.Type );
                 if( !resultItem.IsFavorite )
-                    _favorites.Insert( 0, resultItem.Component );
+                    _favorites.Insert( 0, resultItem.Component.Type );
                 if ( _settings.SearchListMode == EListMode.Recommended )
                     ProcessRecommended();
                 else
@@ -296,28 +300,35 @@ namespace GDDB.Editor
             _settings.SearchListMode = EListMode.Recommended;
 
             _resultsLabel.text = "Recommended";
-            var favoriteItems = _favorites.Take( _settings.MaxFavoriteViewItems )
-                                          .Select( i => new ResultItem()
-                                             {
-                                                     Component = i, 
-                                                     Label     = i.ComponentName,
-                                                     Icon      = Resources.FavoriteIcon,
-                                                     IsFavorite = true,
-                                             } ).ToList();
-             var mruItems = _mru.Where( i => favoriteItems.All( f => f.Type != i.Type ) )
-                                .Take( _settings.MaxMRUViewItems )
-                                .Select( i => new ResultItem()
-                                 {
-                                         Component = i, 
-                                         Label = i.ComponentName,
-                                         Icon = Resources.RecentIcon,
-                                 } ).ToList();
+            var favoriteItems = new List<ResultItem>();
+            foreach ( var favCompType in _favorites )
+            {
+                var favItem = _allComponents.First( i => i.Type == favCompType );
+                favoriteItems.Add( new ResultItem()
+                                   {
+                                           Component = favItem,
+                                           Label = favItem.ComponentName,
+                                           Icon = Resources.FavoriteIcon,
+                                           IsFavorite = true,
+                                   } );
+            }
+            var mruItems = new List<ResultItem>();
+            foreach ( var mruCompType in _mru )
+            {
+                var mruItem = _allComponents.First( i => i.Type == mruCompType );
+                mruItems.Add( new ResultItem()
+                              {
+                                      Component  = mruItem,
+                                      Label      = mruItem.ComponentName,
+                                      Icon       = Resources.RecentIcon,
+                              } );
+            }
 
-             _resultsToList.Clear();
-             _resultsToList.AddRange( favoriteItems );
-             _resultsToList.AddRange( mruItems );
-             _resultsList.RefreshItems();
-             SelectedItem = -1;
+            _resultsToList.Clear();
+            _resultsToList.AddRange( favoriteItems );
+            _resultsToList.AddRange( mruItems );
+            _resultsList.RefreshItems();
+            SelectedItem = -1;
         }
 
 
@@ -344,8 +355,8 @@ namespace GDDB.Editor
                                                           Component = i, 
                                                           Label = i.ComponentName, 
                                                           Namespace = i.Namespace.Skip( result.InspectNamespace.Count ).ToList(),
-                                                          Icon = _favorites.Contains( i ) ? Resources.FavoriteIcon : Resources.CSharpIcon,
-                                                          IsFavorite = _favorites.Contains( i )
+                                                          Icon = _favorites.Contains( i.Type ) ? Resources.FavoriteIcon : Resources.CSharpIcon,
+                                                          IsFavorite = _favorites.Contains( i.Type )
                                                   } ).ToList();
             }
             else
@@ -355,8 +366,8 @@ namespace GDDB.Editor
                                                                 Component = i, 
                                                                 Label = i.ComponentName, 
                                                                 Namespace = i.Namespace,
-                                                                Icon = _favorites.Contains( i ) ? Resources.FavoriteIcon : Resources.CSharpIcon,
-                                                                IsFavorite = _favorites.Contains( i )
+                                                                Icon = _favorites.Contains( i.Type ) ? Resources.FavoriteIcon : Resources.CSharpIcon,
+                                                                IsFavorite = _favorites.Contains( i.Type )
                                                         } ).ToList();
             }
 
@@ -428,7 +439,7 @@ namespace GDDB.Editor
             SelectedItem = -1;
             _resultsToList.Clear();
             _resultsToList.AddRange( result.View );
-            _resultsList.RefreshItems();
+            _resultsList.Rebuild();
             if( _resultsToList.Count > 0 )
                 _resultsList.ScrollToItem( 0 );
         }
@@ -467,8 +478,8 @@ namespace GDDB.Editor
         private void AddComponent( ResultItem item )
         {
             _editor.AddComponent( _componentsProp, item.Component.Type );
-            _mru.Remove( item.Component );
-            _mru.Insert( 0, item.Component );
+            _mru.Remove( item.Component.Type );
+            _mru.Insert( 0, item.Component.Type );
             editorWindow.Close();
         }
 
@@ -574,7 +585,7 @@ namespace GDDB.Editor
              Recommended
         }
 
-        public static class Resources
+        private static class Resources
         {
             public static Texture2D CSharpIcon = UnityEngine.Resources.Load<Texture2D>( "tag_24dp" );
             public static Texture2D NamespaceIcon = UnityEngine.Resources.Load<Texture2D>( "list_alt_24dp" );
