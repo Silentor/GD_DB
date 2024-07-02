@@ -24,6 +24,7 @@ namespace GDDB.Editor
             get => _selectedViewItem;
             set
             {
+                _resultsList.ScrollToItem( value );
                 _selectedViewItem = value;
                 UpdateSelectedItem();
             }
@@ -52,12 +53,12 @@ namespace GDDB.Editor
             _itemAsset = UnityEngine.Resources.Load<VisualTreeAsset>( "SearchPopupItem" );
 
             _searchToolBtn = instance.Q<Button>( "SearchBtn" );
-            _searchToolBtn.clicked += SearchToolBtnOnclicked;
+            _searchToolBtn.clicked += SearchToolBtn_Clicked;
             _recommendedToolBtn = instance.Q<Button>( "RecommendedBtn" );
-            _recommendedToolBtn.clicked += RecommendedToolBtnOnclicked;
+            _recommendedToolBtn.clicked += RecommendedToolBtn_Clicked;
 
             _searchField = instance.Q<TextField>( "SearchField" );
-            _searchField.RegisterValueChangedCallback( SearchFieldOnChanged );
+            _searchField.RegisterValueChangedCallback( SearchField_Changed );
             _searchField.RegisterCallback<AttachToPanelEvent>( _ => _searchField.Focus() );
 
             _resultsLabel         =  instance.Q<Label>( "ResultsLbl" );
@@ -98,7 +99,7 @@ namespace GDDB.Editor
                 ProcessSearch();
 
             //To support keys navigation
-            instance.RegisterCallback<KeyDownEvent>( OnKeyDown, TrickleDown.TrickleDown );
+            instance.RegisterCallback<KeyDownEvent>( Widget_KeyDown, TrickleDown.TrickleDown );
         }
 
         public override void OnClose( )
@@ -133,9 +134,9 @@ namespace GDDB.Editor
         {
             var result = _itemAsset.Instantiate();
             var itemBtn    = result.Q<Button>( "ItemBtn" );
-            itemBtn.clicked += ( ) => OnItemClicked( (ResultItem) itemBtn.userData );
+            itemBtn.clicked += ( ) => ItemBtn_Clicked( (ResultItem) itemBtn.userData );
             var iconBtn = result.Q<Button>( "IconBtn" );
-            iconBtn.clicked += ( ) => OnIconClicked( (ResultItem) iconBtn.userData );
+            iconBtn.clicked += ( ) => IconBtn_Clicked( (ResultItem) iconBtn.userData );
             return result;
         }
 
@@ -168,27 +169,34 @@ namespace GDDB.Editor
 
         private void ResultsList_UnbindItem( VisualElement e, Int32 i )
         {
+            var resultItem = _resultsToList[ i ];
             e.RemoveFromClassList( "search-popup__item-selected" );
+            resultItem.Element  = null;
+            _resultsToList[ i ] = resultItem;
         }
 
-        private void OnItemClicked( ResultItem resultItem )
+        private void ItemBtn_Clicked( ResultItem resultItem )
         {
             if ( !resultItem.IsNamespace )          //Select component, add component to GDObject
             {
-                _editor.AddComponent( _componentsProp, resultItem.Component.Type );
-                _mru.Remove( resultItem.Component );
-                _mru.Insert( 0, resultItem.Component );
-                editorWindow.Close();
+                AddComponent( resultItem );
             }
             else                                    //Show classes from selected namespace 
             {
-                _lastSearchResult.InspectNamespace.AddRange( resultItem.Namespace );
-                PrepareSearchResults( _lastSearchResult );
-                ShowResults( _lastSearchResult );
+                InspectNamespace( resultItem.Namespace );
             }
         }
 
-        private void OnIconClicked( ResultItem resultItem )
+        private void ResultsBtn_Clicked( )
+        {
+            //Back one namespace level                                                            
+            if( _lastSearchResult.InspectNamespace.Any() )
+            {
+                ReturnInspectNamespace();
+            }
+        }
+
+        private void IconBtn_Clicked( ResultItem resultItem )
         {
             //Add/remove item from Favorite list
             if ( !resultItem.IsNamespace )
@@ -204,23 +212,59 @@ namespace GDDB.Editor
         }
 
 
-        private void SearchFieldOnChanged(ChangeEvent<String> ev )
+        private void SearchField_Changed(ChangeEvent<String> ev )
         {
             ProcessSearch( ev.newValue );
         }
 
-        private void RecommendedToolBtnOnclicked( )
+        private void RecommendedToolBtn_Clicked( )
         {
             if( _settings.SearchListMode != EListMode.Recommended )
                 ProcessRecommended();
         }
 
-        private void SearchToolBtnOnclicked( )
+        private void SearchToolBtn_Clicked( )
         {
             if ( _settings.SearchListMode != EListMode.Search )
             {
                 ProcessSearch(  );
                 _searchField.Focus();
+            }
+        }
+
+        private void Widget_KeyDown(KeyDownEvent evt )
+        {
+            if( _resultsToList.Count == 0 )                //All operations work on result items
+                return;
+
+            if ( evt.keyCode == KeyCode.DownArrow  )
+            {
+                SelectedItem = SelectedItem < 0 ? 0 : Math.Clamp( SelectedItem + 1, 0, _resultsToList.Count - 1 );
+            }
+            else if ( evt.keyCode == KeyCode.UpArrow  )
+            {
+                SelectedItem = SelectedItem < 0 ? _resultsToList.Count - 1 : Math.Clamp( SelectedItem - 1, 0, _resultsToList.Count - 1 );
+            }
+            else if ( evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter )
+            {
+                if ( SelectedItem >= 0 && SelectedItem < _resultsToList.Count )
+                    AddComponent( _resultsToList[ SelectedItem ] );
+            }
+            else if ( evt.keyCode == KeyCode.RightArrow )
+            {
+                if ( SelectedItem >= 0 && SelectedItem < _resultsToList.Count )
+                {
+                    var item = _resultsToList[ SelectedItem ];
+                    if( item.IsNamespace )
+                        InspectNamespace( item.Namespace );
+                }
+            }
+            else if ( evt.keyCode == KeyCode.LeftArrow )
+            {
+                if ( SelectedItem >= 0 && SelectedItem < _resultsToList.Count )
+                {
+                    ReturnInspectNamespace();
+                }
             }
         }
 
@@ -241,7 +285,7 @@ namespace GDDB.Editor
                 _lastSearchResult          = SearchItems( searchString );
             }
             
-            PrepareSearchResults( _lastSearchResult );
+            PrepareResults( _lastSearchResult );
             ShowResults( _lastSearchResult );
         }
 
@@ -290,7 +334,7 @@ namespace GDDB.Editor
                        };
         }
 
-        private void PrepareSearchResults( Result result )
+        private void PrepareResults( Result result )
         {
             if ( result.InspectNamespace.Any() )
             {
@@ -381,10 +425,12 @@ namespace GDDB.Editor
                 _backNamespaceIcon.style.display = DisplayStyle.None;
             }
 
+            SelectedItem = -1;
             _resultsToList.Clear();
             _resultsToList.AddRange( result.View );
             _resultsList.RefreshItems();
-            SelectedItem = -1;
+            if( _resultsToList.Count > 0 )
+                _resultsList.ScrollToItem( 0 );
         }
 
         private Boolean IsNamespaceBeginWith( IReadOnlyList<String> ns, IReadOnlyList<String> search )
@@ -401,44 +447,47 @@ namespace GDDB.Editor
             return true;
         }
 
-        private void ResultsBtn_Clicked( )
-        {
-            //Back one namespace level                                                            
-            if( _lastSearchResult != null && _lastSearchResult.InspectNamespace.Any() )
-            {
-                _lastSearchResult.InspectNamespace.RemoveAt( _lastSearchResult.InspectNamespace.Count - 1 );
-                PrepareSearchResults( _lastSearchResult );
-                ShowResults( _lastSearchResult );
-            }
-        }
-
-        private void OnKeyDown(KeyDownEvent evt )
-        {
-            if ( evt.keyCode == KeyCode.DownArrow  )
-            {
-                SelectedItem = SelectedItem < 0 ? 0 : Math.Clamp( SelectedItem + 1, 0, _resultsToList.Count - 1 );
-            }
-            else if ( evt.keyCode == KeyCode.UpArrow  )
-            {
-                SelectedItem = SelectedItem < 0 ? _resultsToList.Count - 1 : Math.Clamp( SelectedItem - 1, 0, _resultsToList.Count - 1 );
-            }
-        }
-
         private void UpdateSelectedItem( )
         {
             for ( var i = 0; i < _resultsToList.Count; i++ )
             {
                 var resultItem = _resultsToList[ i ];
-                if( resultItem.Element == null )                 //Its null after list refresh but before bind items
+                if( resultItem.Element == null )                 //List item was unbinded, it's a virtualized list after all
                     continue;
 
-                if( i == _selectedViewItem )
+                if ( i == _selectedViewItem )
+                {
                     resultItem.Element.AddToClassList( "search-popup__item-selected" );
+                }
                 else
                     resultItem.Element.RemoveFromClassList( "search-popup__item-selected" );
             }
         }
 
+        private void AddComponent( ResultItem item )
+        {
+            _editor.AddComponent( _componentsProp, item.Component.Type );
+            _mru.Remove( item.Component );
+            _mru.Insert( 0, item.Component );
+            editorWindow.Close();
+        }
+
+        private void InspectNamespace( IReadOnlyList<String> ns )
+        {
+            _lastSearchResult.InspectNamespace.AddRange( ns );
+            PrepareResults( _lastSearchResult );
+            ShowResults( _lastSearchResult );
+        }
+
+        private void ReturnInspectNamespace(  )
+        {
+            if ( _lastSearchResult.InspectNamespace.Any() )
+            {
+                _lastSearchResult.InspectNamespace.RemoveAt( _lastSearchResult.InspectNamespace.Count - 1 );
+                PrepareResults( _lastSearchResult );
+                ShowResults( _lastSearchResult );
+            }
+        }
 
         public struct Item : IEquatable<Item>
         {
@@ -482,12 +531,12 @@ namespace GDDB.Editor
             }
             public Texture2D Icon;
 
-            public VisualElement Element;
+            public VisualElement Element;      //Can be null, if item was unbinded from list view item
 
             //Namespace mode
             public Boolean               IsNamespace;
             public Int32                 SubitemsCount;
-            public IReadOnlyList<String> Namespace;
+            public IReadOnlyList<String> Namespace;              //Local to currently inspected namespace
 
             //Component mode
             public Boolean IsFavorite;
