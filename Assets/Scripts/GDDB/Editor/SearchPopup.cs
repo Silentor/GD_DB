@@ -91,14 +91,14 @@ namespace GDDB.Editor
             _favorites.AddRange( types.Where( t => _allComponents.Any( a => a.Type == t ) ) );
 
             _lastSearchResult  = new Result() { SearchString = _settings.LastSearchString, Items = _allComponents.ToList() };
-            _searchField.value = _settings.LastSearchString;
+            _searchField.SetValueWithoutNotify( _settings.LastSearchString );
 
-            if( _settings.SearchListMode == EListMode.Recommended )
+            if ( _settings.SearchListMode == EListMode.Recommended )
                 ProcessRecommended();
             else
-                ProcessSearch();
+                ProcessSearch( );
 
-            //To support keys navigation
+            //To support keyboard navigation
             instance.RegisterCallback<KeyDownEvent>( Widget_KeyDown, TrickleDown.TrickleDown );
         }
 
@@ -151,7 +151,7 @@ namespace GDDB.Editor
             var iconBtn    = e.Q<Button>( "IconBtn" );
             iconBtn.style.backgroundImage = resultItem.Icon;
             var label      = itemBtn.Q<Label>( "Label" );
-            label.text    = resultItem.LabelWithTags;
+            label.text    = resultItem.RichLabel;
             
             if ( !resultItem.IsNamespace )
             {
@@ -164,19 +164,16 @@ namespace GDDB.Editor
                 e.Q<VisualElement>( "OpenNamespaceIcon" ).style.display = StyleKeyword.Null;
             }
 
+            if( resultItem.IsSelected )
+                e.AddToClassList( Resources.SelectedItemClass );
+
             itemBtn.userData = resultItem;
             iconBtn.userData = resultItem;
-
-            resultItem.Element  = e;
-            _resultsToList[ i ] = resultItem;
         }
 
         private void ResultsList_UnbindItem( VisualElement e, Int32 i )
         {
-            var resultItem = _resultsToList[ i ];
-            e.RemoveFromClassList( "search-popup__item-selected" );
-            resultItem.Element  = null;
-            _resultsToList[ i ] = resultItem;
+            e.RemoveFromClassList( Resources.SelectedItemClass );
         }
 
         private void ItemBtn_Clicked( ResultItem resultItem )
@@ -218,7 +215,8 @@ namespace GDDB.Editor
 
         private void SearchField_Changed(ChangeEvent<String> ev )
         {
-            ProcessSearch( ev.newValue );
+            if( !String.Equals( ev.newValue, _lastSearchResult.SearchString ) )
+                ProcessSearch( ev.newValue );
         }
 
         private void RecommendedToolBtn_Clicked( )
@@ -279,24 +277,20 @@ namespace GDDB.Editor
 
         private void ProcessSearch( String searchString )
         {
-            _searchToolBtn.AddToClassList( "search-popup__toolbtn-toggled" );
-            _recommendedToolBtn.RemoveFromClassList( "search-popup__toolbtn-toggled" );
+            _searchToolBtn.AddToClassList( Resources.SearchPopupBtnToggled );
+            _recommendedToolBtn.RemoveFromClassList( Resources.SearchPopupBtnToggled );
             _settings.SearchListMode = EListMode.Search;
-
-            if ( !String.Equals( searchString, _lastSearchResult.SearchString ) )
-            {
-                _settings.LastSearchString = searchString;
-                _lastSearchResult          = SearchItems( searchString );
-            }
             
+            _settings.LastSearchString = searchString;
+            _lastSearchResult          = SearchItems( searchString );
             PrepareResults( _lastSearchResult );
             ShowResults( _lastSearchResult );
         }
 
         private void ProcessRecommended( )
         {
-            _searchToolBtn.RemoveFromClassList( "search-popup__toolbtn-toggled" );
-            _recommendedToolBtn.AddToClassList( "search-popup__toolbtn-toggled" );
+            _searchToolBtn.RemoveFromClassList( Resources.SearchPopupBtnToggled );
+            _recommendedToolBtn.AddToClassList( Resources.SearchPopupBtnToggled );
             _settings.SearchListMode = EListMode.Recommended;
 
             _resultsLabel.text = "Recommended";
@@ -381,7 +375,7 @@ namespace GDDB.Editor
                 var resultItem = result.View[ i ];
                 if ( !resultItem.IsNamespace )
                 {
-                    resultItem.LabelWithTags = resultItem.UseRichTextTags( result.SearchString, resultItem.Label );
+                    resultItem.RichLabel = resultItem.UseRichTextTags( result.SearchString, resultItem.Label );
                     result.View[ i ]         = resultItem;
                 } 
             }
@@ -463,16 +457,10 @@ namespace GDDB.Editor
             for ( var i = 0; i < _resultsToList.Count; i++ )
             {
                 var resultItem = _resultsToList[ i ];
-                if( resultItem.Element == null )                 //List item was unbinded, it's a virtualized list after all
-                    continue;
-
-                if ( i == _selectedViewItem )
-                {
-                    resultItem.Element.AddToClassList( "search-popup__item-selected" );
-                }
-                else
-                    resultItem.Element.RemoveFromClassList( "search-popup__item-selected" );
+                resultItem.IsSelected = i == _selectedViewItem;
+                _resultsToList[ i ] = resultItem;
             }
+            _resultsList.RefreshItems();
         }
 
         private void AddComponent( ResultItem item )
@@ -500,6 +488,9 @@ namespace GDDB.Editor
             }
         }
 
+        /// <summary>
+        /// Search result item for component type
+        /// </summary>
         public struct Item : IEquatable<Item>
         {
             public IReadOnlyList<String> Namespace;
@@ -532,24 +523,26 @@ namespace GDDB.Editor
             }
         }
 
+        /// <summary>
+        /// Search popup visual item  (component or namespace)
+        /// </summary>
         public struct ResultItem
         {
             public  String  Label;
-            public String LabelWithTags
+            public String RichLabel
             {
                 get => String.IsNullOrEmpty( _labelWithTags ) ? Label : _labelWithTags;
                 set => _labelWithTags = value;
             }
             public Texture2D Icon;
+            public Boolean   IsSelected;
 
-            public VisualElement Element;      //Can be null, if item was unbinded from list view item
-
-            //Namespace mode
+            //Namespace item
             public Boolean               IsNamespace;
             public Int32                 SubitemsCount;
             public IReadOnlyList<String> Namespace;              //Local to currently inspected namespace
 
-            //Component mode
+            //Component item
             public Boolean IsFavorite;
             public Item    Component;
             public Type    Type => Component.Type;
@@ -591,6 +584,9 @@ namespace GDDB.Editor
             public static Texture2D NamespaceIcon = UnityEngine.Resources.Load<Texture2D>( "list_alt_24dp" );
             public static Texture2D FavoriteIcon = UnityEngine.Resources.Load<Texture2D>( "star_24dp" );
             public static Texture2D RecentIcon = UnityEngine.Resources.Load<Texture2D>( "history_24dp" );
+
+            public const  String SelectedItemClass     = "search-popup__item-selected";
+            public const String SearchPopupBtnToggled = "search-popup__toolbtn-toggled";
         }
     }
 }
