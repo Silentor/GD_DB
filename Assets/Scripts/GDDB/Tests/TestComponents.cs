@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using GDDB;
 using UnityEngine;
 
 namespace GDDB.Tests
@@ -157,4 +158,9 @@ namespace GDDB.Tests
         public GameObject GameObject;
         public Component  Component;
     }
+}
+
+public class ComponentWithoutNamespace : GDComponent
+{
+    public Int32 Field = 42;
 }
