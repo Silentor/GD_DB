@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using JetBrains.Annotations;
 using UnityEditor;
 
@@ -98,6 +99,35 @@ namespace GDDB.Editor
             }
 
             return result;
+        }
+
+        [MenuItem( "GDDB/Print hierarchy" )]
+        private static void PrintHierarchyToConsole( )
+        {
+             var instance = new GDTypeHierarchy();
+             UnityEngine.Debug.Log( instance.PrintHierarchy() );
+        }
+
+        public String PrintHierarchy( )
+        {
+            var result = new StringBuilder();
+            PrintCategoryRecursive( Root, result, 0 );
+            return result.ToString();
+        }
+
+        private void PrintCategoryRecursive( Category category, StringBuilder result, Int32 depth )
+        {
+            if ( category == null )
+                return;
+
+            foreach ( var item in category.Items )
+            {
+                result.Append( ' ', depth * 4 );
+                result.Append( category.UnderlyingType.Name );
+                result.Append( "." );
+                result.AppendLine(  item.Name );
+                PrintCategoryRecursive( item.Subcategory, result, depth + 1 );
+            }
         }
 
         private String GetTypeString( GdType type, Int32 categoryIndex, Category category, String result )
