@@ -44,6 +44,8 @@ namespace GDDB.Editor
 
             var generateScriptsBtn = new Button( ( ) => GenerateComponents( settings ) ) { text = "Generate GDComponents" };
             rootVisualElement.Add( generateScriptsBtn );
+            var generateCategoriesBtn = new Button( ( ) => GenerateCategories( settings ) ) { text = "Generate categories" };
+            rootVisualElement.Add( generateCategoriesBtn );
             var generateObjectsBtn = new Button( ( ) => GenerateGDObjects( settings ) ) { text = "Generate GDObjects" };
             rootVisualElement.Add( generateObjectsBtn );
 
@@ -63,10 +65,9 @@ namespace GDDB.Editor
             var namespaces = GenerateNamespaces(  );
             var classNames = GenerateClassNames(  );
 
-            if ( !Directory.Exists( _settings.OutputFolderScripts ) )
+            if ( !Directory.Exists( _settings.OutputFolderComponents ) )
             {
-                var dir = Directory.CreateDirectory( _settings.OutputFolderScripts );
-                Debug.Log( dir.FullName );
+                Directory.CreateDirectory( _settings.OutputFolderComponents );
             }
 
             var componentTypeNames = new List<String>();
@@ -74,19 +75,63 @@ namespace GDDB.Editor
             {
                 var ns            = namespaces[ rnd.Next( namespaces.Count ) ];
                 var componentCode = GenerateComponentScript( ns, className );
-                var path          = Path.Join( _settings.OutputFolderScripts, $"{className}.cs" );
+                var path          = Path.Join( _settings.OutputFolderComponents, $"{className}.cs" );
                 File.WriteAllText( path, componentCode );
                 componentTypeNames.Add( $"{ns}.{className}" );
             }
 
-            AssetDatabase.Refresh( ImportAssetOptions.ForceSynchronousImport );
+            AssetDatabase.Refresh();
+        }
 
-            //Never gets here 
-            //Wait for compiling and domain reload
-            //EditorApplication.isCompiling
+        private void GenerateCategories( StressTestSettings settings )
+        {
+            var rnd = new Random();
+             var enumNames = GenerateEnumNames( settings.CategoriesCount );
+             
+             var rootCategory = GenerateCategory( enumNames[0], 0, 4, rnd.Next( 8, 15 ), rnd );
+             var itemsCounter = rootCategory.Items.Count;
+             var categories   = new List<CategoryHolder>(  ) { rootCategory, };
+             var infinityLoopCounter = 0;
 
+             for ( int i = 1; i < settings.CategoriesCount; i++ )
+             {
+                 var parent   = categories[ rnd.Next( categories.Count ) ];
+                 var freeItems = parent.Items.Where( i => i.Subcategory == null ).ToList();
+                 if( freeItems.Any() && parent.Depth < 3 )
+                 {
+                     var parentItem   = freeItems[ rnd.Next( freeItems.Count ) ];
+                     var remainsItems = Math.Max( (settings.CategoryItemsCount - itemsCounter) / (settings.CategoriesCount - categories.Count), 1 );
+                     var itemsCount   = rnd.Next( Math.Max( remainsItems - remainsItems / 2, 1 ), remainsItems + remainsItems / 2 );
+                     var category     = GenerateCategory( enumNames[ i ], parent.Depth + 1, 4, itemsCount, rnd );
+                     category.Parent = parentItem;
+                     parentItem.Subcategory = category;
+                     itemsCounter += category.Items.Count;
+                     categories.Add( category );
+                 }
+                 else
+                 {
+                     i--;
+                     if ( infinityLoopCounter++ > 10000 )
+                     {
+                         Debug.LogError( $"Infinity loop defence abort GenerateCategories()" );
+                         break;
+                     }
 
-            
+                 }
+             }
+
+             //Save hierarchy to file
+             if ( !Directory.Exists( settings.OutputFolderCategories ) )
+             {
+                 Directory.CreateDirectory( settings.OutputFolderCategories );
+             }
+             var str = GenerateCategoriesString( categories, $"{settings.RootNamespace}.Categories" );
+             var categoriesFilePath = Path.Join( settings.OutputFolderCategories, "Categories.cs" );
+             File.WriteAllText( categoriesFilePath, str );
+
+             AssetDatabase.Refresh();
+
+             Debug.Log( $"Generated categories {categories.Count}, category items {itemsCounter}" );
         }
 
         private void GenerateGDObjects( StressTestSettings settings )
@@ -94,7 +139,7 @@ namespace GDDB.Editor
             var rnd = new Random();
             var gdos  = new List<GDObject>();
             var names = GenerateUniqueNouns( _settings.GDObjectsCount, new List<String>(), 2, 3 );
-            var components = TypeCache.GetTypesDerivedFrom<GDComponent>().Where( t => t.Namespace.StartsWith( settings.RootNamespace ) && !t.IsAbstract ).ToList();
+            var components = TypeCache.GetTypesDerivedFrom<GDComponent>().Where( t => t.Namespace?.StartsWith( settings.RootNamespace ) == true && !t.IsAbstract ).ToList();
             while ( gdos.Count < _settings.GDObjectsCount )
             {
                 var go = ScriptableObject.CreateInstance<GDObject>();
@@ -133,6 +178,11 @@ namespace GDDB.Editor
             return GenerateUniqueNouns( _settings.ComponentScriptsCount, new List<String>(), 2, 3 );
         }
 
+        private IReadOnlyList<String> GenerateEnumNames(  Int32 count )
+        {
+            return GenerateUniqueNouns( count, new List<String>(), 1, 3 ).Select( s => $"E{s}" ).ToList();
+        }
+
         private IReadOnlyList<String> GenerateNamespaces( )
         {
             var rnd    = new Random();
@@ -145,6 +195,8 @@ namespace GDDB.Editor
 
             return result;
         }
+
+
 
         private void GenerateNamespaceRecursive( String ns, Int32 depth, Random rnd, List<String> result )
         {
@@ -223,6 +275,72 @@ namespace GDDB.Editor
             }
 
             return result;
+        }
+
+        private CategoryHolder GenerateCategory( String name, Int32 depth, Int32 maxDepth, Int32 itemsCount, Random rnd )
+        {
+            var result = new CategoryHolder { TypeName = name, Depth = depth };
+            if ( depth < maxDepth )
+            {
+                var itemNames = GenerateUniqueNouns( itemsCount, new List<String>(), 1, 2 );
+                for ( var i = 0; i < itemsCount; i++ )
+                {
+                    result.Items.Add( new CategoryItemHolder
+                                      {
+                                              Name = itemNames[ i ],
+                                              Category = result,
+                                      } );
+                }
+            }
+
+            return result;
+        }
+
+        private String GenerateCategoriesString( IReadOnlyList<CategoryHolder> categories, String @namespace )
+        {
+            var result = new StringBuilder();
+            result.AppendLine( "using GDDB;" );
+            result.AppendLine( $"namespace {@namespace}" );
+            result.AppendLine( "{" );
+
+            for ( int i = 0; i < categories.Count; i++ )
+            {
+                 var category = categories[ i ];
+                 if ( category.Parent == null )
+                     result.AppendLine( "    [Category]" );
+                 else
+                     result.AppendLine( $"    [Category( {category.Parent.Category.TypeName}.{category.Parent.Name} )]" );
+                 result.AppendLine( $"    public enum {category.TypeName}" );
+                 result.AppendLine( "    {" );
+
+                 category.Items.ForEach( i =>
+                 {
+                     result.Append( "        " );
+                     result.Append( i.Name );
+                     result.AppendLine( "," );
+                 } );
+
+                 result.AppendLine( "    }" );
+                 result.AppendLine();
+            }
+            result.AppendLine( "}" );
+
+            return result.ToString();
+        }
+
+        private class CategoryHolder
+        {
+            public string                   TypeName;
+            public List<CategoryItemHolder> Items = new();
+            public CategoryItemHolder       Parent;
+            public Int32                    Depth;
+        }
+
+        private class CategoryItemHolder
+        {
+            public String         Name;
+            public CategoryHolder Category;
+            public CategoryHolder Subcategory;
         }
     }
 }
