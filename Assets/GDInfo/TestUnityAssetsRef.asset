@@ -14,9 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   EnabledObject: 1
   Type:
-    Data: 30978
+    Data: 17170697
   Components:
   - rid: 2631727329348419584
+  - rid: 8886619657113960448
+  - rid: 8886619657113960449
+  - rid: 8886619657113960450
+  - rid: 8886619657113960451
+  - rid: 8886619657113960452
   references:
     version: 2
     RefIds:
@@ -27,3 +32,71 @@ MonoBehaviour:
         Material: {fileID: 2100000, guid: e5d490a742d0f014f880cb47ab835955, type: 2}
         GameObject: {fileID: 6211874546738034317, guid: 260be3ae7188a404b91972cc00114e34, type: 3}
         Component: {fileID: 6362591528722712133, guid: 260be3ae7188a404b91972cc00114e34, type: 3}
+    - rid: 8886619657113960448
+      type: {class: CollectionTestComponent, ns: GDDB.Tests, asm: Tests}
+      data:
+        IntArray: 010000000200000003000000
+        StrArray:
+        - 
+        - 
+        - 3
+        ClassList1:
+        - IntField: 66
+        - IntField: 99
+        - IntField: 42
+        ClassListPolymorf2:
+        - IntField: 66
+        - IntField: 99
+        - IntField: 42
+    - rid: 8886619657113960449
+      type: {class: CollectionTestComponent, ns: GDDB.Tests, asm: Tests}
+      data:
+        IntArray: 010000000200000003000000
+        StrArray:
+        - 
+        - 
+        - 3
+        ClassList1:
+        - IntField: 66
+        - IntField: 99
+        - IntField: 42
+        ClassListPolymorf2:
+        - IntField: 66
+        - IntField: 99
+        - IntField: 42
+    - rid: 8886619657113960450
+      type: {class: CommitteeDinosaurs, ns: GeneratedGDDB.Story, asm: Assembly-CSharp}
+      data:
+        LunchThoughtAction: 0
+    - rid: 8886619657113960451
+      type: {class: CollectionTestComponent, ns: GDDB.Tests, asm: Tests}
+      data:
+        IntArray: 010000000200000003000000
+        StrArray:
+        - 
+        - 
+        - 3
+        ClassList1:
+        - IntField: 66
+        - IntField: 99
+        - IntField: 42
+        ClassListPolymorf2:
+        - IntField: 66
+        - IntField: 99
+        - IntField: 42
+    - rid: 8886619657113960452
+      type: {class: CollectionTestComponent, ns: GDDB.Tests, asm: Tests}
+      data:
+        IntArray: 010000000200000003000000
+        StrArray:
+        - 
+        - 
+        - 3
+        ClassList1:
+        - IntField: 66
+        - IntField: 99
+        - IntField: 42
+        ClassListPolymorf2:
+        - IntField: 66
+        - IntField: 99
+        - IntField: 42
