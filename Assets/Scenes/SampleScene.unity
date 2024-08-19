@@ -600,7 +600,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: TestType.Data
-      value: 16843720
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: TestType2.Data

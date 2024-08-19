@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using JetBrains.Annotations;
 using UnityEditor;
+using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 namespace GDDB.Editor
 {
@@ -14,24 +17,98 @@ namespace GDDB.Editor
     /// </summary>
     public class GDTypeHierarchy
     {
-        private readonly List<Category> _categories    = new ();
+        private readonly List<Category> _categories;
+        private readonly StringBuilder  _stringBuilder = new ();        //For GetTypeString
+
         public readonly  Category       Root;
 
-        public GDTypeHierarchy( )
+        public  GDTypeHierarchy( )
         {
             //Get all category types
             var categoryTypes = TypeCache.GetTypesWithAttribute<CategoryAttribute>();
 
             //Make categories tree
+            //1st pass - create all categories
+            var categories = new List<CategoryInternal>( categoryTypes.Count );
             foreach ( var categoryType in categoryTypes )
             {
-                if( _categories.Exists( c => c.UnderlyingType == categoryType ) )
-                    continue;
+                var cat = new CategoryInternal()
+                                       {
+                                               Attribute = categoryType.GetCustomAttribute<CategoryAttribute>(),
+                                               UnderlyingType = categoryType,
+                                       };
+                cat.Items = cat.GetValues().ToList();
+                cat.Type  = cat.Items.Count > 0 ? CategoryType.Enum : CategoryType.Int8;           
+                categories.Add( cat );
+            }
+            //2nd pass - link parents/children
+            foreach ( var category in categories )
+            {
+                if ( category.Attribute.ParentCategory != null )
+                {
+                    var parentCategory = categories.First( c => c.UnderlyingType == category.Attribute.ParentCategory );
+                    category.Parent = parentCategory;
+                    parentCategory.Items.First( i => i.Value == category.Attribute.ParentValue ).Subcategory = category;
+                }
+            }
+            //3rd pass - set category index and validate
+            var categoriesToRemove = new List<CategoryInternal>();
+            foreach ( var category in categories )
+            {
+                category.Index = category.GetIndex();
 
-                BuildCategoryFromType( categoryType );
+                if ( category.Index > 3 )
+                {
+                    Debug.LogError( $"[GDTypeHierarchy] Category {category.UnderlyingType.Name} has too deep hierarchy {category.Index}, it will be ignored" );
+                    categoriesToRemove.Add( category );
+                }
+            }
+            foreach ( var catToRemove in categoriesToRemove )
+            {
+                categories.Remove( catToRemove );
+            }
+            //4th pass - calculate int value width
+            foreach ( var category in categories )
+            {
+                foreach ( var itemInternal in category.Items )
+                {
+                     itemInternal.IsValue = itemInternal.Subcategory == null;
+                     if ( itemInternal.IsValue && category.Type != CategoryType.Enum )
+                         category.Type = Category.GetValueTypeForIndex( category.Index );
+                }
             }
 
-            Root = _categories.First( c => c.Parent == null );
+            //Build final categories
+            categories.Sort( (c1, c2) => c1.Index.CompareTo( c2.Index ) );      //Topo sorting    
+            _categories = new List<Category>( categories.Count );
+            //Create categories
+            foreach ( var categoryInternal in categories )
+            {
+                var parent = categoryInternal.Parent != null ? _categories.First( c => c.UnderlyingType == categoryInternal.Parent.UnderlyingType ) : null;
+                var category = new Category( categoryInternal.Type, categoryInternal.UnderlyingType, parent, categoryInternal.Index );
+                _categories.Add( category );
+            }
+
+            //Create category items
+            for ( var i = 0; i < categories.Count; i++ )
+            {
+                var categoryInternal = categories[ i ];
+                var category         = _categories[ i ];
+                if(category.Type == CategoryType.Enum)
+                {
+                    category.Items = new List<CategoryItem>( categoryInternal.Items.Count );
+                    foreach ( var internalItem in categoryInternal.Items )
+                    {
+                        var subcategory = internalItem.Subcategory != null ? _categories.First( c => c.UnderlyingType == internalItem.Subcategory.UnderlyingType ) : null;
+                        var item = new CategoryItem( internalItem.Name, internalItem.Value, category, subcategory );
+                        category.Items.Add( item );
+                    }
+                }
+            }
+
+            Root = _categories.FirstOrDefault( c => c.Parent == null );
+
+            PrintHierarchy();
         }
 
         public String GetTypeString( GdType type )
@@ -39,80 +116,83 @@ namespace GDDB.Editor
             if ( type == default )
                 return "None";
 
-            var result = String.Empty;
-            result = GetTypeString( type, 0, Root, result );
-            return result;
+            _stringBuilder.Clear();
+            GetTypeString( type, _stringBuilder );
+            return _stringBuilder.ToString();
         }
 
         /// <summary>
-        /// For given type check if every component is in proper category enum range
+        /// For given type check if every component is in proper category range
         /// </summary>
         /// <param name="type"></param>
         /// <param name="incorrectIndex"></param>
         /// <returns></returns>
-        public Boolean IsTypeCorrect( GdType type, out Int32 incorrectIndex )
+        public Boolean IsTypeInRange( GdType type, out Category incorrectCategory )
         {
             if ( type == default )
             {
-                incorrectIndex = -1;
+                incorrectCategory = null;
                 return true;
             }
 
-            var category = Root;
-            for ( int i = 0; i < 4; i++ )
-            {
-                if ( category == null )
-                {
-                    incorrectIndex = -1;
-                    return true;
-                }
-
-                if ( !category.IsCorrectValue( type[ i ] ) )
-                {
-                    incorrectIndex = i;
-                    return false;
-                }
-                else
-                {
-                    category = category.FindItem( type[ i ] ).Subcategory;
-                }
-            }
-
-            incorrectIndex = -1;
-            return true;
+            var metadata = GetMetadataOf( type );
+            return metadata.IsTypeInRange( type, out incorrectCategory );
         }
 
-        public IReadOnlyList<Category> GetCategories( GdType type )
+        public Boolean IsTypeDefined( GdType type )
         {
             if ( type == default )
-                return Array.Empty<Category>();
+                return true;
 
-            var result = new Category[4];
+            var metadata = GetMetadataOf( type );
+            return metadata.IsTypeDefined( type );
+        }
+
+        public GdTypeMetadata GetMetadataOf( GdType type )
+        {
+            if ( type == default )
+                return GdTypeMetadata.Default;
+
+            if ( Root == null )
+            {
+                return new GdTypeMetadata( new List<Category>() );
+            }
+
+            var result = new List<Category>( 4 );
             var category = Root;
             for ( int i = 0; i < 4; i++ )
             {
                 if ( category != null )
                 {
-                    result[ i ] = category;
-                    category = category.FindItem( type[ i ] ).Subcategory;
+                    result.Add( category );
+                    var categoryItem = category.GetItem( type );
+                    category    = categoryItem?.Subcategory;
                 }
+                else break;
             }
 
-            return result;
+            return new GdTypeMetadata( result );
         }
 
         [MenuItem( "GDDB/Print hierarchy" )]
         private static void PrintHierarchyToConsole( )
         {
              var instance = new GDTypeHierarchy();
-             UnityEngine.Debug.Log( instance.PrintHierarchy() );
+             Debug.Log( instance.PrintHierarchy() );
         }
 
         public String PrintHierarchy( )
         {
-            var result = new StringBuilder();
-            PrintCategoryRecursive( Root, result, 0 );
-            return result.ToString();
+            if( _categories.Count == 0 )
+                return "No categories found";
+
+            _stringBuilder.Clear();
+            _stringBuilder.Append( Root.UnderlyingType.Name );
+            _stringBuilder.Append( " (" );
+            _stringBuilder.Append( Root.Type );
+            _stringBuilder.AppendLine( ") :" );
+            PrintCategoryRecursive( Root, _stringBuilder, 0 );
+            return _stringBuilder.ToString();
         }
 
         private void PrintCategoryRecursive( Category category, StringBuilder result, Int32 depth )
@@ -125,64 +205,106 @@ namespace GDDB.Editor
                 result.Append( ' ', depth * 4 );
                 result.Append( category.UnderlyingType.Name );
                 result.Append( "." );
-                result.AppendLine(  item.Name );
-                PrintCategoryRecursive( item.Subcategory, result, depth + 1 );
+                result.Append(  item.Name );
+                if ( item.Subcategory != null )
+                {
+                    result.Append( " (" );
+                    result.Append( item.Subcategory.Type );
+                    result.AppendLine( ") :" );
+                    PrintCategoryRecursive( item.Subcategory, result, depth + 1 );
+                }
+                else
+                    result.AppendLine();
             }
         }
 
-        private String GetTypeString( GdType type, Int32 categoryIndex, Category category, String result )
+        private void GetTypeString( GdType type, StringBuilder result )
         {
-            var value = type[categoryIndex];
-            var cat   = category?.FindItem( value ) ?? new CategoryItem( $"{value}", value );
-            result += categoryIndex == 0 ? $"{cat.Name}" : $".{cat.Name}";
-
-            if( categoryIndex < 3 )
-                result = GetTypeString( type, categoryIndex + 1, cat.Subcategory, result );
-
-            return result;
-        }
-
-        private Category BuildCategoryFromType( Type categoryEnum )
-        {
-            var items = new List<CategoryItem>();
-            foreach ( var enumCategoryField in categoryEnum.GetFields( BindingFlags.Public | BindingFlags.Static ) )
+            var metadata = GetMetadataOf( type );
+            for ( var i = 0; i < metadata.Categories.Count; i++ )
             {
-                var name     = enumCategoryField.Name;
-                var intValue = (Int32)enumCategoryField.GetValue( null );
-                var item     = new CategoryItem( name, intValue );
-                items.Add( item );
-            }
-
-            var attr   = categoryEnum.GetCustomAttribute<CategoryAttribute>();
-            if ( attr.ParentCategory != null )            //Link this Category with parent Category
-            {
-                //Find and modify parent category to reference this child
-                var parentCategoryType = attr.ParentCategory;
-                var parentValue        = attr.ParentValue;
-                var parentCategory     = GetOrBuildCategory( parentCategoryType );
-                var parentItem         = parentCategory.FindItem( parentValue );
-                var result             = new Category( CategoryType.Enum, categoryEnum, items, parentCategory );
-                parentItem.Subcategory = result;
-
-                _categories.Add( result );
-                return result;
-            }
-            else
-            {
-                var result = new Category( CategoryType.Enum, categoryEnum, items, null ); 
-                _categories.Add( result );
-                return result;
+                var category = metadata.Categories[ i ];
+                var value    = category.GetValue( type );
+                var categoryItem = category.GetItem( value );
+                result.Append( categoryItem != null ? categoryItem.Name : value.ToString( CultureInfo.InvariantCulture ) );
+                if ( i < metadata.Categories.Count - 1 )
+                    result.Append( '.' );    
             }
         }
-
-        Category GetOrBuildCategory( Type categoryType )
+       
+        public class GdTypeMetadata
         {
-            if ( !_categories.TryFirst( c => c.UnderlyingType == categoryType, out var result ) )
+            /// <summary>
+            /// Metadata of default GdType
+            /// </summary>
+            public static readonly GdTypeMetadata Default = new ( new List<Category>() );
+
+            public IReadOnlyList<Category> Categories => _categories;
+
+            public UInt32 Mask
             {
-                result = BuildCategoryFromType( categoryType );
+                get
+                {
+                    if( _mask == null )
+                    {
+                        _mask = 0;
+                        for ( var i = 0; i < _categories.Length; i++ )
+                        {
+                            var category = _categories[ i ];
+                            _mask |= category.GetMask();
+                        }
+                    }
+
+                    return _mask.Value;
+                }
             }
 
-            return result;
+            public GdTypeMetadata( List<Category> categories )
+            {
+                _categories = categories.ToArray();
+            }
+
+            public Boolean IsTypeDefined( GdType type )
+            {
+                if( type == default )
+                    return true;
+
+                return (type.Data & Mask)  == type.Data;
+            }
+
+            public Boolean IsTypeInRange( GdType type, out Category incorrectCategory )
+            {
+                if( type == default )
+                {
+                    incorrectCategory = null;
+                    return true;
+                }
+
+                var data = type.Data;
+                for ( var i = 0; i < _categories.Length; i++ )
+                {
+                    var category = _categories[ i ];
+                    if ( !category.IsCorrectValue( category.GetValue( data ) ) )
+                    {
+                        incorrectCategory = category;
+                        return false;
+                    }
+                }
+
+                incorrectCategory = null;
+                return true;
+            }
+
+            public Boolean IsTypesEqual( GdType type1, GdType type2 )
+            {
+                if( type1 == default && type2 == default )
+                    return true;
+
+                return (type1.Data & Mask) == (type2.Data & Mask);
+            }
+
+            private readonly Category[] _categories;
+            private UInt32? _mask;
         }
 
         [DebuggerDisplay("{UnderlyingType.Name} ({Type}): {Items.Count}")]
@@ -190,73 +312,142 @@ namespace GDDB.Editor
         {
             public readonly Type               UnderlyingType;
             public readonly CategoryType       Type;
-            public          List<CategoryItem> Items;  //Null - default values range
             public readonly Category           Parent;
+            public readonly Int32              Index;
+            public readonly String             Name;
 
-            public Category(   CategoryType type, Type underlyingType, IEnumerable<CategoryItem> items, Category parent )
+            public  List<CategoryItem> Items = null;        //Null - default values for given Type 
+
+
+            public Category( CategoryType type, Type underlyingType, Category parent, Int32 index )
             {
                 UnderlyingType = underlyingType;
                 Type           = type;
-                if ( items != null )
-                {
-                    Items = new List<CategoryItem>( items );
-                }
                 Parent         = parent;
+                Index          = index;
+                Name           = underlyingType.Name;
             }
 
             public Boolean IsCorrectValue( Int32 value )
             {
-                if ( Items.Count > 0 || Type == CategoryType.Enum )
-                    return Items.Any( i => i.Value == value ); 
-
-                return Type switch
-                       {
-                               CategoryType.Int8  => value is >= 0 and <= 255,
-                               CategoryType.Int16 => value is >= 0 and <= 65535,
-                               _                  => throw new ArgumentOutOfRangeException()
-                       };
-            }
-
-            public Int32 ClampValue( Int32 value )
-            {
-                return Type switch
-                       {
-                               CategoryType.Int8  => Math.Clamp( value, 0, 255 ),
-                               CategoryType.Int16 => Math.Clamp( value, 0, 65535 ),
-                               CategoryType.Enum  => value,
-                               _                  => throw new ArgumentOutOfRangeException()
-                       };
-            }
-
-            public CategoryItem FindItem( Int32 value )
-            {
-                if ( Items.TryFirst( i => i.Value == value, out var categoryItem ) )
+                if ( Type == CategoryType.Enum )
                 {
-                    return categoryItem;
+                    if ( Items != null && Items.Any( i => i.Value == value ) )
+                        return true;
+                }
+                else
+                {
+                    if( Items != null )
+                    {
+                        if ( Items.Any( i => i.Value == value ) ) 
+                            return true;
+                    }
+                    else
+                        return true;
                 }
 
-                return new CategoryItem( $"{value}", value );
+                return false;
             }
 
+            public CategoryItem GetItem( GdType type )
+            {
+                var value = GetValue( type );
+                if( Type == CategoryType.Enum )
+                    return Items.FirstOrDefault( i => i.Value == value );
+                return new CategoryItem( value.ToString( CultureInfo.InvariantCulture ), value, this );     //For Int values
+            }
+
+            public CategoryItem GetItem( Int32 value )
+            {
+                if( Type == CategoryType.Enum )
+                    return Items.FirstOrDefault( i => i.Value == value );
+                return new CategoryItem( value.ToString( CultureInfo.InvariantCulture ), value, this );     //For Int values
+            }
+
+            public Int32 GetValue( GdType type )
+            {
+                var shift = GetShift( Index, Type );
+                var mask  = GetMask();
+                return (Int32)( ( type.Data >> shift ) & mask );
+            }
+
+            public Int32 GetValue( UInt32 rawData )
+            {
+                var shift = GetShift( Index, Type );
+                var mask  = GetMask();
+                return (Int32)( ( rawData >> shift ) & mask );
+            }
+
+            public void SetValue( ref GdType type, Int32 value )
+            {
+                var shift = GetShift( Index, Type );
+                var mask  = GetMask();
+                var data  = type.Data;
+                data      &= ~( mask << shift );
+                data      |= (UInt32)value << shift;
+                type.Data =  data;
+            }
+
+            public static Int32 GetShift( Int32 index, CategoryType type )
+            {
+                var indexShift = 3 - index;
+                var typeShift  = type switch
+                                {
+                                        CategoryType.Enum => 0,
+                                        CategoryType.Int8  => 0,
+                                        CategoryType.Int16 => 8,
+                                        CategoryType.Int24 => 16,
+                                        CategoryType.Int32 => 24,
+                                        _                 => throw new ArgumentOutOfRangeException()
+                                };
+                return (indexShift - typeShift) * 8;
+            }
+
+            public static CategoryType GetValueTypeForIndex( Int32 index )
+            {
+                return index switch
+                       {
+                               0 => CategoryType.Int32,
+                               1 => CategoryType.Int24,
+                               2 => CategoryType.Int16,
+                               3 => CategoryType.Int8,
+                               _ => throw new ArgumentOutOfRangeException()
+                       };
+            }
+
+            public UInt32 GetMask( )
+            {
+                return Type switch
+                       {
+                               CategoryType.Enum  => 0x000000FF,
+                               CategoryType.Int8  => 0x000000FF,
+                               CategoryType.Int16 => 0x0000FFFF,
+                               CategoryType.Int24 => 0x00FFFFFF,
+                               CategoryType.Int32 => 0xFFFFFFFF,
+                               _                   => throw new ArgumentOutOfRangeException()
+                       };
+            }
         }
 
         [DebuggerDisplay( "{Name} = {Value} => {Subcategory?.UnderlyingType.Name}" )]
         public class CategoryItem : IEquatable<CategoryItem>
         {
-            public readonly String   Name;
-            public readonly Int32    Value;
-            public          Category Subcategory;
+            public readonly String        Name;
+            public readonly Int32         Value;
+            public readonly Category      Owner;
+            public readonly Category      Subcategory;
 
-            public CategoryItem(String name, Int32 value, Category subcategory = default )
+            public CategoryItem(String name, Int32 value, Category owner, Category subcategory = default )
             {
                 Name        = name;
                 Value       = value;
+                Owner       = owner;
                 Subcategory = subcategory;
             }
             
             public bool Equals(CategoryItem other)
             {
-                return Value == other?.Value;
+                return Owner == other?.Owner && Value == other?.Value;
             }
 
             public override bool Equals(object obj)
@@ -266,25 +457,68 @@ namespace GDDB.Editor
 
             public override int GetHashCode( )
             {
-                return Value;
-            }
-
-            public static bool operator ==(CategoryItem left, CategoryItem right)
-            {
-                return left.Equals( right );
-            }
-
-            public static bool operator !=(CategoryItem left, CategoryItem right)
-            {
-                return !left.Equals( right );
+                return HashCode.Combine( Owner, Value );
             }
         }
 
         public enum CategoryType
         {
-            Int8,
-            Int16,
-            Enum
+            Int8,           //Value 8 bits
+            Int16,          //Value 16 bits
+            Int24,          //Value 24 bits
+            Int32,          //Value 32 bits
+            Enum            //Namespace or enum value, always 8 bits
+        }
+
+        private class CategoryInternal
+        {
+            public CategoryAttribute  Attribute;
+            public Type               UnderlyingType;
+            public CategoryType       Type;
+            public CategoryInternal   Parent;
+            public List<ItemInternal> Items;
+
+            public  Int32 Index;
+
+            public Int32 GetIndex( )
+            {
+                var result            = 0;
+                var inspectedCategory = this;
+
+                while ( inspectedCategory.Parent != null )
+                {
+                    result++;
+                    inspectedCategory = inspectedCategory.Parent;
+                }
+
+                return result;
+            }
+
+            public List<ItemInternal>  GetValues( )
+            {
+                var result = new List<ItemInternal>();
+                foreach ( var field in UnderlyingType.GetFields( BindingFlags.Public | BindingFlags.Static ) )
+                {
+                    var item = new ItemInternal()
+                               {
+                                       Field = field,
+                                       Name  = field.Name,
+                                       Value = (Int32)field.GetValue( null ),
+                               };
+                    result.Add( item );                    
+                }
+
+                return result;
+            }
+        }
+
+        private class ItemInternal
+        {
+            public FieldInfo        Field;
+            public String           Name;
+            public Int32            Value;
+            public CategoryInternal Subcategory;
+            public Boolean          IsValue;            //True - Last category in hierarchy is a value, false - its a part of namespace
         }
     }
 }

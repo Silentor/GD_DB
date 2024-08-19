@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 258fa77c429347f3a571a7c99e6da8a5, type: 3}
-  m_Name: TestGDObject
+  m_Name: TestGDObject 4
   m_EditorClassIdentifier: 
   EnabledObject: 1
   Type:
-    Data: 65547
+    Data: 66507
   Components:
   - rid: 6870417494477373444
   - rid: 6870417494477373448

@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5ebd1bfc4a076ec4ea41fbabfe03ccbb, type: 3}
-  m_Name: EmptyGDObject
+  m_Name: EmptyGDObject 2
   m_EditorClassIdentifier: 
   EnabledObject: 1
   Type:
-    Data: 16842753
+    Data: 16777475
   Components: []
   references:
     version: 2

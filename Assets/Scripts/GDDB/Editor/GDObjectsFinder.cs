@@ -5,6 +5,9 @@ using UnityEngine;
 
 namespace GDDB.Editor
 {
+    /// <summary>
+    /// Helper class to work with types of GDObjects without creating entre GDDB
+    /// </summary>
     public class GDObjectsFinder
     {
         public readonly List<GDObject>   GDObjects = new();
@@ -46,6 +49,29 @@ namespace GDDB.Editor
             }
 
             return false;
+        }
+
+        public Boolean IsDuplicatedType( GdType type, GDTypeHierarchy typeHierarchy, out Int32 count )
+        {
+            count = 0;
+            if ( type == default )
+            {
+                return false;
+            }
+
+            var metadata = typeHierarchy.GetMetadataOf( type );
+            for ( var i = 0; i < GDTypedObjects.Count; i++ )
+            {
+                if( GDTypedObjects[i].EnabledObject == false )
+                    continue;
+
+                if ( metadata.IsTypesEqual( type, GDTypedObjects[ i ].Type ) )
+                {
+                    count++;
+                }                
+            }
+
+            return count > 1;
         }
 
         /// <summary>

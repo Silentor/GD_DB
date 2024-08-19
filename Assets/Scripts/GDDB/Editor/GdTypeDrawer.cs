@@ -96,11 +96,11 @@ namespace GDDB.Editor
                            }
                    };
 
-            var categories = _typeHierarchy.GetCategories( gdType );
-            result.Categories.Add( GetStateCategoryValue( categories[0], gdType[0] ) );
-            result.Categories.Add( GetStateCategoryValue( categories[1], gdType[1] ) );
-            result.Categories.Add( GetStateCategoryValue( categories[2], gdType[2] ) );
-            result.Categories.Add( GetStateCategoryValue( categories[3], gdType[3] ) );
+            var metadata = _typeHierarchy.GetMetadataOf( gdType );
+            for ( int i = 0; i < metadata.Categories.Count; i++ )
+            {
+                result.Categories.Add( GetStateCategoryValue( metadata.Categories[i], gdType[i] ) );    
+            }
 
             if( _gdoFinder.IsDuplicatedType( gdType ) )
             {
@@ -137,28 +137,30 @@ namespace GDDB.Editor
                                  }
                          };
         
-            var categories = _typeHierarchy.GetCategories( gdType );
-            var existCategoryValues = GetExistCategoryItems( categories, gdType );
+            var metadata = _typeHierarchy.GetMetadataOf( gdType );
+            var existCategoryValues = GetExistCategoryItems( metadata.Categories, gdType );
             var filteredCategoryValues = GetFilteredItems( existCategoryValues, gdType );
 
             var categoryValues = new List<State.CategoryValue>( filteredCategoryValues.Count );
             for ( var i = 0; i < filteredCategoryValues.Count; i++ )
             {
-                var value    = gdType[ i ];
+                var category = metadata.Categories[ i ];
+                var value    = category.GetValue( gdType );
                 var isError  = filteredCategoryValues[ i ].All( ci => ci.Value != value );
                 var errorMsg = String.Empty;
                 if ( isError )
                 {
-                    errorMsg      = categories
-                           .TryElementAt( i, out var category ) && category?.Type == GDTypeHierarchy.CategoryType.Enum && category.Items.TryFirst( ci => ci.Value == value, out var catItem ) 
-                                ? $"Invalid value {catItem.Name}" 
-                                : $"Invalid value {value}"; 
-                    filteredCategoryValues[ i ].Add( new GDTypeHierarchy.CategoryItem( errorMsg, value ) );
+                    if ( category.Type == GDTypeHierarchy.CategoryType.Enum )
+                        errorMsg = $"Invalid value {value} of {category.UnderlyingType.Name}";
+                    else
+                        errorMsg = $"Invalid value {value}";
+                    var errorItem = new GDTypeHierarchy.CategoryItem( errorMsg, value, category );
+                    filteredCategoryValues[ i ].Add( errorItem );
                 }
                 categoryValues.Add( new State.CategoryValue(  )
                                       {
                                               ActualItems = filteredCategoryValues[ i ],
-                                              Category = categories[ i ],
+                                              Category = metadata.Categories[ i ],
                                               Value = value,
                                               IsError = isError,
                                               ErrorMessage = errorMsg,
@@ -202,7 +204,7 @@ namespace GDDB.Editor
 
         private State.CategoryValue GetStateCategoryValue( GDTypeHierarchy.Category category, Int32 value )
         {
-            var isOutOfCategoryValue = category != null && !category.IsCorrectValue( value );
+            var isOutOfCategoryValue = !category.IsCorrectValue( value );
             return new State.CategoryValue()
                    {
                            Category     = category,
@@ -212,7 +214,7 @@ namespace GDDB.Editor
                    };
         }
 
-        private List<List<GDTypeHierarchy.CategoryItem>> GetExistCategoryItems( IReadOnlyList<GDTypeHierarchy.Category> categories, GdType type )
+        private List<List<GDTypeHierarchy.CategoryItem>>  GetExistCategoryItems( IReadOnlyList<GDTypeHierarchy.Category> categories, GdType type )
         {
             var result     = new List<List<GDTypeHierarchy.CategoryItem>>();
             var existTypes = _gdoFinder.GDTypedObjects.Select( g => g.Type ).ToList();
@@ -222,20 +224,11 @@ namespace GDDB.Editor
                 {
                     existTypes.RemoveAll( t => t[ i - 1 ] != type[ i - 1 ] );
                 }
-                
-                var distinctValues = existTypes.Select( t => t[ i ] ).Distinct().ToList();
 
-                var  category         = categories[ i ];
-                List<GDTypeHierarchy.CategoryItem> filteredItems;
-                if ( category == null )
-                {
-                    filteredItems = distinctValues.OrderBy( v => v ).Select( v =>  new GDTypeHierarchy.CategoryItem( v.ToString(), v ) ).ToList();
-                }
-                else
-                {
-                    filteredItems = category.Items.Where( ci => distinctValues.Contains( ci.Value ) ).ToList();
-                }
-                
+                var category       = categories[ i ];
+                var distinctValues = existTypes.Select( t => category.GetValue( t ) ).Distinct().ToList();
+                var filteredItems = category.Items.Where( ci => distinctValues.Contains( ci.Value ) ).ToList();
+
                 // var isError      = filteredItems.All( ci => ci.Value != type[ i ] );
                 // if ( isError )
                 // {
@@ -371,6 +364,12 @@ namespace GDDB.Editor
                label.image   = Resources.ErrorIcon;
            }
 
+           //DEBUG
+           var gdType = new GdType( prop.uintValue );
+           if( gdType != default )
+               label.text = $"{label.text} ({gdType.ToString()})";
+           //DEBUG
+
             //Draw label
             position = EditorGUI.PrefixLabel( position, label, state.IsError ? Resources.PrefixLabelErrorStyle : Resources.PrefixLabelStyle );
 
@@ -484,13 +483,13 @@ namespace GDDB.Editor
         private void DrawCategoryIMGUI( Rect categoryPosition, SerializedProperty prop, State.CategoryValue category, Int32 index )
         {                 
             var gdType = new GdType( prop.uintValue );
-            var value = category.Value;
-            var items = category.ActualItems ?? category.Category?.Items;
+            var value = category.Category.GetValue( gdType );
+            var items = category.ActualItems ?? category.Category.Items;
 
 
             if ( items == null )                 //Items null - use category default values
             {
-                if ( category.Category == null || category.Category.Type == GDTypeHierarchy.CategoryType.Int8 )
+                if ( category.Category.Type != GDTypeHierarchy.CategoryType.Enum )
                 {
                     DrawIntField( );
                 }
@@ -499,9 +498,9 @@ namespace GDDB.Editor
                     DrawEmptyPopupField();
                 }
             }
-            else if ( items.Count == 0 )              //Several options - show popup
+            else if ( items.Count == 0 )              //Show disabled controls
             {
-                if ( category.Category == null || category.Category.Type == GDTypeHierarchy.CategoryType.Int8 )
+                if ( category.Category.Type != GDTypeHierarchy.CategoryType.Enum )
                 {
                     DrawDisabledIntField();
                 }
@@ -512,9 +511,9 @@ namespace GDDB.Editor
             }
             else
             {
-                if ( category.Category == null || category.Category.Type == GDTypeHierarchy.CategoryType.Int8 )
+                if ( category.Category.Type != GDTypeHierarchy.CategoryType.Enum )
                 {
-                    DrawPopupField();   //Int but with options list (gd reference)
+                    DrawPopupField();   //Int but with options list (gd reference). same popup as enum ?
                 }
                 else
                 {
@@ -528,15 +527,11 @@ namespace GDDB.Editor
                 var newValue = EditorGUI.DelayedIntField( categoryPosition, value );
                 if ( EditorGUI.EndChangeCheck() )
                 {
-                    Int32 clampedValue = 0;
-                    if( category.Category != null )
-                        clampedValue = category.Category.ClampValue( newValue );
-                    else
-                        clampedValue = Math.Clamp( newValue, Byte.MinValue, Byte.MaxValue );
-                    gdType[ index ] = clampedValue;
-                    if ( gdType != default )
+                    GdType newGdType = default;
+                    category.Category.SetValue( ref newGdType, newValue );
+                    if ( newGdType != default && newGdType != gdType)
                     {
-                        prop.uintValue   = gdType.Data;
+                        prop.uintValue   = newGdType.Data;
                         prop.serializedObject.ApplyModifiedProperties();
                     }
                 }
@@ -553,7 +548,7 @@ namespace GDDB.Editor
                 if ( EditorGUI.EndChangeCheck() )
                 {
                     value           = items[ newIndex ].Value;
-                    gdType[ index ] = value;
+                    category.Category.SetValue( ref gdType, value );
                     if ( gdType != default )
                     {
                         prop.uintValue = gdType.Data;
@@ -616,7 +611,7 @@ namespace GDDB.Editor
 
         
 
-        public override VisualElement CreatePropertyGUI( SerializedProperty property )
+        /*public override VisualElement CreatePropertyGUI( SerializedProperty property )
         {
             return null;    //Disable UIToolkit drawer
 
@@ -655,9 +650,9 @@ namespace GDDB.Editor
             RecreateProperty( root );
 
             return  root;
-        }
+        }*/
 
-        private void RecreateProperty( VisualElement root )
+        /*private void RecreateProperty( VisualElement root )
         {
             root.RemoveFromClassList( "duplicateType" );
             var gdType = GetGDTypeFromRoot( root );
@@ -693,15 +688,15 @@ namespace GDDB.Editor
 
                 CheckDuplicateType( root );
             }
-        }
+        }*/
 
-        private void  CreateNoneType( VisualElement root )
+        /*private void  CreateNoneType( VisualElement root )
         {
             var noneLabel = new Label("None");
             var gdType    = GetGDTypeFromRoot( root );
             gdType.Add( noneLabel );
 
-            var addTypeBtn = new Button( /*() => AssignType(root)*/ );
+            var addTypeBtn = new Button( /*() => AssignType(root)#1# );
             addTypeBtn.text     = "";
             addTypeBtn.tabIndex = 1;
             addTypeBtn.AddToClassList( "toolbar-square-button" );
@@ -709,9 +704,9 @@ namespace GDDB.Editor
             addTypeBtn.tooltip = "Assign type";
             var toolbar = GetToolbarFromRoot( root );
             toolbar.Add( addTypeBtn );
-        }
+        }*/
 
-        private void CreateWidgets( VisualElement root, Int32 index, GDTypeHierarchy.Category category )
+        /*private void CreateWidgets( VisualElement root, Int32 index, GDTypeHierarchy.Category category )
         {
             if( index >= 4 )
                 return;
@@ -729,11 +724,11 @@ namespace GDDB.Editor
             CheckIncorrectType( gdTypeValue, widget, index );
 
             //Create next widget(s)
-            var nextCategory = category.FindItem( gdTypeValue[ index ] ).Subcategory;
+            var nextCategory = category.GetItem( gdTypeValue[ index ] ).Subcategory;
             CreateWidgets( root, index + 1, nextCategory );
-        }
+        }*/
 
-        private VisualElement CreateCategoryField( VisualElement root, GDTypeHierarchy.Category category, Int32 value, Int32 index )
+        /*private VisualElement CreateCategoryField( VisualElement root, GDTypeHierarchy.Category category, Int32 value, Int32 index )
         {
             VisualElement result = null;
             if ( category == null )         //Default Int8 field
@@ -752,7 +747,7 @@ namespace GDDB.Editor
                 result.style.flexGrow = 1;
                 result.RegisterCallback<ChangeEvent<Int32>>( OnChangeEnumWidget );
 
-                Debug.Log( $"Created popup field, index {index} for {category.UnderlyingType} category, value {category.FindItem( value ).Name}" );
+                Debug.Log( $"Created popup field, index {index} for {category.UnderlyingType} category, value {category.GetItem( value ).Name}" );
 
                 List<Int32> GetValues( GDTypeHierarchy.Category category, Int32 selectedItem )
                 {
@@ -765,7 +760,7 @@ namespace GDDB.Editor
                 String ValueToString( GDTypeHierarchy.Category category, Int32 value )
                 {
                     if( category.IsCorrectValue( value ) )
-                        return category.FindItem( value ).Name;
+                        return category.GetItem( value ).Name;
 
                     return $"Incorrect value {value}";
                 }
@@ -782,15 +777,15 @@ namespace GDDB.Editor
                 _dataProp.uintValue = gdType.Data;
                 _serializedObject.ApplyModifiedProperties();
 
-                var nextCategory = category.FindItem( evt.newValue ).Subcategory;
+                var nextCategory = category.GetItem( evt.newValue ).Subcategory;
                 CreateWidgets( root, index + 1, nextCategory );
 
                 CheckDuplicateType( root );
                 CheckIncorrectType( gdType, (VisualElement)evt.target, index );
             }
-        }
+        }*/
 
-        private void CheckDuplicateType( VisualElement root )
+        /*private void CheckDuplicateType( VisualElement root )
         {
             if ( _gdoFinder.IsDuplicatedType( GetGDType() ) )
             {
@@ -818,9 +813,9 @@ namespace GDDB.Editor
                 if( fixBtn != null )
                     toolbar.Remove( fixBtn );
             }
-        }
+        }*/
 
-        private void CheckIncorrectType( GdType type, VisualElement widget, Int32 index )
+        /*private void CheckIncorrectType( GdType type, VisualElement widget, Int32 index )
         {
             if ( !_typeHierarchy.IsTypeCorrect( type, out var incorrectIndex ) && index == incorrectIndex )
             {
@@ -830,27 +825,23 @@ namespace GDDB.Editor
             {
                 widget.RemoveFromClassList( "incorrectValue" );
             }
-        }
+        }*/
 
-        private Int32 ToolbarSort( VisualElement a, VisualElement b )
+        /*private Int32 ToolbarSort( VisualElement a, VisualElement b )
         {
             return a.tabIndex.CompareTo( b.tabIndex );
-        }
+        }*/
 
-        private VisualElement GetGDTypeFromRoot( VisualElement root )
+        /*private VisualElement GetGDTypeFromRoot( VisualElement root )
         {
             return root.Q<VisualElement>( "GDType" );
-        }
+        }*/
 
-        private VisualElement GetToolbarFromRoot( VisualElement root )
+        /*private VisualElement GetToolbarFromRoot( VisualElement root )
         {
             return root.Q<VisualElement>( "Toolbar" );
-        }
+        }*/
 
-        private GdType GetGDType( )
-        {
-            return new GdType( _dataProp.uintValue );
-        }
 
         public class State
         {
@@ -941,6 +932,11 @@ namespace GDDB.Editor
                                                                               NumberGroupSeparator = "",
                                                                               NumberDecimalSeparator = ".",
                                                                       };
+
+            public static readonly GUIStyle SmallLabelStyle = new GUIStyle( EditorStyles.label )
+                                                              {
+                                                                      fontSize = 9,
+                                                              };
         }
 
         public enum EEditMode

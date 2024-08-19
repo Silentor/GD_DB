@@ -26,6 +26,8 @@ namespace GDDB.Editor
         public String OutputFolderDB                = "Assets/GeneratedGDDB/DB/";
         [Min(1)]
         public Int32 GDObjectsCount                 = 10000;
+        [Min(1)]
+        public Int32 MaxComponentsPerObject         = 5;
 
         public void Save( )
         {

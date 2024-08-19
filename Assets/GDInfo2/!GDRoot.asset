@@ -12,11 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e112a9ca44dc1e4f8749440491807b1, type: 3}
   m_Name: '!GDRoot'
   m_EditorClassIdentifier: 
-  _name: 
+  EnabledObject: 1
+  Type:
+    Data: 0
   Components: []
   Id: GD2
   Version: 0
-  Content: []
   references:
     version: 2
     RefIds: []

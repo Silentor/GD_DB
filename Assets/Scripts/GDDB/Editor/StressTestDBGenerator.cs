@@ -138,15 +138,33 @@ namespace GDDB.Editor
         {
             var rnd = new Random();
             var gdos  = new List<GDObject>();
-            var names = GenerateUniqueNouns( _settings.GDObjectsCount, new List<String>(), 2, 3 );
             var components = TypeCache.GetTypesDerivedFrom<GDComponent>().Where( t => t.Namespace?.StartsWith( settings.RootNamespace ) == true && !t.IsAbstract ).ToList();
-            while ( gdos.Count < _settings.GDObjectsCount )
+            var types = new GDTypeHierarchy(); 
+
+            //Generate typed objects
+            var categoriesToIndexate = GetFinalCategories( types.Root );
+            while ( gdos.Count < settings.GDObjectsCount && categoriesToIndexate.Count > 0 )
+            {
+                var randomIndex = rnd.Next( categoriesToIndexate.Count );
+                var categoryItem = categoriesToIndexate[ randomIndex];
+                categoriesToIndexate.RemoveAt( randomIndex );
+                if ( categoryItem.Owner.Index < 3 )
+                {
+                    for ( int i = 0; i < 10; i++ )
+                    {
+                        
+                    }
+                }
+            }
+
+            var names = GenerateUniqueNouns( _settings.GDObjectsCount, new List<String>(), 2, 3 );
+            while ( gdos.Count < settings.GDObjectsCount )
             {
                 var go = ScriptableObject.CreateInstance<GDObject>();
                 go.name       = names[ rnd.Next( names.Count ) ];
                 go.Components = new List<GDComponent>();
 
-                var componentsCount = rnd.Next( 1, 5 + 1 );
+                var componentsCount = rnd.Next( 1, settings.MaxComponentsPerObject + 1 );
                 for ( var i = 0; i < componentsCount; i++ )
                 {
                     var componentType = components[ rnd.Next( components.Count ) ];
@@ -157,12 +175,18 @@ namespace GDDB.Editor
                 gdos.Add( go );
             }
 
+            //Save gdobject assets
+            if ( !Directory.Exists( settings.OutputFolderDB ) )
+            {
+                Directory.CreateDirectory( settings.OutputFolderDB );
+            }
+
             AssetDatabase.StartAssetEditing();
             try
             {
                 foreach ( var gdo in gdos )
                 {
-                    AssetDatabase.CreateAsset( gdo, Path.Join( _settings.OutputFolderDB, $"{gdo.name}.asset" ) );
+                    AssetDatabase.CreateAsset( gdo, Path.Join( settings.OutputFolderDB, $"{gdo.name}.asset" ) );
                 }
             }
             finally
@@ -256,6 +280,7 @@ namespace GDDB.Editor
         {
             var result = new List<String>( count );
             var rnd    = new Random();
+            var infinityLoopDefenceCounter = 0; 
 
             while( result.Count < count )
             {
@@ -267,6 +292,12 @@ namespace GDDB.Editor
                     var namePart = _nouns[ rnd.Next( _nouns.Length ) ];
                     if( !partsList.Contains( namePart ) )
                         partsList.Add( namePart );
+
+                    if(infinityLoopDefenceCounter++ > 10000)
+                    {
+                        Debug.LogError( "Infinity loop defence abort GenerateUniqueNouns()" );
+                        break;
+                    }
                 }
 
                 var fullName = String.Join( "", partsList );
@@ -326,6 +357,27 @@ namespace GDDB.Editor
             result.AppendLine( "}" );
 
             return result.ToString();
+        }
+
+        private List<GDTypeHierarchy.CategoryItem> GetFinalCategories( GDTypeHierarchy.Category root )
+        {
+            var result = new List<GDTypeHierarchy.CategoryItem>();
+            var stack  = new Stack<GDTypeHierarchy.Category>();
+            stack.Push( root );
+
+            while ( stack.Count > 0 )
+            {
+                var current = stack.Pop();
+                foreach ( var item in current.Items )
+                {
+                    if ( item.Subcategory != null )
+                        stack.Push( item.Subcategory );  
+                    else
+                        result.Add( item );
+                }
+            }
+
+            return result;
         }
 
         private class CategoryHolder

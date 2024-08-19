@@ -1,0 +1,33 @@
+{
+    "GDDGTypeHierarchy":{
+      "Currencies" : {
+        "_Value" : 0,
+        "Gold" : 0,
+        "Silver" : 1,
+        "Copper" : 2,
+        "HardCurrency" : 3,
+        "Energy" : 4,
+        "Tokens" : {
+            "_Value" : 5,
+            "Armor" : 0,
+            "Weapon" : 1,
+            "Skin" : 2
+        }
+      },
+      "Mobs": {
+        "_Value"  : 1,
+        "Humans"  : {
+            "_Value" : 0,
+            "_Type"  : "Int8"
+        },
+        "Orcs"    : 1,
+        "Elves"   : 2
+      },
+      "Items" : {
+        "_Value" : 2,
+        "Armors" : 0,
+        "Weapons" : 1,
+        "Consumables" : 2
+      }
+    }
+}

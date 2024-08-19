@@ -55,7 +55,7 @@ namespace GDDB
     }
 
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true )]
-    public class RequireComponentAttribute : Attribute
+    public class RequireComponentAttribute : Attribute                  //TODO add analyzer to check attribute usage
     {
         public IReadOnlyList<Type> Components { get; }
 
@@ -72,7 +72,7 @@ namespace GDDB
     }
 
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true )]
-    public class ForbidComponentAttribute : Attribute
+    public class ForbidComponentAttribute : Attribute                    //TODO add analyzer to check attribute usage
     {
         public IReadOnlyList<Type> Components { get; }
 
