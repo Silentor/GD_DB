@@ -102,14 +102,34 @@ namespace GDDB.Editor
                 result.Categories.Add( GetStateCategoryValue( metadata.Categories[i], gdType[i] ) );    
             }
 
-            if( _gdoFinder.IsDuplicatedType( gdType ) )
+            if ( !metadata.IsTypeDefined( gdType ) )
+            {
+                result.IsError      = true;
+                result.ErrorMessage = $"Type not properly defined. Press Fix button to clear undefined part";
+                result.Buttons.Add( new State.Button()
+                                    {
+                                            Type  = State.EButton.FixType,
+                                            Click = FixUndefinedTypePart,
+                                    } );
+            }
+            else if ( !metadata.IsTypeInRange( gdType, out var incorrectCategory ) )
+            {
+                result.IsError      = true;
+                result.ErrorMessage = $"Category {incorrectCategory.Index+1} value is out of range. Select proper value of press Fix button to autofix";
+                result.Buttons.Add( new State.Button()
+                                    {
+                                            Type  = State.EButton.FixType,
+                                            Click = FixCategoryOutOfRange,
+                                    } );
+            }
+            else if( _gdoFinder.IsDuplicatedType( gdType, metadata, out var count ) )
             {
                 result.IsError = true;
-                result.ErrorMessage = "Duplicate type";
+                result.ErrorMessage = $"Duplicate type, count {count}. Press Fix button to assign new type";
                 result.Buttons.Add( new State.Button()
                                    {
                                            Type = State.EButton.FixType,
-                                           Click = FixType,
+                                           Click = FixDuplicateType,
                                    } );
             }
 
@@ -205,13 +225,17 @@ namespace GDDB.Editor
         private State.CategoryValue GetStateCategoryValue( GDTypeHierarchy.Category category, Int32 value )
         {
             var isOutOfCategoryValue = !category.IsCorrectValue( value );
-            return new State.CategoryValue()
+            var result =  new State.CategoryValue()
                    {
                            Category     = category,
                            Value        = value,
                            IsError      = isOutOfCategoryValue,
-                           ErrorMessage = isOutOfCategoryValue ? $"Incorrect value {value}" : String.Empty
+                           ErrorMessage = isOutOfCategoryValue ? $"Incorrect value {value}" : String.Empty,
                    };
+            if ( isOutOfCategoryValue )
+                result.ActualItems = new List<GDTypeHierarchy.CategoryItem>( category.Items.Append( new GDTypeHierarchy.CategoryItem( $"Incorrect value {value}", value, category ) ) );
+
+            return result;
         }
 
         private List<List<GDTypeHierarchy.CategoryItem>>  GetExistCategoryItems( IReadOnlyList<GDTypeHierarchy.Category> categories, GdType type )
@@ -292,10 +316,60 @@ namespace GDDB.Editor
             _serializedObject.ApplyModifiedProperties();
         }
 
-        private void FixType(  )
+        private void FixDuplicateType(  )
         {
             _serializedObject.Update();
-            if ( _gdoFinder.FindFreeType( new GdType( _dataProp.uintValue ), out var newType ) ) 
+            if ( _gdoFinder.FindFreeType( new GdType( _dataProp.uintValue ), _typeHierarchy, out var newType ) ) 
+            {
+                _dataProp.uintValue = newType.Data;
+                _serializedObject.ApplyModifiedProperties();
+            }
+        }
+
+        private void FixCategoryOutOfRange(  )
+        {
+            _serializedObject.Update();
+            var gdType = new GdType( _dataProp.uintValue );
+            if ( !_typeHierarchy.IsTypeInRange( gdType, out var incorrectCategory ) )
+            {
+                var incorrectValue = incorrectCategory.GetValue( gdType );
+                if ( incorrectCategory.Type == GDTypeHierarchy.CategoryType.Enum )
+                {
+                    var diff         = Int32.MaxValue;
+                    var optimalValue = 0;
+                    foreach ( var categoryItem in incorrectCategory.Items )
+                    {
+                        var value = categoryItem.Value;
+                        if( Math.Abs( value - incorrectValue ) < diff )
+                        {
+                            diff = Math.Abs( value - incorrectValue );
+                            optimalValue = value;
+                        }
+                    }
+                    if( diff < Int32.MaxValue )
+                    {
+                        incorrectCategory.SetValue( ref gdType, optimalValue );
+                        _dataProp.uintValue = gdType.Data;
+                        _serializedObject.ApplyModifiedProperties();
+                    }
+                }
+                else
+                {
+                    incorrectValue = Mathf.Clamp( incorrectValue, incorrectCategory.MinValue, incorrectCategory.MaxValue );
+                    incorrectCategory.SetValue( ref gdType, incorrectValue );
+                    _dataProp.uintValue = gdType.Data;
+                    _serializedObject.ApplyModifiedProperties();
+                }
+            }
+        }
+
+        private void FixUndefinedTypePart(  )
+        {
+            _serializedObject.Update();
+            var oldType  = new GdType( _dataProp.uintValue );
+            var metadata = _typeHierarchy.GetMetadataOf( oldType );
+            var newType  = metadata.ClearUndefinedTypePart( oldType );
+            if( newType != oldType )
             {
                 _dataProp.uintValue = newType.Data;
                 _serializedObject.ApplyModifiedProperties();
@@ -357,13 +431,6 @@ namespace GDDB.Editor
        {
            label = EditorGUI.BeginProperty( position, label, prop );
 
-           if ( state.IsError )
-           {
-               label.tooltip = state.ErrorMessage;
-               label.text    = $"{label.text} ({state.ErrorMessage})";
-               label.image   = Resources.ErrorIcon;
-           }
-
            //DEBUG
            var gdType = new GdType( prop.uintValue );
            if( gdType != default )
@@ -372,6 +439,13 @@ namespace GDDB.Editor
 
             //Draw label
             position = EditorGUI.PrefixLabel( position, label, state.IsError ? Resources.PrefixLabelErrorStyle : Resources.PrefixLabelStyle );
+            position.height = EditorGUIUtility.singleLineHeight * 2 + EditorGUIUtility.standardVerticalSpacing;
+
+            if ( state.IsError )
+            {
+                EditorGUI.HelpBox( position, state.ErrorMessage, MessageType.Error );
+                position.y += EditorGUIUtility.singleLineHeight * 2 + EditorGUIUtility.standardVerticalSpacing * 2;
+            }
 
             var toolbarWidth = 20 * state.Buttons.Count;
             var toolbarPosition = new Rect( position.x + position.width - toolbarWidth, position.y, toolbarWidth, position.height );
@@ -606,8 +680,15 @@ namespace GDDB.Editor
             }
         }
 
+        public override Single GetPropertyHeight(SerializedProperty property, GUIContent label )
+        {
+            if( _state != null && _state.IsError )
+                return base.GetPropertyHeight( property, label ) * 3 + EditorGUIUtility.standardVerticalSpacing * 2;
+            else
+                return base.GetPropertyHeight( property, label );
+        }
 
-#endregion
+    #endregion
 
         
 

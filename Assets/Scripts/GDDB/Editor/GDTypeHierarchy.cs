@@ -5,9 +5,7 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using JetBrains.Annotations;
 using UnityEditor;
-using UnityEngine;
 using Debug = UnityEngine.Debug;
 
 namespace GDDB.Editor
@@ -24,6 +22,8 @@ namespace GDDB.Editor
 
         public  GDTypeHierarchy( )
         {
+            var startTimer = new Stopwatch();
+
             //Get all category types
             var categoryTypes = TypeCache.GetTypesWithAttribute<CategoryAttribute>();
 
@@ -108,6 +108,17 @@ namespace GDDB.Editor
 
             Root = _categories.FirstOrDefault( c => c.Parent == null );
 
+            startTimer.Stop();
+
+            var possibleTypesCount = 0;
+            foreach ( var category in _categories )
+            {
+                if ( category.Type == CategoryType.Enum )
+                    possibleTypesCount += category.Items.Count( i => i.Subcategory == null );
+                else
+                    possibleTypesCount += category.Count;
+            }
+            Debug.Log( $"[GDTypeHierarchy] Hierrarchy build time {startTimer.ElapsedMilliseconds} ms, possible types count {possibleTypesCount}" );
             PrintHierarchy();
         }
 
@@ -197,7 +208,7 @@ namespace GDDB.Editor
 
         private void PrintCategoryRecursive( Category category, StringBuilder result, Int32 depth )
         {
-            if ( category == null )
+            if ( category == null || category.Items == null )
                 return;
 
             foreach ( var item in category.Items )
@@ -231,7 +242,7 @@ namespace GDDB.Editor
                     result.Append( '.' );    
             }
         }
-       
+
         public class GdTypeMetadata
         {
             /// <summary>
@@ -245,13 +256,13 @@ namespace GDDB.Editor
             {
                 get
                 {
-                    if( _mask == null )
+                    if ( _mask == null )
                     {
                         _mask = 0;
                         for ( var i = 0; i < _categories.Length; i++ )
                         {
                             var category = _categories[ i ];
-                            _mask |= category.GetMask();
+                            _mask |= category.GetMask() << Category.GetShift( i, category.Type );
                         }
                     }
 
@@ -266,13 +277,19 @@ namespace GDDB.Editor
 
             public Boolean IsTypeDefined( GdType type )
             {
-                if( type == default )
+                if ( type == default )
                     return true;
 
                 return (type.Data & Mask)  == type.Data;
             }
 
-            public Boolean IsTypeInRange( GdType type, out Category incorrectCategory )
+            public GdType ClearUndefinedTypePart( GdType type )
+            {
+                return new GdType( type.Data & Mask );
+            }
+        
+
+        public Boolean IsTypeInRange( GdType type, out Category incorrectCategory )
             {
                 if( type == default )
                 {
@@ -310,13 +327,43 @@ namespace GDDB.Editor
         [DebuggerDisplay("{UnderlyingType.Name} ({Type}): {Items.Count}")]
         public class Category
         {
-            public readonly Type               UnderlyingType;
-            public readonly CategoryType       Type;
-            public readonly Category           Parent;
-            public readonly Int32              Index;
-            public readonly String             Name;
+            public readonly Type         UnderlyingType;
+            public readonly CategoryType Type;
+            public readonly Category     Parent;
+            public readonly Int32        Index;
+            public readonly String       Name;
 
-            public  List<CategoryItem> Items = null;        //Null - default values for given Type 
+            public  List<CategoryItem> Items = null;        //Null - default values for Int Type 
+
+            public Int32 MinValue
+            {
+                get
+                {
+                    if ( Type == CategoryType.Enum )
+                        return Items.Min( i => i.Value );
+                    return 0;
+                }
+            }
+
+            public Int32 MaxValue
+            {
+                get
+                {
+                    if ( Type == CategoryType.Enum )
+                        return Items.Max( i => i.Value );
+                    return (Int32)GetMask();
+                }
+            }
+
+            public Int32 Count
+            {
+                get
+                {
+                    if ( Type == CategoryType.Enum )
+                        return Items.Count;
+                    return MaxValue - MinValue + 1;
+                }
+            }
 
 
             public Category( CategoryType type, Type underlyingType, Category parent, Int32 index )

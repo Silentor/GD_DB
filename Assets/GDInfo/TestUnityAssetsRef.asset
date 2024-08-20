@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   EnabledObject: 1
   Type:
-    Data: 17170697
+    Data: 16908288
   Components:
   - rid: 2631727329348419584
   - rid: 8886619657113960448
@@ -25,6 +25,8 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }
     - rid: 2631727329348419584
       type: {class: UnityAssetReferenceComponent, ns: GDDB.Tests, asm: Tests}
       data:

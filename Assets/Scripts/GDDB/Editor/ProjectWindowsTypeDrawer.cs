@@ -97,13 +97,13 @@ namespace GDDB.Editor
                     text = text.Substring( itemData.GDTypeString.Length - remainChars );
             }
 
-
-            if( GDOFinder.IsDuplicatedType( asset.Type, TypeHierarchy, out var count ) )
-                    GUI.Label( rect, new GUIContent( text, tooltip: $"Duplicated type, found {count} types" ), Styles.GDTypeStrLabelError );
+            //Validation
+            if( !TypeHierarchy.IsTypeDefined( asset.Type ) )
+                GUI.Label( rect, new GUIContent( text, tooltip: "Type value is out of range"), Styles.GDTypeStrLabelError );
             else if( !TypeHierarchy.IsTypeInRange( asset.Type, out var category ) )
-                GUI.Label( rect, new GUIContent( text, tooltip: $"Type has value out of range at {category.Name} category"), Styles.GDTypeStrLabelError );
-            else if( !TypeHierarchy.IsTypeDefined( asset.Type ) )
-                GUI.Label( rect, new GUIContent( text, tooltip: $"Type has partly undefined"), Styles.GDTypeStrLabelError );
+                GUI.Label( rect, new GUIContent( text, tooltip: $"Type category {category.Index + 1} is out of range"), Styles.GDTypeStrLabelError );
+            else if( GDOFinder.IsDuplicatedType( asset.Type, TypeHierarchy, out var count ) )
+                GUI.Label( rect, new GUIContent( text, tooltip: $"Duplicated type, found {count} types" ), Styles.GDTypeStrLabelError );
             else
             {
                 if( Selection.objects.Contains( asset ) )

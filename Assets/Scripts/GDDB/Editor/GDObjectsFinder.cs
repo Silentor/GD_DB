@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
 namespace GDDB.Editor
 {
     /// <summary>
-    /// Helper class to work with types of GDObjects without creating entre GDDB
+    /// Helper class to work with types of GDObjects without creating entire GDDB
     /// </summary>
     public class GDObjectsFinder
     {
@@ -26,31 +27,6 @@ namespace GDDB.Editor
             LoadGDObjects();
         }
 
-        public Boolean IsDuplicatedType( GDObject gdObject )
-        {
-            return IsDuplicatedType( gdObject.Type );
-        }
-
-        public Boolean IsDuplicatedType( GdType type )
-        {
-            if ( type == default )
-                return false;
-
-            var typeCount = 0;
-            for ( var i = 0; i < GDTypedObjects.Count; i++ )
-            {
-                if ( GDTypedObjects[ i ].Type == type )
-                {
-                    if ( typeCount > 0 )
-                        return true;
-                    else
-                        typeCount++;
-                }                
-            }
-
-            return false;
-        }
-
         public Boolean IsDuplicatedType( GdType type, GDTypeHierarchy typeHierarchy, out Int32 count )
         {
             count = 0;
@@ -60,6 +36,17 @@ namespace GDDB.Editor
             }
 
             var metadata = typeHierarchy.GetMetadataOf( type );
+            return IsDuplicatedType( type, metadata, out count );
+        }
+
+        public Boolean IsDuplicatedType( GdType type, GDTypeHierarchy.GdTypeMetadata metadata, out Int32 count )
+        {
+            count = 0;
+            if ( type == default )
+            {
+                return false;
+            }
+
             for ( var i = 0; i < GDTypedObjects.Count; i++ )
             {
                 if( GDTypedObjects[i].EnabledObject == false )
@@ -74,46 +61,66 @@ namespace GDDB.Editor
             return count > 1;
         }
 
+        public Boolean FindFreeType( GdType fromType, GDTypeHierarchy typeHierarchy, out GdType result )
+        {
+            if ( fromType == default )
+            {
+                result = default;
+                return false;
+            }
+
+            var metadata = typeHierarchy.GetMetadataOf( fromType );
+            return FindFreeType( fromType, metadata, out result );
+        }
+
         /// <summary>
         /// Find free 4th category for given type
         /// </summary>
         /// <param name="fromType"></param>
         /// <param name="result"></param>
         /// <returns></returns>
-        public Boolean FindFreeType( GdType fromType, out GdType result )
+        public Boolean FindFreeType( GdType fromType, GDTypeHierarchy.GdTypeMetadata metadata, out GdType result )
         {
-            var from  = fromType[3];
-            var range = Math.Max( 255 - from, from );
-            for ( var i = 1; i < range; i++ )
+            if ( fromType == default )
             {
-                var incValue = from + i;
-                if ( incValue <= 255 )
-                {
-                    if ( CheckValue( incValue ) )
-                    {
-                        result = fromType.WithCategory( 3, incValue );
-                        return true;
-                    }
-                }
+                result = default;
+                return false;
+            }
 
-                var decValue = from - i;
-                if ( decValue >= 0 )
-                {
-                    if ( CheckValue( decValue ) )
-                    {
-                        result = fromType.WithCategory( 3, decValue );
-                        return true;
-                    }
-                }
+
+            var    valueCategory = metadata.Categories.Last();
+            var    value         = valueCategory.GetValue( fromType );
+
+            for ( var newValue = value + 1; newValue < valueCategory.MaxValue; newValue++ )
+            {
+                if ( IsValidAndUnique( newValue, out result ) )
+                    return true;
+            }
+
+            for ( var newValue = valueCategory.MinValue; newValue < value; newValue++ )     
+            {
+                if ( IsValidAndUnique( newValue, out result ) )
+                    return true;
             }
 
             result = default;
             return false;
 
-            Boolean CheckValue( Int32 newElem )
+            Boolean IsValidAndUnique( Int32 newValue, out GdType newType )
             {
-                var newType = fromType.WithCategory( 3, newElem );
-                return !GDTypedObjects.Exists( g => g.Type == newType );
+                if ( valueCategory.IsCorrectValue( newValue ) )
+                {
+                    var checkType = fromType;
+                    valueCategory.SetValue( ref checkType, newValue );
+                    if ( checkType != default && checkType != fromType && !GDTypedObjects.Exists( g => metadata.IsTypesEqual( g.Type, checkType ) ) )
+                    {
+                        newType = checkType;
+                        return true;
+                    }
+                }
+
+                newType = default;
+                return false;
             }
         }
 

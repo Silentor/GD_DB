@@ -34,13 +34,21 @@ namespace GDDB.Editor
         {
             Debug.Log( $"Processing imported GDObjects, count {gdObjects.Count}" );
 
+            GDTypeHierarchy gdTypeHierarchy = null;
             var gdoFinder = new GDObjectsFinder();
             foreach ( var gdObject in gdObjects )
             {
                 if( gdObject.Type != default )
-                    if ( gdoFinder.IsDuplicatedType( gdObject ) )
+                {
+                    if(_gdTypeHierarchy == null)
                     {
-                        if( gdoFinder.FindFreeType( gdObject.Type, out var newType ) )
+                        _gdTypeHierarchy = new GDTypeHierarchy();
+                    }
+
+                    var metadata = _gdTypeHierarchy.GetMetadataOf( gdObject.Type );
+                    if ( gdoFinder.IsDuplicatedType( gdObject.Type, metadata, out _ ) )
+                    {
+                        if( gdoFinder.FindFreeType( gdObject.Type, metadata, out var newType ) )
                         {
                             var oldType = gdObject.Type;
                             gdObject.Type = newType;
@@ -52,10 +60,12 @@ namespace GDDB.Editor
                         {
                             Debug.LogWarning( $"[GDOAssetPostprocessor] Detected duplicate type on imported GDObject, but no free type was found: object {gdObject.name}, type {gdObject.Type}", gdObject );
                         }
-                    }
+                    }}
             }
 
             Debug.Log( $"Finished processing imported GDObjects" );
         }
+
+        private static GDTypeHierarchy _gdTypeHierarchy;
     }
 }
