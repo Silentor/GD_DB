@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GdDbSourceGen", "GdDbSourceGen.csproj", "{FEAF0261-7359-4F14-98C4-851355E179FE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FEAF0261-7359-4F14-98C4-851355E179FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FEAF0261-7359-4F14-98C4-851355E179FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FEAF0261-7359-4F14-98C4-851355E179FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FEAF0261-7359-4F14-98C4-851355E179FE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
