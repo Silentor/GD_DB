@@ -439,14 +439,15 @@ namespace GDDB.Editor
 
             //Draw label
             position = EditorGUI.PrefixLabel( position, label, state.IsError ? Resources.PrefixLabelErrorStyle : Resources.PrefixLabelStyle );
-            position.height = EditorGUIUtility.singleLineHeight * 2 + EditorGUIUtility.standardVerticalSpacing;
 
             if ( state.IsError )
             {
+                position.height = EditorGUIUtility.singleLineHeight * 2 + EditorGUIUtility.standardVerticalSpacing;
                 EditorGUI.HelpBox( position, state.ErrorMessage, MessageType.Error );
-                position.y += EditorGUIUtility.singleLineHeight * 2 + EditorGUIUtility.standardVerticalSpacing * 2;
+                position.y      += EditorGUIUtility.singleLineHeight * 2 + EditorGUIUtility.standardVerticalSpacing * 2;
+                position.height =  EditorGUIUtility.singleLineHeight;
             }
-
+            
             var toolbarWidth = 20 * state.Buttons.Count;
             var toolbarPosition = new Rect( position.x + position.width - toolbarWidth, position.y, toolbarWidth, position.height );
             var typeWidth = position.width - toolbarWidth;

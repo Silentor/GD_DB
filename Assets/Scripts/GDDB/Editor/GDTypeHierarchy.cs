@@ -63,6 +63,13 @@ namespace GDDB.Editor
                     categoriesToRemove.Add( category );
                 }
             }
+            var mainCategory = categories.Where( c => c.Parent == null ).ToArray();
+            if( mainCategory.Length == 0 )
+                throw new InvalidOperationException( "[GDTypeHierarchy] No main category found, should be one root category with Parent null" );
+            if( mainCategory.Length > 1 )
+                throw new InvalidOperationException( $"[GDTypeHierarchy] Too many main categories found ({mainCategory.Length}), should be one root category with Parent null" );
+            if( mainCategory.First().Items.Any( i => i.Value == 0 ) )
+                throw new InvalidOperationException( $"[GDTypeHierarchy] Zero item at main category {mainCategory.First().UnderlyingType.Name} is reserved, please start with 1" );
             foreach ( var catToRemove in categoriesToRemove )
             {
                 categories.Remove( catToRemove );
@@ -536,6 +543,9 @@ namespace GDDB.Editor
                 {
                     result++;
                     inspectedCategory = inspectedCategory.Parent;
+
+                    if( result > 255 )          //Probably loop in tree
+                        break;
                 }
 
                 return result;

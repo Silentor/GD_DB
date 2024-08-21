@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   EnabledObject: 1
   Type:
-    Data: 16777472
+    Data: 16777216
   Components: []
   references:
     version: 2

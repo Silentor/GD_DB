@@ -7,7 +7,7 @@ namespace TestGdDb
     [Category]
     public enum MainCategory
     {
-        Common,
+        Common = 1,
         Mobs,
         Items,
         Weapons,
