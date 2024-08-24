@@ -1,0 +1,28 @@
+﻿{
+  "Root": {
+    "Items": {
+      "Mobs": {
+        "Value": 1
+      },
+      "Locations": {
+        "Value": 2
+      },
+      "Currencies": {
+        "Value": 3,
+        "Items": {
+          "Gold": {
+            "Value": 1
+          },
+          "Silver": {
+            "Value": 2
+          },
+          "Copper": {
+            "Value": 3
+          }
+        }
+      }
+    }
+  }
+}
+      
+ 

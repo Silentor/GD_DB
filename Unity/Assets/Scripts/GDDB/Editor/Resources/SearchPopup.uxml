@@ -1,0 +1,17 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/Scripts/GDDB/Editor/Resources/GDO.uss?fileID=7433441132597879392&amp;guid=7bda1607dc850bf4b986f7b5e610a080&amp;type=3#GDO" />
+    <ui:VisualElement name="SearchBox" style="flex-direction: row; height: 24px;">
+        <ui:Button name="RecommendedBtn" tooltip="Recommended components" class="search-popup__toolbtn" style="background-image: resource(&apos;thumb_up_24dp&apos;);" />
+        <ui:Button name="SearchBtn" tooltip="Search mode" class="search-popup__toolbtn search-popup__toolbtn-toggled" style="background-image: resource(&apos;search_24dp&apos;);" />
+        <ui:TextField picking-mode="Ignore" name="SearchField" style="flex-grow: 1;" />
+    </ui:VisualElement>
+    <ui:VisualElement name="InfoBox" class="search-popup__info-box">
+        <ui:Button parse-escape-sequences="true" display-tooltip-when-elided="true" name="ResultsBtn" style="padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; flex-direction: row; height: 22px;">
+            <ui:VisualElement name="BackNamespaceIcon" style="flex-grow: 0; background-image: resource(&apos;chevron_left_24dp&apos;); width: 22px; height: 22px; flex-shrink: 0;" />
+            <ui:Label tabindex="-1" text="Results count: 100" parse-escape-sequences="true" display-tooltip-when-elided="true" name="ResultsLbl" style="-unity-text-align: middle-right; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 5px; padding-bottom: 0; padding-left: 0; flex-grow: 1; height: 22px;" />
+        </ui:Button>
+    </ui:VisualElement>
+    <ui:VisualElement name="ResultsBox" style="flex-grow: 1;">
+        <ui:ListView name="ResultsList" selection-type="None" focusable="false" show-bound-collection-size="false" />
+    </ui:VisualElement>
+</ui:UXML>

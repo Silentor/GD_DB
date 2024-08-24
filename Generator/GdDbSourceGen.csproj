@@ -1,0 +1,52 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <RootNamespace>GDDB.SourceGenerator</RootNamespace>
+        <LangVersion>12</LangVersion>
+        <Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <OutputPath>bin\Release</OutputPath>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <OutputPath>bin\Debug\</OutputPath>
+    </PropertyGroup>
+    
+    <PropertyGroup>
+        <UnitySourceGepPath>..\Unity\Assets\Scripts\GDDB\SourceGen\</UnitySourceGepPath>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.3.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="Newtonsoft.Json">
+        <HintPath>..\Libs\Newtonsoft.Json.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+	
+	<PropertyGroup>
+    <GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
+  </PropertyGroup>
+  
+   <Target Name="GetDependencyTargetPaths">
+    <ItemGroup>
+      <TargetPathWithTargetPlatformMoniker Include="..\Libs\Newtonsoft.Json.dll" IncludeRuntimeDependency="false" />
+      <!-- Pack both our DLL and the dependencies into a generated Nuget Package -->
+<!--      <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />-->
+<!--      <None Include="$(PKGNewtonsoft_Json)\lib\netstandard2.0\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />-->
+    </ItemGroup>
+  </Target>
+  
+   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+       <Copy SourceFiles="$(OutputPath)\$(AssemblyName).dll" DestinationFolder="$(UnitySourceGepPath)" />
+       <Copy SourceFiles="$(OutputPath)\Newtonsoft.Json.dll" DestinationFolder="$(UnitySourceGepPath)" />
+   </Target>
+
+</Project>
