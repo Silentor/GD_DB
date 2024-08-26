@@ -3,7 +3,7 @@
 namespace GDDB
 {
     [Serializable]
-    public struct GdType : IEquatable<GdType>
+    public partial struct GdType : IEquatable<GdType>
     {
         public UInt32 Data;
 
@@ -26,14 +26,22 @@ namespace GDDB
 
         public static readonly GdType None = default;
 
-        public GdType( UInt32 rawData )
+        public static GdType CreateFromRawData(UInt32 rawData )
         {
-            Data = rawData;
+            return new GdType { Data = rawData };
         }
 
-        public GdType( Int32 rawData )
+        public static GdType CreateFromRawData(Int32 rawData )
         {
-            Data = (UInt32)rawData;
+            return new GdType { Data = (UInt32)rawData };
+        }
+
+        public GdType( Int32 category1, Int32 category2 = 0, Int32 category3 = 0, Int32 category4 = 0 )
+        {
+            Data = (UInt32)(((category1 & 0xFF) << 24)
+                   |        ((category2 & 0xFF) << 16)
+                   |        ((category3 & 0xFF) << 8)
+                   |        (category4 & 0xFF));
         }
 
         public GdType WithCategory( Int32 categoryIndex, Int32 value )

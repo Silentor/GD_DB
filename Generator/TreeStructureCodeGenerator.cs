@@ -2,6 +2,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 using System.Text;
+using GDDB.Editor;
 using Newtonsoft.Json.Linq;
 
 namespace GDDB.SourceGenerator
@@ -12,7 +13,7 @@ namespace GDDB.SourceGenerator
         private static readonly DiagnosticDescriptor JsonParsingError = new ( 
                 "GDDB001", 
                 "Tree structure file parsing error", 
-                "Some error parsing json {0}. Exception: {1}", 
+                "Error parsing GDDB type structure json {0}. Exception: {1}", 
                 "Parsing",
                 DiagnosticSeverity.Error,
                 true );
@@ -41,25 +42,41 @@ namespace GDDB.SourceGenerator
             context.RegisterSourceOutput(pipeline,
                     static (context, pair) => 
                     {
+                        // #if DEBUG
+                        // if (!Debugger.IsAttached)
+                        // {
+                        //     Debugger.Launch();
+                        // }
+                        // #endif 
+
                         Console.WriteLine( $"[DemoSourceGenerator] Parsing file {pair.name}" );
 
-                        Parser.Category category;
+                        Category category;
                         try
                         {
-                            category = Parser.ParseJson(pair.code);
+                            var parser = new TreeStructureParser();
+                            category = parser.ParseJson( pair.code );
                         }
                         catch ( Exception e )
                         {
                             context.ReportDiagnostic( Diagnostic.Create( JsonParsingError, null, pair.path, e.ToString() ) );    
-                            throw;
+                            return;
                         }
                         
                         Console.WriteLine( $"[DemoSourceGenerator] Generating code for {pair.name}" );
-                        var categoryEnum = Parser.GenerateEnums( pair.path, category );
-                        context.AddSource( $"Categories.gen.cs", SourceText.From( categoryEnum, Encoding.UTF8 ) );
-                        var filterClasses = Parser.GenerateFilters( pair.path, category );
-                        context.AddSource( $"Filters.gen.cs", SourceText.From( filterClasses, Encoding.UTF8 ) );
-                        Console.WriteLine( $"[DemoSourceGenerator] Writing file Categories.gen.cs" );
+                        var emitter       = new CodeEmitter();
+                        var allCategories = new List<Category>();
+                        emitter.FlattenCategoriesTree( category, allCategories );
+                        var categoryEnum = emitter.GenerateEnums( pair.path, category, allCategories );
+                        context.AddSource( $"Categories.g.cs", SourceText.From( categoryEnum, Encoding.UTF8 ) );
+                        var filterClasses = emitter.GenerateEnumerators( pair.path, category, allCategories );
+                        context.AddSource( $"Filters.g.cs", SourceText.From( filterClasses, Encoding.UTF8 ) );
+                        var gddbExtensions = emitter.GenerateGdDbExtensions( pair.path, category, allCategories );
+                        context.AddSource( $"GdDbExtensions.g.cs", SourceText.From( gddbExtensions, Encoding.UTF8 ) );
+                        var gdTypeExtensions = emitter.GenerateGdTypeExtensions( pair.path, category, allCategories );
+                        context.AddSource( $"GdTypeExtensions.g.cs", SourceText.From( gdTypeExtensions, Encoding.UTF8 ) );
+
+                        Console.WriteLine( $"[DemoSourceGenerator] Finished" );
                     } );
         }
       
