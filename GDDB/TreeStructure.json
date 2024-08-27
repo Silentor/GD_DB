@@ -1,0 +1,53 @@
+﻿{
+  "Root": {
+    "Items": {
+      "Mobs": {
+        "Value": 1,
+        "Items": {
+          "Humans": {
+            "Value": 0
+            },
+          "Elves": {
+            "Value": 1
+          },
+          "Orcs": {
+            "Value": 2
+          }
+        }
+      },
+      "Locations": {
+        "Value": 2
+      },
+      "Currencies": {
+        "Value": 3,
+        "Items": {
+          "Gold": {
+            "Value": 1
+          },
+          "Silver": {
+            "Value": 2
+          },
+          "Copper": {
+            "Value": 3
+          },
+          "Tokens": {
+            "Value": 4,
+            "Items": {
+              "Armor": {
+                "Value": 0
+              },
+              "Weapon": {
+                "Value": 1
+              },
+              "Skin": {
+                "Value": 2
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+      
+ 

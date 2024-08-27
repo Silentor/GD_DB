@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Text;
 using UnityEditor;
 using Debug = UnityEngine.Debug;
+using GDDB;
 
 namespace GDDB.Editor
 {
@@ -292,7 +293,7 @@ namespace GDDB.Editor
 
             public GdType ClearUndefinedTypePart( GdType type )
             {
-                return new GdType( type.Data & Mask );
+                return GdType.CreateFromRawData( type.Data & Mask );
             }
         
 

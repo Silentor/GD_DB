@@ -13,7 +13,7 @@ namespace GDDB.SourceGenerator
         private static readonly DiagnosticDescriptor JsonParsingError = new ( 
                 "GDDB001", 
                 "Tree structure file parsing error", 
-                "Error parsing GDDB type structure json {0}. Exception: {1}", 
+                "Error parsing GDDB type structure json {0}. Exception: {1}.", 
                 "Parsing",
                 DiagnosticSeverity.Error,
                 true );
@@ -26,54 +26,68 @@ namespace GDDB.SourceGenerator
             {
                 Console.WriteLine( $"[DemoSourceGenerator] RegisterPostInitializationOutput {DateTime.Now}" );
             } );
-            var pipeline = context.AdditionalTextsProvider
+            var compilations = context.CompilationProvider.Select( (cmp, cancel) => cmp.AssemblyName );
+            var jsonFileData = context.AdditionalTextsProvider
                                   .Where(static (text) => text.Path.EndsWith("TreeStructure.json"))
                                   .Select(static (text, cancellationToken) =>
                                    {
                                        var name = Path.GetFileNameWithoutExtension(text.Path);
 
-                                       Console.WriteLine( $"[DemoSourceGenerator] Processing file {text.Path}" );
+                                       Console.WriteLine( $"[DemoSourceGenerator] Processing file {text.Path}..." );
 
                                        var code = text.GetText(cancellationToken)?.ToString();
+
+                                       if( code ==  null )
+                                           Console.WriteLine( $"[DemoSourceGenerator] Error reading file, source gen will be skipped" );
+
                                        var path = text.Path;
                                        return (name, code, path);
-                                   });
+                                   }).Where( static (json) => json.code != null );
 
-            context.RegisterSourceOutput(pipeline,
+            var compilationAndJson = jsonFileData.Combine( compilations );
+            
+            context.RegisterSourceOutput(compilationAndJson,
                     static (context, pair) => 
                     {
                         // #if DEBUG
-                        // if (!Debugger.IsAttached)
+                        // if (!Debugger.IsAttached)                                            !
                         // {
                         //     Debugger.Launch();
                         // }
                         // #endif 
 
-                        Console.WriteLine( $"[DemoSourceGenerator] Parsing file {pair.name}" );
+                        //Console.WriteLine( $"[DemoSourceGenerator] Parsing file {pair.name}, compilation {context.}" );
+
+                        //Generate code for GDDB assembly only, because this code heavely depends on gddb types
+                        var assemblyName = pair.Right;
+                        if( assemblyName == null || assemblyName != "GDDB" )
+                            return;
+
+                        var json = pair.Left;
 
                         Category category;
                         try
                         {
                             var parser = new TreeStructureParser();
-                            category = parser.ParseJson( pair.code );
+                            category = parser.ParseJson( json.code );
                         }
                         catch ( Exception e )
                         {
-                            context.ReportDiagnostic( Diagnostic.Create( JsonParsingError, null, pair.path, e.ToString() ) );    
+                            context.ReportDiagnostic( Diagnostic.Create( JsonParsingError, null, json.path, e.ToString() ) );    
                             return;
                         }
                         
-                        Console.WriteLine( $"[DemoSourceGenerator] Generating code for {pair.name}" );
+                        Console.WriteLine( $"[DemoSourceGenerator] Generating code for {json.name}" );
                         var emitter       = new CodeEmitter();
                         var allCategories = new List<Category>();
                         emitter.FlattenCategoriesTree( category, allCategories );
-                        var categoryEnum = emitter.GenerateEnums( pair.path, category, allCategories );
+                        var categoryEnum = emitter.GenerateEnums( json.path, category, allCategories );
                         context.AddSource( $"Categories.g.cs", SourceText.From( categoryEnum, Encoding.UTF8 ) );
-                        var filterClasses = emitter.GenerateEnumerators( pair.path, category, allCategories );
+                        var filterClasses = emitter.GenerateEnumerators( json.path, category, allCategories );
                         context.AddSource( $"Filters.g.cs", SourceText.From( filterClasses, Encoding.UTF8 ) );
-                        var gddbExtensions = emitter.GenerateGdDbExtensions( pair.path, category, allCategories );
+                        var gddbExtensions = emitter.GenerateGdDbExtensions( json.path, category, allCategories );
                         context.AddSource( $"GdDbExtensions.g.cs", SourceText.From( gddbExtensions, Encoding.UTF8 ) );
-                        var gdTypeExtensions = emitter.GenerateGdTypeExtensions( pair.path, category, allCategories );
+                        var gdTypeExtensions = emitter.GenerateGdTypeExtensions( json.path, category, allCategories );
                         context.AddSource( $"GdTypeExtensions.g.cs", SourceText.From( gdTypeExtensions, Encoding.UTF8 ) );
 
                         Console.WriteLine( $"[DemoSourceGenerator] Finished" );

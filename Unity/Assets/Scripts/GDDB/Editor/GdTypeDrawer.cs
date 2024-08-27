@@ -63,7 +63,7 @@ namespace GDDB.Editor
 
         private State CreateState( String label, SerializedProperty gdTypeProp )
         {
-            var gdType = new GdType( gdTypeProp.uintValue );
+            var gdType = GdType.CreateFromRawData( gdTypeProp.uintValue );
             if ( gdType == default )
                 return CreateNoneTypeState( label, gdTypeProp );
             else
@@ -319,7 +319,7 @@ namespace GDDB.Editor
         private void FixDuplicateType(  )
         {
             _serializedObject.Update();
-            if ( _gdoFinder.FindFreeType( new GdType( _dataProp.uintValue ), _typeHierarchy, out var newType ) ) 
+            if ( _gdoFinder.FindFreeType( GdType.CreateFromRawData( _dataProp.uintValue ), _typeHierarchy, out var newType ) ) 
             {
                 _dataProp.uintValue = newType.Data;
                 _serializedObject.ApplyModifiedProperties();
@@ -329,7 +329,7 @@ namespace GDDB.Editor
         private void FixCategoryOutOfRange(  )
         {
             _serializedObject.Update();
-            var gdType = new GdType( _dataProp.uintValue );
+            var gdType = GdType.CreateFromRawData( _dataProp.uintValue );
             if ( !_typeHierarchy.IsTypeInRange( gdType, out var incorrectCategory ) )
             {
                 var incorrectValue = incorrectCategory.GetValue( gdType );
@@ -366,7 +366,7 @@ namespace GDDB.Editor
         private void FixUndefinedTypePart(  )
         {
             _serializedObject.Update();
-            var oldType  = new GdType( _dataProp.uintValue );
+            var oldType  = GdType.CreateFromRawData( _dataProp.uintValue );
             var metadata = _typeHierarchy.GetMetadataOf( oldType );
             var newType  = metadata.ClearUndefinedTypePart( oldType );
             if( newType != oldType )
@@ -378,13 +378,13 @@ namespace GDDB.Editor
 
         private void OpenContextMenu( )
         {
-            var gdType = new GdType( _dataProp.uintValue );
+            var gdType = GdType.CreateFromRawData( _dataProp.uintValue );
 
             var menu = new GenericMenu();
             menu.AddItem( new GUIContent( "Copy" ), false, () => EditorGUIUtility.systemCopyBuffer = _dataProp.uintValue.ToString() );
             if( UInt32.TryParse( EditorGUIUtility.systemCopyBuffer, out var gdTypeRawValue ) )
             {
-                var typeString = _typeHierarchy.GetTypeString( new GdType( gdTypeRawValue ) );
+                var typeString = _typeHierarchy.GetTypeString( GdType.CreateFromRawData( gdTypeRawValue ) );
                 menu.AddItem( new GUIContent( $"Paste {typeString}" ), false, () =>
                 {
                     _serializedObject.Update();
@@ -432,7 +432,7 @@ namespace GDDB.Editor
            label = EditorGUI.BeginProperty( position, label, prop );
 
            //DEBUG
-           var gdType = new GdType( prop.uintValue );
+           var gdType = GdType.CreateFromRawData( prop.uintValue );
            if( gdType != default )
                label.text = $"{label.text} ({gdType.ToString()})";
            //DEBUG
@@ -557,7 +557,7 @@ namespace GDDB.Editor
 
         private void DrawCategoryIMGUI( Rect categoryPosition, SerializedProperty prop, State.CategoryValue category, Int32 index )
         {                 
-            var gdType = new GdType( prop.uintValue );
+            var gdType = GdType.CreateFromRawData( prop.uintValue );
             var value = category.Category.GetValue( gdType );
             var items = category.ActualItems ?? category.Category.Items;
 

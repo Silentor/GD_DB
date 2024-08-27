@@ -49,9 +49,9 @@ namespace GDDB.Editor
             var generateObjectsBtn = new Button( ( ) => GenerateGDObjects( settings ) ) { text = "Generate GDObjects" };
             rootVisualElement.Add( generateObjectsBtn );
 
-            _nouns = (Resources.Load( "NounsList" ) as TextAsset).text.Split( "\r\n" );
-            _verbs = (Resources.Load( "VerbsList" ) as TextAsset).text.Split( "\r\n" );
-            _types = (Resources.Load( "TypesList" ) as TextAsset).text.Split( "\r\n" );
+            _nouns = (Resources.Load( "NounsList" ) as TextAsset).text.Split( "\n" ).Select( word => word.Trim() ).ToArray();
+            _verbs = (Resources.Load( "VerbsList" ) as TextAsset).text.Split( "\n" ).Select( word => word.Trim() ).ToArray();
+            _types = (Resources.Load( "TypesList" ) as TextAsset).text.Split( "\n" ).Select( word => word.Trim() ).ToArray();
 
             if ( _nouns.Length < 10 || _verbs.Length < 10 )
                 Debug.LogError( "Nouns or Verbs list is too small" );

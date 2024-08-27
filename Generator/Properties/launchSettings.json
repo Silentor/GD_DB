@@ -3,7 +3,7 @@
   "profiles": {
     "Generators": {
       "commandName": "DebugRoslynComponent",
-      "targetProject": "../TestProject/TestProject.csproj"
+      "targetProject": "../GDDB/GDDB.csproj"
     }
   }
 }
