@@ -159,7 +159,7 @@ namespace GDDB.Editor
         
             var metadata = _typeHierarchy.GetMetadataOf( gdType );
             var existCategoryValues = GetExistCategoryItems( metadata.Categories, gdType );
-            var filteredCategoryValues = GetFilteredItems( existCategoryValues, gdType );
+            var filteredCategoryValues = GetAttributeFilteredItems( existCategoryValues, gdType );
 
             var categoryValues = new List<State.CategoryValue>( filteredCategoryValues.Count );
             for ( var i = 0; i < filteredCategoryValues.Count; i++ )
@@ -170,11 +170,11 @@ namespace GDDB.Editor
                 var errorMsg = String.Empty;
                 if ( isError )
                 {
-                    if ( category.Type == GDTypeHierarchy.CategoryType.Enum )
-                        errorMsg = $"Invalid value {value} of {category.UnderlyingType.Name}";
+                    if ( category.Type == CategoryType.Enum )
+                        errorMsg = $"Invalid value {value} of {category.Name}";
                     else
                         errorMsg = $"Invalid value {value}";
-                    var errorItem = new GDTypeHierarchy.CategoryItem( errorMsg, value, category );
+                    var errorItem = new CategoryItem( errorMsg, value, category );
                     filteredCategoryValues[ i ].Add( errorItem );
                 }
                 categoryValues.Add( new State.CategoryValue(  )
@@ -222,7 +222,7 @@ namespace GDDB.Editor
             
         }
 
-        private State.CategoryValue GetStateCategoryValue( GDTypeHierarchy.Category category, Int32 value )
+        private State.CategoryValue GetStateCategoryValue( Category category, Int32 value )
         {
             var isOutOfCategoryValue = !category.IsCorrectValue( value );
             var result =  new State.CategoryValue()
@@ -233,14 +233,14 @@ namespace GDDB.Editor
                            ErrorMessage = isOutOfCategoryValue ? $"Incorrect value {value}" : String.Empty,
                    };
             if ( isOutOfCategoryValue )
-                result.ActualItems = new List<GDTypeHierarchy.CategoryItem>( category.Items.Append( new GDTypeHierarchy.CategoryItem( $"Incorrect value {value}", value, category ) ) );
+                result.ActualItems = new List<CategoryItem>( category.Items.Append( new CategoryItem( $"Incorrect value {value}", value, category ) ) );
 
             return result;
         }
 
-        private List<List<GDTypeHierarchy.CategoryItem>>  GetExistCategoryItems( IReadOnlyList<GDTypeHierarchy.Category> categories, GdType type )
+        private List<List<CategoryItem>>  GetExistCategoryItems( IReadOnlyList<Category> categories, GdType type )
         {
-            var result     = new List<List<GDTypeHierarchy.CategoryItem>>();
+            var result     = new List<List<CategoryItem>>();
             var existTypes = _gdoFinder.GDTypedObjects.Select( g => g.Type ).ToList();
             for ( var i = 0; i < categories.Count; i++ )
             {
@@ -265,17 +265,17 @@ namespace GDDB.Editor
             return result;
         }
 
-        private List<List<GDTypeHierarchy.CategoryItem>> GetFilteredItems( List<List<GDTypeHierarchy.CategoryItem>> categories, GdType typeValue )
+        private List<List<CategoryItem>> GetAttributeFilteredItems( List<List<CategoryItem>> categories, GdType typeValue )
         {
             var filterAttributes = fieldInfo.GetCustomAttributes<GdTypeFilterAttribute>().ToList();
 
             if( filterAttributes.Count == 0 )
                 return categories;
 
-            var result = new List<List<GDTypeHierarchy.CategoryItem>>( categories.Count );
+            var result = new List<List<CategoryItem>>( categories.Count );
             for ( var i = 0; i < categories.Count; i++ )
             {
-                var categoryItems = new List<GDTypeHierarchy.CategoryItem>();
+                var categoryItems = new List<CategoryItem>();
                 for ( var j = 0; j < filterAttributes.Count; j++ )
                 {
                     var filterAttribute = filterAttributes[ j ];
@@ -333,7 +333,7 @@ namespace GDDB.Editor
             if ( !_typeHierarchy.IsTypeInRange( gdType, out var incorrectCategory ) )
             {
                 var incorrectValue = incorrectCategory.GetValue( gdType );
-                if ( incorrectCategory.Type == GDTypeHierarchy.CategoryType.Enum )
+                if ( incorrectCategory.Type == CategoryType.Enum )
                 {
                     var diff         = Int32.MaxValue;
                     var optimalValue = 0;
@@ -564,7 +564,7 @@ namespace GDDB.Editor
 
             if ( items == null )                 //Items null - use category default values
             {
-                if ( category.Category.Type != GDTypeHierarchy.CategoryType.Enum )
+                if ( category.Category.Type != CategoryType.Enum )
                 {
                     DrawIntField( );
                 }
@@ -575,7 +575,7 @@ namespace GDDB.Editor
             }
             else if ( items.Count == 0 )              //Show disabled controls
             {
-                if ( category.Category.Type != GDTypeHierarchy.CategoryType.Enum )
+                if ( category.Category.Type != CategoryType.Enum )
                 {
                     DrawDisabledIntField();
                 }
@@ -586,7 +586,7 @@ namespace GDDB.Editor
             }
             else
             {
-                if ( category.Category.Type != GDTypeHierarchy.CategoryType.Enum )
+                if ( category.Category.Type != CategoryType.Enum )
                 {
                     DrawPopupField();   //Int but with options list (gd reference). same popup as enum ?
                 }
@@ -952,8 +952,8 @@ namespace GDDB.Editor
 
             public class CategoryValue
             {
-                public GDTypeHierarchy.Category           Category;
-                public List<GDTypeHierarchy.CategoryItem> ActualItems;      //Has items - show popup, 0 items - show disabled field, null - use default items range from category
+                public Category           Category;
+                public List<CategoryItem> ActualItems;      //Has items - show popup, 0 items - show disabled field, null - use default items range from category
                 public Int32                              Value;
                 public Boolean                            IsError;
                 public String                             ErrorMessage;

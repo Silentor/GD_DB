@@ -359,10 +359,10 @@ namespace GDDB.Editor
             return result.ToString();
         }
 
-        private List<GDTypeHierarchy.CategoryItem> GetFinalCategories( GDTypeHierarchy.Category root )
+        private List<CategoryItem> GetFinalCategories( Category root )
         {
-            var result = new List<GDTypeHierarchy.CategoryItem>();
-            var stack  = new Stack<GDTypeHierarchy.Category>();
+            var result = new List<CategoryItem>();
+            var stack  = new Stack<Category>();
             stack.Push( root );
 
             while ( stack.Count > 0 )

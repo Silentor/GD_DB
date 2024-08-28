@@ -8,7 +8,7 @@ var file     = new System.IO.FileInfo("TreeStructure.json");
 var json     = System.IO.File.ReadAllText(file.FullName);
 
 var parser   = new TreeStructureParser();
-var category = parser.ParseJson(json);
+var category = parser.ParseJson(json, CancellationToken.None );
 
 var emitter  = new CodeEmitter();
 var categories = new List<Category> { category };

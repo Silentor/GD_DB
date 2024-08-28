@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 using System.Text;
 using GDDB.Editor;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace GDDB.SourceGenerator
@@ -12,16 +13,21 @@ namespace GDDB.SourceGenerator
     {
         private static readonly DiagnosticDescriptor JsonParsingError = new ( 
                 "GDDB001", 
-                "Tree structure file parsing error", 
+                "Tree structure json parsing error", 
                 "Error parsing GDDB type structure json {0}. Exception: {1}.", 
+                "Parsing",
+                DiagnosticSeverity.Error,
+                true );
+        private static readonly DiagnosticDescriptor BuildCategoryError = new ( 
+                "GDDB002", 
+                "Tree structure file parsing error", 
+                "Error error building categories from json {0}. Exception: {1}.", 
                 "Parsing",
                 DiagnosticSeverity.Error,
                 true );
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            //throw new System.NotImplementedException();
-
             context.RegisterPostInitializationOutput( c =>
             {
                 Console.WriteLine( $"[DemoSourceGenerator] RegisterPostInitializationOutput {DateTime.Now}" );
@@ -42,7 +48,7 @@ namespace GDDB.SourceGenerator
 
                                        var path = text.Path;
                                        return (name, code, path);
-                                   }).Where( static (json) => json.code != null );
+                                   }).Where( static json => json.code != null );
 
             var compilationAndJson = jsonFileData.Combine( compilations );
             
@@ -58,7 +64,7 @@ namespace GDDB.SourceGenerator
 
                         //Console.WriteLine( $"[DemoSourceGenerator] Parsing file {pair.name}, compilation {context.}" );
 
-                        //Generate code for GDDB assembly only, because this code heavely depends on gddb types
+                        //Generate code for GDDB assembly only, because this code heavily depends on gddb types
                         var assemblyName = pair.Right;
                         if( assemblyName == null || assemblyName != "GDDB" )
                             return;
@@ -69,12 +75,17 @@ namespace GDDB.SourceGenerator
                         try
                         {
                             var parser = new TreeStructureParser();
-                            category = parser.ParseJson( json.code );
+                            category = parser.ParseJson( json.code!, CancellationToken.None );
                         }
-                        catch ( Exception e )
+                        catch ( JsonException e )
                         {
                             context.ReportDiagnostic( Diagnostic.Create( JsonParsingError, null, json.path, e.ToString() ) );    
-                            return;
+                            throw;
+                        }
+                        catch( Exception e ) when (e is not OperationCanceledException)
+                        {
+                            context.ReportDiagnostic( Diagnostic.Create( BuildCategoryError, null, json.path, e.ToString() ) );
+                            throw;
                         }
                         
                         Console.WriteLine( $"[DemoSourceGenerator] Generating code for {json.name}" );
@@ -84,7 +95,7 @@ namespace GDDB.SourceGenerator
                         var categoryEnum = emitter.GenerateEnums( json.path, category, allCategories );
                         context.AddSource( $"Categories.g.cs", SourceText.From( categoryEnum, Encoding.UTF8 ) );
                         var filterClasses = emitter.GenerateEnumerators( json.path, category, allCategories );
-                        context.AddSource( $"Filters.g.cs", SourceText.From( filterClasses, Encoding.UTF8 ) );
+                        context.AddSource( $"Enumerators.g.cs", SourceText.From( filterClasses, Encoding.UTF8 ) );
                         var gddbExtensions = emitter.GenerateGdDbExtensions( json.path, category, allCategories );
                         context.AddSource( $"GdDbExtensions.g.cs", SourceText.From( gddbExtensions, Encoding.UTF8 ) );
                         var gdTypeExtensions = emitter.GenerateGdTypeExtensions( json.path, category, allCategories );
