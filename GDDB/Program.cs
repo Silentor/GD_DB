@@ -12,7 +12,7 @@ var category = parser.ParseJson(json, CancellationToken.None );
 
 var emitter  = new CodeEmitter();
 var categories = new List<Category> { category };
-emitter.FlattenCategoriesTree( category, categories );
+parser.ToFlatList( category, categories );
 
 var enums    = emitter.GenerateEnums( "test.json", category, categories );
 Console.WriteLine(enums);

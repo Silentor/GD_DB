@@ -93,20 +93,6 @@ public class CodeEmitter
         return sb.ToString();
     }
 
-
-
-    public void FlattenCategoriesTree( Category rootCategory, List<Category> result )
-    {
-        result.Add( rootCategory );
-        foreach ( var item in rootCategory.Items )
-        {
-            if ( item.Subcategory != null )
-            {
-                FlattenCategoriesTree( item.Subcategory, result );
-            }
-        }
-    }
-
     private static void GenerateEnumerator( StringBuilder sb, Category owner, CategoryItem item )
     {
         if( item.IsValue )

@@ -120,7 +120,7 @@ namespace GDDB.Editor
                 if ( category != null )
                 {
                     result.Add( category );
-                    var categoryItem = category.GetItem( type );
+                    var categoryItem = category.GetItem( category.GetValue(type.Data) );
                     category    = categoryItem?.Subcategory;
                 }
                 else break;

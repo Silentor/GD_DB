@@ -71,10 +71,10 @@ namespace GDDB.SourceGenerator
 
                         var json = pair.Left;
 
+                        var      parser = new TreeStructureParser();
                         Category category;
                         try
                         {
-                            var parser = new TreeStructureParser();
                             category = parser.ParseJson( json.code!, CancellationToken.None );
                         }
                         catch ( JsonException e )
@@ -91,7 +91,7 @@ namespace GDDB.SourceGenerator
                         Console.WriteLine( $"[DemoSourceGenerator] Generating code for {json.name}" );
                         var emitter       = new CodeEmitter();
                         var allCategories = new List<Category>();
-                        emitter.FlattenCategoriesTree( category, allCategories );
+                        parser.ToFlatList( category, allCategories );
                         var categoryEnum = emitter.GenerateEnums( json.path, category, allCategories );
                         context.AddSource( $"Categories.g.cs", SourceText.From( categoryEnum, Encoding.UTF8 ) );
                         var filterClasses = emitter.GenerateEnumerators( json.path, category, allCategories );

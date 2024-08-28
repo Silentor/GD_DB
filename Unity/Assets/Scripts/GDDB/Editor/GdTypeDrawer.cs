@@ -348,7 +348,7 @@ namespace GDDB.Editor
                     }
                     if( diff < Int32.MaxValue )
                     {
-                        incorrectCategory.SetValue( ref gdType, optimalValue );
+                        gdType = incorrectCategory.SetValue( gdType, optimalValue );
                         _dataProp.uintValue = gdType.Data;
                         _serializedObject.ApplyModifiedProperties();
                     }
@@ -356,7 +356,7 @@ namespace GDDB.Editor
                 else
                 {
                     incorrectValue = Mathf.Clamp( incorrectValue, incorrectCategory.MinValue, incorrectCategory.MaxValue );
-                    incorrectCategory.SetValue( ref gdType, incorrectValue );
+                    gdType = incorrectCategory.SetValue( gdType, incorrectValue );
                     _dataProp.uintValue = gdType.Data;
                     _serializedObject.ApplyModifiedProperties();
                 }
@@ -559,8 +559,14 @@ namespace GDDB.Editor
         {                 
             var gdType = GdType.CreateFromRawData( prop.uintValue );
             var value = category.Category.GetValue( gdType );
-            var items = category.ActualItems ?? category.Category.Items;
-
+            var items = category.ActualItems;
+            if ( items == null )
+            {
+                if ( category.Category.Type == CategoryType.Enum )
+                    items = category.Category.Items;
+                else if ( category.Category.Items.Any() )
+                    items = category.Category.Items;
+            }
 
             if ( items == null )                 //Items null - use category default values
             {
@@ -602,8 +608,7 @@ namespace GDDB.Editor
                 var newValue = EditorGUI.DelayedIntField( categoryPosition, value );
                 if ( EditorGUI.EndChangeCheck() )
                 {
-                    GdType newGdType = default;
-                    category.Category.SetValue( ref newGdType, newValue );
+                    var newGdType = category.Category.SetValue( gdType, newValue );
                     if ( newGdType != default && newGdType != gdType)
                     {
                         prop.uintValue   = newGdType.Data;
@@ -623,7 +628,7 @@ namespace GDDB.Editor
                 if ( EditorGUI.EndChangeCheck() )
                 {
                     value           = items[ newIndex ].Value;
-                    category.Category.SetValue( ref gdType, value );
+                    gdType = category.Category.SetValue( gdType, value );
                     if ( gdType != default )
                     {
                         prop.uintValue = gdType.Data;

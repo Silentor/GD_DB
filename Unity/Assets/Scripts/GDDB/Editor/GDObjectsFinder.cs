@@ -89,7 +89,7 @@ namespace GDDB.Editor
 
 
             var    valueCategory = metadata.Categories.Last();
-            var    value         = valueCategory.GetValue( fromType );
+            var    value         = valueCategory.GetValue( fromType.Data );
 
             for ( var newValue = value + 1; newValue < valueCategory.MaxValue; newValue++ )
             {
@@ -111,7 +111,7 @@ namespace GDDB.Editor
                 if ( valueCategory.IsCorrectValue( newValue ) )
                 {
                     var checkType = fromType;
-                    valueCategory.SetValue( ref checkType, newValue );
+                    checkType.Data = valueCategory.SetValue( checkType.Data, newValue );
                     if ( checkType != default && checkType != fromType && !GDTypedObjects.Exists( g => metadata.IsTypesEqual( g.Type, checkType ) ) )
                     {
                         newType = checkType;

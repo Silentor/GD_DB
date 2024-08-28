@@ -40,23 +40,32 @@ namespace GDDB.Editor
         private static Category BuildCategory(     String            name, JObject jCategory, Int32 index, CategoryItem? parentItem,
                                                    CancellationToken cancel )
         {
-            var jItems            = jCategory["Items"] as JObject;
-            if ( jItems == null )
-                throw new ArgumentException( "Is not valid category" );
-
             cancel.ThrowIfCancellationRequested();
 
             var result = new Category( name, CategoryType.Enum, parentItem, index );
             var items  = new List<CategoryItem>();
-            foreach ( var jItem in jItems.Children<JProperty>() )
+            foreach ( var jItem in jCategory.Children<JProperty>() )
             {
-                var      itemName    = jItem.Name;
-                var      itemValue   = jItem.Value["Value"].Value<Int32>();
-                var      childItems  = jItem.Value["Items"];
-                var      item        = new CategoryItem( itemName, itemValue, result );
+                var itemName           = jItem.Name;
+                if( itemName == "!Value" )
+                    continue;
+
+                var someValue          = jItem.Value;
+                var itemValue          = 0;
+                JObject? jSubcategoryObject = null;
+                if ( someValue is JValue rawValue )
+                {
+                    itemValue = rawValue.Value<Int32>();
+                }
+                else if ( someValue is JObject jItemSubcategory && jItemSubcategory["!Value"] is JValue rawValueInObject )
+                {
+                    itemValue = rawValueInObject.Value<Int32>();
+                    jSubcategoryObject = jItemSubcategory;
+                }
+                var       item        = new CategoryItem( itemName, itemValue, result );
                 Category? subcategory = null;
-                if ( childItems != null )            
-                    subcategory = BuildCategory( itemName, jItem.Value as JObject, index + 1, item, cancel );
+                if ( jSubcategoryObject != null )            
+                    subcategory = BuildCategory( itemName, jSubcategoryObject, index + 1, item, cancel );
                 item.Subcategory = subcategory;
                 items.Add( item );
             }
@@ -67,14 +76,15 @@ namespace GDDB.Editor
     }
 
     [DebuggerDisplay("{Name} ({Type}): {Items.Count}")]
-    public class Category
+    public partial class Category
     {
-        public readonly String              Name;
-        public readonly CategoryType        Type;
-        public readonly Int32               Index;
-        public          Category?           Parent            => ParentItem?.Owner;
-        public          CategoryItem?       ParentItem;
-        public readonly  List<CategoryItem> Items = new();
+        public readonly String             Name;
+        public readonly CategoryType       Type;
+        public readonly Int32              Index;
+        public readonly CategoryItem?      ParentItem;
+        public readonly List<CategoryItem>  Items = new();                //Empty for Int categories - default range
+
+        public          Category?          Parent            => ParentItem?.Owner;
 
         public Int32 MinValue
         {
@@ -136,43 +146,27 @@ namespace GDDB.Editor
             return false;
         }
 
-        public CategoryItem GetItem( GdType type )
-        {
-            var value = GetValue( type );
-            if( Type == CategoryType.Enum )
-                return Items.FirstOrDefault( i => i.Value == value );
-            return new CategoryItem( value.ToString( CultureInfo.InvariantCulture ), value, this );     //For Int values
-        }
-
-        public CategoryItem GetItem( Int32 value )
+        public CategoryItem GetItem( Int32 categoryValue )
         {
             if( Type == CategoryType.Enum )
-                return Items.FirstOrDefault( i => i.Value == value );
-            return new CategoryItem( value.ToString( CultureInfo.InvariantCulture ), value, this );     //For Int values
+                return Items.FirstOrDefault( i => i.Value == categoryValue );
+            return new CategoryItem( categoryValue.ToString( CultureInfo.InvariantCulture ), categoryValue, this );     //For Int values
         }
 
-        public Int32 GetValue( GdType type )
+        public Int32 GetValue( UInt32 typeData )
         {
             var shift = GetShift( Index, Type );
             var mask  = GetMask();
-            return (Int32)( ( type.Data >> shift ) & mask );
+            return (Int32)( ( typeData >> shift ) & mask );
         }
 
-        public Int32 GetValue( UInt32 rawData )
+        public UInt32 SetValue( UInt32 typeData, Int32 value )
         {
-            var shift = GetShift( Index, Type );
-            var mask  = GetMask();
-            return (Int32)( ( rawData >> shift ) & mask );
-        }
-
-        public void SetValue( ref GdType type, Int32 value )
-        {
-            var shift = GetShift( Index, Type );
-            var mask  = GetMask();
-            var data  = type.Data;
-            data      &= ~( mask << shift );
-            data      |= (UInt32)value << shift;
-            type.Data =  data;
+            var shift  = GetShift( Index, Type );
+            var mask   = GetMask();
+            typeData  &= ~( mask << shift );
+            typeData  |= (UInt32)value << shift;
+            return typeData;
         }
 
         public static Int32 GetShift( Int32 index, CategoryType type )

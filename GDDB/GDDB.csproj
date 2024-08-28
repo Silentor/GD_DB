@@ -13,12 +13,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <AdditionalFiles Include="TreeStructure.json">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </AdditionalFiles>
-    </ItemGroup>
-
-    <ItemGroup>
       <Reference Include="Newtonsoft.Json">
         <HintPath>..\Libs\Newtonsoft.Json.dll</HintPath>
       </Reference>
@@ -31,6 +25,12 @@
       <Compile Include="..\Unity\Assets\Scripts\GDDB\Editor\TreeStructureParser.cs">
         <Link>TreeStructureParser.cs</Link>
       </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
+      <AdditionalFiles Include="..\Unity\Assets\Scripts\TreeStructure.json">
+        <Link>TreeStructure.json</Link>
+      </AdditionalFiles>
     </ItemGroup>
 
 </Project>

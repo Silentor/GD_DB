@@ -16,9 +16,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <AdditionalFiles Include="TreeStructure.json">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </AdditionalFiles>
+      <Content Include="..\Unity\Assets\Scripts\TreeStructure.json">
+        <Link>TreeStructure.json</Link>
+      </Content>
     </ItemGroup>
 
 </Project>
