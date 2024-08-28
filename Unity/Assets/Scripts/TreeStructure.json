@@ -4,7 +4,9 @@
       "!Value": 1,
       "Humans": 0,
       "Elves": 1,
-      "Orcs": 2
+      "Orcs": {
+        "!Type" : "Int8"
+      }
     },
     "Locations": 2,
     "Currencies": {
