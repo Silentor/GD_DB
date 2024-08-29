@@ -16,10 +16,11 @@ namespace GDDB.Editor
 
         static ProjectWindowsTypeDrawer()
         {
+            TypeHierarchy = new GDTypeHierarchy();
+            GDOFinder     = new GDObjectsFinder();
+
             EditorApplication.projectWindowItemInstanceOnGUI += DrawGDTypeString;
             GDObjectEditor.Changed += GDObjectEditorOnChanged;
-            TypeHierarchy = new GDTypeHierarchy();
-            GDOFinder = new GDObjectsFinder();
         }
 
         private static void GDObjectEditorOnChanged( GDObject obj )
