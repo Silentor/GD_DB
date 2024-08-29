@@ -103,6 +103,11 @@ namespace GDDB.Editor
             return metadata.IsTypeDefined( type );
         }
 
+        /// <summary>
+        /// Metadata knows about type categories
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         public GdTypeMetadata GetMetadataOf( GdType type )
         {
             if ( type == default )

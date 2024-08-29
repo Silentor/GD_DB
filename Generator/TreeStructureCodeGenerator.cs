@@ -21,7 +21,7 @@ namespace GDDB.SourceGenerator
         private static readonly DiagnosticDescriptor BuildCategoryError = new ( 
                 "GDDB002", 
                 "Tree structure file parsing error", 
-                "Error error building categories from json {0}. Exception: {1}.", 
+                "Error building categories from json {0}. Exception: {1}.", 
                 "Parsing",
                 DiagnosticSeverity.Error,
                 true );
@@ -80,12 +80,12 @@ namespace GDDB.SourceGenerator
                         catch ( JsonException e )
                         {
                             context.ReportDiagnostic( Diagnostic.Create( JsonParsingError, null, json.path, e.ToString() ) );    
-                            throw;
+                            return;
                         }
                         catch( Exception e ) when (e is not OperationCanceledException)
                         {
                             context.ReportDiagnostic( Diagnostic.Create( BuildCategoryError, null, json.path, e.ToString() ) );
-                            throw;
+                            return;
                         }
                         
                         Console.WriteLine( $"[DemoSourceGenerator] Generating code for {json.name}" );

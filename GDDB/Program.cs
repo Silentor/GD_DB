@@ -4,7 +4,7 @@ using GDDB;
 using GDDB.Editor;
 using GDDB.SourceGenerator;
 
-var file     = new System.IO.FileInfo("TreeStructure.json");
+var file     = new System.IO.FileInfo(@"..\..\..\..\Unity\Assets\Scripts\TreeStructure.json");
 var json     = System.IO.File.ReadAllText(file.FullName);
 
 var parser   = new TreeStructureParser();
@@ -27,17 +27,13 @@ var gdTypeExt = emitter.GenerateGdTypeExtensions( "test.json", category, categor
 Console.WriteLine(gdTypeExt);
 
 var db = new GdDb();
-var currencies = db.GetCurrencies();
-var goldObj = currencies.GetGold();
-var copperObj = db.GetCurrencies().GetCopper();
-var armorToken = db.GetCurrencies().GetTokens().GetArmor();
+//var currencies = db.GetCurrencies();
+//var goldObj = currencies.GetGold();
+//var copperObj = db.GetCurrencies().GetCopper();
+//var armorToken = db.GetCurrencies().GetTokens().GetArmor();
 
 //var copperType = GdType.Create( ERoot.Currencies, ECurrencies.Copper );
 //var skinTokenType = GdType.Create( ERoot.Currencies, ECurrencies.Copper, ETokens.Skin );
 //var incorrectOrcType = GdType.Create( ERoot.Mobs, ECurrencies.Copper, ETokens.Skin );               //ERROR, consider using analyzer to prevent this
 
-var armorTokenType = GdType.CreateCurrenciesTokensArmor();
-//var humanType = GdType.WithMobs().WithHuman();
-//var copperCurrencyType  = GdType.WithCurrencies().WithCopper();
-//var copperCurrencyType2 = GdType.CreateCurrencyCopperType;
-//var weaponTokenType = GdType.WithCurrencies().WithTokens().WithWeapon();
+//var armorTokenType = GdType.CreateCurrenciesTokensArmor();

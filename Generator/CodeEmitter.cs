@@ -139,6 +139,9 @@ public class CodeEmitter
 
     private static void GenerateEnum( StringBuilder sb, Category category )
     {
+        if( category.Type != CategoryType.Enum )
+            return;
+
         if ( category.Parent != null )        
             sb.AppendLine($"    //Child of {category.Parent.Name}");
         sb.AppendLine( GeneratedTypeAttribute );

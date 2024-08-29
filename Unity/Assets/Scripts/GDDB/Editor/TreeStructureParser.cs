@@ -47,25 +47,32 @@ namespace GDDB.Editor
             foreach ( var jItem in jCategory.Children<JProperty>() )
             {
                 var itemName           = jItem.Name;
-                if( itemName == "!Value" )
+                if( itemName == "!Value" )                          //Was processed on parent level
                     continue;
 
                 var someValue          = jItem.Value;
                 var itemValue          = 0;
                 JObject? jSubcategoryObject = null;
-                if ( someValue is JValue rawValue )
+                var subcategoryType = CategoryType.Enum;
+                if ( someValue is JValue rawValue )                //Value 
                 {
                     itemValue = rawValue.Value<Int32>();
                 }
-                else if ( someValue is JObject jItemSubcategory && jItemSubcategory["!Value"] is JValue rawValueInObject )
+                else if ( someValue is JObject jItemSubcategory )   //Subcategory
                 {
-                    itemValue = rawValueInObject.Value<Int32>();
-                    jSubcategoryObject = jItemSubcategory;
+                    subcategoryType = GetTypeFromJValue( jItemSubcategory["!Type"] as JValue );
+                    itemValue = jItemSubcategory[ "!Value" ].Value<Int32>();
+                    if( subcategoryType == CategoryType.Enum )
+                    {
+                        jSubcategoryObject = jItemSubcategory;
+                    }
                 }
                 var       item        = new CategoryItem( itemName, itemValue, result );
                 Category? subcategory = null;
                 if ( jSubcategoryObject != null )            
                     subcategory = BuildCategory( itemName, jSubcategoryObject, index + 1, item, cancel );
+                else if( subcategoryType != CategoryType.Enum )                
+                    subcategory = CreateIntCategory( subcategoryType, itemName, index + 1, item );
                 item.Subcategory = subcategory;
                 items.Add( item );
             }
@@ -73,7 +80,30 @@ namespace GDDB.Editor
             result.Items.AddRange( items );
             return result;
         }
+
+        private static Category CreateIntCategory( CategoryType intTypeCategory, String name, Int32 index, CategoryItem? parentItem )
+        {
+            return new Category( name, intTypeCategory, parentItem, index );
+        }
+
+        private static CategoryType GetTypeFromJValue( JValue? jValue )
+        {
+            if ( jValue == null )
+                return CategoryType.Enum;
+            return jValue.Value<String>() switch
+                   {
+                           "Enum"  => CategoryType.Enum,
+                           "Int8"  => CategoryType.Int8,
+                           "Int16" => CategoryType.Int16,
+                           "Int24" => CategoryType.Int24,
+                           "Int32" => CategoryType.Int32,
+                           _       => throw new ArgumentOutOfRangeException()
+                   };
+        }
     }
+
+    
+
 
     [DebuggerDisplay("{Name} ({Type}): {Items.Count}")]
     public partial class Category
