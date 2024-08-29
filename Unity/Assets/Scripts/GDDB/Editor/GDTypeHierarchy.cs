@@ -143,6 +143,10 @@ namespace GDDB.Editor
 
         public String PrintHierarchy( )
         {
+            var folderParser = new FoldersParser();
+            folderParser.Parse();
+            folderParser.Print();
+
             if( Root == null )
                 return "No categories found";
 

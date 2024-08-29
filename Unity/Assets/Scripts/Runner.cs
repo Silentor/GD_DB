@@ -17,8 +17,6 @@ namespace GDDB_User
 
         private void Awake( )
         {
-           
-
             var loader = new GdJsonLoader( "GD1" );
 
             var gdb         = loader.GetGameDataBase();
