@@ -9,6 +9,7 @@ namespace GDDB_User
     public class Runner : MonoBehaviour
     {
         public Int32  TestField;
+        public GDObject TestObject;
         public GdId   TestId;
         public GdType TestType;
 
