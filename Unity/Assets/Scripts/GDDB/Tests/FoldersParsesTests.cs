@@ -28,7 +28,7 @@ namespace GDDB.Tests
                                                                 new FoldersParser.GDAsset() { Asset = GetAsset( "Hero") },
                                                         }};
               mobsFolder.SubFolders.Add( humansFolder );
-              var heroSkinsFolder = new FoldersParser.Folder(){Name = "HeroSkins", Parent = humansFolder, Objects =
+              var heroSkinsFolder = new FoldersParser.Folder(){Name = "Skins/", Parent = humansFolder, Objects =
                                                               {
                                                                       new FoldersParser.GDAsset() { Asset = GetAsset( "DefaultSkin") },
                                                                       new FoldersParser.GDAsset() { Asset = GetAsset( "Templar") },
@@ -42,6 +42,11 @@ namespace GDDB.Tests
                                                                 new FoldersParser.GDAsset() { Asset = GetAsset( "Shaman") },
                                                         }};
               mobsFolder.SubFolders.Add( orcsFolder );
+              var orcSkinsFolder = new FoldersParser.Folder(){Name = "Skins/", Parent = orcsFolder, Objects =
+                                                              {
+                                                                      new FoldersParser.GDAsset() { Asset = GetAsset( "Chieftan") },
+                                                              }};
+              orcsFolder.SubFolders.Add( orcSkinsFolder );
 
               _parser = new FoldersParser();
               _parser.DebugParse( gddbRoot);
@@ -67,7 +72,7 @@ namespace GDDB.Tests
             var allObjects = _parser.GetObjects( "" );
 
             //Asset
-            allObjects.Count().Should().Be( 10 );
+            allObjects.Count().Should().Be( 11 );
         }
 
         [Test]
@@ -116,8 +121,19 @@ namespace GDDB.Tests
             var allObjects = _parser.GetObjects( "Mobs/*/*/" ).ToArray();
 
             //Asset
-            allObjects.Count().Should().Be( 3 );
-            allObjects.Select( gdo => gdo.name ).Should().BeEquivalentTo( "DefaultSkin", "Crusader", "Templar" );
+            allObjects.Count().Should().Be( 4 );
+            allObjects.Select( gdo => gdo.name ).Should().BeEquivalentTo( "DefaultSkin", "Crusader", "Templar", "Chieftan" );
+        }
+
+        [Test]
+        public void TestFolderDifferectPlacesQuery()
+        {
+            //Act
+            var allObjects = _parser.GetObjects( "Skins/" ).ToArray();
+
+            //Asset
+            allObjects.Count().Should().Be( 4 );
+            allObjects.Select( gdo => gdo.name ).Should().BeEquivalentTo( "DefaultSkin", "Crusader", "Templar", "Chieftan" );
         }
 
         [Test]
@@ -127,8 +143,8 @@ namespace GDDB.Tests
             var allObjects = _parser.GetObjects( "Mobs/**/" ).ToArray();     //Files from all folders under Mobs/
 
             //Asset
-            allObjects.Count().Should().Be( 9 );
-            allObjects.Select( gdo => gdo.name ).Should().BeEquivalentTo( "Grunt", "WolfRider", "Shaman", "Hero", "Knight", "Peasant", "DefaultSkin", "Crusader", "Templar" );
+            allObjects.Count().Should().Be( 10 );
+            allObjects.Select( gdo => gdo.name ).Should().BeEquivalentTo( "Grunt", "WolfRider", "Shaman", "Hero", "Knight", "Peasant", "DefaultSkin", "Crusader", "Templar", "Chieftan" );
         }
     }
 }

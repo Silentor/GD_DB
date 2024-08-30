@@ -110,24 +110,24 @@ namespace GDDB.Editor
             return existFolder;
         }
 
-        //Custom split with preservation of slash at the parts end
-        private IReadOnlyList<String> Split( String path )
+        //Custom split with preservation of slash at the folders names end
+        private IReadOnlyList<String> Split( String assetPath )
         {
-            if ( String.IsNullOrEmpty( path ) )
+            if ( String.IsNullOrEmpty( assetPath ) )
                 return Array.Empty<String>();
 
             var start      = 0;
             var slashIndex = 0;
             var result     = new List<String>();
-            while ( start < path.Length )
+            while ( start < assetPath.Length )
             {
-                slashIndex = path.IndexOf( '/', start );
+                slashIndex = assetPath.IndexOf( '/', start );
                 if ( slashIndex < 0 )
                 {
-                    result.Add( path.Substring( start, path.Length - start ) );
+                    result.Add( assetPath.Substring( start, assetPath.Length - start ) );
                     return result;
                 }
-                result.Add( path.Substring( start, slashIndex - start + 1 ) );
+                result.Add( assetPath.Substring( start, slashIndex - start + 1 ) );
                 start = slashIndex + 1;
             }
 
