@@ -146,5 +146,16 @@ namespace GDDB.Tests
             allObjects.Count().Should().Be( 10 );
             allObjects.Select( gdo => gdo.name ).Should().BeEquivalentTo( "Grunt", "WolfRider", "Shaman", "Hero", "Knight", "Peasant", "DefaultSkin", "Crusader", "Templar", "Chieftan" );
         }
+
+        [Test]
+        public void TestJustAssetNameQuery()
+        {
+            //Act
+            var allObjects = _parser.GetObjects( "CommonMobs" ).ToArray();     //Find all assets with name CommonMobs
+
+            //Asset
+            allObjects.Count().Should().Be( 1 );
+            allObjects.Select( gdo => gdo.name ).Should().BeEquivalentTo( "CommonMobs" );
+        }
     }
 }
