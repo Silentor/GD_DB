@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -32,18 +33,17 @@ namespace GDDB.Editor
 
             //Skip unused folders?
 
-            //Calculate depth
-            foreach ( var folder in EnumerateFoldersDFS( Root ) )
-            {
-                var depth = 0;
-                var checkFolder = folder;
-                while ( checkFolder.Parent != null )
-                {
-                    depth++;
-                    checkFolder = checkFolder.Parent;
-                }
-                folder.Depth = depth;
-            }
+            CalculateDepth();
+        }
+
+        
+
+        public void DebugParse( Folder presetHierarchy )
+        {
+            Root.SubFolders.Add( presetHierarchy );
+            presetHierarchy.Parent = Root;
+
+            CalculateDepth();
         }
 
         //Test some queries, like "Mobs/" - all gdos from Mobs folder
@@ -52,62 +52,19 @@ namespace GDDB.Editor
             //Short path - return all objects
             if( String.IsNullOrEmpty( path ) )
             {
-                foreach ( var folder in EnumerateFoldersDFS( Root ) )
+                foreach ( var folder in Root.EnumerateDFS(  ) )
                     foreach ( var obj in folder.Objects )
                         yield return obj.Asset;
                 yield break;
             }
-            var splittedPath = Split( path ).ToArray();
-            Assert.IsTrue( splittedPath.Length > 0, "Path is empty, must be handled by fast path" );
-            var dbFolders         = EnumerateFoldersDFS( Root ).ToArray();
-            var pathIndex         = 0;
-            var dbIndex           = 0;
-            var infiniteLoopGuard = 0;
-            var dbFolder          = dbFolders[ 0 ];
-            while( dbIndex < dbFolders.Length )   
+
+            var query        = ConvertPathToQuery( path );
+
+            foreach ( var folder in  Root.EnumerateDFS(  ) )
             {
-                if( infiniteLoopGuard++ > 1000 )
-                    throw new Exception( "Infinite loop" );
-            
-                var pathPart = pathIndex < splittedPath.Length ? splittedPath[ pathIndex ] : null; 
-
-                if ( pathPart == null )         //End of path. get files from current db folder
+                foreach ( var gdObject in query.First().ProcessFolder( folder ) )
                 {
-                    foreach ( var obj in dbFolder.Objects )
-                    {
-                        yield return obj.Asset;
-                    }
-
-                    //Continue search from next db folder, maybe there is another folder with same path
-                    pathIndex = 0;              
-                    dbIndex++;
-                }
-                else if ( pathPart.EndsWith( '/' ) )     //Check folder
-                {
-                    dbFolder = dbFolders[ dbIndex ];
-                    if( pathPart == dbFolder.Name                                                           //Compare name 
-                        && (pathIndex == 0 || dbFolder.Depth == dbFolders[ dbIndex - 1 ].Depth + 1 ))       //Compare structure because path can be like "Mobs/Elves/"
-                    {
-                        pathIndex++;
-                    }
-                    else
-                    {
-                        pathIndex = 0;
-                    }
-
-                    dbIndex++;
-                }
-                else     //GD object name mask, find objects in current db folder  (primitive)
-                {
-                    foreach ( var obj in dbFolder.Objects )
-                    {
-                        if ( obj.Asset.Name.StartsWith( pathPart ) )
-                            yield return obj.Asset;
-                    }
-
-                    //Continue search from next db folder, maybe there is another folder with same path
-                    pathIndex = 0;              
-                    dbIndex++;
+                    yield return    gdObject;
                 }
             }
         }
@@ -115,18 +72,6 @@ namespace GDDB.Editor
         public void Print( )
         {
             PrintRecursively( Root, 0 );
-        }
-
-        private IEnumerable<Folder> EnumerateFoldersDFS( Folder folder )
-        {
-            yield return folder;
-            foreach ( var subFolder in folder.SubFolders )
-            {
-                foreach ( var subSubFolder in EnumerateFoldersDFS( subFolder ) )
-                {
-                    yield return subSubFolder;
-                }
-            }
         }
 
         private void PrintRecursively(Folder folder, int indent )
@@ -189,9 +134,129 @@ namespace GDDB.Editor
             return result;
         }
 
+        private void CalculateDepth( )
+        {
+            foreach ( var folder in Root.EnumerateDFS(  ) )
+            {
+                var depth       = 0;
+                var checkFolder = folder;
+                while ( checkFolder.Parent != null )
+                {
+                    depth++;
+                    checkFolder = checkFolder.Parent;
+                }
+                folder.Depth = depth;
+            }
+        }
+
+        private IReadOnlyList<Query> ConvertPathToQuery( String path )
+        {
+            var splittedPath = Split( path );
+            var result       = new List<Query>( splittedPath.Count );
+            for ( int i = 0; i < splittedPath.Count; i++ )
+            {
+                var   partStr = splittedPath[ i ] ;
+                Query query;
+                if ( partStr.EndsWith( '/' ) )
+                    query = new FolderQuery() { Term = partStr };
+                else
+                    query = new FileQuery() { Term = partStr };
+
+                result.Add( query );
+            }
+
+            if ( result.Last() is not FileQuery )
+            {
+                var lastAllFilesQuery = new FileQuery();
+                result.Add( lastAllFilesQuery );
+            }
+
+            for ( int i = 1; i < result.Count; i++ )
+            {
+                result[ i - 1 ].NextPart = result[ i ];
+            }
+
+            return result;
+        }
+
+        private abstract class Query
+        {
+            public Query  NextPart;
+            public String Term;
+
+            public abstract IEnumerable<GDObject> ProcessFolder( Folder folder );
+        }
+
+        private class FileQuery : Query
+        {
+            public override IEnumerable<GDObject> ProcessFolder(Folder folder )
+            {
+                if ( String.IsNullOrEmpty( Term ) )
+                {
+                    foreach ( var gdAsset in folder.Objects )
+                    {
+                        yield return gdAsset.Asset;
+                    }
+                }
+                else
+                {
+                    foreach ( var gdAsset in folder.Objects )
+                    {
+                        if( gdAsset.Asset.name.Contains( Term ) )
+                            yield return gdAsset.Asset;
+                    }
+                }
+            }
+        }
+
+        private class FolderQuery : Query
+        {
+            public override IEnumerable<GDObject> ProcessFolder(Folder folder )
+            {
+                if ( Term == "**/" )
+                {
+                    if( NextPart is FileQuery )
+                        foreach ( var f in folder.EnumerateDFS(  ) )
+                        {
+                            foreach ( var gdObject in NextPart.ProcessFolder( f ) )
+                            {
+                                yield return    gdObject;
+                            }
+                        }
+                    else
+                    {
+                        foreach ( var subFolder in folder.EnumerateDFS(  ) )
+                        {
+                            foreach ( var gdObject in NextPart.ProcessFolder( subFolder ) )
+                            {
+                                yield return gdObject;
+                            }
+                        }
+                    }
+                }
+                else if ( Term == folder.Name || Term == "*/")
+                {
+                    if( NextPart is FileQuery )
+                        foreach ( var gdObject in NextPart.ProcessFolder( folder ) )
+                        {
+                            yield return gdObject;
+                        }
+                    else
+                    {
+                        foreach ( var subFolder in folder.SubFolders )
+                        {
+                            foreach ( var gdObject in NextPart.ProcessFolder( subFolder ) )
+                            {
+                                yield return gdObject;
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         [DebuggerDisplay("Name {GetHierarchyPath()}, folders {SubFolders.Count}, objects {Objects.Count}")]
-        public class Folder
+        public class Folder : IEnumerable
         {
             public String Name;
             public String Path;
@@ -213,20 +278,48 @@ namespace GDDB.Editor
 
                 return path;
             }
-            
-            
+
+            public IEnumerable<Folder> EnumerateDFS( Boolean includeSelf = true )
+            {
+                if( includeSelf )
+                    yield return this;
+                foreach ( var subFolder in SubFolders )
+                {
+                    foreach ( var subSubFolder in subFolder.EnumerateDFS(  ) )
+                    {
+                        yield return subSubFolder;
+                    }
+                }
+            }
+
+            public IEnumerator GetEnumerator( )
+            {
+                throw new NotImplementedException();
+            }
         }
 
-        [DebuggerDisplay("{GetName()}")]
+        [DebuggerDisplay("{AssetName}")]
         public class GDAsset
         {
             public String   AssetGuid;
+            //public String   AssetName;
             public GDObject Asset;
 
-            public String GetName( )
-            {
-                return Asset ? Asset.Name : AssetGuid;
-            }
+            // public String GetName( )
+            // {
+            //     return Asset ? Asset.Name : AssetGuid;
+            // }
+
+            // public GDObject GetObject( )
+            // {
+            //     if ( !Asset )
+            //     {
+            //         var path = AssetDatabase.GUIDToAssetPath( AssetGuid );
+            //         Asset = AssetDatabase.LoadAssetAtPath<GDObject>( path );
+            //     }
+            //
+            //     return Asset;
+            // }
         }
     }
 }
