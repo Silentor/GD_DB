@@ -147,6 +147,12 @@ namespace GDDB.Editor
             folderParser.Parse();
             folderParser.Print();
 
+            var elves = folderParser.GetObjects( "Mobs/" ).ToArray();
+            foreach ( var elfObj in elves )
+            {
+                Debug.Log( elfObj.Name );
+            }
+
             if( Root == null )
                 return "No categories found";
 

@@ -28,6 +28,7 @@ namespace GDDB
             }
         }
 
+      
         public GDObject GetObject( GdType type )
         {
             return AllObjects.First( o => o.Type == type );
@@ -42,5 +43,6 @@ namespace GDDB
         {
             return AllObjects.Where( o => o.Type[0] == category1 && o.Type[1] == category2 );
         }
+
     }
 }
