@@ -144,7 +144,7 @@ namespace GDDB
             foreach ( var obj in folder.Objects )
             {
                 objectsCount++;
-                Debug.Log($"  {indentStr}{obj.Asset.Name}");
+                Debug.Log($"  {indentStr}{obj.Asset.Name}, type {obj.Asset.GetType().Name}, components {obj.Asset.Components.Count}");
             }
         }
 

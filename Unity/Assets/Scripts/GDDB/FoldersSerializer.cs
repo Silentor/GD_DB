@@ -59,9 +59,6 @@ namespace GDDB
                 Parent = parent
             };
 
-            if( parent != null )
-                parent.SubFolders.Add( folder );
-
             var subFolders = json["subFolders"];
             foreach ( var subFolderJson in subFolders )
             {
@@ -74,7 +71,7 @@ namespace GDDB
             {
                 var obj = new GDAsset
                 {
-                    AssetGuid = objJson["guid"].Value<String>()
+                    AssetGuid = Guid.ParseExact( objJson["guid"].Value<String>() , "D" )
                 };
                 folder.Objects.Add( obj );
             }
@@ -86,7 +83,7 @@ namespace GDDB
     [DebuggerDisplay("{Asset.Name}")]
     public class GDAsset
     {
-        public String   AssetGuid;
+        public Guid   AssetGuid;
         //public String   AssetName;
         public GDObject Asset;
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using UnityEngine;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -14,14 +15,13 @@ namespace GDDB
     /// </summary>
     public class GdEditorLoader : GdLoader
     {
-        private readonly String         _gddbPath;
-
         public GdEditorLoader( String name )
         {
  #if !UNITY_EDITOR
                 throw new NotSupportedException( "GdEditorLoader can be used only in editor" );            
  #else
 
+                var timer = System.Diagnostics.Stopwatch.StartNew();
                 var parser  = new FoldersParser();
                 parser.Parse();
                 var allGDOfolders = parser.Root;
@@ -50,6 +50,10 @@ namespace GDDB
 
                 var allObjects = GetAllObjects( gddbFolder );
                 _db = new GdDb( gddbFolder, allObjects );
+
+                timer.Stop();
+
+                Debug.Log( $"[GdEditorLoader] GD data base {name} loaded in {timer.ElapsedMilliseconds} msec" );
 #endif           
 
         } 

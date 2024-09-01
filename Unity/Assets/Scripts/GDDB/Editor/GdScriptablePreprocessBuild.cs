@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.Build;
@@ -44,7 +45,13 @@ namespace GDDB.Editor
             var gdReference = ScriptableObject.CreateInstance<GdScriptableReference>();
             gdReference.Root    = gddb.Root;
             gdReference.Content = gddb.AllObjects.ToArray();
-            AssetDatabase.CreateAsset( gdReference, $"Assets/Resources/{gddb.Root.Id}.asset");
+            AssetDatabase.CreateAsset( gdReference, $"Assets/Resources/{gddb.Root.Id}.objects.asset");
+
+            var serializer = new FoldersSerializer();
+            var json       = serializer.Serialize( gddb.RootFolder );
+            var jsonPath   = Path.Combine( Application.dataPath, $"Resources/{gddb.Root.Id}.structure.json" );
+            File.WriteAllText( jsonPath, json );
+            AssetDatabase.Refresh();
         }
     }
 }

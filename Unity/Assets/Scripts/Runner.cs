@@ -19,9 +19,11 @@ namespace GDDB_User
 
         private void Awake( )
         {
-            var loader = new GdJsonLoader( "GD1" );
-
+            var loader = new GdScriptableLoader( "GD1" );
             var gdb         = loader.GetGameDataBase();
+
+            gdb.Print();
+
             //var testGetMobs = gdb.GetMobs(  );          //Source generated
         }
 
