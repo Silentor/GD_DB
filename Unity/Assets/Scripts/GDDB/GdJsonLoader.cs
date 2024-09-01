@@ -21,7 +21,7 @@ namespace GDDB
             var gdJson = new GDJson();
             var content = gdJson.JsonToGD( jsonAsset.text );
 
-            _db = new GdDb( content );
+            _db = new GdDb( null, content );
         }
         
         public GdJsonLoader( [NotNull] TextReader jsonContent )
@@ -31,7 +31,7 @@ namespace GDDB
             var gdJson  = new GDJson();
             var content = gdJson.JsonToGD( jsonContent.ReadToEnd() );
 
-            _db  = new GdDb( content );
+            _db  = new GdDb( null, content );
         } 
     }
 }

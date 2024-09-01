@@ -15,7 +15,7 @@ namespace GDDB
             if( !gddbReference )
                 throw new ArgumentException( $"GdDB name {name} is incorrect" );
 
-            _db = new GdDb( gddbReference.Content );
+            _db = new GdDb( null, gddbReference.Content );
         } 
     }
 }

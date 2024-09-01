@@ -64,6 +64,16 @@ namespace GDDB.Editor
             fromJsonBtn.style.height = 20;
             toolbar.Add( fromJsonBtn );
 
+            var printHierarchy = new Button( ( ) => 
+            {
+                var gddb = new GdEditorLoader( _target.Id ).GetGameDataBase();
+                gddb.Print();
+            } );
+            printHierarchy.text         = "Print";
+            printHierarchy.style.width  = 100;
+            printHierarchy.style.height = 20;
+            toolbar.Add( printHierarchy );
+
             return result;
         }
     }

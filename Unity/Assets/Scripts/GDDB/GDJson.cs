@@ -71,7 +71,7 @@ namespace GDDB
 
         
 
-        private JObject WriteGDObjectToJson( GDObject obj )
+        private JObject  WriteGDObjectToJson( GDObject obj )
         {
             var result = new JObject();
             result.Add( ".Name", obj.name );
