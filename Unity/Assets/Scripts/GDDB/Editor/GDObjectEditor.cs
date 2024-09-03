@@ -103,7 +103,7 @@ namespace GDDB.Editor
                 var json = new GDJson().GDToJson( new []{ _target } );
                 Debug.Log( json );
             } );
-            toJsonBtn.text         = "To Json";
+            toJsonBtn.text         = "Print obj json";
             toJsonBtn.style.width  = 100;
             toJsonBtn.style.height = 20;
             debugToolbar.Add( toJsonBtn );

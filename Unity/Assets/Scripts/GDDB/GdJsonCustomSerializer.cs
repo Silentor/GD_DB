@@ -175,7 +175,7 @@ namespace GDDB
         public override Object Deserialize( JToken json )
         {
             var quatValues = (JArray)json;
-            var obj        = new UnityEngine.Bounds();
+            //var obj        = new UnityEngine.Bounds();
             var center = new UnityEngine.Vector3(
                     quatValues[0].Value<Single>(),
                     quatValues[1].Value<Single>(),

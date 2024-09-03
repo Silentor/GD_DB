@@ -8,10 +8,13 @@ namespace GDDB_User
 {
     public class Runner : MonoBehaviour
     {
-        public Int32  TestField;
-        public GDObject TestObject;
-        public GdId   TestId;
-        public GdType TestType;
+        public Int32            TestField;
+        public GDObject         TestObject;
+        public GdId             TestId;
+        public GdType           TestType;
+        public Classes          NullObject;
+        [SerializeReference]
+        public TestNullAbstract TestAbstract;
 
         //[GdTypeFilter(MainCategory.Mobs, EMobs.Elves)]
         //[GdTypeFilter(MainCategory.Game)]                      
@@ -36,5 +39,11 @@ namespace GDDB_User
 #endif
         }
     }
+
+    [Serializable]
+    public abstract class TestNullAbstract
+    {
+        public Int32 TestValue = 42;
+    }     
 
 }

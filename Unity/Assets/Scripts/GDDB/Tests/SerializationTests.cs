@@ -28,7 +28,7 @@ namespace GDDB.Tests
             //Assert
             var jObjects    = (JArray)JToken.Parse( jsonString );
             var jRoot       = (JObject)jObjects[ 0 ];
-            var jComponents = (JArray)jRoot[ "Components" ];
+            var jComponents = (JArray)jRoot[ ".Components" ];
             var jsonSerComp = (JObject)jComponents[ 0 ][ ".Value" ];
 
             Assert.That( jsonSerComp.Children(), Is.Empty );
@@ -147,7 +147,7 @@ namespace GDDB.Tests
             //Assert json
             var jObjects    = (JArray)JToken.Parse( jsonString );
             var jRoot       = (JObject)jObjects[ 0 ];
-            var jComponents = (JArray)jRoot[ "Components" ];
+            var jComponents = (JArray)jRoot[ ".Components" ];
             var jsonSerComp = (JObject)jComponents[ 0 ][ ".Value" ];
 
             Assert.IsNull( jsonSerComp[ nameof(CollectionTestComponent.OldIntArray) ] );
@@ -291,10 +291,10 @@ namespace GDDB.Tests
                 var serializer = new GDJson();
                 var jsonString = serializer.GDToJson( new GDObject[] { root, enabledObj, disabledObj } );
                 Debug.Log( jsonString );
-                var gddb = new GdJsonLoader( new StringReader( jsonString ) ).GetGameDataBase();
+                var deserializedObjects = serializer.JsonToGD( jsonString );
 
                 //Assert
-                gddb.AllObjects.Count( gdo => gdo.EnabledObject ).Should().Be( 2 );
+                deserializedObjects.Count( gdo => gdo.EnabledObject ).Should().Be( 2 );
         }
 
         [Test]
@@ -348,5 +348,7 @@ namespace GDDB.Tests
                 copyComp.GameObject.Should().BeSameAs( testGO );
                 copyComp.Component.Should().BeSameAs( testComponent );
         }
+
+
     }
 }

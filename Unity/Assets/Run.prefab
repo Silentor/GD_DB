@@ -44,5 +44,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f3fe69165761d9348a44065cd54395d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  TestField: 7
+  TestObject: {fileID: 0}
+  TestId:
+    Serializalble1: 0
+    Serializalble2: 0
   TestType:
     Data: 66504
+  NullObject:
+    ParentClassPolymord:
+      IntValue2: 0
+    ChildClass:
+      IntValue2: 0
+      IntValue3: 0
+    Struct1:
+      IntValue: 0
+      EmbeddedClass:
+        IntValue2: 0
+      EmbeddedClassPolymorf:
+        IntValue2: 0
+  TestAbstract:
+    rid: -2
+  references:
+    version: 2
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }

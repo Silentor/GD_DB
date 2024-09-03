@@ -12,21 +12,21 @@ namespace GDDB.Editor
     {
         private static readonly GDTypeHierarchy             TypeHierarchy;
         private static readonly Dictionary<Int32, ItemData> GdTypeCache = new ();
-        private static readonly GDObjectsFinder             GDOFinder;
+        //private static readonly GDObjectsFinder             GDOFinder;
 
         static ProjectWindowsTypeDrawer()
         {
             TypeHierarchy = new GDTypeHierarchy();
-            GDOFinder     = new GDObjectsFinder();
+            //GDOFinder     = new GDObjectsFinder();
 
-            EditorApplication.projectWindowItemInstanceOnGUI += DrawGDTypeString;
+            //EditorApplication.projectWindowItemInstanceOnGUI += DrawGDTypeString;
             GDObjectEditor.Changed += GDObjectEditorOnChanged;
         }
 
         private static void GDObjectEditorOnChanged( GDObject obj )
         {
             GdTypeCache.Clear();
-            GDOFinder.Reload();
+            //GDOFinder.Reload();
         }
 
         private static void DrawGDTypeString(Int32 instanceid, Rect rect )
@@ -38,93 +38,68 @@ namespace GDDB.Editor
             if ( !asset )
                 return;
 
-            //Not enough free space
-            // if( rect.width < 250 )
-            //     return;
 
-            // Right align label:
-            // const int width = 250;
-            // rect.x     += rect.width - width;
-            // rect.width =  width;
-
-            //TEST
-            //GUI.skin.label.CalcMinMaxWidth( new GUIContent(asset.name), out var min, out var max );
-            //GUI.Label( rect, $"{min} / {max}, {rect.width - max}", Styles.GDTypeStrLabel );
-            //Test
-
-            var itemHash = HashCode.Combine( instanceid, asset.name.GetHashCode(), asset.Type.GetHashCode() );
-            if ( !GdTypeCache.TryGetValue( itemHash, out var itemData ) )
-            {
-                itemData = new ItemData() { GDTypeString = TypeHierarchy.GetTypeString( asset.Type ),  } ;
-                if( asset.Type != default )
-                    Styles.GDTypeStrLabel.CalcMinMaxWidth( new GUIContent( itemData.GDTypeString ), out _, out itemData.GDTypeStrWidth );
-                GUI.skin.label.CalcMinMaxWidth( new GUIContent( asset.name ), out _, out var objNameWidth );
-                itemData.GDObjectNameWidth = objNameWidth + 25;
-            }
-
-            if ( !asset.EnabledObject )
-            {
-                if ( rect.width > itemData.GDObjectNameWidth + 50 )
-                {
-                    if( Selection.objects.Contains( asset ) )
-                        GUI.Label( rect, "Disabled", Styles.GDTypeStrLabelDisabledSelected );
-                    else
-                        GUI.Label( rect, "Disabled", Styles.GDTypeStrLabelDisabled );
-                }
-                else if( rect.width > itemData.GDObjectNameWidth )
-                {
-                    if( Selection.objects.Contains( asset ) )
-                        GUI.Label( rect, "x", Styles.GDTypeStrLabelDisabledSelected );
-                    else
-                        GUI.Label( rect, "x", Styles.GDTypeStrLabelDisabled );
-                }
-                return;
-            }
-
-            if( asset.Type == default )
-                return;
-
-            if( rect.width <= itemData.GDObjectNameWidth )
-                return;
-
-            var text = itemData.GDTypeString;
-            if ( rect.width < itemData.GDObjectNameWidth + itemData.GDTypeStrWidth )
-            {
-                var pixelsPerChar = itemData.GDTypeStrWidth / itemData.GDTypeString.Length;
-                var remainChars   = Mathf.Clamp( Mathf.RoundToInt( (rect.width - itemData.GDObjectNameWidth ) / pixelsPerChar ), 0, itemData.GDTypeString.Length );
-                if( remainChars == 0 )
-                    return;
-                else if ( remainChars < itemData.GDTypeString.Length )
-                    text = text.Substring( itemData.GDTypeString.Length - remainChars );
-            }
-
-            //Validation
-            if( !TypeHierarchy.IsTypeDefined( asset.Type ) )
-                GUI.Label( rect, new GUIContent( text, tooltip: "Type value is out of range"), Styles.GDTypeStrLabelError );
-            else if( !TypeHierarchy.IsTypeInRange( asset.Type, out var category ) )
-                GUI.Label( rect, new GUIContent( text, tooltip: $"Type category {category.Index + 1} is out of range"), Styles.GDTypeStrLabelError );
-            else if( GDOFinder.IsDuplicatedType( asset.Type, TypeHierarchy, out var count ) )
-                GUI.Label( rect, new GUIContent( text, tooltip: $"Duplicated type, found {count} types" ), Styles.GDTypeStrLabelError );
-            else
-            {
-                if( Selection.objects.Contains( asset ) )
-                    GUI.Label( rect, text, Styles.GDTypeStrLabelSelected );
-                else
-                    GUI.Label( rect, text, Styles.GDTypeStrLabel );
-            }
-            // else
+            // var itemHash = HashCode.Combine( instanceid, asset.name.GetHashCode(), asset.Type.GetHashCode() );
+            // if ( !GdTypeCache.TryGetValue( itemHash, out var itemData ) )
             // {
-            //     var gdTypeStr = asset.Type.ToString();
-            //     if( GDOFinder.IsDuplicatedType( asset ) || !TypeHierarchy.IsTypeCorrect( asset.Type, out _ ) )
-            //         GUI.Label( rect, gdTypeStr, Styles.GDTypeStrLabelError );
-            //     else
+            //     itemData = new ItemData() { GDTypeString = TypeHierarchy.GetTypeString( asset.Type ),  } ;
+            //     if( asset.Type != default )
+            //         Styles.GDTypeStrLabel.CalcMinMaxWidth( new GUIContent( itemData.GDTypeString ), out _, out itemData.GDTypeStrWidth );
+            //     GUI.skin.label.CalcMinMaxWidth( new GUIContent( asset.name ), out _, out var objNameWidth );
+            //     itemData.GDObjectNameWidth = objNameWidth + 25;
+            // }
+
+            // if ( !asset.EnabledObject )
+            // {
+            //     if ( rect.width > itemData.GDObjectNameWidth + 50 )
             //     {
             //         if( Selection.objects.Contains( asset ) )
-            //             GUI.Label( rect, gdTypeStr, Styles.GDTypeStrLabelSelected );
+            //             GUI.Label( rect, "Disabled", Styles.GDTypeStrLabelDisabledSelected );
             //         else
-            //             GUI.Label( rect, gdTypeStr, Styles.GDTypeStrLabel );
+            //             GUI.Label( rect, "Disabled", Styles.GDTypeStrLabelDisabled );
             //     }
+            //     else if( rect.width > itemData.GDObjectNameWidth )
+            //     {
+            //         if( Selection.objects.Contains( asset ) )
+            //             GUI.Label( rect, "x", Styles.GDTypeStrLabelDisabledSelected );
+            //         else
+            //             GUI.Label( rect, "x", Styles.GDTypeStrLabelDisabled );
+            //     }
+            //     return;
             // }
+
+            // if( asset.Type == default )
+            //     return;
+            //
+            // if( rect.width <= itemData.GDObjectNameWidth )
+            //     return;
+            //
+            // var text = itemData.GDTypeString;
+            // if ( rect.width < itemData.GDObjectNameWidth + itemData.GDTypeStrWidth )
+            // {
+            //     var pixelsPerChar = itemData.GDTypeStrWidth / itemData.GDTypeString.Length;
+            //     var remainChars   = Mathf.Clamp( Mathf.RoundToInt( (rect.width - itemData.GDObjectNameWidth ) / pixelsPerChar ), 0, itemData.GDTypeString.Length );
+            //     if( remainChars == 0 )
+            //         return;
+            //     else if ( remainChars < itemData.GDTypeString.Length )
+            //         text = text.Substring( itemData.GDTypeString.Length - remainChars );
+            // }
+
+            //Validation
+            // if( !TypeHierarchy.IsTypeDefined( asset.Type ) )
+            //     GUI.Label( rect, new GUIContent( text, tooltip: "Type value is out of range"), Styles.GDTypeStrLabelError );
+            // else if( !TypeHierarchy.IsTypeInRange( asset.Type, out var category ) )
+            //     GUI.Label( rect, new GUIContent( text, tooltip: $"Type category {category.Index + 1} is out of range"), Styles.GDTypeStrLabelError );
+            // else if( GDOFinder.IsDuplicatedType( asset.Type, TypeHierarchy, out var count ) )
+            //     GUI.Label( rect, new GUIContent( text, tooltip: $"Duplicated type, found {count} types" ), Styles.GDTypeStrLabelError );
+            // else
+            // {
+            //     if( Selection.objects.Contains( asset ) )
+            //         GUI.Label( rect, text, Styles.GDTypeStrLabelSelected );
+            //     else
+            //         GUI.Label( rect, text, Styles.GDTypeStrLabel );
+            // }
+            
             
         }
 

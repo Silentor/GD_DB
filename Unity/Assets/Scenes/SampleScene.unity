@@ -599,8 +599,16 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
+      propertyPath: TestField
+      value: 141
+      objectReference: {fileID: 0}
+    - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
+      propertyPath: TestObject
+      value: 
+      objectReference: {fileID: 11400000, guid: c9d1f11f7bd552244be031c883375f18, type: 2}
+    - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: TestType.Data
-      value: 16842755
+      value: 33619971
       objectReference: {fileID: 0}
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: TestType2.Data
@@ -608,15 +616,47 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: TestId.Serializalble1
-      value: 5331668293871178353
+      value: 6526857918927391347
       objectReference: {fileID: 0}
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: TestId.Serializalble2
-      value: 1949695887312712867
+      value: 2865162241926079290
       objectReference: {fileID: 0}
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: TestTypeRestrictedMobs.Data
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
+      propertyPath: TestUnsafeId.bs.Array.data[0]
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
+      propertyPath: TestUnsafeId.bs.Array.data[1]
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
+      propertyPath: TestUnsafeId.bs.Array.data[2]
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
+      propertyPath: TestUnsafeId.bs.Array.data[3]
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
+      propertyPath: TestUnsafeId.bs.Array.data[5]
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
+      propertyPath: TestUnsafeId.bs.Array.data[8]
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
+      propertyPath: TestUnsafeId.bs.Array.data[11]
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
+      propertyPath: TestUnsafeId.bs.Array.data[12]
+      value: 255
       objectReference: {fileID: 0}
     - target: {fileID: 6999935956975957650, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: m_Name

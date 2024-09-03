@@ -73,17 +73,33 @@ namespace GDDB
 
         private JObject  WriteGDObjectToJson( GDObject obj )
         {
-            var result = new JObject();
-            result.Add( ".Name", obj.name );
-            var type = obj.GetType();
-            result.Add( ".Type", type.Assembly == GetType().Assembly ? type.FullName : type.AssemblyQualifiedName );
-            result.Add( ".Ref", obj.Guid.ToString() );
-            if( !obj.EnabledObject )
-                result.Add( ".Enabled", false );
+            try
+            {
+                var result = new JObject();
+                result.Add( ".Name", obj.name );
+                var type = obj.GetType();
+                result.Add( ".Type", type.Assembly == GetType().Assembly ? type.FullName : type.AssemblyQualifiedName );
+                result.Add( ".Ref",  obj.Guid.ToString() );
+                if( !obj.EnabledObject )
+                    result.Add( ".Enabled", false );
 
-            WriteObjectContent( type, obj, result );
+                var componentsArray = new JArray();
+                result.Add( ".Components", componentsArray );
+                foreach ( var gdComponent in obj.Components )
+                {
+                    if( gdComponent == null || gdComponent.GetType().IsAbstract )       //Seems like missed class component
+                        continue;
+                    componentsArray.Add( WriteObjectToJson( typeof(GDComponent), gdComponent ) );
+                }
 
-            return result;
+                WriteObjectContent( type, obj, result );
+
+                return result;
+            }
+            catch ( Exception e )
+            {
+                throw new JsonObjectException( obj.name, obj.GetType(), null, $"Error writing object {obj.name} of type {obj.GetType()}", e );
+            }
         }
 
         private JObject WriteObjectToJson( Type propertyType, Object obj )
@@ -146,9 +162,17 @@ namespace GDDB
        
         private JProperty WritePropertyToJson( String propertyName, Type propertyType, Object value, Type valueType )
         {
-            var result = new JProperty( propertyName );
-            result.Value = WriteSomethingToJson( propertyType, value, valueType );
-            return result;
+            try
+            {
+                var result = new JProperty( propertyName );
+                result.Value = WriteSomethingToJson( propertyType, value, valueType );
+                return result;
+            }
+            catch ( Exception e )
+            {
+                throw new JsonPropertyException( propertyName, null, $"Error writing property {propertyName} of type {propertyType} value {value} ", e );
+            }
+            
         }
 
         private JProperty WriteNullPropertyToJson( String propertyName, Type propertyType )
@@ -211,7 +235,7 @@ namespace GDDB
             {
                 //Create and serialize empty object
                 var emptyObject  = CreateEmptyObject( propertyType );
-                var jEmptyObject = WriteObjectToJson( propertyType, emptyObject );
+                var jEmptyObject = emptyObject != null ? WriteObjectToJson( propertyType, emptyObject ) : new JObject();
                 return jEmptyObject;
             }
         }
@@ -251,6 +275,12 @@ namespace GDDB
 
         private Object CreateEmptyObject( Type type )
         {
+            if( type.IsAbstract || type.IsInterface )
+            {
+                Debug.LogError( $"Can not create empty object for abstract or interface type {type} return null" );
+                return null;
+            }
+
             var defaultConstructor = type.GetConstructor( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, Array.Empty<Type>(), null );
             if ( defaultConstructor == null )
             {
@@ -322,12 +352,38 @@ namespace GDDB
 
         private GDObject ReadGDObjectContentFromJson( JObject gdObjToken, GDObject obj )
         {
-            ReadContentFromJson( gdObjToken, obj );
-            return obj;
+            try
+            {
+                //Components should be read from reserved property
+                var componentsProp = gdObjToken[".Components"] as JArray;
+                for ( var i = 0; i < componentsProp.Count; i++ )
+                {
+                    var componentjToken = componentsProp[ i ];
+                    try
+                    {
+                        var component = (GDComponent)ReadObjectFromJson( (JObject)componentjToken, typeof(GDComponent) );
+                        obj.Components.Add( component );
+                    }
+                    catch ( Exception e )
+                    {
+                        throw new JsonComponentException( i, componentjToken, $"Error reading component {i} from jtoken {componentjToken} of GDObject {obj.Name}({obj.Guid})", e );
+                    }
+                }
+
+                ReadContentFromJson( gdObjToken, obj );
+                return obj;
+            }
+            catch ( Exception e )
+            {
+                throw new JsonObjectException( obj.Name, obj.GetType(), gdObjToken, $"Error reading object {obj.Name} of type {obj.GetType()} from jobject {gdObjToken}", e );
+            }
         }
 
         private Object ReadObjectFromJson( JObject jObject, Type propertyType )
         {
+            if ( !jObject.HasValues )
+                return null;
+
             var objectType = propertyType;
 
             //Check polymorphic object
@@ -364,7 +420,7 @@ namespace GDDB
                 if( IsFieldSerializable( field ) )
                 {
                     var valueToken = jObject[field.Name];
-                    if( valueToken == null )
+                    if( valueToken == null )                        //Incorrect name
                         field.SetValue( obj, null );
                     else
                         try
@@ -374,7 +430,7 @@ namespace GDDB
                         }
                         catch ( Exception ex )  
                         {
-                            Debug.LogError( $"Error settings field {field} from jtoken {valueToken.Type} value {valueToken}, exception: {ex}" );                            
+                            throw new JsonPropertyException( field.Name, valueToken, $"Error setting field {field} from jtoken {valueToken}", ex );
                         }
                 }
             }
@@ -408,6 +464,9 @@ namespace GDDB
             }
             else if (typeof(UnityEngine.Object).IsAssignableFrom( propertyType ) )      //Read Unity asset by reference
             {
+                if ( !value.HasValues )                  //Seems like missed reference or null reference
+                    return null;
+
                 var guid = value[".Ref"].Value<String>();
                 var localId = value[".Id"].Value<long>();
                 var asset = _assetReference.Assets.Find( a => a.Guid.Equals( guid ) && a.LocalId == localId )?.Asset;
@@ -609,8 +668,10 @@ namespace GDDB
             if ( field.IsPublic && field.IsDefined( typeof(NonSerializedAttribute), false ) )
                 return false;
 
-            //Reserved fields
-            if ( field.Name == nameof(GDObject.EnabledObject) )
+            //Reserved fields for some types
+            var declaredType = field.DeclaringType;
+            if ( declaredType == typeof(GDObject) 
+                 && (field.Name == nameof(GDObject.EnabledObject) || field.Name == nameof(GDObject.Components)) )
                 return false;
 
             var fieldType = field.FieldType;
@@ -657,6 +718,82 @@ namespace GDDB
             }
 
             return true;
+        }
+    }
+
+    public class JsonPropertyException : Exception
+    {
+        public String PropertyName { get; }
+        public JToken JToken { get; }
+
+        public JsonPropertyException()
+        {
+            
+        }
+
+        public JsonPropertyException( String propertyName, JToken jToken, string message )
+                : base(message)
+        {
+            PropertyName = propertyName;
+            JToken  = jToken;
+        }
+
+        public JsonPropertyException(String propertyName, JToken jToken, string message, Exception inner )
+                : base(message, inner)
+        {
+            PropertyName = propertyName;
+            JToken  = jToken;
+        }
+    }
+
+    public class JsonObjectException : Exception
+    {
+        public String ObjectName { get; }
+        public Type   ObjectType { get; }
+        public JToken JToken     { get; }
+
+        public JsonObjectException()
+        {
+        }
+
+        public JsonObjectException( String objectName, Type objectType, JToken jToken, string message)
+                : base(message)
+        {
+            JToken     = jToken;
+            ObjectName = objectName;
+            ObjectType = objectType;
+        }
+
+        public JsonObjectException( String objectName, Type objectType, JToken jToken, string message, Exception inner)
+                : base(message, inner)
+        {
+            ObjectName = objectName;
+            ObjectType = objectType;
+            JToken     = jToken;
+        }
+    }
+
+    public class JsonComponentException : Exception
+    {
+        public Int32  ComponentIndex { get; }
+        public JToken JToken         { get; }
+
+        public JsonComponentException()
+        {
+        }
+
+        public JsonComponentException( Int32 index, JToken jToken, string message)
+                : base(message)
+        {
+            ComponentIndex = index;
+            JToken         = jToken;
+        }
+
+        public JsonComponentException( Int32 index, JToken jToken, string message, Exception inner)
+                : base(message, inner)
+        {
+            ComponentIndex = index;
+            JToken         = jToken;
         }
     }
 }

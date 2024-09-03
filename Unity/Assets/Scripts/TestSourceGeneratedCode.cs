@@ -33,8 +33,9 @@ namespace TestGdDb
 
             public IEnumerator<GDObject> GetEnumerator( )
             {
-                foreach ( var gdo in _db.GetObjects( (Int32)MainCategory.Mobs ) )
-                    yield return gdo;
+                // foreach ( var gdo in _db.GetObjects( (Int32)MainCategory.Mobs ) )
+                //     yield return gdo;
+                return null;
             }
 
             IEnumerator IEnumerable.GetEnumerator( )
@@ -54,8 +55,9 @@ namespace TestGdDb
 
             public IEnumerator<GDObject> GetEnumerator( )
             {
-                foreach ( var gdo in _db.GetObjects( (Int32)MainCategory.Mobs, (Int32)EMobs.Orcs ) )
-                    yield return gdo;
+                // foreach ( var gdo in _db.GetObjects( (Int32)MainCategory.Mobs, (Int32)EMobs.Orcs ) )
+                //     yield return gdo;
+                return null;
             }
 
             IEnumerator IEnumerable.GetEnumerator( )
@@ -74,7 +76,7 @@ namespace TestGdDb
             var orcs = db.GetMobs().GetOrcs();
             foreach ( var orcObj in orcs )
             {
-                Debug.Log( $"Obj name {orcObj.Name}, type {orcObj.Type}" );
+                Debug.Log( $"Obj name {orcObj.Name}" );
             }
         }
 

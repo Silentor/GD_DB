@@ -14,24 +14,37 @@ namespace GDDB
     {
         public GdJsonLoader( String name )
         {
-            var jsonAsset = Resources.Load<TextAsset>( $"{name}" );
-            if( !jsonAsset )
-                throw new ArgumentException( $"GdDB name {name} is incorrect" );
+            var structureJsonPath = $"{name}.structure";
+            var structureJson = Resources.Load<TextAsset>( structureJsonPath );
+            if( !structureJson )
+                throw new ArgumentException( $"GdDB name {name} is incorrect, structure file {structureJsonPath} not found " );
 
-            var gdJson = new GDJson();
-            var content = gdJson.JsonToGD( jsonAsset.text );
+            var objectsJsonPath = $"{name}.objects";
+            var objectsJson = Resources.Load<TextAsset>( objectsJsonPath );
+            if( !objectsJson )
+                throw new ArgumentException( $"GdDB name {name} is incorrect, objects file {objectsJsonPath} not found " );
 
-            _db = new GdDb( null, content );
+            var assetsPath = $"{name}.assets";
+            var referencedAssets  = Resources.Load<GdAssetReference>( assetsPath );
+            if( !referencedAssets )
+                throw new ArgumentException( $"GdDB name {name} is incorrect, assets file {assetsPath} not found " );
+
+            _db = LoadGdDb( structureJson.text, objectsJson.text, referencedAssets );
         }
         
-        public GdJsonLoader( [NotNull] TextReader jsonContent )
+        public GdJsonLoader( String structureJson, String objectsJson, GdAssetReference referencedAssets = null )
         {
-            if ( jsonContent == null ) throw new ArgumentNullException( nameof(jsonContent) );
+            _db = LoadGdDb( structureJson, objectsJson, referencedAssets );
+        }
 
-            var gdJson  = new GDJson();
-            var content = gdJson.JsonToGD( jsonContent.ReadToEnd() );
+        private GdDb LoadGdDb( String structureJson, String objectsJson, GdAssetReference referencedAssets )
+        {
+            var folderSerializer = new FoldersSerializer();
+            var rootFolder       = folderSerializer.Deserialize( structureJson );
+            var gdJsonSerializer = new GDJson();
+            var objects          = gdJsonSerializer.JsonToGD( objectsJson, referencedAssets );
 
-            _db  = new GdDb( null, content );
-        } 
+            return new GdDb( rootFolder, objects );
+        }
     }
 }

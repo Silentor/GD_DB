@@ -26,7 +26,7 @@ namespace GDDB.Editor
         private readonly GDTypeHierarchy          _typeHierarchy;
         private readonly StyleSheet               _gdTypeStyles;
         
-        private readonly GDObjectsFinder          _gdoFinder;
+        //private readonly GDObjectsFinder          _gdoFinder;
 
         private State  _state;
         private UInt32? _lastGdTypeValue;
@@ -35,7 +35,7 @@ namespace GDDB.Editor
         {
             _typeHierarchy = new GDTypeHierarchy();
             _gdTypeStyles = UnityEngine.Resources.Load<StyleSheet>( "GDType" );
-            _gdoFinder = new GDObjectsFinder();
+            //_gdoFinder = new GDObjectsFinder();
 
             //Debug.Log( $"Constructor" );
         }
@@ -122,16 +122,16 @@ namespace GDDB.Editor
                                             Click = FixCategoryOutOfRange,
                                     } );
             }
-            else if( _gdoFinder.IsDuplicatedType( gdType, metadata, out var count ) )
-            {
-                result.IsError = true;
-                result.ErrorMessage = $"Duplicate type, count {count}. Press Fix button to assign new type";
-                result.Buttons.Add( new State.Button()
-                                   {
-                                           Type = State.EButton.FixType,
-                                           Click = FixDuplicateType,
-                                   } );
-            }
+            // else if( _gdoFinder.IsDuplicatedType( gdType, metadata, out var count ) )
+            // {
+            //     result.IsError = true;
+            //     result.ErrorMessage = $"Duplicate type, count {count}. Press Fix button to assign new type";
+            //     result.Buttons.Add( new State.Button()
+            //                        {
+            //                                Type = State.EButton.FixType,
+            //                                Click = FixDuplicateType,
+            //                        } );
+            // }
 
             return result;
         }
@@ -241,26 +241,26 @@ namespace GDDB.Editor
         private List<List<CategoryItem>>  GetExistCategoryItems( IReadOnlyList<Category> categories, GdType type )
         {
             var result     = new List<List<CategoryItem>>();
-            var existTypes = _gdoFinder.GDTypedObjects.Select( g => g.Type ).ToList();
-            for ( var i = 0; i < categories.Count; i++ )
-            {
-                if( i > 0 )
-                {
-                    existTypes.RemoveAll( t => t[ i - 1 ] != type[ i - 1 ] );
-                }
-
-                var category       = categories[ i ];
-                var distinctValues = existTypes.Select( t => category.GetValue( t ) ).Distinct().ToList();
-                var filteredItems = category.Items.Where( ci => distinctValues.Contains( ci.Value ) ).ToList();
-
-                // var isError      = filteredItems.All( ci => ci.Value != type[ i ] );
-                // if ( isError )
-                // {
-                //     filteredItems.Add( new GDTypeHierarchy.CategoryItem( $"Incorrect value {type[ i ]}", type[ i ] ) );
-                // }
-                //var errorMessage = isError ? $"Incorrect value {type[ i ]}" : String.Empty;
-                result.Add( filteredItems);
-            }
+            // var existTypes = _gdoFinder.GDTypedObjects.Select( g => g.Type ).ToList();
+            // for ( var i = 0; i < categories.Count; i++ )
+            // {
+            //     if( i > 0 )
+            //     {
+            //         existTypes.RemoveAll( t => t[ i - 1 ] != type[ i - 1 ] );
+            //     }
+            //
+            //     var category       = categories[ i ];
+            //     var distinctValues = existTypes.Select( t => category.GetValue( t ) ).Distinct().ToList();
+            //     var filteredItems = category.Items.Where( ci => distinctValues.Contains( ci.Value ) ).ToList();
+            //
+            //     // var isError      = filteredItems.All( ci => ci.Value != type[ i ] );
+            //     // if ( isError )
+            //     // {
+            //     //     filteredItems.Add( new GDTypeHierarchy.CategoryItem( $"Incorrect value {type[ i ]}", type[ i ] ) );
+            //     // }
+            //     //var errorMessage = isError ? $"Incorrect value {type[ i ]}" : String.Empty;
+            //     result.Add( filteredItems);
+            // }
 
             return result;
         }
@@ -318,12 +318,12 @@ namespace GDDB.Editor
 
         private void FixDuplicateType(  )
         {
-            _serializedObject.Update();
-            if ( _gdoFinder.FindFreeType( GdType.CreateFromRawData( _dataProp.uintValue ), _typeHierarchy, out var newType ) ) 
-            {
-                _dataProp.uintValue = newType.Data;
-                _serializedObject.ApplyModifiedProperties();
-            }
+            // _serializedObject.Update();
+            // if ( _gdoFinder.FindFreeType( GdType.CreateFromRawData( _dataProp.uintValue ), _typeHierarchy, out var newType ) ) 
+            // {
+            //     _dataProp.uintValue = newType.Data;
+            //     _serializedObject.ApplyModifiedProperties();
+            // }
         }
 
         private void FixCategoryOutOfRange(  )
@@ -400,8 +400,8 @@ namespace GDDB.Editor
             {
                 menu.AddItem( new GUIContent("Ping GD asset"),      false, () =>
                 {
-                    if( _gdoFinder.GDTypedObjects.TryFirst( g => g.Type == gdType, out var gdObject ) )
-                        EditorGUIUtility.PingObject( gdObject );
+                    // if( _gdoFinder.GDTypedObjects.TryFirst( g => g.Type == gdType, out var gdObject ) )
+                    //     EditorGUIUtility.PingObject( gdObject );
                 } );
             }
 

@@ -16,6 +16,7 @@ namespace GDDB
         public Decimal DecimalValue = Decimal.MaxValue;
     }
 
+    [Serializable]
     public class Classes : GDComponent
     {
         public TestEmbeddedClassParent ParentClassPolymord;
