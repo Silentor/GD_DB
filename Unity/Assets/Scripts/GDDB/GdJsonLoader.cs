@@ -44,6 +44,14 @@ namespace GDDB
             var gdJsonSerializer = new GDJson();
             var objects          = gdJsonSerializer.JsonToGD( objectsJson, referencedAssets );
 
+            foreach ( var folder in rootFolder.EnumerateFoldersDFS(  ) )
+            {
+                foreach ( var gdo in folder.Objects )
+                {
+                    gdo.Asset = objects.FirstOrDefault( o => o.Guid == gdo.AssetGuid );
+                } 
+            }
+
             return new GdDb( rootFolder, objects );
         }
     }

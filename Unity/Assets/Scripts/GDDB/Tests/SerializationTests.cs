@@ -349,6 +349,55 @@ namespace GDDB.Tests
                 copyComp.Component.Should().BeSameAs( testComponent );
         }
 
+        [Test]
+        public void FoldersSerializationTest( )
+        {
+            //Arrange
+            var root = new Folder() { Name = "Root" };
+            var mobs = new Folder() { Name = "Mobs", Parent = root}; root.SubFolders.Add( mobs );
+            var elves = new Folder() { Name = "Elves", Parent = mobs};  mobs.SubFolders.Add( elves );
+            var locations = new Folder() { Name = "Locations", Parent = root};  root.SubFolders.Add( locations );
 
+            var gdRoot         = CreateGDObject<GDRoot>( "Root" ); root.Objects.Add( gdRoot );
+            var elf1           = CreateGDObject( "Elf1" ); elves.Objects.Add( elf1 );
+            var elf2           = CreateGDObject( "Elf2" ); elves.Objects.Add( elf2 );
+            var mobsSettings   = CreateGDObject( "MobsSettings" ); mobs.Objects.Add( mobsSettings );
+            var forestLocation = CreateGDObject( "Forest" ); locations.Objects.Add( forestLocation );
+
+            //Act
+            var foldersSerializer = new FoldersSerializer();
+            var structure         = foldersSerializer.Serialize( root );
+            var gdjson            = new GDJson();
+            var objects           = gdjson.GDToJson( new GDObject[] { gdRoot.Asset, elf1.Asset, elf2.Asset, mobsSettings.Asset, forestLocation.Asset } );
+            var db                = new GdJsonLoader( structure, objects, null ).GetGameDataBase();
+
+            //Assert
+            db.RootFolder.SubFolders.Count.Should().Be( 2 );
+            db.RootFolder.Name.Should().Be( "Root" );
+            var mobsFolder = db.RootFolder.SubFolders.Single( f => f.Name == "Mobs" );
+            mobsFolder.Objects.Count.Should().Be( 1 );
+            var elvesFolder = mobsFolder.SubFolders.Single( f => f.Name == "Elves" );
+            elvesFolder.Objects.Count.Should().Be( 2 );
+            elvesFolder.Objects.Select( gdo => gdo.AssetGuid ).Should().BeEquivalentTo( new[] { elf1.AssetGuid, elf2.AssetGuid } );
+            elvesFolder.SubFolders.Should().BeEmpty();
+            elvesFolder.Objects.Select( gdo => gdo.Asset.Guid ).Should().BeEquivalentTo( new[] { elf1.Asset.Guid, elf2.Asset.Guid } );
+            elvesFolder.Objects.Select( gdo => gdo.Asset.Name ).Should().BeEquivalentTo( new[] { "Elf1", "Elf2" } );
+
+            
+        }
+
+        GDAsset CreateGDObject( String name )
+        {
+                var gdo = GDObject.CreateInstance<GDObject>();
+                gdo.name = name;
+                return new GDAsset() { Asset = gdo, AssetGuid = gdo.Guid, };
+        }
+
+        GDAsset CreateGDObject<T>( String name ) where T : GDObject
+        {
+                var gdo = GDObject.CreateInstance<T>();
+                gdo.name = name;
+                return new GDAsset() { Asset = gdo, AssetGuid = gdo.Guid, };
+        }
     }
 }
