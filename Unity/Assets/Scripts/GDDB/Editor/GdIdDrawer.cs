@@ -1,8 +1,6 @@
 ﻿using System;
 using UnityEditor;
-using UnityEditor.UIElements;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace GDDB.Editor
 {
@@ -16,12 +14,15 @@ namespace GDDB.Editor
             //var fieldPos  = position; fieldPos.xMin += EditorGUIUtility.labelWidth + 2;
             //var buttonPos = Resources.PickerButton.margin.Remove(new Rect(position.xMax - 19, position.y, 19, position.height));
 
-            
+            var totalPosition = position;
             label    = EditorGUI.BeginProperty( position, label, property );
             position = EditorGUI.PrefixLabel( position, controlId, label );
 
             var fieldPos = position;
-            //fieldPos.width -= 20;
+            fieldPos.width -= 20;
+            var dropdownBtnPos = position;
+            dropdownBtnPos.xMin = fieldPos.xMax;
+
             var oldGDObject = GetGDObject( property );
             EditorGUI.BeginChangeCheck();
             var newGDObject = EditorGUI.ObjectField( fieldPos, GUIContent.none, oldGDObject, typeof(GDObject), false ) as GDObject;
@@ -29,6 +30,27 @@ namespace GDDB.Editor
             {
                 SetGDObject( property, newGDObject );
             }
+
+            if ( GUI.Button( dropdownBtnPos, "\u02c5", Resources.PickerButton ) )
+            {
+                var gddb         = new GdEditorLoader( "GD1" ).GetGameDataBase();
+                var dropDownRect = GUIUtility.GUIToScreenRect( totalPosition );               //Because PropertyDrawer use local coords
+                dropDownRect.y += 50;
+                var selectedObject = GetGDObject( property );
+                var treeBrowser = GdDbTreeWindow.Open( gddb.RootFolder, selectedObject, dropDownRect );
+                treeBrowser.Selected += ( gdObject ) =>
+                {
+                    SetGDObject( property, gdObject );
+                    Debug.Log( $"Selected {gdObject.Name}" );
+                };
+                treeBrowser.Chosed += ( gdObject ) =>
+                {
+                    SetGDObject( property, gdObject );
+                    Debug.Log( $"Chosed {gdObject.Name}" );
+                };
+            }
+
+
 
             //GUI.TextField( fieldPos, displayedObject ? displayedObject.name : "None" );
             // var btnPos = position;
