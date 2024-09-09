@@ -12,6 +12,10 @@ namespace GDDB
     /// </summary>
     public class GdJsonLoader : GdLoader
     {
+        public GdJsonLoader() : this ("Default")
+        {
+        }
+
         public GdJsonLoader( String name )
         {
             var structureJsonPath = $"{name}.structure";

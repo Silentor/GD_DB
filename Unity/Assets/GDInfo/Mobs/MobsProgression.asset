@@ -9,15 +9,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3e112a9ca44dc1e4f8749440491807b1, type: 3}
-  m_Name: '!GDRoot'
+  m_Script: {fileID: 11500000, guid: 5ebd1bfc4a076ec4ea41fbabfe03ccbb, type: 3}
+  m_Name: MobsProgression
   m_EditorClassIdentifier: 
   EnabledObject: 1
   Type:
-    Data: 0
+    Data: 50462720
   Components: []
-  Id: GD2
-  Version: 0
   references:
     version: 2
     RefIds: []

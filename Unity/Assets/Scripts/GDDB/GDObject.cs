@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -38,6 +39,31 @@ namespace GDDB
         public T GetComponent<T>() where T : GDComponent
         {
             return Components.Find( c => c is T ) as T;
+        }
+
+        public Boolean HasComponent<T>() where T : GDComponent
+        {
+            return Components.Exists( c => c is T );
+        }
+
+        public Boolean HasComponent( Type type )
+        {
+            if( type == null ) return Components.Count == 0;
+
+            return Components.Exists( c => type.IsAssignableFrom( c.GetType() ) );
+        }
+
+        public Boolean HasComponents( params Type[] types )
+        {
+            if( types == null || types.Length == 0 ) return Components.Count == 0;
+
+            foreach ( var t in types )
+            {
+                if( !Components.Exists( c => t.IsAssignableFrom( c.GetType() ) ) )
+                    return false;
+            }
+
+            return true;
         }
 
         internal GDObject WithGuid( Guid guid )

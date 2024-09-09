@@ -905,15 +905,9 @@
     ]
   },
   {
-    ".Name": "Human1",
+    ".Name": "MobsProgression",
     ".Type": "GDDB.GDObject",
-    ".Ref": "c88f601a-e681-0fc4-a9cf-eeed25b88473",
-    ".Components": []
-  },
-  {
-    ".Name": "Human2",
-    ".Type": "GDDB.GDObject",
-    ".Ref": "3086e03a-f9eb-bee4-ba7b-65e0171b9fb6",
+    ".Ref": "4d1cca73-0eb2-5a94-3aa3-ddf5e019c327",
     ".Components": []
   },
   {
@@ -1087,6 +1081,12 @@
             "PreWrapMode": 8,
             "PostWrapMode": 8
           }
+        }
+      },
+      {
+        ".Type": "GDDB.TestMobComponent, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+        ".Value": {
+          "Name": ""
         }
       }
     ]
@@ -1262,6 +1262,38 @@
             "PreWrapMode": 8,
             "PostWrapMode": 8
           }
+        }
+      },
+      {
+        ".Type": "GDDB.TestMobComponent, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+        ".Value": {
+          "Name": ""
+        }
+      }
+    ]
+  },
+  {
+    ".Name": "Human1",
+    ".Type": "GDDB.GDObject",
+    ".Ref": "c88f601a-e681-0fc4-a9cf-eeed25b88473",
+    ".Components": [
+      {
+        ".Type": "GDDB.TestMobComponent, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+        ".Value": {
+          "Name": ""
+        }
+      }
+    ]
+  },
+  {
+    ".Name": "Human2",
+    ".Type": "GDDB.GDObject",
+    ".Ref": "3086e03a-f9eb-bee4-ba7b-65e0171b9fb6",
+    ".Components": [
+      {
+        ".Type": "GDDB.TestMobComponent, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+        ".Value": {
+          "Name": ""
         }
       }
     ]

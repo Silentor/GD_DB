@@ -1,7 +1,5 @@
 using System;
 using GDDB;
-using TestGdDb;
-using UnityEditor.Compilation;
 using UnityEngine;
 
 namespace GDDB_User
@@ -10,6 +8,7 @@ namespace GDDB_User
     {
         public Int32            TestField;
         public GDObject         TestObject;
+        [GdTypeFilter("Mobs//", typeof(TestMobComponent))]
         public GdId             TestId;
         public GdType           TestType;
         public Classes          NullObject;
@@ -22,7 +21,7 @@ namespace GDDB_User
 
         private void Awake( )
         {
-            var loader = new GdScriptableLoader( "GD1" );
+            var loader = new GdScriptableLoader( "Default" );
             var gdb         = loader.GetGameDataBase();
 
             gdb.Print();
@@ -30,12 +29,12 @@ namespace GDDB_User
             //var testGetMobs = gdb.GetMobs(  );          //Source generated
         }
 
-        private GdLoader GetGD( String name )
+        private GdLoader GetGD(  )
         {
 #if UNITY_EDITOR
-            return new GdEditorLoader( name );
+            return new GdEditorLoader( );
 #else
-            return new GdScriptableLoader( name );
+            return new GdScriptableLoader( );
 #endif
         }
     }

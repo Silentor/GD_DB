@@ -10,22 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5ebd1bfc4a076ec4ea41fbabfe03ccbb, type: 3}
-  m_Name: test2
+  m_Name: Human1
   m_EditorClassIdentifier: 
-  Enabled: 1
+  EnabledObject: 1
   Components:
-  - rid: 6870417204533526534
-  - rid: 6870417204533526535
+  - rid: 6526597885833510914
   references:
     version: 2
     RefIds:
-    - rid: -2
-      type: {class: , ns: , asm: }
-    - rid: 6870417204533526534
-      type: {class: GDComponentChild1, ns: GDDB, asm: Assembly-CSharp}
+    - rid: 6526597885833510914
+      type: {class: TestMobComponent, ns: GDDB, asm: Assembly-CSharp}
       data:
-        IntValue: 1
-    - rid: 6870417204533526535
-      type: {class: GDComponentChild1, ns: GDDB, asm: Assembly-CSharp}
-      data:
-        IntValue: 9
+        Name: 

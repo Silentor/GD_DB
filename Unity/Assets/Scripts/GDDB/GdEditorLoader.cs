@@ -15,7 +15,7 @@ namespace GDDB
     /// </summary>
     public class GdEditorLoader : GdLoader
     {
-        public GdEditorLoader( String name )
+        public GdEditorLoader(  )
         {
  #if !UNITY_EDITOR
                 throw new NotSupportedException( "GdEditorLoader can be used only in editor" );            
@@ -24,36 +24,19 @@ namespace GDDB
                 var timer = System.Diagnostics.Stopwatch.StartNew();
                 var parser  = new FoldersParser();
                 parser.Parse();
-                var allGDOfolders = parser.Root;
+                var assetsFolder = parser.Root;
 
-                Folder gddbFolder = null;
-                GDRoot gdRoot     = null;
-                foreach ( var folder in allGDOfolders.EnumerateFoldersDFS(  ) )
-                {
-                    foreach ( var gdAsset in folder.Objects )
-                    {
-                        var asset = gdAsset.Asset;
-                        if( asset is GDRoot gdR && String.Equals( gdR.Id, name, StringComparison.OrdinalIgnoreCase ) )
-                        {
-                            gddbFolder        = folder;
-                            gddbFolder.Parent = null;
-                            gdRoot            = gdR;
-                            break;
-                        }
-                    }
-                }
+                // if( !gdRoot )
+                //     throw new ArgumentException( $"Game design data base name {name} is incorrect" );
 
-                if( !gdRoot )
-                    throw new ArgumentException( $"Game design data base name {name} is incorrect" );
+                //parser.CalculateDepth( assetsFolder );
 
-                parser.CalculateDepth( gddbFolder );
-
-                var allObjects = GetAllObjects( gddbFolder );
-                _db = new GdDb( gddbFolder, allObjects );
+                var allObjects = GetAllObjects( assetsFolder );
+                _db = new GdDb( assetsFolder, allObjects );
 
                 timer.Stop();
 
-                Debug.Log( $"[GdEditorLoader] GD data base {name} loaded in {timer.ElapsedMilliseconds} msec" );
+                Debug.Log( $"[GdEditorLoader] GD data base {_db.Name} loaded in {timer.ElapsedMilliseconds} msec" );
 #endif           
 
         } 

@@ -25,8 +25,8 @@ namespace GDDB
         {
             var result = new JObject();
             result["name"] = folder.Name;
-            result["path"] = folder.Path;
             result["depth"] = folder.Depth;
+            result["guid"] = folder.FolderGuid.ToString("N");
 
             var subFolders = new JArray();
             foreach ( var subFolder in folder.SubFolders )
@@ -54,8 +54,8 @@ namespace GDDB
             var folder = new Folder
             {
                 Name = json["name"].Value<String>(),
-                Path = json["path"].Value<String>(),
                 Depth = json["depth"].Value<Int32>(),
+                FolderGuid = Guid.ParseExact( json["guid"].Value<String>(), "N"),
                 Parent = parent
             };
 
@@ -108,9 +108,11 @@ namespace GDDB
     public class Folder
     {
         public String Name;
-        public String Path;
         public Folder Parent;
         public Int32  Depth;
+        public Guid   FolderGuid;
+
+        public String PartName => Name[ ..^1 ];
 
         public readonly List<Folder>  SubFolders = new ();
         public readonly List<GDAsset> Objects    = new();
@@ -139,6 +141,14 @@ namespace GDDB
                     yield return subSubFolder;
                 }
             }
+        }
+
+        public Folder GetRootFolder( )
+        {
+            if( Parent == null )
+                return this;
+
+            return Parent.GetRootFolder();
         }
     }
 }

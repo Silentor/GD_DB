@@ -267,39 +267,41 @@ namespace GDDB.Editor
 
         private List<List<CategoryItem>> GetAttributeFilteredItems( List<List<CategoryItem>> categories, GdType typeValue )
         {
-            var filterAttributes = fieldInfo.GetCustomAttributes<GdTypeFilterAttribute>().ToList();
+            return categories;
 
-            if( filterAttributes.Count == 0 )
-                return categories;
-
-            var result = new List<List<CategoryItem>>( categories.Count );
-            for ( var i = 0; i < categories.Count; i++ )
-            {
-                var categoryItems = new List<CategoryItem>();
-                for ( var j = 0; j < filterAttributes.Count; j++ )
-                {
-                    var filterAttribute = filterAttributes[ j ];
-
-                    if ( i > 0 && i - 1 < filterAttribute.FilterCategories.Count )            //Check is filter applicable
-                    {
-                        if ( typeValue[ i - 1 ] != filterAttribute.FilterCategories[ i - 1 ] )         //todo Get filter categories and compare categories
-                        {
-                            filterAttributes.RemoveAt( j );
-                            j--;
-                            continue;
-                        }
-                    }
-                    
-                    if ( filterAttribute.FilterCategories.TryElementAt( i, out var filterValue ) )
-                        categoryItems.AddRange( categories[ i ].Where( c => c.Value == filterValue ) );
-                    else
-                        categoryItems.AddRange( categories[ i ] );
-                }
-
-                result.Add( categoryItems );
-            }
-
-            return result;
+            // var filterAttributes = fieldInfo.GetCustomAttributes<GdTypeFilterAttribute>().ToList();
+            //
+            // if( filterAttributes.Count == 0 )
+            //     return categories;
+            //
+            // var result = new List<List<CategoryItem>>( categories.Count );
+            // for ( var i = 0; i < categories.Count; i++ )
+            // {
+            //     var categoryItems = new List<CategoryItem>();
+            //     for ( var j = 0; j < filterAttributes.Count; j++ )
+            //     {
+            //         var filterAttribute = filterAttributes[ j ];
+            //
+            //         if ( i > 0 && i - 1 < filterAttribute.FilterCategories.Count )            //Check is filter applicable
+            //         {
+            //             if ( typeValue[ i - 1 ] != filterAttribute.FilterCategories[ i - 1 ] )         //todo Get filter categories and compare categories
+            //             {
+            //                 filterAttributes.RemoveAt( j );
+            //                 j--;
+            //                 continue;
+            //             }
+            //         }
+            //         
+            //         if ( filterAttribute.FilterCategories.TryElementAt( i, out var filterValue ) )
+            //             categoryItems.AddRange( categories[ i ].Where( c => c.Value == filterValue ) );
+            //         else
+            //             categoryItems.AddRange( categories[ i ] );
+            //     }
+            //
+            //     result.Add( categoryItems );
+            // }
+            //
+            // return result;
         }
 
         private void AssignType( )

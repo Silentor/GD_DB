@@ -23,7 +23,7 @@ namespace GDDB.Editor
 
                 if( gdiRoot )
                 {
-                    var gddb = new GdEditorLoader( gdiRoot.Id ).GetGameDataBase();
+                    var gddb = new GdEditorLoader(  ).GetGameDataBase();
                     PrepareResourceReference( gddb );
 
                     // if( AssetDatabase.CopyAsset( path, $"Assets/Resources/{gdiRoot.Id}.asset" ) )
@@ -43,13 +43,13 @@ namespace GDDB.Editor
         public static void PrepareResourceReference( GdDb gddb )
         {
             var gdReference = ScriptableObject.CreateInstance<GdScriptableReference>();
-            gdReference.Root    = gddb.Root;
+            //gdReference.Root    = gddb.Root;
             gdReference.Content = gddb.AllObjects.ToArray();
-            AssetDatabase.CreateAsset( gdReference, $"Assets/Resources/{gddb.Root.Id}.objects.asset");
+            AssetDatabase.CreateAsset( gdReference, $"Assets/Resources/{gddb.Name}.objects.asset");
 
             var serializer = new FoldersSerializer();
             var json       = serializer.Serialize( gddb.RootFolder );
-            var jsonPath   = Path.Combine( Application.dataPath, $"Resources/{gddb.Root.Id}.structure.json" );
+            var jsonPath   = Path.Combine( Application.dataPath, $"Resources/{gddb.Name}.structure.json" );
             File.WriteAllText( jsonPath, json );
             AssetDatabase.Refresh();
         }

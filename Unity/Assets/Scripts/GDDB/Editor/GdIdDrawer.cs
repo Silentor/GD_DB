@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
@@ -33,11 +34,14 @@ namespace GDDB.Editor
 
             if ( GUI.Button( dropdownBtnPos, "\u02c5", Resources.PickerButton ) )
             {
-                var gddb         = new GdEditorLoader( "GD1" ).GetGameDataBase();
+                var gddb         = new GdEditorLoader(  ).GetGameDataBase();     
                 var dropDownRect = GUIUtility.GUIToScreenRect( totalPosition );               //Because PropertyDrawer use local coords
                 dropDownRect.y += 50;
                 var selectedObject = GetGDObject( property );
-                var treeBrowser = GdDbTreeWindow.Open( gddb.RootFolder, selectedObject, dropDownRect );
+                var filterAttr     = fieldInfo.GetCustomAttribute( typeof(GdTypeFilterAttribute) ) ;
+                var query          = (filterAttr as GdTypeFilterAttribute)?.Query;
+                var components     = (filterAttr as GdTypeFilterAttribute)?.Components;
+                var treeBrowser    = GdDbTreeWindow.Open( gddb, query, components, selectedObject, dropDownRect );
                 treeBrowser.Selected += ( gdObject ) =>
                 {
                     SetGDObject( property, gdObject );

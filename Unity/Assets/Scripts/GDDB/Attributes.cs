@@ -46,12 +46,28 @@ namespace GDDB
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = true )]
     public class GdTypeFilterAttribute : Attribute
     {
-        public IReadOnlyList<Int32> FilterCategories { get; }
+        public String   Query           { get; }
+        public Type[]   Components      { get; }
 
-        public GdTypeFilterAttribute( params Object[] filters )
+        public GdTypeFilterAttribute( )
         {
-            FilterCategories = filters.Take( 4 ).Cast<Int32>().ToArray();
+            Query = null;
         }
+        
+        public GdTypeFilterAttribute( String query )
+        {
+            Query = query;
+        }
+
+        public GdTypeFilterAttribute( String query, params Type[] componentTypes )
+        {
+            Query = query;
+
+            if( componentTypes != null && componentTypes.Any( c => !typeof(GDComponent).IsAssignableFrom( c ) ) )
+                throw new ArgumentException( $"Component type must be derived from GDComponent", nameof(componentTypes) );
+            Components = componentTypes;
+        }
+       
     }
 
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true )]

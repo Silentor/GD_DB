@@ -72,4 +72,9 @@ namespace GDDB
 
     }
 
+    public class TestMobComponent : GDComponent
+    {
+        public String Name;
+    }
+
 }

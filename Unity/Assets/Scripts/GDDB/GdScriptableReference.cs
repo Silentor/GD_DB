@@ -5,7 +5,7 @@ namespace GDDB
 {                                 
     public class GdScriptableReference : ScriptableObject
     {
-        public GDRoot           Root;
+        //public GDRoot           Root;
         public GDObject[]       Content;
     }
 }

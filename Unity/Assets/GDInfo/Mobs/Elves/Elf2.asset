@@ -13,17 +13,20 @@ MonoBehaviour:
   m_Name: Elf2
   m_EditorClassIdentifier: 
   EnabledObject: 1
-  Type:
-    Data: 16842752
   Components:
   - rid: 6870417494477373444
   - rid: 6870417494477373448
   - rid: 6870417513993469958
   - rid: 6870417513993469971
   - rid: 6870417603641212953
+  - rid: 6526597885833510913
   references:
     version: 2
     RefIds:
+    - rid: 6526597885833510913
+      type: {class: TestMobComponent, ns: GDDB, asm: Assembly-CSharp}
+      data:
+        Name: 
     - rid: 6870417494477373444
       type: {class: NotSerializableContentComponent, ns: GDDB.Tests, asm: Tests}
       data: 

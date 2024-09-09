@@ -11,12 +11,12 @@ namespace GDDB.Editor
 {
     public class GdDbTreeWindow : EditorWindow
     {
-        public static GdDbTreeWindow Open( [NotNull] Folder root, GDObject selectedObject, Rect dropDownRect )
+        public static GdDbTreeWindow Open( GdDb db, [CanBeNull] String query, Type[] components, [CanBeNull] GDObject selectedObject, Rect dropDownRect )
         {
-            if ( root == null ) throw new ArgumentNullException( nameof(root) );
+            if ( db == null ) throw new ArgumentNullException( nameof(db) );
 
             var treeBrowser = EditorWindow.GetWindow<GdDbTreeWindow>( true, "Gddb", true );
-            treeBrowser.Init( root, selectedObject );
+            treeBrowser.Init( db, query, components, selectedObject );
             treeBrowser.ShowAsDropDown( dropDownRect, new Vector2( dropDownRect.width, 400 ) );
             return treeBrowser;
         }
@@ -74,8 +74,47 @@ namespace GDDB.Editor
             }
         }
 
-        private void Init( Folder rootFolder, GDObject selectedObject )
+        private void Init(   GdDb db, String query, Type[] components, GDObject selectedObject )
         {
+            Folder rootFolder = db.RootFolder;
+            if ( !String.IsNullOrEmpty( query ) )
+            {
+                var result = components != null ? db.GetObjectsAndFolders( query, components.First() ) : db.GetObjectsAndFolders( query );
+                //Reconstruct tree from search result
+                Dictionary<Guid, Folder> queryFolders = new ();
+
+                foreach ( var (folder, obj) in result  )
+                {
+                     var tempFolder = GetTempFolder( folder );
+                     tempFolder.Objects.Add( new GDAsset { AssetGuid = obj.Guid, Asset = obj } );
+                }
+
+                rootFolder = queryFolders.Values.First();
+
+                var objCount = rootFolder.EnumerateFoldersDFS(  ).SelectMany( f => f.Objects ).Count();
+                Debug.Log( $"[GdDbTreeWindow] Show results for query '{query}', retrieved {objCount} objects" );
+
+                Folder GetTempFolder( Folder originalFolder )
+                {
+                    if ( !queryFolders.TryGetValue( originalFolder.FolderGuid, out var tempFolder ) )
+                    {
+                        tempFolder = new Folder()
+                                     {
+                                             Name       = originalFolder.Name,
+                                             FolderGuid = originalFolder.FolderGuid,
+                                             Depth      = originalFolder.Depth,
+                                             Parent = originalFolder.Parent != null ? GetTempFolder( originalFolder.Parent )  : null,
+                                     };
+                        if( tempFolder.Parent != null )
+                            tempFolder.Parent.SubFolders.Add( tempFolder );
+                        queryFolders.Add( tempFolder.FolderGuid, tempFolder );
+                    }
+
+                    return tempFolder;
+                }
+            }
+            
+
             var rootTreeItem         = PrepareTreeRoot( rootFolder );
             _treeView.SetRootItems( new []{ rootTreeItem } );
             _treeView.Rebuild();
@@ -84,7 +123,6 @@ namespace GDDB.Editor
             var selectedTreeItem = FindTreeItemData( rootTreeItem, o => o is GDObject gdo && gdo == selectedObject );
             if( selectedTreeItem.data != null )
                 _treeView.SetSelectionById( selectedTreeItem.id );
-
         }
 
        

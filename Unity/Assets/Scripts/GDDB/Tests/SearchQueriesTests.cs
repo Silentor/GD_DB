@@ -75,7 +75,7 @@ namespace GDDB.Tests
             //Act
             var allObjects = _db.GetObjects( "" );
 
-            //Asset
+            //Assert
             allObjects.Count().Should().Be( 12 );
         }
 
@@ -87,7 +87,7 @@ namespace GDDB.Tests
             var allObjects2 = _db.GetObjects( "Orcs/" ).ToArray();
             var allObjects3 = _db.GetObjects( "Mobs/" ).ToArray();
 
-            //Asset
+            //Assert
             allObjects.Count().Should().Be( 3 );
             allObjects.Select( gdo => gdo.name ).Should().BeEquivalentTo( "Hero", "Knight", "Peasant" );
             allObjects2.Count().Should().Be( 3 );
@@ -100,55 +100,66 @@ namespace GDDB.Tests
         public void TestTwoFoldersQuery()
         {
             //Act
-            var allObjects = _db.GetObjects( "Mobs/Orcs/" ).ToArray();
+            var allObjects = _db.GetObjects( "Mobs/Orcs/" ).ToArray();  //Files from Mobs/Orcs/
 
-            //Asset
+            //Assert
             allObjects.Count().Should().Be( 3 );
             allObjects.Select( gdo => gdo.name ).Should().BeEquivalentTo( "Grunt", "WolfRider", "Shaman" );
         }
 
         [Test]
-        public void TestAsterixFoldersQuery()
+        public void TestAnyFolderQuery()
         {
             //Act
-            var allObjects = _db.GetObjects( "Mobs/*/" ).ToArray();
+            var allObjects = _db.GetObjects( "Mobs/*/" ).ToArray();     //Files from all folders under Mobs/
 
-            //Asset
+            //Assert
             allObjects.Count().Should().Be( 6 );
             allObjects.Select( gdo => gdo.name ).Should().BeEquivalentTo( "Grunt", "WolfRider", "Shaman", "Hero", "Knight", "Peasant" );
         }
 
         [Test]
-        public void TestAsterixAfterAsterixFoldersQuery()
+        public void  TestFoldersAnyFolderHierarchyQuery()
         {
             //Act
-            var allObjects = _db.GetObjects( "Mobs/*/*/" ).ToArray();
+            var allObjects = _db.GetObjects( "Mobs/*/*/" ).ToArray();      //Files from all folders 2 levels under Mobs/
 
-            //Asset
+            //Assert
             allObjects.Count().Should().Be( 4 );
             allObjects.Select( gdo => gdo.name ).Should().BeEquivalentTo( "DefaultSkin", "Crusader", "Templar", "Chieftan" );
         }
 
         [Test]
-        public void TestFolderDifferectPlacesQuery()
+        public void TestFolderInDifferentPlacesQuery()
         {
             //Act
-            var allObjects = _db.GetObjects( "Skins/" ).ToArray();
+            var allObjects = _db.GetObjects( "Skins/" ).ToArray();     //There are several Skins folders in different places, collect all files
 
-            //Asset
+            //Assert
             allObjects.Count().Should().Be( 4 );
             allObjects.Select( gdo => gdo.name ).Should().BeEquivalentTo( "DefaultSkin", "Crusader", "Templar", "Chieftan" );
         }
 
         [Test]
-        public void TestTwoAsterixFoldersQuery()
+        public void TestRecursiveFoldersQuery()
         {
             //Act
-            var allObjects = _db.GetObjects( "Mobs/**/" ).ToArray();     //Files from all folders under Mobs/
+            var allObjects = _db.GetObjects( "Mobs//" ).ToArray();     //Files from Mobs/ and all folders under Mobs/ recursively
 
-            //Asset
-            allObjects.Count().Should().Be( 10 );
-            allObjects.Select( gdo => gdo.name ).Should().BeEquivalentTo( "Grunt", "WolfRider", "Shaman", "Hero", "Knight", "Peasant", "DefaultSkin", "Crusader", "Templar", "Chieftan" );
+            //Assert
+            allObjects.Count().Should().Be( 11 );
+            allObjects.Select( gdo => gdo.name ).Should().BeEquivalentTo( "CommonMobs", "Grunt", "WolfRider", "Shaman", "Hero", "Knight", "Peasant", "DefaultSkin", "Crusader", "Templar", "Chieftan" );
+        }
+
+        [Test]
+        public void TestAllFilesInFolderQuery()
+        {
+            //Act
+            var allObjects = _db.GetObjects( "Mobs/*" ).ToArray();     //All files from Mobs/  (synonym to Mobs/)
+
+            //Assert
+            allObjects.Count().Should().Be( 1 );
+            allObjects.Select( gdo => gdo.name ).Should().BeEquivalentTo( "CommonMobs" );
         }
 
         [Test]
@@ -157,9 +168,31 @@ namespace GDDB.Tests
             //Act
             var allObjects = _db.GetObjects( "CommonMobs" ).ToArray();     //Find all assets with name CommonMobs
 
-            //Asset
+            //Assert
             allObjects.Count().Should().Be( 1 );
             allObjects.Select( gdo => gdo.name ).Should().BeEquivalentTo( "CommonMobs" );
+        }
+
+        [Test]
+        public void TestFolderMaskQuery()
+        {
+            //Act
+            var allObjects = _db.GetObjects( "Mo*/*mans/" ).ToArray();     //Find all assets if Mobs/Humans
+
+            //Assert
+            allObjects.Count().Should().Be( 3 );
+            allObjects.Select( gdo => gdo.name ).Should().BeEquivalentTo( "Hero", "Knight", "Peasant" );
+        }
+
+        [Test]
+        public void TestFileMaskQuery()
+        {
+            //Act
+            var allObjects = _db.GetObjects( "*ru*" ).ToArray();     //Find all assets by mask
+
+            //Assert
+            allObjects.Count().Should().Be( 2 );
+            allObjects.Select( gdo => gdo.name ).Should().BeEquivalentTo( "Grunt", "Crusader" );
         }
     }
 }

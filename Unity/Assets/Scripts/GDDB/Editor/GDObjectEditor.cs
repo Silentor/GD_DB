@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using JetBrains.Annotations;
 using NUnit.Framework;
@@ -92,21 +93,7 @@ namespace GDDB.Editor
             //New component add button
             CreateComponentAddButton( compsProp, gdoVisualTree );
 
-            //Debug write to json button
-            var debugToolbar = new Box()
-                          {
-                                  style = { flexDirection = FlexDirection.Row, justifyContent = Justify.SpaceBetween }
-                          };
-            gdoVisualTree.Add( debugToolbar );
-
-            var toJsonBtn = new Button( ( ) => {
-                var json = new GDJson().GDToJson( new []{ _target } );
-                Debug.Log( json );
-            } );
-            toJsonBtn.text         = "Print obj json";
-            toJsonBtn.style.width  = 100;
-            toJsonBtn.style.height = 20;
-            debugToolbar.Add( toJsonBtn );
+            ProcessDebugToolbar( gdoVisualTree );
 
             return gdoVisualTree;
         }
@@ -281,6 +268,86 @@ namespace GDDB.Editor
         {
             _favorites = new List<Type>();
             _settings.LoadFavoriteComponents( _favorites );
+        }
+
+        private void ProcessDebugToolbar( VisualElement root )
+        {
+            var toolbar = new Box()
+                          {
+                                  style = { flexDirection = FlexDirection.Row, justifyContent = Justify.SpaceBetween }
+                          };
+            root.Add( toolbar );
+
+            //Save db to json
+            var toJsonBtn = new Button( ( ) => 
+            {
+                var freshDB = new GdEditorLoader(  ).GetGameDataBase();
+
+                //Save hierarchy to json
+                var serializer = new FoldersSerializer();
+                var json       = serializer.Serialize( freshDB.RootFolder );
+                var structureJsonPath   = Path.Combine( Application.dataPath, $"Resources/{freshDB.Name}.structure.json" );
+                File.WriteAllText( structureJsonPath, json );
+
+                //Save gd objects to another json
+                var gdSerializer = new GDJson();
+                var referencedAssets       = ScriptableObject.CreateInstance<GdAssetReference>();
+                json = gdSerializer.GDToJson( freshDB.AllObjects, referencedAssets );
+                var objectsJsonPath = Path.Combine( Application.dataPath, $"Resources/{freshDB.Name}.objects.json" );
+                File.WriteAllText( objectsJsonPath, json );
+
+                //Save referenced assets to scriptable object list
+                var assetsPath = $"Assets/Resources/{freshDB.Name}.assets.asset";
+                AssetDatabase.CreateAsset( referencedAssets, assetsPath );
+
+                AssetDatabase.Refresh();
+
+                Debug.Log( $"Saved gddb structure to {structureJsonPath}, gddb objects to {objectsJsonPath}, asset resolver to {assetsPath}" );
+            } );
+            toJsonBtn.text = "DB to Json";
+            toJsonBtn.style.width = 100;
+            toJsonBtn.style.height = 20;
+            toolbar.Add( toJsonBtn );
+
+            //Save db to scriptable object
+            var toSoBtn = new Button( ( ) => {
+                GdScriptablePreprocessBuild.PrepareResourceReference( new GdEditorLoader( ).GetGameDataBase() );
+            } );
+            toSoBtn.text       = "DB to SO";
+            toSoBtn.style.width  = 100;
+            toSoBtn.style.height = 20;
+            toolbar.Add( toSoBtn );
+
+            //Load bd from json and print to console 
+            var fromJsonBtn = new Button( ( ) => {
+                var gdJson = new GdJsonLoader( ).GetGameDataBase();
+                Debug.Log( $"Loaded gd DB {gdJson.Name}, total objects {gdJson.AllObjects.Count}" );
+                gdJson.Print();
+            } );
+            fromJsonBtn.text           = "Print Json DB";
+            fromJsonBtn.style.width  = 100;
+            fromJsonBtn.style.height = 20;
+            toolbar.Add( fromJsonBtn );
+
+            //Print bd from editor to console
+            var printHierarchy = new Button( ( ) => 
+            {
+                var gddb = new GdEditorLoader(  ).GetGameDataBase();
+                gddb.Print();
+            } );
+            printHierarchy.text         = "Print editor DB";
+            printHierarchy.style.width  = 100;
+            printHierarchy.style.height = 20;
+            toolbar.Add( printHierarchy );
+
+            var printObjBtn = new Button( ( ) => {
+                var json = new GDJson().GDToJson( new []{ _target } );
+                Debug.Log( json );
+            } );
+            printObjBtn.text         = "Print obj";
+            printObjBtn.style.width  = 100;
+            printObjBtn.style.height = 20;
+            toolbar.Add( printObjBtn );
         }
 
         private static class Resources

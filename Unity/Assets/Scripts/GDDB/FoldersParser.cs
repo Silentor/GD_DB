@@ -11,28 +11,43 @@ namespace GDDB.Editor
     /// </summary>
     public class FoldersParser
     {
-        public readonly Folder Root = new Folder{Name = "Assets/", };
+        public Folder Root;
 
         /// <summary>
-        /// Parse real folder structure, root folder goes to <see cref="Root"/>
+        /// Parse physical folder structure, root folder goes to <see cref="Root"/>
         /// </summary>
         public void Parse( )
         {
-            //var folders = AssetDatabase.FindAssets("t:Folder");
+            var folders      = AssetDatabase.FindAssets("t:Folder", new []{"Assets/"});
+            var foldersGuids = new List<(Guid, String)>();
+            foreach ( var folderId in folders )
+            {
+                 var guid = Guid.ParseExact( folderId, "N" );
+                 var path = AssetDatabase.GUIDToAssetPath( folderId ) + "/";
+                 foldersGuids.Add( (guid, path) );
+            }
+
+            Root = new Folder() { Name = "Assets/",    FolderGuid = Guid.ParseExact( "A55E7500-F5B6-4EBA-825C-B1BC7331A193", "D" ) } ;
+
             var gdos = AssetDatabase.FindAssets("t:GDObject", new []{"Assets/"});   //Skip packages, consider collect GDObjects from Packages?
             foreach ( var guidStr in gdos )
             {
                 var path        = AssetDatabase.GUIDToAssetPath(guidStr);
-                //var gdo = AssetDatabase.LoadAssetAtPath<GDObject>( path );
-                //Debug.Log( $"id {gdoGuid}, path {path}, asset {gdo}" );
 
                 var splittedPath   = Split( path );
-                var folderForAsset = GetFolderForSplittedPath( Root, splittedPath );
+                var folderForAsset = GetFolderForSplittedPath( Root, splittedPath, foldersGuids );
                 var guid           = Guid.ParseExact( guidStr, "N" );
                 folderForAsset.Objects.Add( new GDAsset { AssetGuid = guid, Asset = AssetDatabase.LoadAssetAtPath<GDObject>( path ) } );
             }
 
-            //Skip unused folders?
+            //Skip unused folders from root
+            var checkFolder = Root;
+            while( checkFolder.SubFolders.Count == 1 && checkFolder.Objects.Count == 0 )
+            {
+                checkFolder        = checkFolder.SubFolders[0];
+                checkFolder.Parent = null;
+                Root               = checkFolder;
+            }
 
             CalculateDepth( Root );
         }
@@ -80,18 +95,17 @@ namespace GDDB.Editor
             }
         }
 
-        private Folder GetFolderForSplittedPath( Folder root, IReadOnlyList<String> splittedPath )
+        private Folder GetFolderForSplittedPath( Folder root, IReadOnlyList<String> splittedObjectPath, List<(Guid, String)> folders )
         {
             var existFolder = root;
-            foreach ( var pathFolder in splittedPath.Skip( 1 ) )    //Skip "Assets"
+            foreach ( var pathFolder in splittedObjectPath.Skip( 1 ).SkipLast( 1 ) )    //Skip "Assets" and file name
             {
-                if ( pathFolder == splittedPath.Last() )
-                    break;
-
                 var folder = existFolder.SubFolders.Find( f => f.Name == pathFolder );
                 if ( folder == null )
                 {
-                    folder = new Folder { Name = pathFolder, Parent = existFolder };
+                    var path = existFolder.GetHierarchyPath() + pathFolder;
+                    var folderGuid = folders.Find( f => f.Item2 == path ).Item1;
+                    folder = new Folder { Name = pathFolder, Parent = existFolder, FolderGuid = folderGuid};
                     existFolder.SubFolders.Add( folder );
                 }
 
