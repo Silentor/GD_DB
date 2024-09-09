@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using JetBrains.Annotations;
 using UnityEngine;
 
 namespace GDDB
@@ -18,6 +15,8 @@ namespace GDDB
 
         public GdJsonLoader( String name )
         {
+            var timer = System.Diagnostics.Stopwatch.StartNew();
+
             var structureJsonPath = $"{name}.structure";
             var structureJson = Resources.Load<TextAsset>( structureJsonPath );
             if( !structureJson )
@@ -34,11 +33,19 @@ namespace GDDB
                 throw new ArgumentException( $"GdDB name {name} is incorrect, assets file {assetsPath} not found " );
 
             _db = LoadGdDb( structureJson.text, objectsJson.text, referencedAssets );
+
+            timer.Stop();
+            Debug.Log( $"[GdJsonLoader] GD data base {_db.Name} loaded in {timer.ElapsedMilliseconds} msec" );
         }
         
         public GdJsonLoader( String structureJson, String objectsJson, GdAssetReference referencedAssets = null )
         {
+            var timer = System.Diagnostics.Stopwatch.StartNew();
+
             _db = LoadGdDb( structureJson, objectsJson, referencedAssets );
+
+            timer.Stop();
+            Debug.Log( $"[GdJsonLoader] GD data base {_db.Name} loaded in {timer.ElapsedMilliseconds} msec" );
         }
 
         private GdDb LoadGdDb( String structureJson, String objectsJson, GdAssetReference referencedAssets )

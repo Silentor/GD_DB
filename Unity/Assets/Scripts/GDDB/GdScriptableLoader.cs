@@ -40,7 +40,6 @@ namespace GDDB
             _db = new GdDb( rootFolder, gddbReference.Content );
 
             timer.Stop();
-
             Debug.Log( $"[GdScriptableLoader] GD data base {name} loaded in {timer.ElapsedMilliseconds} msec" );
         } 
     }
