@@ -21,7 +21,8 @@ namespace GDDB_User
 
         private void Awake( )
         {
-            var loader = new GdScriptableLoader( "Default" );
+            //var loader = new GdScriptableLoader( "Default" );
+            var loader = new GdJsonLoader( "Default" );
             var gdb         = loader.GetGameDataBase();
 
             gdb.Print();
