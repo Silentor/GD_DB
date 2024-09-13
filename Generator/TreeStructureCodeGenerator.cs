@@ -2,7 +2,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 using System.Text;
-using GDDB.Editor;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -71,11 +70,11 @@ namespace GDDB.SourceGenerator
 
                         var json = pair.Left;
 
-                        var      parser = new TreeStructureParser();
-                        Category category;
+                        var      serializer = new FoldersSerializer();
+                        Folder rootFolder;
                         try
                         {
-                            category = parser.ParseJson( json.code!, CancellationToken.None );
+                            rootFolder = serializer.Deserialize( pair.Left.code );
                         }
                         catch ( JsonException e )
                         {
@@ -90,16 +89,18 @@ namespace GDDB.SourceGenerator
                         
                         Console.WriteLine( $"[DemoSourceGenerator] Generating code for {json.name}" );
                         var emitter       = new CodeEmitter();
-                        var allCategories = new List<Category>();
-                        parser.ToFlatList( category, allCategories );
-                        var categoryEnum = emitter.GenerateEnums( json.path, category, allCategories );
-                        context.AddSource( $"Categories.g.cs", SourceText.From( categoryEnum, Encoding.UTF8 ) );
-                        var filterClasses = emitter.GenerateEnumerators( json.path, category, allCategories );
-                        context.AddSource( $"Enumerators.g.cs", SourceText.From( filterClasses, Encoding.UTF8 ) );
-                        var gddbExtensions = emitter.GenerateGdDbExtensions( json.path, category, allCategories );
-                        context.AddSource( $"GdDbExtensions.g.cs", SourceText.From( gddbExtensions, Encoding.UTF8 ) );
-                        var gdTypeExtensions = emitter.GenerateGdTypeExtensions( json.path, category, allCategories );
-                        context.AddSource( $"GdTypeExtensions.g.cs", SourceText.From( gdTypeExtensions, Encoding.UTF8 ) );
+                        //var allCategories = new List<Category>();
+                        var allFolders = serializer.Flatten( rootFolder ).ToArray();
+                        //var categoryEnum = emitter.GenerateEnums( json.path, rootFolder, allCategories );
+                        //context.AddSource( $"Categories.g.cs", SourceText.From( categoryEnum, Encoding.UTF8 ) );
+                        var foldersClasses = emitter.GenerateFolders( json.path, allFolders );
+                        context.AddSource( "Folders.g.cs", SourceText.From( foldersClasses, Encoding.UTF8 ) );
+                        var gddbPartial = emitter.GenerateGdDbPartial( json.path, rootFolder );
+                        context.AddSource( "GdDb.partial.g.cs", SourceText.From( gddbPartial, Encoding.UTF8 ) );
+                        //var gddbExtensions = emitter.GenerateGdDbExtensions( json.path, allFolders );
+                        //context.AddSource( $"GdDbExtensions.g.cs", SourceText.From( gddbExtensions, Encoding.UTF8 ) );
+                        //var gdTypeExtensions = emitter.GenerateGdTypeExtensions( json.path, rootFolder, allCategories );
+                        //context.AddSource( $"GdTypeExtensions.g.cs", SourceText.From( gdTypeExtensions, Encoding.UTF8 ) );
 
                         Console.WriteLine( $"[DemoSourceGenerator] Finished" );
                     } );

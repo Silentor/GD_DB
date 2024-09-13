@@ -86,7 +86,7 @@ namespace GDDB.Editor
                 foreach ( var (folder, obj) in result  )
                 {
                      var tempFolder = GetTempFolder( folder );
-                     tempFolder.Objects.Add( new GDAsset { AssetGuid = obj.Guid, Asset = obj } );
+                     tempFolder.Objects.Add( obj );
                 }
 
                 rootFolder = queryFolders.Values.First();
@@ -144,9 +144,9 @@ namespace GDDB.Editor
                 childs.Add( subfolderItem );
             }
 
-            foreach ( var gdAsset in folder.Objects )
+            foreach ( var gdo in folder.Objects )
             {
-                var objectTreeItem = new TreeViewItemData<Object>( gdAsset.AssetGuid.GetHashCode(), gdAsset.Asset );
+                var objectTreeItem = new TreeViewItemData<Object>( gdo.Guid.GetHashCode(), gdo );
                 childs.Add( objectTreeItem );
             }
 

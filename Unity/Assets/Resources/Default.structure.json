@@ -1,17 +1,17 @@
 {
   "name": "GDInfo/",
   "depth": 0,
-  "guid": "1f03f29222c278c40ba4020059bcd90f",
+  "guid": "1f03f292-22c2-78c4-0ba4-020059bcd90f",
   "subFolders": [
     {
       "name": "Mobs/",
       "depth": 1,
-      "guid": "df2c75d187d0d0f4aaeccfd353fa6514",
+      "guid": "df2c75d1-87d0-d0f4-aaec-cfd353fa6514",
       "subFolders": [
         {
           "name": "Elves/",
           "depth": 2,
-          "guid": "d18747b0302d4a94b83f0bdf80efbee7",
+          "guid": "d18747b0-302d-4a94-b83f-0bdf80efbee7",
           "subFolders": [],
           "objects": [
             {
@@ -25,7 +25,7 @@
         {
           "name": "Humans/",
           "depth": 2,
-          "guid": "391a2907afc54de42b679daeabeee187",
+          "guid": "391a2907-afc5-4de4-2b67-9daeabeee187",
           "subFolders": [],
           "objects": [
             {

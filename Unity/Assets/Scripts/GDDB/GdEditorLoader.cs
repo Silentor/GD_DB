@@ -48,7 +48,7 @@ namespace GDDB
             {
                 foreach ( var gdo in folder.Objects )
                 {
-                    result.Add( gdo.Asset );
+                    result.Add( gdo );
                 }                
             }
 

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using UnityEngine.WSA;
 
 namespace GDDB
 {
@@ -26,7 +25,7 @@ namespace GDDB
             var result = new JObject();
             result["name"] = folder.Name;
             result["depth"] = folder.Depth;
-            result["guid"] = folder.FolderGuid.ToString("N");
+            result["guid"] = folder.FolderGuid.ToString("D");
 
             var subFolders = new JArray();
             foreach ( var subFolder in folder.SubFolders )
@@ -40,7 +39,7 @@ namespace GDDB
             foreach ( var obj in folder.Objects )
             {
                 var objJson = new JObject();
-                objJson["guid"] = obj.AssetGuid;
+                objJson[ "guid" ] = obj.Guid.ToString("D");
                 objects.Add( objJson );
             }
 
@@ -49,13 +48,13 @@ namespace GDDB
             return result;
         }
 
-        private Folder DeserializeFolder( JObject json, Folder parent )
+        private Folder DeserializeFolder( JObject json, Folder? parent )
         {
             var folder = new Folder
             {
                 Name = json["name"].Value<String>(),
                 Depth = json["depth"].Value<Int32>(),
-                FolderGuid = Guid.ParseExact( json["guid"].Value<String>(), "N"),
+                FolderGuid = Guid.ParseExact( json["guid"].Value<String>(), "D"),
                 Parent = parent
             };
 
@@ -69,14 +68,16 @@ namespace GDDB
             var objects = json["objects"];
             foreach ( var objJson in objects )
             {
-                var obj = new GDAsset
-                {
-                    AssetGuid = Guid.ParseExact( objJson["guid"].Value<String>() , "D" )
-                };
-                folder.Objects.Add( obj );
+                var objId = Guid.ParseExact( objJson[ "guid" ].Value<String>() , "D" );
+                folder.ObjectIds.Add( objId );
             }
 
             return folder;
+        }
+
+        public IEnumerable<Folder> Flatten( Folder root )
+        {
+            return root.EnumerateFoldersDFS(  );
         }
     }
 
@@ -107,15 +108,16 @@ namespace GDDB
     [DebuggerDisplay("Name {GetHierarchyPath()}, folders {SubFolders.Count}, objects {Objects.Count}")]
     public class Folder
     {
-        public String Name;
-        public Folder Parent;
-        public Int32  Depth;
-        public Guid   FolderGuid;
+        public String  Name;
+        public Folder? Parent;
+        public Int32   Depth;
+        public Guid    FolderGuid;
 
-        public String PartName => Name[ ..^1 ];
+        public String PartName => Name.Substring(0, Name.Length - 1);
 
         public readonly List<Folder>  SubFolders = new ();
-        public readonly List<GDAsset> Objects    = new();
+        public readonly List<Guid>    ObjectIds    = new();
+        public readonly List<GDObject> Objects    = new();
             
         public String GetHierarchyPath( )
         {

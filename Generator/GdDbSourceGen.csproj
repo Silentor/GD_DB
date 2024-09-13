@@ -38,8 +38,14 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Include="..\Unity\Assets\Scripts\GDDB\Editor\TreeStructureParser.cs">
-        <Link>TreeStructureParser.cs</Link>
+      <Compile Include="..\GDDB\Stubs\GDObject.cs">
+        <Link>Stubs\GDObject.cs</Link>
+      </Compile>
+      <Compile Include="..\Unity\Assets\Scripts\GDDB\FoldersSerializer.cs">
+        <Link>FoldersSerializer.cs</Link>
+      </Compile>
+      <Compile Include="..\Unity\Assets\Scripts\GDDB\GdId.cs">
+        <Link>Stubs\GdId.cs</Link>
       </Compile>
     </ItemGroup>
 	

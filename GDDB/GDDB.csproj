@@ -22,8 +22,11 @@
       <Compile Include="..\Generator\CodeEmitter.cs">
         <Link>CodeEmitter.cs</Link>
       </Compile>
-      <Compile Include="..\Unity\Assets\Scripts\GDDB\Editor\TreeStructureParser.cs">
-        <Link>TreeStructureParser.cs</Link>
+      <Compile Include="..\Unity\Assets\Scripts\GDDB\FoldersSerializer.cs">
+        <Link>FoldersSerializer.cs</Link>
+      </Compile>
+      <Compile Include="..\Unity\Assets\Scripts\GDDB\GdId.cs">
+        <Link>Stubs\GdId.cs</Link>
       </Compile>
     </ItemGroup>
 

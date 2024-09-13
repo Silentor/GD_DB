@@ -22,10 +22,16 @@ namespace GDDB_User
         private void Awake( )
         {
             //var loader = new GdScriptableLoader( "Default" );
-            var loader = new GdJsonLoader( "Default" );
+            var loader = new GdScriptableLoader( "Default" );
             var gdb         = loader.GetGameDataBase();
 
             gdb.Print();
+
+            // var humans = gdb.Root.Mobs.Humans;
+            // foreach ( var human in humans )
+            // {
+            //     Debug.Log( $"Human: {human.Name}" );
+            // }
 
             //var testGetMobs = gdb.GetMobs(  );          //Source generated
         }

@@ -19,40 +19,40 @@ namespace GDDB.Tests
               var gdRootObject = ScriptableObject.CreateInstance<GDRoot>();
               gdRootObject.Id = "TestGdDb";
               gdRootObject.name = "!TestGdDbRoot";
-              gddbRoot.Objects.Add( new GDAsset(){Asset = gdRootObject} );
+              gddbRoot.Objects.Add( gdRootObject );
               var mobsFolder = new Folder { Name = "Mobs/", Parent = gddbRoot, Objects =
                                           {
-                                                  new GDAsset() { Asset = GetAsset( "CommonMobs") },
+                                                  GetAsset( "CommonMobs") ,
                                           }};
               gddbRoot.SubFolders.Add( mobsFolder );
               var humansFolder = new Folder { Name = "Humans/", Parent = mobsFolder, Objects =
                                             {
-                                                    new GDAsset() { Asset = GetAsset( "Peasant") },
-                                                    new GDAsset() { Asset = GetAsset( "Knight") },
-                                                    new GDAsset() { Asset = GetAsset( "Hero") },
+                                                    GetAsset( "Peasant") ,
+                                                    GetAsset( "Knight") ,
+                                                    GetAsset( "Hero") ,
                                             }};
               mobsFolder.SubFolders.Add( humansFolder );
               var heroSkinsFolder = new Folder(){Name = "Skins/", Parent = humansFolder, Objects =
                                                 {
-                                                        new GDAsset() { Asset = GetAsset( "DefaultSkin") },
-                                                        new GDAsset() { Asset = GetAsset( "Templar") },
-                                                        new GDAsset() { Asset = GetAsset( "Crusader") },
+                                                        GetAsset( "DefaultSkin") ,
+                                                        GetAsset( "Templar") ,
+                                                        GetAsset( "Crusader") ,
                                                 }};
               humansFolder.SubFolders.Add( heroSkinsFolder );
               var orcsFolder = new Folder { Name = "Orcs/", Parent = mobsFolder, Objects =
                                           {
-                                                  new GDAsset() { Asset = GetAsset( "Grunt") },
-                                                  new GDAsset() { Asset = GetAsset( "WolfRider") },
-                                                  new GDAsset() { Asset = GetAsset( "Shaman") },
+                                                  GetAsset( "Grunt") ,
+                                                  GetAsset( "WolfRider") ,
+                                                  GetAsset( "Shaman") ,
                                           }};
               mobsFolder.SubFolders.Add( orcsFolder );
               var orcSkinsFolder = new Folder(){Name = "Skins/", Parent = orcsFolder, Objects =
                                                {
-                                                       new GDAsset() { Asset = GetAsset( "Chieftan") },
+                                                       GetAsset( "Chieftan") ,
                                                }};
               orcsFolder.SubFolders.Add( orcSkinsFolder );
 
-              var allObjects = gddbRoot.EnumerateFoldersDFS().SelectMany( folder => folder.Objects.Select( gdAsset => gdAsset.Asset ) ).ToList();
+              var allObjects = gddbRoot.EnumerateFoldersDFS().SelectMany( folder => folder.Objects.Select( gdo => gdo ) ).ToList();
               _db = new GdDb( gddbRoot, allObjects );
           }
 

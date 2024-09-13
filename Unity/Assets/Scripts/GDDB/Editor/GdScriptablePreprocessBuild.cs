@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using GDDB.GDDB;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -44,7 +45,7 @@ namespace GDDB.Editor
         {
             var gdReference = ScriptableObject.CreateInstance<GdScriptableReference>();
             //gdReference.Root    = gddb.Root;
-            gdReference.Content = gddb.AllObjects.ToArray();
+            gdReference.Content = gddb.AllObjects.Select( gdo => new GDObjectAndGuid(){Object = gdo, Guid = new SerializableGuid(){Guid = gdo.Guid}} ).ToArray();
             AssetDatabase.CreateAsset( gdReference, $"Assets/Resources/{gddb.Name}.objects.asset");
 
             var serializer = new FoldersSerializer();

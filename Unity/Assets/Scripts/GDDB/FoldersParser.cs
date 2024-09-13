@@ -37,7 +37,8 @@ namespace GDDB.Editor
                 var splittedPath   = Split( path );
                 var folderForAsset = GetFolderForSplittedPath( Root, splittedPath, foldersGuids );
                 var guid           = Guid.ParseExact( guidStr, "N" );
-                folderForAsset.Objects.Add( new GDAsset { AssetGuid = guid, Asset = AssetDatabase.LoadAssetAtPath<GDObject>( path ) } );
+                folderForAsset.ObjectIds.Add( guid );
+                folderForAsset.Objects.Add( AssetDatabase.LoadAssetAtPath<GDObject>( path ) );
             }
 
             //Skip unused folders from root
@@ -91,7 +92,7 @@ namespace GDDB.Editor
 
             foreach ( var obj in folder.Objects )
             {
-                Debug.Log($"  {indentStr}{obj.Asset.Name}");
+                Debug.Log($"  {indentStr}{obj.Name}");
             }
         }
 

@@ -16,7 +16,7 @@ namespace GDDB.Editor
 
         static ProjectWindowsTypeDrawer()
         {
-            TypeHierarchy = new GDTypeHierarchy();
+            //TypeHierarchy = new GDTypeHierarchy();
             //GDOFinder     = new GDObjectsFinder();
 
             //EditorApplication.projectWindowItemInstanceOnGUI += DrawGDTypeString;

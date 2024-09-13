@@ -1,0 +1,67 @@
+{
+  "name": "GDInfo/",
+  "depth": 0,
+  "guid": "1f03f292-22c2-78c4-0ba4-020059bcd90f",
+  "subFolders": [
+    {
+      "name": "Mobs/",
+      "depth": 1,
+      "guid": "df2c75d1-87d0-d0f4-aaec-cfd353fa6514",
+      "subFolders": [
+        {
+          "name": "Elves/",
+          "depth": 2,
+          "guid": "d18747b0-302d-4a94-b83f-0bdf80efbee7",
+          "subFolders": [],
+          "objects": [
+            {
+              "guid": "23e447b7-9974-4ad4-c9d6-4f2296c581d7"
+            },
+            {
+              "guid": "4c2bcfb6-0c5b-1324-5a6a-6da35322f5a8"
+            }
+          ]
+        },
+        {
+          "name": "Humans/",
+          "depth": 2,
+          "guid": "391a2907-afc5-4de4-2b67-9daeabeee187",
+          "subFolders": [],
+          "objects": [
+            {
+              "guid": "c88f601a-e681-0fc4-a9cf-eeed25b88473"
+            },
+            {
+              "guid": "3086e03a-f9eb-bee4-ba7b-65e0171b9fb6"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "guid": "4d1cca73-0eb2-5a94-3aa3-ddf5e019c327"
+        }
+      ]
+    }
+  ],
+  "objects": [
+    {
+      "guid": "c9d1f11f-7bd5-5224-4be0-31c883375f18"
+    },
+    {
+      "guid": "a67522e2-681c-cd54-7bc1-77456fef667f"
+    },
+    {
+      "guid": "79d0ddb9-7bbc-ee04-2b1f-441234aaf8e3"
+    },
+    {
+      "guid": "3af49c1f-eda9-1fd4-1a8d-1652bc5b3d63"
+    },
+    {
+      "guid": "cb595db9-ada0-d114-d80d-c074b374f7d4"
+    },
+    {
+      "guid": "43679cf1-65c8-96d4-790d-6b241c499fe4"
+    }
+  ]
+}

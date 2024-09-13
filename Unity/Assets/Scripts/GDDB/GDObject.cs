@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using UnityEditor;
+
+#if UNITY_2019_3_OR_NEWER
 using UnityEngine;
-using UnityEngine.Assertions;
+#endif
 
 namespace GDDB
 {
@@ -19,14 +19,28 @@ namespace GDDB
         {
             get
             {
+#if UNITY_EDITOR
                 if ( _guid == default )
                 {
-                    _guid = GetAssetGuid();
-                    if( _guid == default )
-                        Debug.LogWarning( $"Cannot get asset {name} guid, runtime creation?" );
+                    //GDObject do not store guid in asset, we just use AssetDatabase guid if needed
+                    _guid = EditorGetAssetGuid();
+                    if ( _guid == default )
+                    {
+                        Debug.LogWarning( $"[GDObject] Cannot get GDObject asset guid, probably GDObject was created via ScriptableObject.CreateInstance(), but should via GDObject.CreateInstance(), name {Name}. " +
+                                          $"Assigned temporary guid, will be changed if saved to AssetDatabase." );
+                        _guid = Guid.NewGuid();
+                    }
                 }
+#else 
+
+                if ( _guid == default )  //Must be loaded form GD database OR set on runtime creation TODO consider support it
+                {
+                    throw new InvalidOperationException($"[GDObject] Guid is not set, objects {name}");
+                }
+#endif
 
                 return _guid;
+
             }
         }
 
@@ -66,7 +80,7 @@ namespace GDDB
             return true;
         }
 
-        internal GDObject WithGuid( Guid guid )
+        internal GDObject SetGuid( Guid guid )
         {
             _guid = guid;
             return this;
@@ -75,8 +89,7 @@ namespace GDDB
         public new static T CreateInstance<T>( ) where T : GDObject
         {
             var result = ScriptableObject.CreateInstance<T>();
-
-            //Set runtime temporary guid, do not equal to asset guid if saved as asset
+            result.name = typeof(T).Name + result.GetInstanceID().ToString();
             result._guid = Guid.NewGuid();
             return result;
         }
@@ -84,26 +97,28 @@ namespace GDDB
 
         public new static GDObject CreateInstance( Type type )
         {
-            Assert.IsTrue( typeof(GDObject).IsAssignableFrom( type ) );
+            if( !typeof(GDObject).IsAssignableFrom( type ) )
+                throw new ArgumentException( $"Type {type.Name} must be derived from GDObject" );
 
             var result = (GDObject)ScriptableObject.CreateInstance( type );
-
-            //Set runtime temporary guid, do not equal to asset guid if saved as asset
+            result.name  = type.Name + result.GetInstanceID().ToString();
             result._guid = Guid.NewGuid();
             return result;
         }
 
-        private Guid GetAssetGuid( )
+        private Guid _guid;
+
+#if UNITY_EDITOR
+        private Guid EditorGetAssetGuid( )
         {
-            if ( AssetDatabase.TryGetGUIDAndLocalFileIdentifier( this, out var guid, out long localId ) )
+            if ( UnityEditor.AssetDatabase.TryGetGUIDAndLocalFileIdentifier( this, out var guid, out long localId ) )
             {
-                return Guid.Parse( guid );
+                return Guid.ParseExact( guid, "N" );
             }
 
             return default;
         }
-
-        private Guid _guid;
+#endif
     }
 
     [Serializable]

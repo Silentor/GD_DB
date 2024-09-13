@@ -59,7 +59,7 @@ namespace GDDB
             {
                 foreach ( var folder in RootFolder.EnumerateFoldersDFS(  ) )
                     foreach ( var obj in folder.Objects )
-                        yield return obj.Asset;
+                        yield return obj;
                 yield break;
             }
 
@@ -90,7 +90,7 @@ namespace GDDB
             {
                 foreach ( var folder in RootFolder.EnumerateFoldersDFS(  ) )
                     foreach ( var obj in folder.Objects )
-                        yield return (folder, obj.Asset);
+                        yield return (folder, obj);
                 yield break;
             }
 
@@ -113,7 +113,18 @@ namespace GDDB
                     yield return gdObject;
             }
         }
-      
+
+        public Folder GetFolder( GdId folderId )
+        {
+            foreach ( var folder in RootFolder.EnumerateFoldersDFS(  ) )
+            {
+                if ( folder.FolderGuid == folderId.GUID )
+                    return folder;
+            }
+
+            return null;
+        }
+
         // public GDObject GetObject( GdType type )
         // {
         //     return AllObjects.First( o => o.Type == type );
@@ -193,7 +204,7 @@ namespace GDDB
             foreach ( var obj in folder.Objects )
             {
                 objectsCount++;
-                Debug.Log($"  {indentStr}{obj.Asset.Name}, type {obj.Asset.GetType().Name}, components {obj.Asset.Components.Count}");
+                Debug.Log($"  {indentStr}{obj.Name}, type {obj.GetType().Name}, components {obj.Components.Count}");
             }
         }
 
@@ -235,8 +246,8 @@ namespace GDDB
             {
                 foreach ( var gdAsset in folder.Objects )
                 {
-                    if( FileNameRegex.IsMatch( gdAsset.Asset.Name ) )
-                        yield return gdAsset.Asset;
+                    if( FileNameRegex.IsMatch( gdAsset.Name ) )
+                        yield return gdAsset;
                 }
             }
         }

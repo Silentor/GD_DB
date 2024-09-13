@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using UnityEngine;
 
 namespace GDDB
@@ -23,21 +24,22 @@ namespace GDDB
             //Restore objects in hierarchy
             foreach ( var folder in rootFolder.EnumerateFoldersDFS(  ) )
             {
-                foreach ( var gdAsset in folder.Objects )
+                folder.Objects.Capacity = folder.ObjectIds.Count;
+                foreach ( var id in folder.ObjectIds )
                 {
-                    var guid = gdAsset.AssetGuid;
-                    foreach ( var obj in gddbReference.Content )
+                    foreach ( var obj in gddbReference.Content )           //todo Optimize search by parallel iteration
                     {
-                        if ( obj.Guid == guid )
+                        if ( obj.Guid.Guid == id )
                         {
-                            gdAsset.Asset = obj;
+                            obj.Object.SetGuid( id );
+                            folder.Objects.Add( obj.Object );
                             break;
                         }
                     }
                 }
             }
 
-            _db = new GdDb( rootFolder, gddbReference.Content );
+            _db = new GdDb( rootFolder, gddbReference.Content.Select( gdo => gdo.Object ).ToArray() ); 
 
             timer.Stop();
             Debug.Log( $"[GdScriptableLoader] GD data base {name} loaded in {timer.ElapsedMilliseconds} msec" );

@@ -79,7 +79,7 @@ namespace GDDB
                 result.Add( ".Name", obj.name );
                 var type = obj.GetType();
                 result.Add( ".Type", type.Assembly == GetType().Assembly ? type.FullName : type.AssemblyQualifiedName );
-                result.Add( ".Ref",  obj.Guid.ToString() );
+                result.Add( ".Ref",  obj.Guid.ToString("D") );
                 if( !obj.EnabledObject )
                     result.Add( ".Enabled", false );
 
@@ -339,9 +339,9 @@ namespace GDDB
         {
             var name = gdObjToken[".Name"].Value<String>();
             var type = Type.GetType( gdObjToken[".Type"].Value<String>() );
-            var guid = Guid.Parse( gdObjToken[".Ref"].Value<String>() );
+            var guid = Guid.ParseExact( gdObjToken[".Ref"].Value<String>(), "D" );
             var enabled = gdObjToken[".Enabled"]?.Value<Boolean>() ?? true;
-            var obj  = GDObject.CreateInstance( type ).WithGuid( guid );
+            var obj  = GDObject.CreateInstance( type ).SetGuid( guid );
             obj.hideFlags = HideFlags.HideAndDontSave;
             obj.name      = name;
             obj.EnabledObject   = enabled;

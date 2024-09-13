@@ -368,7 +368,7 @@ namespace GDDB.Tests
             var foldersSerializer = new FoldersSerializer();
             var structure         = foldersSerializer.Serialize( root );
             var gdjson            = new GDJson();
-            var objects           = gdjson.GDToJson( new GDObject[] { gdRoot.Asset, elf1.Asset, elf2.Asset, mobsSettings.Asset, forestLocation.Asset } );
+            var objects           = gdjson.GDToJson( new GDObject[] { gdRoot, elf1, elf2, mobsSettings, forestLocation } );
             var db                = new GdJsonLoader( structure, objects, null ).GetGameDataBase();
 
             //Assert
@@ -378,26 +378,26 @@ namespace GDDB.Tests
             mobsFolder.Objects.Count.Should().Be( 1 );
             var elvesFolder = mobsFolder.SubFolders.Single( f => f.Name == "Elves" );
             elvesFolder.Objects.Count.Should().Be( 2 );
-            elvesFolder.Objects.Select( gdo => gdo.AssetGuid ).Should().BeEquivalentTo( new[] { elf1.AssetGuid, elf2.AssetGuid } );
+            elvesFolder.Objects.Select( gdo => gdo.Guid ).Should().BeEquivalentTo( new[] { elf1.Guid, elf2.Guid } );
             elvesFolder.SubFolders.Should().BeEmpty();
-            elvesFolder.Objects.Select( gdo => gdo.Asset.Guid ).Should().BeEquivalentTo( new[] { elf1.Asset.Guid, elf2.Asset.Guid } );
-            elvesFolder.Objects.Select( gdo => gdo.Asset.Name ).Should().BeEquivalentTo( new[] { "Elf1", "Elf2" } );
+            elvesFolder.Objects.Select( gdo => gdo.Guid ).Should().BeEquivalentTo( new[] { elf1.Guid, elf2.Guid } );
+            elvesFolder.Objects.Select( gdo => gdo.Name ).Should().BeEquivalentTo( new[] { "Elf1", "Elf2" } );
 
             
         }
 
-        GDAsset CreateGDObject( String name )
+        GDObject CreateGDObject( String name )
         {
                 var gdo = GDObject.CreateInstance<GDObject>();
                 gdo.name = name;
-                return new GDAsset() { Asset = gdo, AssetGuid = gdo.Guid, };
+                return gdo;
         }
 
-        GDAsset CreateGDObject<T>( String name ) where T : GDObject
+        GDObject CreateGDObject<T>( String name ) where T : GDObject
         {
                 var gdo = GDObject.CreateInstance<T>();
                 gdo.name = name;
-                return new GDAsset() { Asset = gdo, AssetGuid = gdo.Guid, };
+                return gdo;
         }
     }
 }

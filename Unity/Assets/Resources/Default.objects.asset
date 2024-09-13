@@ -13,14 +13,47 @@ MonoBehaviour:
   m_Name: Default.objects
   m_EditorClassIdentifier: 
   Content:
-  - {fileID: 11400000, guid: c9d1f11f7bd552244be031c883375f18, type: 2}
-  - {fileID: 11400000, guid: a67522e2681ccd547bc177456fef667f, type: 2}
-  - {fileID: 11400000, guid: 79d0ddb97bbcee042b1f441234aaf8e3, type: 2}
-  - {fileID: 11400000, guid: 3af49c1feda91fd41a8d1652bc5b3d63, type: 2}
-  - {fileID: 11400000, guid: cb595db9ada0d114d80dc074b374f7d4, type: 2}
-  - {fileID: 11400000, guid: 43679cf165c896d4790d6b241c499fe4, type: 2}
-  - {fileID: 11400000, guid: 4d1cca730eb25a943aa3ddf5e019c327, type: 2}
-  - {fileID: 11400000, guid: 23e447b799744ad4c9d64f2296c581d7, type: 2}
-  - {fileID: 11400000, guid: 4c2bcfb60c5b13245a6a6da35322f5a8, type: 2}
-  - {fileID: 11400000, guid: c88f601ae6810fc4a9cfeeed25b88473, type: 2}
-  - {fileID: 11400000, guid: 3086e03af9ebbee4ba7b65e0171b9fb6, type: 2}
+  - Guid:
+      Part1: 5918991968415904031
+      Part2: 1756183418836738123
+    Object: {fileID: 11400000, guid: c9d1f11f7bd552244be031c883375f18, type: 2}
+  - Guid:
+      Part1: 14795565148079989474
+      Part2: 9180288151627219323
+    Object: {fileID: 11400000, guid: a67522e2681ccd547bc177456fef667f, type: 2}
+  - Guid:
+      Part1: 17150969330361490873
+      Part2: 16427066781455359787
+    Object: {fileID: 11400000, guid: 79d0ddb97bbcee042b1f441234aaf8e3, type: 2}
+  - Guid:
+      Part1: 2293719421332790303
+      Part2: 7150972647723404570
+    Object: {fileID: 11400000, guid: 3af49c1feda91fd41a8d1652bc5b3d63, type: 2}
+  - Guid:
+      Part1: 15065857559579155897
+      Part2: 15345862569394965976
+    Object: {fileID: 11400000, guid: cb595db9ada0d114d80dc074b374f7d4, type: 2}
+  - Guid:
+      Part1: 10868423711550577905
+      Part2: 16473966347163471225
+    Object: {fileID: 11400000, guid: 43679cf165c896d4790d6b241c499fe4, type: 2}
+  - Guid:
+      Part1: 6526857918927391347
+      Part2: 2865162241926079290
+    Object: {fileID: 11400000, guid: 4d1cca730eb25a943aa3ddf5e019c327, type: 2}
+  - Guid:
+      Part1: 5392103377966745527
+      Part2: 15528910238761604809
+    Object: {fileID: 11400000, guid: 23e447b799744ad4c9d64f2296c581d7, type: 2}
+  - Guid:
+      Part1: 1379240972141711286
+      Part2: 12174674910285490778
+    Object: {fileID: 11400000, guid: 4c2bcfb60c5b13245a6a6da35322f5a8, type: 2}
+  - Guid:
+      Part1: 1136286451094216730
+      Part2: 8323980484332670889
+    Object: {fileID: 11400000, guid: c88f601ae6810fc4a9cfeeed25b88473, type: 2}
+  - Guid:
+      Part1: 13755393950423113786
+      Part2: 13159266425562823610
+    Object: {fileID: 11400000, guid: 3086e03af9ebbee4ba7b65e0171b9fb6, type: 2}

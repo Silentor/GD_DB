@@ -57,9 +57,10 @@ namespace GDDB
 
             foreach ( var folder in rootFolder.EnumerateFoldersDFS(  ) )
             {
-                foreach ( var gdo in folder.Objects )
+                folder.Objects.Capacity = folder.ObjectIds.Count;
+                foreach ( var id in folder.ObjectIds )
                 {
-                    gdo.Asset = objects.FirstOrDefault( o => o.Guid == gdo.AssetGuid );
+                    folder.Objects.Add( objects.First( o => o.Guid == id ) );//todo Optimize search by parallel iteration
                 } 
             }
 
