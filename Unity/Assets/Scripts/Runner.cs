@@ -21,13 +21,19 @@ namespace GDDB_User
 
         private void Awake( )
         {
+            var loader = new GdEditorLoader( );
             //var loader = new GdScriptableLoader( "Default" );
-            var loader = new GdScriptableLoader( "Default" );
             var gdb         = loader.GetGameDataBase();
 
-            gdb.Print();
+            //gdb.Print();
 
-            // var humans = gdb.Root.Mobs.Humans;
+            var properties = gdb.Root.Mobs.GetType().GetProperties();
+            foreach ( var propertyInfo in properties )
+            {
+                Debug.Log( propertyInfo.Name );
+            }
+            //var a = gdb.Root.Mobs.Humans2;
+            //var humans = gdb.Root.Mobs.Humans_1;
             // foreach ( var human in humans )
             // {
             //     Debug.Log( $"Human: {human.Name}" );

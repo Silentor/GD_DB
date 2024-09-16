@@ -134,12 +134,12 @@ namespace GDDB.Editor
             return new GdTypeMetadata( result );
         }
 
-        [MenuItem( "GDDB/Print hierarchy" )]
-        private static void PrintHierarchyToConsole( )
-        {
-             var instance = new GDTypeHierarchy();
-             Debug.Log( instance.PrintHierarchy() );
-        }
+        // [MenuItem( "GDDB/Print hierarchy" )]
+        // private static void PrintHierarchyToConsole( )
+        // {
+        //      var instance = new GDTypeHierarchy();
+        //      Debug.Log( instance.PrintHierarchy() );
+        // }
 
         public String PrintHierarchy( )
         {

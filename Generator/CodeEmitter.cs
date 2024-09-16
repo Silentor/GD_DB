@@ -109,7 +109,7 @@ public class CodeEmitter
 
     private static void GenerateFolder( StringBuilder sb, Folder folder )
     {
-        var classFolderName    = $"{folder.PartName}Folder";
+        var classFolderName    = GetFolderClassName( folder );
 
         sb.AppendLine( GeneratedTypeAttribute );
         sb.AppendLine(
@@ -169,7 +169,7 @@ public class CodeEmitter
         if( folder.Parent != null )
         {
             sb.AppendLine( );
-            var parentFolderTypeName = $"{folder.Parent.PartName}Folder";
+            var parentFolderTypeName = GetFolderClassName( folder.Parent );
             sb.AppendLine( $"        public {parentFolderTypeName} ParentFolder => new( Folder.Parent! );" );
         }
 
@@ -180,8 +180,8 @@ public class CodeEmitter
             for ( var i = 0; i < folder.SubFolders.Count; i++ )
             {
                 var subFolder          = folder.SubFolders[ i ];
-                var subfolderClassName = $"{subFolder.PartName}Folder";
-                sb.AppendLine( $"        public {subfolderClassName} {subFolder.PartName} => new( Folder.SubFolders[{i}] );" );
+                var subfolderClassName = GetFolderClassName( subFolder );
+                sb.AppendLine( $"        public {subfolderClassName} {GetFolderMemberName( subFolder )} => new( Folder.SubFolders[{i}] );" );
             }
         }
 
@@ -189,6 +189,17 @@ public class CodeEmitter
         sb.AppendLine( );
     }
 
+    private static String GetFolderClassName( Folder folder )
+    {
+        var sanitizeName = folder.PartName.Replace( " ", "_" );
+        return $"{sanitizeName}Folder";
+    }
+
+    private static String GetFolderMemberName( Folder folder )
+    {
+        var sanitizeName = folder.PartName.Replace( " ", "_" );
+        return $"{sanitizeName}";
+    }
 
     // private static void GenerateEnum( StringBuilder sb, Category category )
     // {

@@ -15,42 +15,21 @@ namespace GDDB.Tests
         [SetUp]
         public void SetupParser()
           {
-              var gddbRoot = new Folder { Name = "GdDb/" };
+              var gddbRoot = GetFolder( "GdDb", null );
               var gdRootObject = ScriptableObject.CreateInstance<GDRoot>();
               gdRootObject.Id = "TestGdDb";
               gdRootObject.name = "!TestGdDbRoot";
               gddbRoot.Objects.Add( gdRootObject );
-              var mobsFolder = new Folder { Name = "Mobs/", Parent = gddbRoot, Objects =
-                                          {
-                                                  GetAsset( "CommonMobs") ,
-                                          }};
-              gddbRoot.SubFolders.Add( mobsFolder );
-              var humansFolder = new Folder { Name = "Humans/", Parent = mobsFolder, Objects =
-                                            {
-                                                    GetAsset( "Peasant") ,
-                                                    GetAsset( "Knight") ,
-                                                    GetAsset( "Hero") ,
-                                            }};
-              mobsFolder.SubFolders.Add( humansFolder );
-              var heroSkinsFolder = new Folder(){Name = "Skins/", Parent = humansFolder, Objects =
-                                                {
-                                                        GetAsset( "DefaultSkin") ,
-                                                        GetAsset( "Templar") ,
-                                                        GetAsset( "Crusader") ,
-                                                }};
-              humansFolder.SubFolders.Add( heroSkinsFolder );
-              var orcsFolder = new Folder { Name = "Orcs/", Parent = mobsFolder, Objects =
-                                          {
-                                                  GetAsset( "Grunt") ,
-                                                  GetAsset( "WolfRider") ,
-                                                  GetAsset( "Shaman") ,
-                                          }};
-              mobsFolder.SubFolders.Add( orcsFolder );
-              var orcSkinsFolder = new Folder(){Name = "Skins/", Parent = orcsFolder, Objects =
-                                               {
-                                                       GetAsset( "Chieftan") ,
-                                               }};
-              orcsFolder.SubFolders.Add( orcSkinsFolder );
+              var mobsFolder = GetFolder( "Mobs", gddbRoot );
+              mobsFolder.Objects.Add( GetAsset( "CommonMobs" ) );
+              var humansFolder = GetFolder( "Humans", mobsFolder );
+              humansFolder.Objects.AddRange( new[] { GetAsset( "Peasant") , GetAsset( "Knight") , GetAsset( "Hero") } );
+              var heroSkinsFolder = GetFolder( "Skins", humansFolder);
+              heroSkinsFolder.Objects.AddRange( new[] { GetAsset( "DefaultSkin") , GetAsset( "Templar") , GetAsset( "Crusader")  });
+              var orcsFolder = GetFolder( "Orcs", mobsFolder );
+              orcsFolder.Objects.AddRange( new[] { GetAsset( "Grunt") , GetAsset( "WolfRider") , GetAsset( "Shaman")  });
+              var orcSkinsFolder = GetFolder( "Skins", orcsFolder );
+              orcSkinsFolder.Objects.Add( GetAsset( "Chieftan") );
 
               var allObjects = gddbRoot.EnumerateFoldersDFS().SelectMany( folder => folder.Objects.Select( gdo => gdo ) ).ToList();
               _db = new GdDb( gddbRoot, allObjects );
@@ -61,6 +40,19 @@ namespace GDDB.Tests
             var result = ScriptableObject.CreateInstance<GDObject>();
             result.name = name;
             return result;
+        }
+
+        private Folder GetFolder( String name, Folder parent )
+        {
+            if ( parent != null )
+            {
+                var result = new Folder( name, Guid.NewGuid(), parent );
+                return result;
+            }
+            else
+            {
+                return new Folder( name, name, Guid.NewGuid() );
+            }
         }
 
         [Test]
@@ -193,6 +185,17 @@ namespace GDDB.Tests
             //Assert
             allObjects.Count().Should().Be( 2 );
             allObjects.Select( gdo => gdo.name ).Should().BeEquivalentTo( "Grunt", "Crusader" );
+        }
+
+        [Test]
+        public void TestFolderPath( )
+        {
+            //Act
+            var chieftan      = _db.GetObjectsAndFolders( "Chieftan" );      //Find chieftan skin
+            var orcSkinFolder = chieftan.Single().Item1;
+
+            //Assert
+            orcSkinFolder.Path.Should().Be( "GdDb/Mobs/Orcs/Skins" );
         }
     }
 }

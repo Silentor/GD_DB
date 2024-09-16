@@ -24,6 +24,13 @@ namespace GDDB.SourceGenerator
                 "Parsing",
                 DiagnosticSeverity.Error,
                 true );
+        private static readonly DiagnosticDescriptor DebugInfo = new ( 
+                "GDDB003", 
+                "Just info", 
+                "Just info", 
+                "Info",
+                DiagnosticSeverity.Info,
+                true );
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
@@ -54,6 +61,9 @@ namespace GDDB.SourceGenerator
             context.RegisterSourceOutput(compilationAndJson,
                     static (context, pair) => 
                     {
+                        //DEBUG
+                        context.ReportDiagnostic( Diagnostic.Create( DebugInfo, null ) );
+
                         // #if DEBUG
                         // if (!Debugger.IsAttached)                                            !
                         // {

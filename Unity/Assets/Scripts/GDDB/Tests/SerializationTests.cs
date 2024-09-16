@@ -353,10 +353,10 @@ namespace GDDB.Tests
         public void FoldersSerializationTest( )
         {
             //Arrange
-            var root = new Folder() { Name = "Root" };
-            var mobs = new Folder() { Name = "Mobs", Parent = root}; root.SubFolders.Add( mobs );
-            var elves = new Folder() { Name = "Elves", Parent = mobs};  mobs.SubFolders.Add( elves );
-            var locations = new Folder() { Name = "Locations", Parent = root};  root.SubFolders.Add( locations );
+            var root      = GetFolder( "Root", null  ) ;
+            var mobs      = GetFolder( "Mobs", root); 
+            var elves     = GetFolder( "Elves", mobs); 
+            var locations = GetFolder( "Locations", root);
 
             var gdRoot         = CreateGDObject<GDRoot>( "Root" ); root.Objects.Add( gdRoot );
             var elf1           = CreateGDObject( "Elf1" ); elves.Objects.Add( elf1 );
@@ -398,6 +398,20 @@ namespace GDDB.Tests
                 var gdo = GDObject.CreateInstance<T>();
                 gdo.name = name;
                 return gdo;
+        }
+
+        private Folder GetFolder( String name, Folder parent )
+        { 
+                if ( parent != null )
+                {
+                        var result = new Folder( parent.Path + name, name, Guid.NewGuid() ){Parent = parent};
+                        parent.SubFolders.Add( result );
+                        return result;
+                }
+                else
+                {
+                        return new Folder( name, name, Guid.NewGuid() );
+                }
         }
     }
 }

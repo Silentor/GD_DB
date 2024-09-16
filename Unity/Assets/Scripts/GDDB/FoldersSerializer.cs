@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using JetBrains.Annotations;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -24,6 +26,7 @@ namespace GDDB
         {
             var result = new JObject();
             result["name"] = folder.Name;
+            result["path"] = folder.Path;
             result["depth"] = folder.Depth;
             result["guid"] = folder.FolderGuid.ToString("D");
 
@@ -50,11 +53,9 @@ namespace GDDB
 
         private Folder DeserializeFolder( JObject json, Folder? parent )
         {
-            var folder = new Folder
+            var folder = new Folder( json["path"].Value<String>(), json["name"].Value<String>(), Guid.ParseExact( json["guid"].Value<String>(), "D" ) )
             {
-                Name = json["name"].Value<String>(),
                 Depth = json["depth"].Value<Int32>(),
-                FolderGuid = Guid.ParseExact( json["guid"].Value<String>(), "D"),
                 Parent = parent
             };
 
@@ -74,62 +75,49 @@ namespace GDDB
 
             return folder;
         }
-
-        public IEnumerable<Folder> Flatten( Folder root )
-        {
-            return root.EnumerateFoldersDFS(  );
-        }
     }
 
-    [DebuggerDisplay("{Asset.Name}")]
-    public class GDAsset
-    {
-        public Guid   AssetGuid;
-        //public String   AssetName;
-        public GDObject Asset;
-
-        // public String GetName( )
-        // {
-        //     return Asset ? Asset.Name : AssetGuid;
-        // }
-
-        // public GDObject GetObject( )
-        // {
-        //     if ( !Asset )
-        //     {
-        //         var path = AssetDatabase.GUIDToAssetPath( AssetGuid );
-        //         Asset = AssetDatabase.LoadAssetAtPath<GDObject>( path );
-        //     }
-        //
-        //     return Asset;
-        // }
-    }
-
-    [DebuggerDisplay("Name {GetHierarchyPath()}, folders {SubFolders.Count}, objects {Objects.Count}")]
+    [DebuggerDisplay("Path {Path}, folders {SubFolders.Count}, objects {Objects.Count}")]
     public class Folder
     {
-        public String  Name;
+        public readonly String  Name;
+        public readonly String  Path;
         public Folder? Parent;
         public Int32   Depth;
-        public Guid    FolderGuid;
-
-        public String PartName => Name.Substring(0, Name.Length - 1);
+        public readonly Guid    FolderGuid;
 
         public readonly List<Folder>  SubFolders = new ();
         public readonly List<Guid>    ObjectIds    = new();
         public readonly List<GDObject> Objects    = new();
-            
-        public String GetHierarchyPath( )
-        {
-            var path   = Name;
-            var parent = Parent;
-            while ( parent != null )
-            {
-                path   = parent.Name + path;
-                parent = parent.Parent;
-            }
 
-            return path;
+        public Folder( String path, [NotNull] String name, Guid folderGuid )
+        {
+            if ( String.IsNullOrWhiteSpace( name ) || !IsFolderNameValid( name ) )
+                throw new ArgumentException( $"Incorrect folder name '{name}'", nameof(name) );
+            if ( String.IsNullOrWhiteSpace( path ) || !IsPathValid( path ) )
+                throw new ArgumentException( $"Incorrect path '{path}'", nameof(path) );
+            if( folderGuid == Guid.Empty )
+                throw new ArgumentException( "Empty guid", nameof(folderGuid) );
+
+            Path = path;
+            Name = name;
+            FolderGuid = folderGuid;
+        }
+
+        public Folder( String name, Guid folderGuid, [NotNull] Folder parent )
+        {
+            if ( parent == null ) throw new ArgumentNullException( nameof(parent) );
+            if ( String.IsNullOrWhiteSpace( name ) || !IsFolderNameValid( name ) )
+                throw new ArgumentException( $"Incorrect folder name '{name}'", nameof(name) );
+            if( folderGuid == Guid.Empty )
+                throw new ArgumentException( "Empty guid", nameof(folderGuid) );
+
+            Path       = String.Concat(parent.Path, "/",  name);
+            Name       = name;
+            FolderGuid = folderGuid;
+            Parent     = parent;
+
+            parent.SubFolders.Add( this );
         }
 
         public IEnumerable<Folder> EnumerateFoldersDFS( Boolean includeSelf = true )
@@ -152,5 +140,38 @@ namespace GDDB
 
             return Parent.GetRootFolder();
         }
+
+        private static Boolean IsFolderNameValid( String folderName )
+        {
+            if ( String.IsNullOrWhiteSpace( folderName ) )
+                return false;
+            foreach ( var invalidChar in InvalidFolderNameChars )
+            {
+                if( folderName.Contains( invalidChar ) )
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static Boolean IsPathValid( String path )
+        {
+            if ( String.IsNullOrWhiteSpace( path ) )
+                return false;
+            foreach ( var invalidChar in InvalidPathChars )
+            {
+                if( path.Contains( invalidChar ) )
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static readonly Char[] InvalidFolderNameChars = System.IO.Path.GetInvalidPathChars()
+                                                                      .Concat( new []{'/', '\\', '*', ':'} )     //Unity limitation
+                                                                      .ToArray();
+        private static readonly Char[] InvalidPathChars = System.IO.Path.GetInvalidPathChars()
+                                                                      .Concat( new []{     '\\', '*', ':'} )          //Unity limitation
+                                                                      .ToArray();
     }
 }

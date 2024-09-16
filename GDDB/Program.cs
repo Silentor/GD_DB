@@ -25,13 +25,13 @@ Console.WriteLine(filters);
 //Console.WriteLine(gdTypeExt);
 
 var db     = new GdDb();
-var humans = db.Root.Mobs.Humans.ParentFolder;
+//var humans = db.Root.Mobs.Humans.ParentFolder;
 //var elves  = db.GetGDInfo().GetMobs().GetElves().ToArray();
 
-foreach ( var h in humans )
-{
-    Console.WriteLine( h );    
-}
+// foreach ( var h in humans )
+// {
+//     Console.WriteLine( h );    
+// }
 
 //var currencies = db.GetCurrencies();
 //var goldObj = currencies.GetGold();

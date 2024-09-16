@@ -1,15 +1,54 @@
 {
-  "name": "GDInfo/",
+  "name": "GDInfo",
+  "path": "Assets/GDInfo",
   "depth": 0,
   "guid": "1f03f292-22c2-78c4-0ba4-020059bcd90f",
   "subFolders": [
     {
-      "name": "Mobs/",
+      "name": "Mobs",
+      "path": "Assets/GDInfo/Mobs",
       "depth": 1,
       "guid": "df2c75d1-87d0-d0f4-aaec-cfd353fa6514",
       "subFolders": [
         {
-          "name": "Elves/",
+          "name": "Humans8",
+          "path": "Assets/GDInfo/Mobs/Humans8",
+          "depth": 2,
+          "guid": "e79188a3-af76-58a4-9858-188c2d281153",
+          "subFolders": [],
+          "objects": [
+            {
+              "guid": "132942ba-cee7-d7f4-3882-360073789368"
+            }
+          ]
+        },
+        {
+          "name": "Humans8 1",
+          "path": "Assets/GDInfo/Mobs/Humans8 1",
+          "depth": 2,
+          "guid": "07b8668d-319d-5bd4-988e-d21e4f4ff26f",
+          "subFolders": [],
+          "objects": [
+            {
+              "guid": "714ad052-51d1-79b4-9bb5-706ae2908786"
+            }
+          ]
+        },
+        {
+          "name": "Humans8 2",
+          "path": "Assets/GDInfo/Mobs/Humans8 2",
+          "depth": 2,
+          "guid": "d7b70691-850f-9794-9881-b5c65aea4492",
+          "subFolders": [],
+          "objects": [
+            {
+              "guid": "d3b86812-c37a-7044-ab95-4dbd7226587a"
+            }
+          ]
+        },
+        {
+          "name": "Orcs",
+          "path": "Assets/GDInfo/Mobs/Orcs",
           "depth": 2,
           "guid": "d18747b0-302d-4a94-b83f-0bdf80efbee7",
           "subFolders": [],
@@ -23,18 +62,45 @@
           ]
         },
         {
-          "name": "Humans/",
+          "name": "New Folder2 5",
+          "path": "Assets/GDInfo/Mobs/New Folder2 5",
           "depth": 2,
-          "guid": "391a2907-afc5-4de4-2b67-9daeabeee187",
+          "guid": "11077e42-baeb-9dc4-1ae3-0fcb9a1789e0",
           "subFolders": [],
-          "objects": [
+          "objects": []
+        },
+        {
+          "name": "New Folder2 6",
+          "path": "Assets/GDInfo/Mobs/New Folder2 6",
+          "depth": 2,
+          "guid": "35a23e9a-33f1-d374-b947-80ff233879bd",
+          "subFolders": [],
+          "objects": []
+        },
+        {
+          "name": "New Folder2 7",
+          "path": "Assets/GDInfo/Mobs/New Folder2 7",
+          "depth": 2,
+          "guid": "2ea6c78a-101d-0bf4-b945-5133fac55f5d",
+          "subFolders": [],
+          "objects": []
+        },
+        {
+          "name": "New Folder2 8",
+          "path": "Assets/GDInfo/Mobs/New Folder2 8",
+          "depth": 2,
+          "guid": "8f5ccb84-95a8-55e4-0aae-036298ef77fa",
+          "subFolders": [
             {
-              "guid": "c88f601a-e681-0fc4-a9cf-eeed25b88473"
-            },
-            {
-              "guid": "3086e03a-f9eb-bee4-ba7b-65e0171b9fb6"
+              "name": "New Folder",
+              "path": "Assets/GDInfo/Mobs/New Folder2 8/New Folder",
+              "depth": 3,
+              "guid": "68e0ed75-6387-6d24-2b0f-2cc9dd6d6ea7",
+              "subFolders": [],
+              "objects": []
             }
-          ]
+          ],
+          "objects": []
         }
       ],
       "objects": [

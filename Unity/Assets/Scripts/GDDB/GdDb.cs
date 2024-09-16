@@ -271,7 +271,7 @@ namespace GDDB
             {
                 if ( Delim == "/" )
                 {
-                    if ( FolderNameRegex.IsMatch( folder.PartName ) )
+                    if ( FolderNameRegex.IsMatch( folder.Name ) )
                     {
                         if( NextPart is FileQuery )
                             foreach ( var gdObject in NextPart.ProcessFolder( folder ) )
@@ -292,7 +292,7 @@ namespace GDDB
                 }
                 else if( Delim == "//" )
                 {
-                    if ( FolderNameRegex.IsMatch( folder.PartName ) )
+                    if ( FolderNameRegex.IsMatch( folder.Name ) )
                         if( NextPart is FileQuery )
                             foreach ( var f in folder.EnumerateFoldersDFS(  ) )
                             {

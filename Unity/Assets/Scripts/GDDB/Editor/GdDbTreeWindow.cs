@@ -98,10 +98,8 @@ namespace GDDB.Editor
                 {
                     if ( !queryFolders.TryGetValue( originalFolder.FolderGuid, out var tempFolder ) )
                     {
-                        tempFolder = new Folder()
+                        tempFolder = new Folder( originalFolder.Path, originalFolder.Name, originalFolder.FolderGuid)
                                      {
-                                             Name       = originalFolder.Name,
-                                             FolderGuid = originalFolder.FolderGuid,
                                              Depth      = originalFolder.Depth,
                                              Parent = originalFolder.Parent != null ? GetTempFolder( originalFolder.Parent )  : null,
                                      };
