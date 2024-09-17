@@ -61,13 +61,13 @@ namespace GDDB.Editor
         {
             if ( isDomainReload )
             {
-                var loader = new GdEditorLoader( );
-                var gdb         = loader.GetGameDataBase();
-                var properties = gdb.Root.Mobs.GetType().GetProperties();
-                foreach ( var propertyInfo in properties )
-                {
-                    Debug.Log( propertyInfo.Name );
-                }
+                // var loader = new GdEditorLoader( );
+                // var gdb         = loader.GetGameDataBase();
+                // var properties = gdb.Root.Mobs.GetType().GetProperties();
+                // foreach ( var propertyInfo in properties )
+                // {
+                //     Debug.Log( propertyInfo.Name );
+                // }
             }
 
             _gdObjects.Clear();

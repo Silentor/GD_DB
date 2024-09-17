@@ -27,11 +27,11 @@ namespace GDDB_User
 
             //gdb.Print();
 
-            var properties = gdb.Root.Mobs.GetType().GetProperties();
-            foreach ( var propertyInfo in properties )
-            {
-                Debug.Log( propertyInfo.Name );
-            }
+            // var properties = gdb.Root.Mobs_Space._1_digit_start_folder.GetType().GetProperties();
+            // foreach ( var propertyInfo in properties )
+            // {
+            //     Debug.Log( propertyInfo.Name );
+            // }
             //var a = gdb.Root.Mobs.Humans2;
             //var humans = gdb.Root.Mobs.Humans_1;
             // foreach ( var human in humans )
