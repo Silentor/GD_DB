@@ -100,7 +100,7 @@ namespace GDDB.SourceGenerator
                         Console.WriteLine( $"[DemoSourceGenerator] Generating code for {json.name}" );
                         var emitter       = new CodeEmitter();
                         //var allCategories = new List<Category>();
-                        var allFolders = serializer.Flatten( rootFolder ).ToArray();
+                        var allFolders = rootFolder.EnumerateFoldersDFS(  ).ToArray();
                         //var categoryEnum = emitter.GenerateEnums( json.path, rootFolder, allCategories );
                         //context.AddSource( $"Categories.g.cs", SourceText.From( categoryEnum, Encoding.UTF8 ) );
                         var foldersClasses = emitter.GenerateFolders( json.path, allFolders );

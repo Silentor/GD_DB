@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json.Linq;
 
 namespace GDDB.SourceGenerator;
@@ -59,7 +60,7 @@ public class CodeEmitter
         sb.AppendLine( GeneratedTypeAttribute );
         sb.AppendLine( "  public partial class GdDb" );
         sb.AppendLine( "  {" );
-        var rootFolderClassName = $"{rootFolder.PartName}Folder";
+        var rootFolderClassName = $"{rootFolder.Name}Folder";
         sb.AppendLine( $"  public {rootFolderClassName} Root => new( RootFolder );" );
         sb.AppendLine( "  }" );
         sb.AppendLine( "}" );
@@ -107,10 +108,11 @@ public class CodeEmitter
     //     return sb.ToString();
     // }
 
-    private static void GenerateFolder( StringBuilder sb, Folder folder )
+    private void GenerateFolder( StringBuilder sb, Folder folder )
     {
         var classFolderName    = GetFolderClassName( folder );
 
+        sb.AppendLine( $"//Folder {folder.Path}, subfolders {folder.SubFolders.Count}, objects {folder.ObjectIds.Count}" );
         sb.AppendLine( GeneratedTypeAttribute );
         sb.AppendLine(
                 $$"""
@@ -189,16 +191,54 @@ public class CodeEmitter
         sb.AppendLine( );
     }
 
-    private static String GetFolderClassName( Folder folder )
+    private String GetFolderClassName( Folder folder )
     {
-        var sanitizeName = folder.PartName.Replace( " ", "_" );
-        return $"{sanitizeName}Folder";
+        //Check cached folder name
+        foreach ( var folderAndName in _folderClassNames )
+        {
+            if( folderAndName.Folder == folder )
+                return folderAndName.Name;
+        }
+
+        //Check duplicated folder name
+        var folderName = GetFolderMemberName( folder ) + "Folder";
+        for ( var i = 0; i < _folderClassNames.Count; i++ )
+        {
+            var fn = _folderClassNames[ i ];
+            if( fn.Name == folderName )
+            {
+                fn.DuplicateCounter++;
+                folderName += fn.DuplicateCounter;
+                _folderClassNames[ i ] =  fn;
+                _folderClassNames.Add( new FolderAndName(){Folder = folder, Name = folderName, DuplicateCounter = 1 } );
+                return folderName;
+            }
+        }
+
+        _folderClassNames.Add( new FolderAndName(){Folder = folder, Name = folderName, DuplicateCounter = 1  } );
+        return folderName;
     }
 
     private static String GetFolderMemberName( Folder folder )
     {
-        var sanitizeName = folder.PartName.Replace( " ", "_" );
-        return $"{sanitizeName}";
+        var folderName = folder.Name;
+
+        if( Char.IsDigit( folderName[0] ) )
+            folderName = "_" + folderName ;
+
+        var sanitizedName = IncorrectIdentifierChars.Replace( folderName, "_" );
+        return sanitizedName;
+    }
+
+    private static readonly Regex IncorrectIdentifierChars = new ( @"[^a-zA-Z0-9_]" );
+
+    private List<FolderAndName> _folderClassNames = new ();
+
+    private struct FolderAndName
+    {
+        public Folder Folder;
+        public String Name;
+        public Int32  DuplicateCounter;
     }
 
     // private static void GenerateEnum( StringBuilder sb, Category category )
@@ -248,31 +288,31 @@ public class CodeEmitter
     //         sb.AppendLine(  "    }" );
     //         sb.AppendLine( );
     //     }
-        // else                //Item is a value, return single object
-        // {
-        //     var categoryHierarchy = String.Join( ", ", GetCategoriesHierarchy( folder ));
-        //     if ( isRootFolder )
-        //     {
-        //         sb.AppendLine( $"    public static GDObject Get{itemName}( this {GdDbTypeName} db )" );
-        //         sb.AppendLine(  "    {" );
-        //         sb.AppendLine( $"        var type = new GdType( {categoryHierarchy} );" );
-        //         sb.AppendLine( $"        return db.GetObject( type );" );
-        //         sb.AppendLine(  "    }" );
-        //         sb.AppendLine( );
-        //     }
-        //     else
-        //     {
-        //         var parentEnumeratorTypeName = $"{folder.Owner.Name}Enumerator";                 
-        //         sb.AppendLine( $"    public static GDObject Get{itemName}( this {parentEnumeratorTypeName} enumerator )" );
-        //         sb.AppendLine(  "    {" );
-        //         sb.AppendLine( $"        var db = enumerator._db;" );
-        //         sb.AppendLine( $"        var type = new GdType( {categoryHierarchy} );" );
-        //         sb.AppendLine( $"        return db.GetObject( type );" );
-        //         sb.AppendLine(  "    }" );
-        //         sb.AppendLine( );
-        //     }
-        // }
-        
+    // else                //Item is a value, return single object
+    // {
+    //     var categoryHierarchy = String.Join( ", ", GetCategoriesHierarchy( folder ));
+    //     if ( isRootFolder )
+    //     {
+    //         sb.AppendLine( $"    public static GDObject Get{itemName}( this {GdDbTypeName} db )" );
+    //         sb.AppendLine(  "    {" );
+    //         sb.AppendLine( $"        var type = new GdType( {categoryHierarchy} );" );
+    //         sb.AppendLine( $"        return db.GetObject( type );" );
+    //         sb.AppendLine(  "    }" );
+    //         sb.AppendLine( );
+    //     }
+    //     else
+    //     {
+    //         var parentEnumeratorTypeName = $"{folder.Owner.Name}Enumerator";                 
+    //         sb.AppendLine( $"    public static GDObject Get{itemName}( this {parentEnumeratorTypeName} enumerator )" );
+    //         sb.AppendLine(  "    {" );
+    //         sb.AppendLine( $"        var db = enumerator._db;" );
+    //         sb.AppendLine( $"        var type = new GdType( {categoryHierarchy} );" );
+    //         sb.AppendLine( $"        return db.GetObject( type );" );
+    //         sb.AppendLine(  "    }" );
+    //         sb.AppendLine( );
+    //     }
+    // }
+
     //}
 
     // private static void GenerateGdTypeCreate( StringBuilder sb, CategoryItem item )
@@ -322,7 +362,7 @@ public class CodeEmitter
     //
     //     return result;
     // }
-        
-       
+
+
 
 }

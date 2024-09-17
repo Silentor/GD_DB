@@ -3,14 +3,14 @@
 using GDDB;
 using GDDB.SourceGenerator;
 
-var file     = new System.IO.FileInfo(@"..\..\..\..\Unity\Assets\Scripts\TreeStructure.json");
+var file     = new System.IO.FileInfo("TreeStructure.json");
 var json     = System.IO.File.ReadAllText(file.FullName);
 
 var parser   = new FoldersSerializer();
-var category = parser.Deserialize( json );
+var rootFolder = parser.Deserialize( json );
 
 var emitter  = new CodeEmitter();
-var allFolders = parser.Flatten( category  ).ToArray();
+var allFolders = rootFolder.EnumerateFoldersDFS(  ).ToArray();
 
 //var enums    = emitter.GenerateEnums( "test.json", category, categories );
 //Console.WriteLine(enums);
@@ -25,6 +25,7 @@ Console.WriteLine(filters);
 //Console.WriteLine(gdTypeExt);
 
 var db     = new GdDb();
+db.Root.Mobs.Folders
 //var humans = db.Root.Mobs.Humans.ParentFolder;
 //var elves  = db.GetGDInfo().GetMobs().GetElves().ToArray();
 

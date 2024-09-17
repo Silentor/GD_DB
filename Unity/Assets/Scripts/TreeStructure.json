@@ -55,6 +55,14 @@
           "objects": []
         },
         {
+          "name": "Dup",
+          "path": "Assets/GDInfo/Mobs/Dup",
+          "depth": 2,
+          "guid": "0c2b6e3d-3a2a-5c34-d952-d2579590f560",
+          "subFolders": [],
+          "objects": []
+        },
+        {
           "name": "~!#$%^&()_+",
           "path": "Assets/GDInfo/Mobs/~!#$%^&()_+",
           "depth": 2,
@@ -68,6 +76,14 @@
           "guid": "4d1cca73-0eb2-5a94-3aa3-ddf5e019c327"
         }
       ]
+    },
+    {
+      "name": "Dup",
+      "path": "Assets/GDInfo/Dup",
+      "depth": 1,
+      "guid": "bb54fd84-2c1a-e764-6873-42bb06c6a089",
+      "subFolders": [],
+      "objects": []
     }
   ],
   "objects": [

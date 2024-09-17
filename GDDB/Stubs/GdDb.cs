@@ -18,7 +18,7 @@ public partial class GdDb
     
     public Folder? GetFolder( GdId guid )
     {
-        return new Folder();
+        return null;
     }
     
 
