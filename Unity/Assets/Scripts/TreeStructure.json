@@ -47,6 +47,14 @@
           ]
         },
         {
+          "name": "___________",
+          "path": "Assets/GDInfo/Mobs/___________",
+          "depth": 2,
+          "guid": "b3de2726-1010-8bc4-588a-ca504a440858",
+          "subFolders": [],
+          "objects": []
+        },
+        {
           "name": "_undrerscore start",
           "path": "Assets/GDInfo/Mobs/_undrerscore start",
           "depth": 2,

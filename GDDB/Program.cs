@@ -25,7 +25,7 @@ Console.WriteLine(filters);
 //Console.WriteLine(gdTypeExt);
 
 var db     = new GdDb();
-db.Root.Mobs.Folders
+//db.Root.Folder2.
 //var humans = db.Root.Mobs.Humans.ParentFolder;
 //var elves  = db.GetGDInfo().GetMobs().GetElves().ToArray();
 

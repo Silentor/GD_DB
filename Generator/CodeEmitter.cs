@@ -44,6 +44,7 @@ public class CodeEmitter
         sb.AppendLine( );
         foreach ( var folder in allFolders )
         {
+            ResetFolderMemberNames();
             GenerateFolder( sb, folder );
         }
         sb.AppendLine( "}" );
@@ -118,6 +119,7 @@ public class CodeEmitter
                 $$"""
                 public readonly struct {{classFolderName}} : IEnumerable<GDObject>, IEquatable<{{classFolderName}}>
                 {
+                    //Underlying untyped Folder object
                     public readonly Folder Folder;
                     
                     internal {{classFolderName}}( Folder folder )
@@ -166,6 +168,10 @@ public class CodeEmitter
                     }
                 
                 #endregion
+                
+                //Access to GDObjects of this Folder
+                public GDObject this[ Int32 objectIndex ] => Folder.Objects[ objectIndex ];
+                
                 """);
 
         if( folder.Parent != null )
@@ -178,17 +184,25 @@ public class CodeEmitter
         if ( folder.SubFolders.Count > 0 )
         {
             sb.AppendLine( );
-            sb.AppendLine( "         //Subfolder members" );
+            sb.AppendLine( "         //Subfolders" );
             for ( var i = 0; i < folder.SubFolders.Count; i++ )
             {
                 var subFolder          = folder.SubFolders[ i ];
                 var subfolderClassName = GetFolderClassName( subFolder );
-                sb.AppendLine( $"        public {subfolderClassName} {GetFolderMemberName( subFolder )} => new( Folder.SubFolders[{i}] );" );
+                sb.AppendLine( $"        public {subfolderClassName} {GetMemberName( subFolder )} => new( Folder.SubFolders[{i}] );" );
             }
         }
 
         sb.AppendLine( "}" );
         sb.AppendLine( );
+    }
+
+    private String GetIdentifier( String folderName )
+    {
+        if( Char.IsDigit( folderName[0] ) )
+            folderName = "_" + folderName ;
+        var sanitizedName = IncorrectIdentifierChars.Replace( folderName, "_" );
+        return sanitizedName;
     }
 
     private String GetFolderClassName( Folder folder )
@@ -201,7 +215,7 @@ public class CodeEmitter
         }
 
         //Check duplicated folder name
-        var folderName = GetFolderMemberName( folder ) + "Folder";
+        var folderName = GetIdentifier( folder.Name ) + "Folder";
         for ( var i = 0; i < _folderClassNames.Count; i++ )
         {
             var fn = _folderClassNames[ i ];
@@ -219,20 +233,52 @@ public class CodeEmitter
         return folderName;
     }
 
-    private static String GetFolderMemberName( Folder folder )
+    private String GetMemberName( Folder folder )
     {
-        var folderName = folder.Name;
+        //Check cached member name
+        foreach ( var folderAndName in _memberNames )
+        {
+            if( folderAndName.Folder == folder )
+                return folderAndName.Name;
+        }
 
-        if( Char.IsDigit( folderName[0] ) )
-            folderName = "_" + folderName ;
+        //Check for reserved or duplicated member names
+        var memberName = GetIdentifier( folder.Name );
+        for ( var i = 0; i < _memberNames.Count; i++ )
+        {
+            var mn = _memberNames[ i ];
+            if( mn.Name == memberName )
+            {
+                mn.DuplicateCounter++;
+                memberName        += mn.DuplicateCounter;
+                _memberNames[ i ] =  mn;
+                _memberNames.Add( new FolderAndName(){Folder = folder, Name = memberName, DuplicateCounter = 1 } );
+                return memberName;
+            }
+        }
 
-        var sanitizedName = IncorrectIdentifierChars.Replace( folderName, "_" );
-        return sanitizedName;
+        _memberNames.Add( new FolderAndName(){Folder = folder, Name = memberName, DuplicateCounter = 1  } );
+        return memberName;
     }
 
-    private static readonly Regex IncorrectIdentifierChars = new ( @"[^a-zA-Z0-9_]" );
+    private void ResetFolderMemberNames()
+    {
+        _memberNames.Clear();
+        _memberNames.AddRange( _reservedMemberNames );
+    }
 
-    private List<FolderAndName> _folderClassNames = new ();
+    private static readonly Regex IncorrectIdentifierChars = new ( "[^a-zA-Z0-9_]" );
+
+    private readonly List<FolderAndName> _folderClassNames = new ();
+    private readonly List<FolderAndName> _memberNames = new ();
+    private readonly FolderAndName[] _reservedMemberNames = new FolderAndName[]
+    {
+        new (){ Name = "Folder" ,               DuplicateCounter    = 1 },
+        new (){ Name = "ParentFolder",          DuplicateCounter    = 1 },
+        new (){ Name = "GetEnumerator",         DuplicateCounter    = 1 },
+        new (){ Name = "Equals",                DuplicateCounter    = 1 },
+        new (){ Name = "GetHashCode",           DuplicateCounter    = 1 },
+    };
 
     private struct FolderAndName
     {

@@ -62,6 +62,8 @@ public readonly struct TestRootFolder : IEnumerable<GDObject>, IEquatable<TestRo
 
 #endregion
 
+    public GDObject this[ Int32 objectIndex ] => Folder.Objects[ objectIndex ];
+
     public TestMobsFolder Mobs => new( Folder.SubFolders[0] );
 }
 

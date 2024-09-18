@@ -24,6 +24,7 @@ namespace GDDB_User
             var loader = new GdEditorLoader( );
             //var loader = new GdScriptableLoader( "Default" );
             var gdb         = loader.GetGameDataBase();
+            //gdb.Root.Mobs.
 
             //gdb.Print();
 
