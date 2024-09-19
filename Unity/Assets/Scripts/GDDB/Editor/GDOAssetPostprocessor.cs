@@ -11,9 +11,14 @@ namespace GDDB.Editor
 {
     public class GDOAssetPostprocessor : AssetPostprocessor
     {
+        public static event Action GddbStructureChanged;
+
         private static readonly List<GDObject> _gdObjects = new ();
         private static readonly List<String>   _folders   = new ();
-        private static Boolean _isNeedRecompileGddb;
+        private static          Boolean        _isNeedRecompileGddb;
+        private static          FoldersParser  _parser;
+
+        private static readonly String GDDBStructureFilePath = $"{Application.dataPath}/../Library/GDDBTreeStructure.json";
 
         static GDOAssetPostprocessor()
         {
@@ -84,7 +89,7 @@ namespace GDDB.Editor
                         _gdObjects.Add( gdObject );
                     }
                 }
-                else if ( AssetDatabase.IsValidFolder( assetPath ) )        //Check for gddb folder structure change
+                else if ( AssetDatabase.IsValidFolder( assetPath ) && IsGDDBFolder( assetPath ) )        //Check for gddb folder structure change
                 {
                     _folders.Add( assetPath );
                 }
@@ -94,7 +99,7 @@ namespace GDDB.Editor
             for ( int i = 0; i < deletedAssets.Length; i++ )
             {
                 var assetPath = deletedAssets[ i ];
-                if ( !Path.HasExtension( assetPath ) )        
+                if ( !Path.HasExtension( assetPath ) && IsGDDBFolder( assetPath ) )       
                 {
                     _folders.Add( assetPath );
                 }
@@ -114,30 +119,29 @@ namespace GDDB.Editor
         {
             //Check if changed folders are in GDDB structure
             var isGDFoldersChanged = false;
-            var foldersParser = new FoldersParser();
-            foldersParser.Parse();
+            _parser = new FoldersParser();
+            _parser.Parse();
 
-            foreach ( var folder in folders )
-            {
-                if( folder.StartsWith( foldersParser.RootFolderPath ) )
-                {
-                    isGDFoldersChanged = true;
-                    break;
-                }
-            }
+            // foreach ( var folder in folders )
+            // {
+            //     if( folder.StartsWith( _parser.RootFolderPath ) )
+            //     {
+            //         isGDFoldersChanged = true;
+            //         break;
+            //     }
+            // }
 
-            if ( isGDFoldersChanged )
+            //if ( isGDFoldersChanged )
             {
                 Debug.Log( $"[{nameof(GDOAssetPostprocessor)}] GD folder structure change detected, update GDDB DOM" );
 
                 //Update gd structure json to trigger GDDB DOM source generator
                 var       foldersSerializer = new FoldersSerializer();
-                var       jsonString        = foldersSerializer.Serialize( foldersParser.Root );
-                var       path              = $"{Application.dataPath}/Scripts/TreeStructure.json";
-                using var treeStructureFile = File.CreateText( path );
+                var       jsonString        = foldersSerializer.Serialize( _parser.Root, _parser.Root.GetFoldersStructureHash() );
+                using var treeStructureFile = File.CreateText( GDDBStructureFilePath );
                 treeStructureFile.Write( jsonString );
                 treeStructureFile.Close();
-                Debug.Log( $"[{nameof(GDOAssetPostprocessor)}] Updated structure: {jsonString}" );
+                Debug.Log( $"[{nameof(GDOAssetPostprocessor)}] Updated structure: {GDDBStructureFilePath}" );
 
 
                 var currentWindow = EditorWindow.focusedWindow;
@@ -146,6 +150,8 @@ namespace GDDB.Editor
                 _isNeedRecompileGddb = true;
 
                 //AssetDatabase.ImportAsset( "Assets/Scripts/GDDB/AssemblyInfo.cs", ImportAssetOptions.ForceUpdate );
+
+                GddbStructureChanged?.Invoke();
             }
         }
 
@@ -187,6 +193,23 @@ namespace GDDB.Editor
             //
             //
             // Debug.Log( "Finished processing imported GDObjects" );
+        }
+
+        private static Boolean IsGDDBFolder( String folderPath )
+        {
+            if( _parser == null )
+            {
+                _parser = new FoldersParser();
+                _parser.Parse();
+            }
+
+            if ( _parser.RootFolderPath != null )
+            {
+                if( folderPath.StartsWith( _parser.RootFolderPath ) )
+                    return true;
+            }
+
+            return false;
         }
         
     }

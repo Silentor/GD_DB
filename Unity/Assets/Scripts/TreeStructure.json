@@ -2,8 +2,16 @@
   "name": "GDInfo",
   "path": "Assets/GDInfo",
   "depth": 0,
-  "guid": "1f03f292-22c2-78c4-0ba4-020059bcd90f",
+  "guid": "292f30f1-2c22-4c87-b04a-200095cb9df0",
   "subFolders": [
+    {
+      "name": "Dup",
+      "path": "Assets/GDInfo/Dup",
+      "depth": 1,
+      "guid": "bb54fd84-2c1a-e764-6873-42bb06c6a089",
+      "subFolders": [],
+      "objects": []
+    },
     {
       "name": "Mobs",
       "path": "Assets/GDInfo/Mobs",
@@ -21,6 +29,30 @@
               "guid": "d3b86812-c37a-7044-ab95-4dbd7226587a"
             }
           ]
+        },
+        {
+          "name": "_________",
+          "path": "Assets/GDInfo/Mobs/_________",
+          "depth": 2,
+          "guid": "0dd824ad-964d-5b74-cac7-5dae9915ca65",
+          "subFolders": [],
+          "objects": []
+        },
+        {
+          "name": "_undrerscore start",
+          "path": "Assets/GDInfo/Mobs/_undrerscore start",
+          "depth": 2,
+          "guid": "11077e42-baeb-9dc4-1ae3-0fcb9a1789e0",
+          "subFolders": [],
+          "objects": []
+        },
+        {
+          "name": "Dup",
+          "path": "Assets/GDInfo/Mobs/Dup",
+          "depth": 2,
+          "guid": "0c2b6e3d-3a2a-5c34-d952-d2579590f560",
+          "subFolders": [],
+          "objects": []
         },
         {
           "name": "Space folder",
@@ -47,30 +79,6 @@
           ]
         },
         {
-          "name": "___________",
-          "path": "Assets/GDInfo/Mobs/___________",
-          "depth": 2,
-          "guid": "b3de2726-1010-8bc4-588a-ca504a440858",
-          "subFolders": [],
-          "objects": []
-        },
-        {
-          "name": "_undrerscore start",
-          "path": "Assets/GDInfo/Mobs/_undrerscore start",
-          "depth": 2,
-          "guid": "11077e42-baeb-9dc4-1ae3-0fcb9a1789e0",
-          "subFolders": [],
-          "objects": []
-        },
-        {
-          "name": "Dup",
-          "path": "Assets/GDInfo/Mobs/Dup",
-          "depth": 2,
-          "guid": "0c2b6e3d-3a2a-5c34-d952-d2579590f560",
-          "subFolders": [],
-          "objects": []
-        },
-        {
           "name": "~!#$%^&()_+",
           "path": "Assets/GDInfo/Mobs/~!#$%^&()_+",
           "depth": 2,
@@ -84,14 +92,6 @@
           "guid": "4d1cca73-0eb2-5a94-3aa3-ddf5e019c327"
         }
       ]
-    },
-    {
-      "name": "Dup",
-      "path": "Assets/GDInfo/Dup",
-      "depth": 1,
-      "guid": "bb54fd84-2c1a-e764-6873-42bb06c6a089",
-      "subFolders": [],
-      "objects": []
     }
   ],
   "objects": [

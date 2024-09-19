@@ -14,7 +14,7 @@ namespace GDDB.Editor
     public class FoldersParser
     {
         public Folder Root           { get; private set; }
-        public String RootFolderPath => Root.Path;
+        public String RootFolderPath => Root?.Path;
 
         public IReadOnlyList<GDObject> AllObjects   =>  _allObjects;
         public IReadOnlyList<Folder> AllFolders     =>  _allFolders;
@@ -22,7 +22,7 @@ namespace GDDB.Editor
         /// <summary>
         /// Parse physical folder structure, root folder goes to <see cref="Root"/>
         /// </summary>
-        public void Parse( )
+        public Boolean Parse( )
         {
             _allFolders.Clear();
             _allObjects.Clear();
@@ -41,6 +41,12 @@ namespace GDDB.Editor
                     SplittedPath = path.Split( "/" ),
                     Guid     = gdoids[i]
                 };    
+            }
+
+            if( gdoids.Length == 0 )
+            {
+                Debug.LogError( $"[{nameof(FoldersParser)}] No GDObjects found, impossible to parse game data base" );
+                return false;
             }
 
             var gddbRootFolderStr = GetGdDbRootFolder( gdos );
@@ -83,46 +89,10 @@ namespace GDDB.Editor
             Root.Parent    = null;
 
             CalculateDepth( Root );
+
+            return true;
         }
 
-        private String GetGdDbRootFolder( GDObjectData[] gdos )
-        {
-            var shortestPathLength = Int32.MaxValue;
-            for ( var i = 0; i < gdos.Length; i++ )
-            {
-                var pathLength = gdos[i].SplittedPath.Length;
-                if( pathLength < shortestPathLength )
-                {
-                    shortestPathLength = pathLength;
-                }
-            }
-
-            var topFoldersList = new List<GDObjectData>();
-            for ( var i = 0; i < gdos.Length; i++ )
-            {
-                if( gdos[i].SplittedPath.Length == shortestPathLength )
-                {
-                    topFoldersList.Add( gdos[i] );
-                }
-            }
-
-            var topFoldersCount = topFoldersList.Distinct( PathComparerWithoutFilename.Instance ).Count();
-            if( topFoldersCount == 1 )
-            {
-                return GetDirectoryName( topFoldersList[0].Path );
-            }
-            else
-            {
-                //Root folder is common for top folders
-                return GetDirectoryName( GetDirectoryName( topFoldersList[0].Path ) );
-            }
-
-            String GetDirectoryName( String path )
-            {
-                var lastSlashIndex = path.LastIndexOf( '/' );
-                return path.Substring( 0, lastSlashIndex );
-            }
-        }
         
         public void DebugParse( Folder presetHierarchy )
         {
@@ -162,6 +132,45 @@ namespace GDDB.Editor
             foreach ( var obj in folder.Objects )
             {
                 Debug.Log($"  {indentStr}{obj.Name}");
+            }
+        }
+
+        private String GetGdDbRootFolder( GDObjectData[] gdos )
+        {
+            var shortestPathLength = Int32.MaxValue;
+            for ( var i = 0; i < gdos.Length; i++ )
+            {
+                var pathLength = gdos[i].SplittedPath.Length;
+                if( pathLength < shortestPathLength )
+                {
+                    shortestPathLength = pathLength;
+                }
+            }
+
+            var topFoldersList = new List<GDObjectData>();
+            for ( var i = 0; i < gdos.Length; i++ )
+            {
+                if( gdos[i].SplittedPath.Length == shortestPathLength )
+                {
+                    topFoldersList.Add( gdos[i] );
+                }
+            }
+
+            var topFoldersCount = topFoldersList.Distinct( PathComparerWithoutFilename.Instance ).Count();
+            if( topFoldersCount == 1 )
+            {
+                return GetDirectoryName( topFoldersList[0].Path );
+            }
+            else
+            {
+                //Root folder is common for top folders
+                return GetDirectoryName( GetDirectoryName( topFoldersList[0].Path ) );
+            }
+
+            String GetDirectoryName( String path )
+            {
+                var lastSlashIndex = path.LastIndexOf( '/' );
+                return path.Substring( 0, lastSlashIndex );
             }
         }
 

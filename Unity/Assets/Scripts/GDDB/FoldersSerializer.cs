@@ -10,9 +10,9 @@ namespace GDDB
 {
     public class FoldersSerializer
     {
-        public String Serialize( Folder root )
+        public String Serialize( Folder root, Int32? hash = null )
         {
-            var rootJson = SerializeFolder( root );
+            var rootJson = SerializeFolder( root, hash );
             return rootJson.ToString( Formatting.Indented );
         }
 
@@ -22,9 +22,11 @@ namespace GDDB
             return DeserializeFolder( rootJson, null );
         }
 
-        private JObject SerializeFolder( Folder folder )
+        private JObject SerializeFolder( Folder folder, Int32? hash = null )
         {
             var result = new JObject();
+            if( hash.HasValue )
+                result["hash"] = hash.Value;
             result["name"] = folder.Name;
             result["path"] = folder.Path;
             result["depth"] = folder.Depth;
@@ -139,6 +141,21 @@ namespace GDDB
                 return this;
 
             return Parent.GetRootFolder();
+        }
+
+        /// <summary>
+        /// Get hash of folders tree structure
+        /// </summary>
+        /// <returns></returns>
+        public Int32 GetFoldersStructureHash( )
+        {
+            HashCode hash = default;
+            foreach ( var folder in EnumerateFoldersDFS(  ) )
+            {
+                hash.Add( folder.Path );
+            }
+
+            return hash.ToHashCode();
         }
 
         private static Boolean IsFolderNameValid( String folderName )
