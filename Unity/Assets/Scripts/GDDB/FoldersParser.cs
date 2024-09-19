@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEditor;
 using Debug = UnityEngine.Debug;
 
@@ -12,7 +14,7 @@ namespace GDDB.Editor
     public class FoldersParser
     {
         public Folder Root           { get; private set; }
-        public String RootFolderPath { get; private set; }
+        public String RootFolderPath => Root.Path;
 
         public IReadOnlyList<GDObject> AllObjects   =>  _allObjects;
         public IReadOnlyList<Folder> AllFolders     =>  _allFolders;
@@ -25,68 +27,106 @@ namespace GDDB.Editor
             _allFolders.Clear();
             _allObjects.Clear();
 
-            //Make folders cache
-            var folders      = AssetDatabase.FindAssets("t:Folder", new []{"Assets/"});
-            var foldersGuids = new List<(Guid, String)>();
-            foreach ( var folderId in folders )
+            //Get cache of GDObjects
+            var gdoids            = AssetDatabase.FindAssets("t:GDObject", new []{"Assets/"});   //Skip packages, consider collect GDObjects from Packages?
+            var gdos              = new GDObjectData[gdoids.Length];
+            for ( var i = 0; i < gdoids.Length; i++ )
             {
-                 var guid = Guid.ParseExact( folderId, "N" );
-                 var path = AssetDatabase.GUIDToAssetPath( folderId );
-                 foldersGuids.Add( (guid, path) );
+                var path = AssetDatabase.GUIDToAssetPath(gdoids[i]);
+                var gdo  = AssetDatabase.LoadAssetAtPath<GDObject>( path );
+                gdos[i] = new GDObjectData
+                {
+                    GdObject = gdo,
+                    Path     = path,
+                    SplittedPath = path.Split( "/" ),
+                    Guid     = gdoids[i]
+                };    
+            }
+
+            var gddbRootFolderStr = GetGdDbRootFolder( gdos );
+            var gddbRootFolderGuid = AssetPath2Guid( gddbRootFolderStr );
+
+            //Make folders cache of GDDB folder
+            var folderIds    = AssetDatabase.FindAssets("t:Folder", new []{ gddbRootFolderStr });
+            var foldersGuids = new List<(Guid, String)> { (gddbRootFolderGuid, gddbRootFolderStr) };
+            foreach ( var folderId in folderIds )
+            {
+                var guid = Guid.ParseExact( folderId, "N" );
+                var path = AssetDatabase.GUIDToAssetPath( folderId );
+                foldersGuids.Add( (guid, path) );
             }
 
             //Assign Assets folder guid for consistency (Unity is not counts Assets as a folder asset  )
             Root = new Folder( "Assets", "Assets", Guid.ParseExact( "A55E7500-F5B6-4EBA-825C-B1BC7331A193", "D" ) );
             _allFolders.Add( Root );
 
-            //Create folders hierarchy and add GDObjects
-            var gdos = AssetDatabase.FindAssets("t:GDObject", new []{"Assets/"});   //Skip packages, consider collect GDObjects from Packages?
-            foreach ( var guidStr in gdos )
+            //Add folders to hierarchy
+            foreach ( var folderId in folderIds )
             {
-                var path        = AssetDatabase.GUIDToAssetPath(guidStr);
-
-                var splittedPath   = Split( path );
-                var folderForAsset = GetFolderForSplittedPath( Root, splittedPath, foldersGuids );
-                var guid           = Guid.ParseExact( guidStr, "N" );
-                folderForAsset.ObjectIds.Add( guid );
-                var gdObject = AssetDatabase.LoadAssetAtPath<GDObject>( path );
-                folderForAsset.Objects.Add( gdObject );
-                _allObjects.Add( gdObject );
+                 var path = AssetDatabase.GUIDToAssetPath( folderId );
+                 var splittedPath = Split( path );
+                 var folder = GetFolderForSplittedPath( Root, splittedPath, foldersGuids );
             }
 
-            //Find GDDB root folder
-            var gddbRootFolder = Root;
-            while( gddbRootFolder.SubFolders.Count == 1 && gddbRootFolder.Objects.Count == 0 )
+            //Add GDObjects to hierarchy
+            foreach ( var gdoData in gdos )
             {
-                gddbRootFolder     = gddbRootFolder.SubFolders[0];
-            }
-            var gddbRootFolderPath = gddbRootFolder.Path;
-
-            //Add empty folders
-            foreach ( var folder in foldersGuids )
-            {
-                if ( folder.Item2.StartsWith( gddbRootFolderPath ) && !_allFolders.Exists( f => f.FolderGuid == folder.Item1 ) )
-                {
-                    var emptyFolderPath = folder.Item2;
-                    var splittedPath    = Split( emptyFolderPath );
-                    var emptyFolder     = GetFolderForSplittedPath( Root, splittedPath, foldersGuids );        
-                    _allFolders.Add( emptyFolder );
-                }
+                var folder = GetFolderForSplittedPath( Root, gdoData.SplittedPath, foldersGuids );
+                var guid   = Guid.ParseExact( gdoData.Guid, "N" );
+                folder.ObjectIds.Add( guid );
+                folder.Objects.Add( gdoData.GdObject );
+                _allObjects.Add( gdoData.GdObject );
             }
 
-            //Set root folder
-            Root        = gddbRootFolder;
-            Root.Parent = null;
-            RootFolderPath = Root.Path;
+            //Set true GDDB root folder
+            Root           = GetFolderForSplittedPath( Root, gddbRootFolderStr.Split( "/" ), foldersGuids );
+            Root.Parent    = null;
 
             CalculateDepth( Root );
         }
 
+        private String GetGdDbRootFolder( GDObjectData[] gdos )
+        {
+            var shortestPathLength = Int32.MaxValue;
+            for ( var i = 0; i < gdos.Length; i++ )
+            {
+                var pathLength = gdos[i].SplittedPath.Length;
+                if( pathLength < shortestPathLength )
+                {
+                    shortestPathLength = pathLength;
+                }
+            }
+
+            var topFoldersList = new List<GDObjectData>();
+            for ( var i = 0; i < gdos.Length; i++ )
+            {
+                if( gdos[i].SplittedPath.Length == shortestPathLength )
+                {
+                    topFoldersList.Add( gdos[i] );
+                }
+            }
+
+            var topFoldersCount = topFoldersList.Distinct( PathComparerWithoutFilename.Instance ).Count();
+            if( topFoldersCount == 1 )
+            {
+                return GetDirectoryName( topFoldersList[0].Path );
+            }
+            else
+            {
+                //Root folder is common for top folders
+                return GetDirectoryName( GetDirectoryName( topFoldersList[0].Path ) );
+            }
+
+            String GetDirectoryName( String path )
+            {
+                var lastSlashIndex = path.LastIndexOf( '/' );
+                return path.Substring( 0, lastSlashIndex );
+            }
+        }
+        
         public void DebugParse( Folder presetHierarchy )
         {
-            Root.SubFolders.Add( presetHierarchy );
-            presetHierarchy.Parent = Root;
-
+            Root = presetHierarchy;
             CalculateDepth( Root );
         }
 
@@ -178,10 +218,63 @@ namespace GDDB.Editor
             // return result;
         }
 
+        private Guid AssetPath2Guid( String assetPath )
+        {
+            var unityGuid = AssetDatabase.GUIDFromAssetPath( assetPath );
+            var clrGuid   = UnsafeUtility.As<GUID, Guid>( ref unityGuid );
+            return clrGuid;
+        }
+
         private readonly List<GDObject> _allObjects = new List<GDObject>();
         private readonly List<Folder>   _allFolders = new List<Folder>();
 
-#if UNITY_EDITOR
+        private struct GDObjectData
+        {
+            public GDObject GdObject;
+            public String   Path;
+            public String[] SplittedPath;
+            public String   Guid;
+
+        }                    
+
+        private class PathComparerWithoutFilename : IEqualityComparer<GDObjectData>
+        {
+            public static readonly PathComparerWithoutFilename Instance = new ();
+
+            public Boolean Equals(GDObjectData x, GDObjectData y )
+            {
+                if( x.SplittedPath.Length != y.SplittedPath.Length )
+                    return false;
+
+                for ( int i = 0; i < Math.Min( x.SplittedPath.Length, y.SplittedPath.Length ); i++ )
+                {
+                    var xPart =  i == x.SplittedPath.Length - 1 && Path.HasExtension( x.SplittedPath[ i ] ) ? String.Empty : x.SplittedPath[ i ];
+                    var yPart =  i == y.SplittedPath.Length - 1 && Path.HasExtension( y.SplittedPath[ i ] ) ? String.Empty : y.SplittedPath[ i ];
+
+                    if ( xPart != yPart )
+                        return false;    
+                }
+
+                return true;
+            }
+
+            public Int32 GetHashCode( GDObjectData obj )
+            {
+                var splittedPath = obj.SplittedPath;
+                var pathHash = new HashCode();
+                for ( var i = 0; i < splittedPath.Length; i++ )
+                {
+                    if( i == splittedPath.Length - 1 && Path.HasExtension( splittedPath[ i ] ) )
+                        break;
+
+                    pathHash.Add( splittedPath[i] );
+                }
+
+                return pathHash.ToHashCode();
+            }
+        }
+
+        #if UNITY_EDITOR
         [MenuItem( "GDDB/Print hierarchy" )]
         private static void PrintHierarchyToConsole( )
         {
