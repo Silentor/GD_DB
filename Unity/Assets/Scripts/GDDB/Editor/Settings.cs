@@ -15,6 +15,7 @@ namespace GDDB.Editor
         public Int32 MaxFavoriteViewItems           = 10;
         public Int32 MaxFavoriteStoreItems          = 20;
 
+
         public Settings( )
         {
             _settingsPrefix = $"GDDB.Editor.Settings.{Application.identifier}.";

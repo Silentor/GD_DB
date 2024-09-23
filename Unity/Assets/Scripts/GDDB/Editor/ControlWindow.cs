@@ -25,7 +25,7 @@ namespace GDDB.Editor
 
         private void OnEnable( )
         {
-            GDOAssetPostprocessor.GddbStructureChanged += OnGddbStructureChanged;
+            AssetPostprocessor.GddbStructureChanged += OnGddbStructureChanged;
         }
 
         private void OnGddbStructureChanged( )
@@ -37,7 +37,7 @@ namespace GDDB.Editor
 
         private void OnDisable( )
         {
-            GDOAssetPostprocessor.GddbStructureChanged -= OnGddbStructureChanged;
+            AssetPostprocessor.GddbStructureChanged -= OnGddbStructureChanged;
         }
 
         private void CreateGUI( )

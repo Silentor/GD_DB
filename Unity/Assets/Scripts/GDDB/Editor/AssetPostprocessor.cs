@@ -9,18 +9,38 @@ using Object = System.Object;
 
 namespace GDDB.Editor
 {
-    public class GDOAssetPostprocessor : AssetPostprocessor
+    /// <summary>
+    /// Watch for changes of GDDB structure in Asset Database 
+    /// </summary>
+    public class AssetPostprocessor : UnityEditor.AssetPostprocessor
     {
+        public static Int32 GdbStructureHash    { get; private set; }
+        public static String RootFolderPath         {
+            get
+            {
+                if ( String.IsNullOrEmpty( _rootFolderPath ) )
+                {
+                     var parser = new FoldersParser();
+                     _rootFolderPath = parser.GetRootFolderPath();
+                }
+
+                return _rootFolderPath;
+            }
+        }
+
         public static event Action GddbStructureChanged;
+
+        
 
         private static readonly List<GDObject> _gdObjects = new ();
         private static readonly List<String>   _folders   = new ();
         private static          Boolean        _isNeedRecompileGddb;
         private static          FoldersParser  _parser;
+        private static String _rootFolderPath;
 
         private static readonly String GDDBStructureFilePath = $"{Application.dataPath}/../Library/GDDBTreeStructure.json";
 
-        static GDOAssetPostprocessor()
+        static AssetPostprocessor()
         {
             CompilationPipeline.compilationStarted += CompilationPipelineOncompilationStarted;
 
@@ -133,7 +153,7 @@ namespace GDDB.Editor
 
             //if ( isGDFoldersChanged )
             {
-                Debug.Log( $"[{nameof(GDOAssetPostprocessor)}] GD folder structure change detected, update GDDB DOM" );
+                Debug.Log( $"[{nameof(AssetPostprocessor)}] GD folder structure change detected, update GDDB DOM" );
 
                 //Update gd structure json to trigger GDDB DOM source generator
                 var       foldersSerializer = new FoldersSerializer();
@@ -141,7 +161,7 @@ namespace GDDB.Editor
                 using var treeStructureFile = File.CreateText( GDDBStructureFilePath );
                 treeStructureFile.Write( jsonString );
                 treeStructureFile.Close();
-                Debug.Log( $"[{nameof(GDOAssetPostprocessor)}] Updated structure: {GDDBStructureFilePath}" );
+                Debug.Log( $"[{nameof(AssetPostprocessor)}] Updated structure: {GDDBStructureFilePath}" );
 
 
                 var currentWindow = EditorWindow.focusedWindow;
@@ -211,6 +231,8 @@ namespace GDDB.Editor
 
             return false;
         }
+
+
         
     }
 }
