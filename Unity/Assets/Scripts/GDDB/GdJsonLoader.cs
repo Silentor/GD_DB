@@ -35,7 +35,7 @@ namespace GDDB
             _db = LoadGdDb( structureJson.text, objectsJson.text, referencedAssets );
 
             timer.Stop();
-            Debug.Log( $"[GdJsonLoader] GD data base {_db.Name} loaded in {timer.ElapsedMilliseconds} msec" );
+            Debug.Log( $"[GdJsonLoader] GD data base {_db.Name} loaded in {timer.ElapsedMilliseconds} msec, objects {_db.AllObjects.Count}" );
         }
         
         public GdJsonLoader( String structureJson, String objectsJson, GdAssetReference referencedAssets = null )
@@ -45,7 +45,7 @@ namespace GDDB
             _db = LoadGdDb( structureJson, objectsJson, referencedAssets );
 
             timer.Stop();
-            Debug.Log( $"[GdJsonLoader] GD data base {_db.Name} loaded in {timer.ElapsedMilliseconds} msec" );
+            Debug.Log( $"[GdJsonLoader] GD data base {_db.Name} loaded in {timer.ElapsedMilliseconds} msec, objects {_db.AllObjects.Count}" );
         }
 
         private GdDb LoadGdDb( String structureJson, String objectsJson, GdAssetReference referencedAssets )

@@ -7,10 +7,10 @@ namespace GDDB_User
     public class Runner : MonoBehaviour
     {
         public Int32            TestField;
-        public GDObject         TestObject;
+        public GDObject         TestDirectObject;
         [GdTypeFilter("Mobs//", typeof(TestMobComponent))]
-        public GdId             TestId;
-        public GdType           TestType;
+        public GdId             TestIdReference;
+        //public GdType           TestType;
         public Classes          NullObject;
         [SerializeReference]
         public TestNullAbstract TestAbstract;
@@ -21,12 +21,12 @@ namespace GDDB_User
 
         private void Awake( )
         {
-            var loader = new GdEditorLoader( );
+            //var loader = new GdEditorLoader( );
             //var loader = new GdScriptableLoader( "Default" );
+            var loader = new GdJsonLoader( "Default" );
             var gdb         = loader.GetGameDataBase();
+            gdb.Print();
             //gdb.Root.Mobs.
-
-            //gdb.Print();
 
             // var properties = gdb.Root.Mobs_Space._1_digit_start_folder.GetType().GetProperties();
             // foreach ( var propertyInfo in properties )

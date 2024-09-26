@@ -42,7 +42,7 @@ namespace GDDB
             _db = new GdDb( rootFolder, gddbReference.Content.Select( gdo => gdo.Object ).ToArray() ); 
 
             timer.Stop();
-            Debug.Log( $"[GdScriptableLoader] GD data base {name} loaded in {timer.ElapsedMilliseconds} msec" );
+            Debug.Log( $"[GdScriptableLoader] GD data base '{name}' loaded in {timer.ElapsedMilliseconds} msec, gdobjects stored {gddbReference.Content.Length}, loaded {_db.AllObjects.Count}" );
         } 
     }
 }
