@@ -51,7 +51,7 @@ namespace GDDB
         private GdDb LoadGdDb( String structureJson, String objectsJson, GdAssetReference referencedAssets )
         {
             var folderSerializer = new FoldersSerializer();
-            var rootFolder       = folderSerializer.Deserialize( structureJson );
+            var rootFolder       = folderSerializer.Deserialize( structureJson, out _ );
             var gdJsonSerializer = new GDJson();
             var objects          = gdJsonSerializer.JsonToGD( objectsJson, referencedAssets );
 

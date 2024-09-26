@@ -6,6 +6,7 @@ using UnityEngine;
 
 namespace GDDB.Tests
 {
+   
     public class NotSerializableContentComponent : GDComponent
     {
         public readonly Int32     ReadOnlyField = 42;
@@ -164,3 +165,4 @@ public class ComponentWithoutNamespace : GDComponent
 {
     public Int32 Field = 42;
 }
+

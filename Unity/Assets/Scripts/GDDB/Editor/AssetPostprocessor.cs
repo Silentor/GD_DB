@@ -66,13 +66,17 @@ namespace GDDB.Editor
         {
             if ( isDomainReload )
             {
-                // var loader = new GdEditorLoader( );
-                // var gdb         = loader.GetGameDataBase();
-                // var properties = gdb.Root.Mobs.GetType().GetProperties();
-                // foreach ( var propertyInfo in properties )
-                // {
-                //     Debug.Log( propertyInfo.Name );
-                // }
+                var gdb           = GDBEditor.GDB;
+                var rootGenerated = typeof(GdDb).GetProperty( "Root" );
+                if ( rootGenerated != null )
+                {
+                    var rootObj        = rootGenerated.GetValue( gdb );
+                    var generatedProps = rootObj.GetType().GetProperties();
+                    foreach ( var propertyInfo in generatedProps )
+                    {
+                        Debug.Log( propertyInfo.Name );
+                    }
+                }
             }
 
             _gdObjects.Clear();

@@ -19,7 +19,7 @@ namespace GDDB
 
             var structure  = Resources.Load<TextAsset>( $"{name}.structure" );
             var serializer = new FoldersSerializer();
-            var rootFolder = serializer.Deserialize( structure.text );
+            var rootFolder = serializer.Deserialize( structure.text, out _ );
 
             //Restore objects in hierarchy
             foreach ( var folder in rootFolder.EnumerateFoldersDFS(  ) )

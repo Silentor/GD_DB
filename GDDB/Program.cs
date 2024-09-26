@@ -3,11 +3,11 @@
 using GDDB;
 using GDDB.SourceGenerator;
 
-var file     = new System.IO.FileInfo("TreeStructure.json");
+var file     = new System.IO.FileInfo("GDDBTreeStructure.json");
 var json     = System.IO.File.ReadAllText(file.FullName);
 
 var parser   = new FoldersSerializer();
-var rootFolder = parser.Deserialize( json );
+var rootFolder = parser.Deserialize( json, out _ );
 
 var emitter  = new CodeEmitter();
 var allFolders = rootFolder.EnumerateFoldersDFS(  ).ToArray();
@@ -15,7 +15,7 @@ var allFolders = rootFolder.EnumerateFoldersDFS(  ).ToArray();
 //var enums    = emitter.GenerateEnums( "test.json", category, categories );
 //Console.WriteLine(enums);
 
-var filters = emitter.GenerateFolders( "test.json", allFolders );
+var filters = emitter.GenerateFolders( "test.json", 0, DateTime.Now, allFolders );
 Console.WriteLine(filters);
 
 //var gddbGetters = emitter.GenerateGdDbExtensions( "test.json", category, categories );

@@ -1,5 +1,5 @@
 {
-    "name": "Tests",
+    "name": "GDDB.Tests",
     "rootNamespace": "GDDB.Tests",
     "references": [
         "UnityEngine.TestRunner",

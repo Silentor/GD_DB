@@ -10,7 +10,7 @@ public class CodeEmitter
 {
     private static readonly String AssemblyName = Assembly.GetExecutingAssembly().GetName().Name;
     private static readonly String AssemblyVersion = Assembly.GetExecutingAssembly(). GetName().Version.ToString();
-    private static readonly String FileHeader = "//Generated from {0} at {1}";
+    private static readonly String FileHeader = "//Generated from {0} at {1} hash {2}";
     private static readonly String GeneratedTypeAttribute = $"[global::System.CodeDom.Compiler.GeneratedCodeAttribute(\"{AssemblyName}\", \"{AssemblyVersion}\")]";
     private static readonly String GdDbTypeName = "GdDb";
     
@@ -30,10 +30,10 @@ public class CodeEmitter
     //     return sb.ToString();
     // }
 
-    public String GenerateFolders( String treeFilePath, IReadOnlyCollection<Folder> allFolders  )
+    public String GenerateFolders( String treeFilePath, Int32 hash, DateTime generationTime, IReadOnlyCollection<Folder> allFolders  )
     {
         var sb = new StringBuilder();
-        sb.AppendLine( String.Format( FileHeader, treeFilePath, DateTime.Now ));
+        sb.AppendLine( String.Format( FileHeader, treeFilePath, generationTime, hash ));
         sb.AppendLine( "#nullable enable" );
         sb.AppendLine( "using System;" );
         sb.AppendLine( "using System.Collections;" );
@@ -52,10 +52,10 @@ public class CodeEmitter
         return sb.ToString();
     }
 
-    public String GenerateGdDbPartial( String treeFilePath, Folder rootFolder )
+    public String GenerateGdDbPartial( String treeFilePath, Int32 hash, DateTime generationTime, Folder rootFolder )
     {
         var sb = new StringBuilder();
-        sb.AppendLine( String.Format( FileHeader, treeFilePath, DateTime.Now ));
+        sb.AppendLine( String.Format( FileHeader, treeFilePath, generationTime, hash ));
         sb.AppendLine( "namespace GDDB" );
         sb.AppendLine( "{" );
         sb.AppendLine( GeneratedTypeAttribute );

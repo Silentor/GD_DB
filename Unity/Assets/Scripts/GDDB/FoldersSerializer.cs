@@ -16,9 +16,13 @@ namespace GDDB
             return rootJson.ToString( Formatting.Indented );
         }
 
-        public Folder Deserialize( String json )
+        public Folder Deserialize( String json, out Int32? hash )
         {
             var rootJson = JObject.Parse( json );
+            if( rootJson.TryGetValue( "hash", out var hashToken ) && hashToken.Type == JTokenType.Integer )
+                hash = hashToken.Value<Int32>();
+            else
+                hash = null;
             return DeserializeFolder( rootJson, null );
         }
 

@@ -82,9 +82,10 @@ namespace GDDB.SourceGenerator
 
                         var      serializer = new FoldersSerializer();
                         Folder rootFolder;
+                        Int32? dataHash = null;
                         try
                         {
-                            rootFolder = serializer.Deserialize( pair.Left.code );
+                            rootFolder = serializer.Deserialize( pair.Left.code, out dataHash );
                         }
                         catch ( JsonException e )
                         {
@@ -98,14 +99,16 @@ namespace GDDB.SourceGenerator
                         }
                         
                         Console.WriteLine( $"[DemoSourceGenerator] Generating code for {json.name}" );
+                        var now = DateTime.Now;
+                        var hash = dataHash ?? 0;
                         var emitter       = new CodeEmitter();
                         //var allCategories = new List<Category>();
                         var allFolders = rootFolder.EnumerateFoldersDFS(  ).ToArray();
                         //var categoryEnum = emitter.GenerateEnums( json.path, rootFolder, allCategories );
                         //context.AddSource( $"Categories.g.cs", SourceText.From( categoryEnum, Encoding.UTF8 ) );
-                        var foldersClasses = emitter.GenerateFolders( json.path, allFolders );
+                        var foldersClasses = emitter.GenerateFolders( json.path, hash, now, allFolders );
                         context.AddSource( "Folders.g.cs", SourceText.From( foldersClasses, Encoding.UTF8 ) );
-                        var gddbPartial = emitter.GenerateGdDbPartial( json.path, rootFolder );
+                        var gddbPartial = emitter.GenerateGdDbPartial( json.path, hash, now, rootFolder );
                         context.AddSource( "GdDb.partial.g.cs", SourceText.From( gddbPartial, Encoding.UTF8 ) );
                         //var gddbExtensions = emitter.GenerateGdDbExtensions( json.path, allFolders );
                         //context.AddSource( $"GdDbExtensions.g.cs", SourceText.From( gddbExtensions, Encoding.UTF8 ) );

@@ -10,9 +10,10 @@ namespace GDDB.Editor
 {
     public class ControlWindow : EditorWindow
     {
-        private Label _foldersInfoLbl;
-        private Label _foldersStructureHashLbl;
-        private Label _generatedStructureHashLbl;
+        private Label  _foldersInfoLbl;
+        private Label  _foldersStructureHashLbl;
+        private Label  _generatedStructureHashLbl;
+        private Toggle _autoGenerateOnSourceChanged;
 
         private static readonly String GDDBStructureFilePath = $"{Application.dataPath}/../Library/GDDBTreeStructure.json";
 
@@ -51,7 +52,13 @@ namespace GDDB.Editor
             UpdateGeneratedStructureHash(  );
             rootVisualElement.Add( _generatedStructureHashLbl );
 
+            _autoGenerateOnSourceChanged       = new Toggle( "Auto generate on source changed" );
+            _autoGenerateOnSourceChanged.value = GDBSourceGenerator.Settings.AutoGenerateOnSourceChanged;
+            _autoGenerateOnSourceChanged.RegisterValueChangedCallback( evt => GDBSourceGenerator.Settings.AutoGenerateOnSourceChanged = evt.newValue );
+            rootVisualElement.Add( _autoGenerateOnSourceChanged );
+
             var generateBtn = new Button( GenerateGDDBSource );
+            generateBtn.style.width = 200;
             generateBtn.text = "Generate GDDB Source";
             rootVisualElement.Add( generateBtn );
 
@@ -66,7 +73,7 @@ namespace GDDB.Editor
         {
             var rootFolder = GDBEditor.GDB.RootFolder;
             _foldersInfoLbl.text          = $"GDB root folder: {rootFolder.Path}, objects {GDBEditor.AllObjects.Count}, folders {GDBEditor.AllFolders.Count}";
-            _foldersStructureHashLbl.text = "Folders structure hash: " + rootFolder.GetFoldersStructureHash( );
+            _foldersStructureHashLbl.text = "Source hash: " + rootFolder.GetFoldersStructureHash( );
         }
 
         private void UpdateGeneratedStructureHash( )
@@ -80,7 +87,7 @@ namespace GDDB.Editor
                 generatedCodeHash = hash;
             }
 
-            _generatedStructureHashLbl.text = "Generated source hash: " + generatedCodeHash;
+            _generatedStructureHashLbl.text = "Generated  hash: " + generatedCodeHash;
         }
     }
 }

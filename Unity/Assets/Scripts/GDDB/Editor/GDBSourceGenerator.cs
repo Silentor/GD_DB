@@ -9,15 +9,18 @@ namespace GDDB.Editor
     /// <summary>
     /// Trigger GDB source generation if GD assets changed, play mode entered, build started etc
     /// </summary>
+    [InitializeOnLoad]
     public static class GDBSourceGenerator
     {
-        public static Boolean GenerateOnGDAssetsChange { get; set; } = true;
-
-        //public static Int32 FoldersStructureHash    { get; private set; } 
-        //public static Int32 GeneratedCodeHash       { get; private set; }
-
         static GDBSourceGenerator( )
         {
+            AssetPostprocessor.GDBStructureChanged.Subscribe( 5, OnGddbStructureChanged );
+        }
+
+        private static void OnGddbStructureChanged( )
+        {
+            if( Settings.AutoGenerateOnSourceChanged )
+                GenerateGDBSource(  );
         }
 
         public static void GenerateGDBSource( Boolean forceRegenerate = false )
@@ -34,15 +37,20 @@ namespace GDDB.Editor
                 File.WriteAllText( GDDBStructureFilePath, json );
 
                 //Trigger recompile of GDDB assembly and source generation
-                var gddbSourceFile = AssetDatabase.FindAssets( "t:asmdef GDDB" );
-                if( gddbSourceFile.Length == 0 )
+                var gddbSourceFile = AssetDatabase.FindAssets( "t:MonoScript GdDb" );
+
+                foreach ( var gddbFileId in gddbSourceFile )
                 {
-                    Debug.LogError( "GDDB assembly definition not found" );
-                    return;
+                    var path      = AssetDatabase.GUIDToAssetPath( gddbFileId );
+                    if ( path.EndsWith( "GdDb.cs" ) )
+                    {
+                        AssetDatabase.ImportAsset( path, ImportAssetOptions.ForceUpdate );
+                        return;
+                    }
                 }
-                var startTime = System.DateTime.Now;
-                var path      = AssetDatabase.GUIDToAssetPath( gddbSourceFile[0] );
-                AssetDatabase.ImportAsset( path, ImportAssetOptions.ForceUpdate );
+
+                Debug.LogError( "GDDB assembly definition not found" );
+                //var startTime = System.DateTime.Now;
             }
         }
 
@@ -60,5 +68,16 @@ namespace GDDB.Editor
         }
 
         private static readonly String  GDDBStructureFilePath = $"{Application.dataPath}/../Library/GDDBTreeStructure.json";
+
+        public static class Settings
+        {
+            private static readonly String AutoGenerateOnSourceChangeKey = $"{nameof(GDBSourceGenerator)}.{nameof(AutoGenerateOnSourceChanged)}";
+
+            public static Boolean AutoGenerateOnSourceChanged
+            {
+                get => EditorPrefs.GetBool( AutoGenerateOnSourceChangeKey, false );
+                set => EditorPrefs.SetBool( AutoGenerateOnSourceChangeKey, value );
+            }
+        }
     }
 }
