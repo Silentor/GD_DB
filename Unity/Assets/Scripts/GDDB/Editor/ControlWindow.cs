@@ -10,6 +10,7 @@ namespace GDDB.Editor
 {
     public class ControlWindow : EditorWindow
     {
+        private Label _foldersInfoLbl;
         private Label _foldersStructureHashLbl;
         private Label _generatedStructureHashLbl;
 
@@ -25,29 +26,25 @@ namespace GDDB.Editor
 
         private void OnEnable( )
         {
-            AssetPostprocessor.GddbStructureChanged += OnGddbStructureChanged;
+            AssetPostprocessor.GDBStructureChanged.Subscribe( 10, OnGddbStructureChanged );
         }
 
         private void OnGddbStructureChanged( )
         {
-            var foldersParser = new FoldersParser();
-            foldersParser.Parse();
-            UpdateFoldersStructureHash( foldersParser.Root );
+            UpdateFoldersStructureHash( );
         }
 
         private void OnDisable( )
         {
-            AssetPostprocessor.GddbStructureChanged -= OnGddbStructureChanged;
+            AssetPostprocessor.GDBStructureChanged.Unsubscribe( OnGddbStructureChanged );
         }
 
         private void CreateGUI( )
         {
-            var foldersParser = new FoldersParser();
-            foldersParser.Parse();
-
-            var rootFolder = foldersParser.Root;
+            _foldersInfoLbl = new Label(  );
             _foldersStructureHashLbl = new Label(  );
-            UpdateFoldersStructureHash( rootFolder );
+            UpdateFoldersStructureHash(   );
+            rootVisualElement.Add( _foldersInfoLbl );
             rootVisualElement.Add( _foldersStructureHashLbl );
 
             _generatedStructureHashLbl = new Label(  );
@@ -62,19 +59,13 @@ namespace GDDB.Editor
 
         private void GenerateGDDBSource( )
         {
-            var gddbSourceFile = AssetDatabase.FindAssets( "t:asmdef GDDB" );
-            if( gddbSourceFile.Length == 0 )
-            {
-                Debug.LogError( "GDDB assembly definition not found" );
-                return;
-            }
-            var startTime = System.DateTime.Now;
-            var path = AssetDatabase.GUIDToAssetPath( gddbSourceFile[0] );
-            AssetDatabase.ImportAsset( path, ImportAssetOptions.ForceUpdate );
+            GDBSourceGenerator.GenerateGDBSource( );
         }
 
-        private void UpdateFoldersStructureHash( Folder rootFolder)
+        private void UpdateFoldersStructureHash( )
         {
+            var rootFolder = GDBEditor.GDB.RootFolder;
+            _foldersInfoLbl.text          = $"GDB root folder: {rootFolder.Path}, objects {GDBEditor.AllObjects.Count}, folders {GDBEditor.AllFolders.Count}";
             _foldersStructureHashLbl.text = "Folders structure hash: " + rootFolder.GetFoldersStructureHash( );
         }
 

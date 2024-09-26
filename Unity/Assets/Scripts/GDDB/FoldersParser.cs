@@ -15,7 +15,7 @@ namespace GDDB.Editor
         public String RootFolderPath => Root?.Path;
 
         public IReadOnlyList<GDObject> AllObjects   =>  _allObjects;
-        //public IReadOnlyList<Folder> AllFolders     =>  _allFolders;
+        public IReadOnlyList<Folder> AllFolders     =>  _allFolders;
 
         public String GetRootFolderPath( )
         {
@@ -59,7 +59,7 @@ namespace GDDB.Editor
 
             //Assign Assets folder guid for consistency (Unity is not counts Assets as a folder asset  )
             var assetsFolder = new Folder( "Assets", "Assets", Guid.ParseExact( "A55E7500-F5B6-4EBA-825C-B1BC7331A193", "D" ) );
-            var foldersCache = new List<(Guid, String)>( gdos.Length + 1 ){ (assetsFolder.FolderGuid, "Assets") };
+            var foldersCache = new List<(Guid, String )>( gdos.Length + 1 ){ (assetsFolder.FolderGuid, "Assets" ) };
 
             //Add GDObjects to hierarchy
             _allObjects.Capacity = gdos.Length;
@@ -87,8 +87,12 @@ namespace GDDB.Editor
 
             CalculateDepth( Root );
 
+            _allFolders.Clear();
+            foreach ( var folder in Root.EnumerateFoldersDFS(  ) )            
+                _allFolders.Add( folder );
+
             timer.Stop();
-            Debug.Log( $"[{nameof(FoldersParser)}]-[{nameof(Parse)}] processed {gdos.Length} GDObjects, {timer.ElapsedMilliseconds} ms" );
+            Debug.Log( $"[{nameof(FoldersParser)}]-[{nameof(Parse)}] processed {gdos.Length} GDObjects, {_allFolders.Count} folders, {timer.ElapsedMilliseconds} ms" );
 
             return true;
         }
@@ -282,7 +286,8 @@ namespace GDDB.Editor
             return new ArraySegment<String>( mostCommonFolder.Array, 0, i ); 
         }
 
-        private readonly List<GDObject> _allObjects = new List<GDObject>();
+        private readonly List<GDObject> _allObjects = new ();
+        private readonly List<Folder> _allFolders = new ();
 
         private struct GDObjectPath
         {

@@ -149,13 +149,17 @@ namespace GDDB
         /// <returns></returns>
         public Int32 GetFoldersStructureHash( )
         {
-            HashCode hash = default;
+            var      result   = 0;
             foreach ( var folder in EnumerateFoldersDFS(  ) )
             {
-                hash.Add( folder.Path );
+                var folderHash = GetHashString( folder.Path );
+                unchecked
+                {
+                    result = result * 31 + folderHash;
+                }
             }
 
-            return hash.ToHashCode();
+            return result;
         }
 
         private static Boolean IsFolderNameValid( String folderName )
@@ -182,6 +186,22 @@ namespace GDDB
             }
 
             return true;
+        }
+
+        private Int32 GetHashString( string text )
+        {
+            if ( String.IsNullOrEmpty( text ) )
+                return 0;
+
+            unchecked
+            {
+                var hash = 23;
+                foreach (var c in text)
+                {
+                    hash = hash * 31 + c;
+                }
+                return hash;
+            }
         }
 
         private static readonly Char[] InvalidFolderNameChars = System.IO.Path.GetInvalidPathChars()

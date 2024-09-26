@@ -15,6 +15,9 @@ namespace GDDB
     /// </summary>
     public class GdEditorLoader : GdLoader
     {
+        public readonly IReadOnlyList<GDObject> AllObjects;
+        public readonly IReadOnlyList<Folder> AllFolders;
+
         public GdEditorLoader(  )
         {
  #if !UNITY_EDITOR
@@ -29,10 +32,9 @@ namespace GDDB
                 // if( !gdRoot )
                 //     throw new ArgumentException( $"Game design data base name {name} is incorrect" );
 
-                //parser.CalculateDepth( assetsFolder );
-
-                var allObjects = GetAllObjects( assetsFolder );
-                _db = new GdDb( assetsFolder, allObjects );
+                _db = new GdDb( assetsFolder, parser.AllObjects );
+                AllObjects = parser.AllObjects;
+                AllFolders = parser.AllFolders;
 
                 timer.Stop();
 
@@ -40,20 +42,5 @@ namespace GDDB
 #endif           
 
         } 
-
-        IReadOnlyList<GDObject> GetAllObjects(  Folder root )
-        {
-            var result = new List<GDObject>();
-            foreach ( var folder in root.EnumerateFoldersDFS(  ) )
-            {
-                foreach ( var gdo in folder.Objects )
-                {
-                    result.Add( gdo );
-                }                
-            }
-
-            return result;
-        }
     }
-   
 }
