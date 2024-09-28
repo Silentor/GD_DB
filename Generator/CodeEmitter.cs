@@ -38,8 +38,9 @@ public class CodeEmitter
         sb.AppendLine( "using System;" );
         sb.AppendLine( "using System.Collections;" );
         sb.AppendLine( "using System.Collections.Generic;" );
+        sb.AppendLine( "using GDDB;" );
         sb.AppendLine( );
-        sb.AppendLine( "namespace GDDB" );
+        sb.AppendLine( "namespace GDDB.Generated" );
         sb.AppendLine( "{" );
         sb.AppendLine( );
         foreach ( var folder in allFolders )
@@ -58,6 +59,7 @@ public class CodeEmitter
         sb.AppendLine( String.Format( FileHeader, treeFilePath, generationTime, hash ));
         sb.AppendLine( "namespace GDDB" );
         sb.AppendLine( "{" );
+        sb.AppendLine( "using Generated;" );
         sb.AppendLine( GeneratedTypeAttribute );
         sb.AppendLine( "  public partial class GdDb" );
         sb.AppendLine( "  {" );
