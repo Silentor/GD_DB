@@ -38,7 +38,7 @@ namespace GDDB_User
             Debug.Log( gdbHash );
             Debug.Log( generatedRootType );
 
-            var a = gdb.Root.Space_folder2;
+            //var a = gdb.Root.Space_folder2;
 
             // var properties = gdb.Root.Mobs_Space._1_digit_start_folder.GetType().GetProperties();
             // foreach ( var propertyInfo in properties )

@@ -9,13 +9,15 @@ namespace GDDB.Editor
 {
     public class ControlWindow : EditorWindow
     {
-        private Label  _foldersInfoLbl;
-        private Label  _foldersStructureHashLbl;
-        private Label  _generatedStructureHashLbl;
-        private Toggle _autoGenerateOnSourceChanged;
-        private Toggle _autoGenerateOnFocusLost;
-        private Toggle _autoGenerateOnEnterPlayMode;
-        private Toggle _autoGenerateOnBuild;
+        private Label         _foldersInfoLbl;
+        private Label         _foldersStructureHashLbl;
+        private Label         _generatedStructureHashLbl;
+        private Toggle        _autoGenerateOnSourceChanged;
+        private Toggle        _autoGenerateOnFocusLost;
+        private Toggle        _autoGenerateOnEnterPlayMode;
+        private Toggle        _autoGenerateOnBuild;
+        private VisualElement _sourceGenHashIcon;
+        private Button        _sourceGenBtn;
 
         [MenuItem( "GDDB/Control Window" )]
         private static void ShowWindow( )
@@ -32,7 +34,8 @@ namespace GDDB.Editor
 
         private void OnGddbStructureChanged( )
         {
-            UpdateFoldersStructureHash( );
+            UpdateGDBInfo( );
+            UpdateSourceGenInfo();
         }
 
         private void OnDisable( )
@@ -42,42 +45,34 @@ namespace GDDB.Editor
 
         private void CreateGUI( )
         {
-            _foldersInfoLbl = new Label(  );
-            _foldersStructureHashLbl = new Label(  );
-            UpdateFoldersStructureHash(   );
-            rootVisualElement.Add( _foldersInfoLbl );
-            rootVisualElement.Add( _foldersStructureHashLbl );
+            var window = UnityEngine.Resources.Load<VisualTreeAsset>( "ControlWindow" ).Instantiate();
 
-            _generatedStructureHashLbl = new Label(  );
-            UpdateGeneratedStructureHash(  );
-            rootVisualElement.Add( _generatedStructureHashLbl );
+            _foldersInfoLbl = window.Q<Label>( "GDBInfo" );
+            _foldersStructureHashLbl = window.Q<Label>( "GDBHash" );
+            
 
-            _autoGenerateOnSourceChanged       = new Toggle( "Auto generate on source changed" );
-            _autoGenerateOnSourceChanged.value = GDBSourceGenerator.Settings.AutoGenerateOnSourceChanged;
-            _autoGenerateOnSourceChanged.RegisterValueChangedCallback( evt => GDBSourceGenerator.Settings.AutoGenerateOnSourceChanged = evt.newValue );
-            rootVisualElement.Add( _autoGenerateOnSourceChanged );
+            //Source Gen settings
+            _autoGenerateOnSourceChanged = SetupSettingsToggle(window, "GenerateOnChange", GDBSourceGenerator.Settings.AutoGenerateOnSourceChanged, val => GDBSourceGenerator.Settings.AutoGenerateOnSourceChanged = val );
+            _autoGenerateOnFocusLost = SetupSettingsToggle(window, "GenerateOnFocus", GDBSourceGenerator.Settings.AutoGenerateOnFocusLost, val => GDBSourceGenerator.Settings.AutoGenerateOnFocusLost = val );
+            _autoGenerateOnEnterPlayMode = SetupSettingsToggle(window, "GenerateOnPlayMode", GDBSourceGenerator.Settings.AutoGenerateOnPlayMode, val => GDBSourceGenerator.Settings.AutoGenerateOnPlayMode = val );
+            _autoGenerateOnBuild = SetupSettingsToggle(window, "GenerateOnBuild", GDBSourceGenerator.Settings.AutoGenerateOnBuild, val => GDBSourceGenerator.Settings.AutoGenerateOnBuild = val );
+            _generatedStructureHashLbl = window.Q<Label>( "SourceGenHash" );
+            _sourceGenHashIcon = window.Q<VisualElement>( "SourceGenHashIcon" );
+            _sourceGenBtn = window.Q<Button>( "SourceGenBtn" );
+            _sourceGenBtn.clicked += GenerateGDDBSource;
 
-            _autoGenerateOnFocusLost       = new Toggle( "Auto generate on editor focus lost" );
-            _autoGenerateOnFocusLost.value = GDBSourceGenerator.Settings.AutoGenerateOnFocusLost;
-            _autoGenerateOnFocusLost.RegisterValueChangedCallback( evt => GDBSourceGenerator.Settings.AutoGenerateOnFocusLost = evt.newValue );
-            rootVisualElement.Add( _autoGenerateOnFocusLost );
+            UpdateGDBInfo();
+            UpdateSourceGenInfo();
 
-            _autoGenerateOnEnterPlayMode       = new Toggle( "Auto generate on enter play mode" );
-            _autoGenerateOnEnterPlayMode.value = GDBSourceGenerator.Settings.AutoGenerateOnPlayMode;
-            _autoGenerateOnEnterPlayMode.RegisterValueChangedCallback( evt => GDBSourceGenerator.Settings.AutoGenerateOnPlayMode = evt.newValue );
-            rootVisualElement.Add( _autoGenerateOnEnterPlayMode );
+            rootVisualElement.Add( window );
+        }
 
-            _autoGenerateOnBuild       = new Toggle( "Auto generate on build" );
-            _autoGenerateOnBuild.value = GDBSourceGenerator.Settings.AutoGenerateOnBuild;
-            _autoGenerateOnBuild.RegisterValueChangedCallback( evt => GDBSourceGenerator.Settings.AutoGenerateOnBuild = evt.newValue );
-            rootVisualElement.Add( _autoGenerateOnBuild );
-
-
-            var generateBtn = new Button( GenerateGDDBSource );
-            generateBtn.style.width = 200;
-            generateBtn.text = "Generate GDDB Source";
-            rootVisualElement.Add( generateBtn );
-
+        private Toggle SetupSettingsToggle( VisualElement container, String toggleName, Boolean value, Action<Boolean> setter )
+        {
+            var result = container.Q<Toggle>( toggleName );
+            result.value = value;
+            result.RegisterValueChangedCallback( evt => setter( evt.newValue ) );
+            return result;
         }
 
         private void GenerateGDDBSource( )
@@ -85,17 +80,25 @@ namespace GDDB.Editor
             GDBSourceGenerator.GenerateGDBSource( );
         }
 
-        private void UpdateFoldersStructureHash( )
+        private void UpdateGDBInfo( )
         {
             var rootFolder = GDBEditor.GDB.RootFolder;
             _foldersInfoLbl.text          = $"GDB root folder: {rootFolder.Path}, objects {GDBEditor.AllObjects.Count}, folders {GDBEditor.AllFolders.Count}";
             _foldersStructureHashLbl.text = "Source hash: " + rootFolder.GetFoldersStructureHash( );
         }
 
-        private void UpdateGeneratedStructureHash( )
+        private void UpdateSourceGenInfo( )
         {
+            var rootFolderHash        = GDBEditor.GDB.RootFolder.GetFoldersStructureHash();
             var generatedCodeHash = GDBSourceGenerator.GetGeneratedCodeHash();
             _generatedStructureHashLbl.text = "Generated  hash: " + generatedCodeHash;
+            _sourceGenHashIcon.style.backgroundImage = rootFolderHash == generatedCodeHash ? Resources.HashOkIcon : Resources.HashNotOkIcon;
+        }
+
+        private static class Resources
+        {
+            public static readonly Texture2D HashOkIcon    = UnityEngine.Resources.Load<Texture2D>( "check_24dp" );
+            public static readonly Texture2D HashNotOkIcon = UnityEngine.Resources.Load<Texture2D>( "error_24dp" );
         }
     }
 }
