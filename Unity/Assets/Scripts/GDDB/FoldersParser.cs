@@ -1,13 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using Unity.Collections.LowLevel.Unsafe;
-using UnityEditor;
 using Debug = UnityEngine.Debug;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace GDDB.Editor
 {
+#if UNITY_EDITOR
+
     /// <summary>
     /// Creates GDDB DOM from folders and GDO assets structure. Starts from Assets/ folder
+    /// Make sense only in Editor
     /// </summary>
     public class FoldersParser
     {
@@ -62,16 +68,22 @@ namespace GDDB.Editor
             var foldersCache = new List<(Guid, String )>( gdos.Length + 1 ){ (assetsFolder.FolderGuid, "Assets" ) };
 
             //Add GDObjects to hierarchy
+            var addedObjectCount = 0;
             _allObjects.Capacity = gdos.Length;
             for ( var i = 0; i < gdos.Length; i++ )
             {
-                var gdoData = gdos[ i ];
+                var gdoData  = gdos[ i ];
+                var gdobject = AssetDatabase.LoadAssetAtPath<GDObject>( gdoData.Path );
+                if( !gdobject.EnabledObject )
+                    continue;
+                
                 var folder  = GetOrCreateFolderForSplittedPath( assetsFolder, Split( gdoData.Path ), foldersCache );
                 var guid    = Guid.ParseExact( gdoData.Guid, "N" );
                 folder.ObjectIds.Add( guid );
-                var gdobject = AssetDatabase.LoadAssetAtPath<GDObject>( gdoData.Path );
+                
                 folder.Objects.Add( gdobject );
                 _allObjects.Add( gdobject );
+                addedObjectCount++;
             }
 
             //Get GDB root folder
@@ -92,7 +104,7 @@ namespace GDDB.Editor
                 _allFolders.Add( folder );
 
             timer.Stop();
-            Debug.Log( $"[{nameof(FoldersParser)}]-[{nameof(Parse)}] processed {gdos.Length} GDObjects, {_allFolders.Count} folders, {timer.ElapsedMilliseconds} ms" );
+            Debug.Log( $"[{nameof(FoldersParser)}]-[{nameof(Parse)}] processed {gdos.Length} GDObjects, added {addedObjectCount} GDObjects and {_allFolders.Count} folders, {timer.ElapsedMilliseconds} ms" );
 
             return true;
         }
@@ -373,7 +385,6 @@ namespace GDDB.Editor
             public String Current => _path.Substring( _prevIndex, _delimiterIndex - _prevIndex );  //todo use Span
         }
 
-#if UNITY_EDITOR
         [MenuItem( "GDDB/Print hierarchy" )]
         private static void PrintHierarchyToConsole( )
         {
@@ -383,7 +394,7 @@ namespace GDDB.Editor
             Debug.Log( "Root folder2: " + folders.Root.Path );
             folders.Print();
         }
-#endif
-        
     }
+
+#endif
 }

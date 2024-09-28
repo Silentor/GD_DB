@@ -11,7 +11,7 @@ using GDDB.Editor;
 namespace GDDB
 {
     /// <summary>
-    /// GD DB loader from AssetDatabase in Unity Editor
+    /// GD DB loader from AssetDatabase in Unity Editor. Used as fast loader for editor play mode without parsing DB json
     /// </summary>
     public class GdEditorLoader : GdLoader
     {

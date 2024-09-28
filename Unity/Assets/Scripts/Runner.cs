@@ -1,11 +1,14 @@
 using System;
 using GDDB;
+using TMPro;
 using UnityEngine;
 
 namespace GDDB_User
 {
     public class Runner : MonoBehaviour
     {
+        public TMP_Text DebugOutput;
+
         public Int32            TestField;
         public GDObject         TestDirectObject;
         [GdTypeFilter("Mobs//", typeof(TestMobComponent))]
@@ -26,7 +29,16 @@ namespace GDDB_User
             var loader = new GdJsonLoader( "Default" );
             var gdb         = loader.GetGameDataBase();
             gdb.Print();
-            //gdb.Root.Mobs.
+
+            var gdbHash = gdb.RootFolder.GetFoldersStructureHash();
+            var generatedRootType = GetRootFolderType( gdb );
+
+
+            DebugOutput.text = $"GDB hash: {gdbHash}\nRoot sourcegen: {generatedRootType}";
+            Debug.Log( gdbHash );
+            Debug.Log( generatedRootType );
+
+            var a = gdb.Root.Space_folder2;
 
             // var properties = gdb.Root.Mobs_Space._1_digit_start_folder.GetType().GetProperties();
             // foreach ( var propertyInfo in properties )
@@ -48,8 +60,17 @@ namespace GDDB_User
 #if UNITY_EDITOR
             return new GdEditorLoader( );
 #else
-            return new GdScriptableLoader( );
+            return new GdScriptableLoader( "Default" );
 #endif
+        }
+
+        private String GetRootFolderType( GdDb db )
+        {
+            var prop = db.GetType().GetProperty( "Root" );
+            if( prop != null )
+                return prop.PropertyType.Name;
+
+            return "???";
         }
     }
 

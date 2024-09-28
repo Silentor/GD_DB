@@ -281,23 +281,23 @@ namespace GDDB.Editor
             //Save db to json
             var toJsonBtn = new Button( ( ) => 
             {
-                var freshDB = new GdEditorLoader(  ).GetGameDataBase();
+                var editorDB = GDBEditor.GDB;
 
                 //Save hierarchy to json
                 var serializer = new FoldersSerializer();
-                var json       = serializer.Serialize( freshDB.RootFolder );
-                var structureJsonPath   = Path.Combine( Application.dataPath, $"Resources/{freshDB.Name}.structure.json" );
+                var json       = serializer.Serialize( editorDB.RootFolder );
+                var structureJsonPath   = Path.Combine( Application.dataPath, $"Resources/{editorDB.Name}.structure.json" );
                 File.WriteAllText( structureJsonPath, json );
 
                 //Save gd objects to another json
                 var gdSerializer = new GDJson();
                 var referencedAssets       = ScriptableObject.CreateInstance<GdAssetReference>();
-                json = gdSerializer.GDToJson( freshDB.AllObjects, referencedAssets );
-                var objectsJsonPath = Path.Combine( Application.dataPath, $"Resources/{freshDB.Name}.objects.json" );
+                json = gdSerializer.GDToJson( editorDB.AllObjects, referencedAssets );
+                var objectsJsonPath = Path.Combine( Application.dataPath, $"Resources/{editorDB.Name}.objects.json" );
                 File.WriteAllText( objectsJsonPath, json );
 
                 //Save referenced assets to scriptable object list
-                var assetsPath = $"Assets/Resources/{freshDB.Name}.assets.asset";
+                var assetsPath = $"Assets/Resources/{editorDB.Name}.assets.asset";
                 AssetDatabase.CreateAsset( referencedAssets, assetsPath );
 
                 AssetDatabase.Refresh();
@@ -311,7 +311,7 @@ namespace GDDB.Editor
 
             //Save db to scriptable object
             var toSoBtn = new Button( ( ) => {
-                GdScriptablePreprocessBuild.PrepareResourceReference( new GdEditorLoader( ).GetGameDataBase() );
+                BuildPreprocessor.PrepareResourceReference( new GdEditorLoader( ).GetGameDataBase() );
             } );
             toSoBtn.text       = "DB to SO";
             toSoBtn.style.width  = 100;

@@ -15,6 +15,27 @@ namespace GDDB.Editor
         static GDBSourceGenerator( )
         {
             AssetPostprocessor.GDBStructureChanged.Subscribe( 5, OnGddbStructureChanged );
+            EditorApplication.focusChanged += EditorApplicationOnfocusChanged;
+            EditorApplication.playModeStateChanged += EditorApplicationOnplayModeStateChanged;
+            BuildPreprocessor.BuildPreprocessing += BuildPreprocessorOnBuildPreprocessing;
+        }
+
+        private static void BuildPreprocessorOnBuildPreprocessing( )
+        {
+            if( Settings.AutoGenerateOnBuild )
+                GenerateGDBSource(  );
+        }
+
+        private static void EditorApplicationOnplayModeStateChanged( PlayModeStateChange state )
+        {
+            if( Settings.AutoGenerateOnPlayMode && state == PlayModeStateChange.ExitingEditMode )
+                GenerateGDBSource(  );
+        }
+
+        private static void EditorApplicationOnfocusChanged( Boolean isFocused )
+        {
+            if( Settings.AutoGenerateOnFocusLost && !isFocused )
+                GenerateGDBSource(  );
         }
 
         private static void OnGddbStructureChanged( )
@@ -72,12 +93,34 @@ namespace GDDB.Editor
         public static class Settings
         {
             private static readonly String AutoGenerateOnSourceChangeKey = $"{nameof(GDBSourceGenerator)}.{nameof(AutoGenerateOnSourceChanged)}";
+            private static readonly String AutoGenerateOnPlayModeKey = $"{nameof(GDBSourceGenerator)}.{nameof(AutoGenerateOnPlayMode)}";
+            private static readonly String AutoGenerateOnBuildKey = $"{nameof(GDBSourceGenerator)}.{nameof(AutoGenerateOnBuild)}";
+            private static readonly String AutoGenerateOnFocusLostKey = $"{nameof(GDBSourceGenerator)}.{nameof(AutoGenerateOnFocusLost)}";
 
             public static Boolean AutoGenerateOnSourceChanged
             {
                 get => EditorPrefs.GetBool( AutoGenerateOnSourceChangeKey, false );
                 set => EditorPrefs.SetBool( AutoGenerateOnSourceChangeKey, value );
             }
+
+            public static Boolean AutoGenerateOnPlayMode
+            {
+                get => EditorPrefs.GetBool( AutoGenerateOnPlayModeKey, true );
+                set => EditorPrefs.SetBool( AutoGenerateOnPlayModeKey, value );
+            }
+
+            public static Boolean AutoGenerateOnBuild
+            {
+                get => EditorPrefs.GetBool( AutoGenerateOnBuildKey, true );
+                set => EditorPrefs.SetBool( AutoGenerateOnBuildKey, value );
+            }
+
+            public static Boolean AutoGenerateOnFocusLost
+            {
+                get => EditorPrefs.GetBool( AutoGenerateOnFocusLostKey, true );
+                set => EditorPrefs.SetBool( AutoGenerateOnFocusLostKey, value );
+            }
+
         }
     }
 }

@@ -9,12 +9,16 @@ using UnityEngine;
 
 namespace GDDB.Editor
 {
-    public class GdScriptablePreprocessBuild : IPreprocessBuildWithReport
+    public class BuildPreprocessor : IPreprocessBuildWithReport
     {
         public Int32 callbackOrder { get; } = 0;
 
+        public static event Action BuildPreprocessing;
+
         public void  OnPreprocessBuild( BuildReport report )
         {
+            BuildPreprocessing?.Invoke();
+
             //Prepare Resource folder references to GD DB
             var gdiRootsGuids = AssetDatabase.FindAssets( "t:GDRoot" );
             foreach ( var gdiRootGuid in gdiRootsGuids )

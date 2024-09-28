@@ -3,7 +3,6 @@ using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
-using UnityEngine.Windows;
 using Object = System.Object;
 
 namespace GDDB.Editor
@@ -14,8 +13,9 @@ namespace GDDB.Editor
         private Label  _foldersStructureHashLbl;
         private Label  _generatedStructureHashLbl;
         private Toggle _autoGenerateOnSourceChanged;
-
-        private static readonly String GDDBStructureFilePath = $"{Application.dataPath}/../Library/GDDBTreeStructure.json";
+        private Toggle _autoGenerateOnFocusLost;
+        private Toggle _autoGenerateOnEnterPlayMode;
+        private Toggle _autoGenerateOnBuild;
 
         [MenuItem( "GDDB/Control Window" )]
         private static void ShowWindow( )
@@ -57,6 +57,22 @@ namespace GDDB.Editor
             _autoGenerateOnSourceChanged.RegisterValueChangedCallback( evt => GDBSourceGenerator.Settings.AutoGenerateOnSourceChanged = evt.newValue );
             rootVisualElement.Add( _autoGenerateOnSourceChanged );
 
+            _autoGenerateOnFocusLost       = new Toggle( "Auto generate on editor focus lost" );
+            _autoGenerateOnFocusLost.value = GDBSourceGenerator.Settings.AutoGenerateOnFocusLost;
+            _autoGenerateOnFocusLost.RegisterValueChangedCallback( evt => GDBSourceGenerator.Settings.AutoGenerateOnFocusLost = evt.newValue );
+            rootVisualElement.Add( _autoGenerateOnFocusLost );
+
+            _autoGenerateOnEnterPlayMode       = new Toggle( "Auto generate on enter play mode" );
+            _autoGenerateOnEnterPlayMode.value = GDBSourceGenerator.Settings.AutoGenerateOnPlayMode;
+            _autoGenerateOnEnterPlayMode.RegisterValueChangedCallback( evt => GDBSourceGenerator.Settings.AutoGenerateOnPlayMode = evt.newValue );
+            rootVisualElement.Add( _autoGenerateOnEnterPlayMode );
+
+            _autoGenerateOnBuild       = new Toggle( "Auto generate on build" );
+            _autoGenerateOnBuild.value = GDBSourceGenerator.Settings.AutoGenerateOnBuild;
+            _autoGenerateOnBuild.RegisterValueChangedCallback( evt => GDBSourceGenerator.Settings.AutoGenerateOnBuild = evt.newValue );
+            rootVisualElement.Add( _autoGenerateOnBuild );
+
+
             var generateBtn = new Button( GenerateGDDBSource );
             generateBtn.style.width = 200;
             generateBtn.text = "Generate GDDB Source";
@@ -78,15 +94,7 @@ namespace GDDB.Editor
 
         private void UpdateGeneratedStructureHash( )
         {
-            var generatedCodeHash = 0;
-            if ( System.IO.File.Exists( GDDBStructureFilePath ) )
-            {
-                var jsonString    = System.IO.File.ReadAllText( GDDBStructureFilePath );
-                var structureJObj = JObject.Parse( jsonString );
-                var hash = structureJObj["hash"].Value<Int32>();
-                generatedCodeHash = hash;
-            }
-
+            var generatedCodeHash = GDBSourceGenerator.GetGeneratedCodeHash();
             _generatedStructureHashLbl.text = "Generated  hash: " + generatedCodeHash;
         }
     }

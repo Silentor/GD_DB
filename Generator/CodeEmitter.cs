@@ -59,12 +59,12 @@ public class CodeEmitter
         sb.AppendLine( String.Format( FileHeader, treeFilePath, generationTime, hash ));
         sb.AppendLine( "namespace GDDB" );
         sb.AppendLine( "{" );
-        sb.AppendLine( "using Generated;" );
-        sb.AppendLine( GeneratedTypeAttribute );
+        sb.AppendLine( "  using Generated;" );
         sb.AppendLine( "  public partial class GdDb" );
         sb.AppendLine( "  {" );
         var rootFolderClassName = $"{rootFolder.Name}Folder";
-        sb.AppendLine( $"  public {rootFolderClassName} Root => new( RootFolder );" );
+        sb.Append( "    " );sb.AppendLine( GeneratedTypeAttribute );
+        sb.AppendLine( $"    public {rootFolderClassName} Root => new( RootFolder );" );
         sb.AppendLine( "  }" );
         sb.AppendLine( "}" );
         return sb.ToString();

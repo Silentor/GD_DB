@@ -64,6 +64,7 @@ namespace GDDB.Editor
 
         private static void OnPostprocessAllAssets(String[] importedAssets, String[] deletedAssets, String[] movedAssets, String[] movedFromAssetPaths, bool isDomainReload )
         {
+            //DEBUG
             if ( isDomainReload )
             {
                 var gdb           = GDBEditor.GDB;
