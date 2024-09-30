@@ -14,7 +14,7 @@
                 <ui:Toggle label="Generate on losing focus" name="GenerateOnFocus" />
                 <ui:Toggle label="Generate on play mode" name="GenerateOnPlayMode" />
                 <ui:Toggle label="Generate on build" name="GenerateOnBuild" />
-                <ui:Button text="Generate manual" parse-escape-sequences="true" display-tooltip-when-elided="true" name="SourceGenBtn" style="width: 150px;" />
+                <ui:Button text="Force Generate" parse-escape-sequences="true" display-tooltip-when-elided="true" name="SourceGenBtn" style="width: 150px;" />
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

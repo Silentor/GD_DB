@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.IO;
 using Newtonsoft.Json.Linq;
 using UnityEditor;
@@ -18,6 +19,13 @@ namespace GDDB.Editor
             EditorApplication.focusChanged += EditorApplicationOnfocusChanged;
             EditorApplication.playModeStateChanged += EditorApplicationOnplayModeStateChanged;
             BuildPreprocessor.BuildPreprocessing += BuildPreprocessorOnBuildPreprocessing;
+            Settings.SettingChanged += SettingChanged;
+        }
+
+        private static void SettingChanged(String settingName)
+        {
+            if( settingName == nameof(Settings.AutoGenerateOnSourceChanged) && Settings.AutoGenerateOnSourceChanged )
+                GenerateGDBSource();        //Its check changes inside
         }
 
         private static void BuildPreprocessorOnBuildPreprocessing( )
@@ -100,7 +108,11 @@ namespace GDDB.Editor
             public static Boolean AutoGenerateOnSourceChanged
             {
                 get => EditorPrefs.GetBool( AutoGenerateOnSourceChangeKey, false );
-                set => EditorPrefs.SetBool( AutoGenerateOnSourceChangeKey, value );
+                set
+                {
+                    EditorPrefs.SetBool( AutoGenerateOnSourceChangeKey, value );
+                    SettingChanged?.Invoke( nameof(AutoGenerateOnSourceChanged) );
+                }
             }
 
             public static Boolean AutoGenerateOnPlayMode
@@ -120,6 +132,8 @@ namespace GDDB.Editor
                 get => EditorPrefs.GetBool( AutoGenerateOnFocusLostKey, true );
                 set => EditorPrefs.SetBool( AutoGenerateOnFocusLostKey, value );
             }
+
+            public static event Action<String> SettingChanged;
 
         }
     }

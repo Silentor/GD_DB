@@ -59,7 +59,7 @@ namespace GDDB.Editor
             _generatedStructureHashLbl = window.Q<Label>( "SourceGenHash" );
             _sourceGenHashIcon = window.Q<VisualElement>( "SourceGenHashIcon" );
             _sourceGenBtn = window.Q<Button>( "SourceGenBtn" );
-            _sourceGenBtn.clicked += GenerateGDDBSource;
+            _sourceGenBtn.clicked += GenerateSourceManual;
 
             UpdateGDBInfo();
             UpdateSourceGenInfo();
@@ -75,9 +75,9 @@ namespace GDDB.Editor
             return result;
         }
 
-        private void GenerateGDDBSource( )
+        private void GenerateSourceManual( )
         {
-            GDBSourceGenerator.GenerateGDBSource( );
+            GDBSourceGenerator.GenerateGDBSource( true );
         }
 
         private void UpdateGDBInfo( )
