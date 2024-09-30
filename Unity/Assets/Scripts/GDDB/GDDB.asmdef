@@ -1,6 +1,6 @@
 {
     "name": "GDDB",
-    "rootNamespace": "GDDB",
+    "rootNamespace": "",
     "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],

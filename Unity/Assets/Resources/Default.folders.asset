@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 685d665de77149008bad10753cc96b98, type: 3}
+  m_Name: Default.folders
+  m_EditorClassIdentifier: 
+  Folders:
+  - Name: GDInfo
+    Guid:
+      Part1: 5514424793969930481
+      Part2: 17338237981258959536
+    Depth: 0
+    Objects:
+    - {fileID: 11400000, guid: c9d1f11f7bd552244be031c883375f18, type: 2}
+  - Name: Test7
+    Guid:
+      Part1: 4858228606945491376
+      Part2: 15946265253474524584
+    Depth: 1
+    Objects: []
+  - Name: Mobs8
+    Guid:
+      Part1: 5696223913233072893
+      Part2: 4708143103670537898
+    Depth: 2
+    Objects:
+    - {fileID: 11400000, guid: 4d1cca730eb25a943aa3ddf5e019c327, type: 2}
+    - {fileID: 11400000, guid: cb595db9ada0d114d80dc074b374f7d4, type: 2}
+  - Name: 01 start with digit
+    Guid:
+      Part1: 5294527098124270461
+      Part2: 2973693679482116233
+    Depth: 3
+    Objects:
+    - {fileID: 11400000, guid: d3b86812c37a7044ab954dbd7226587a, type: 2}
+  - Name: Space folder7
+    Guid:
+      Part1: 5369812455130667390
+      Part2: 3823981400432936329
+    Depth: 3
+    Objects:
+    - {fileID: 11400000, guid: 132942bacee7d7f43882360073789368, type: 2}
+  - Name: Two space folder
+    Guid:
+      Part1: 5599620390963284848
+      Part2: 17739666789822752905
+    Depth: 3
+    Objects:
+    - {fileID: 11400000, guid: 714ad05251d179b49bb5706ae2908786, type: 2}

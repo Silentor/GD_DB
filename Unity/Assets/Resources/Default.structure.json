@@ -1,77 +1,52 @@
 {
-  "name": "GDInfo",
-  "path": "Assets/GDInfo",
+  "name": "Mobs6",
+  "path": "Assets/GDInfo/Test7/Mobs6",
   "depth": 0,
-  "guid": "292f30f1-2c22-4c87-b04a-200095cb9df0",
+  "guid": "1d57c2fd-0d78-4f0d-aace-fc3d35af5641",
   "subFolders": [
     {
-      "name": "Mobs",
-      "path": "Assets/GDInfo/Mobs",
+      "name": "01 start with digit",
+      "path": "Assets/GDInfo/Test7/Mobs6/01 start with digit",
       "depth": 1,
-      "guid": "1d57c2fd-0d78-4f0d-aace-fc3d35af5641",
-      "subFolders": [
-        {
-          "name": "01 start with digit",
-          "path": "Assets/GDInfo/Mobs/01 start with digit",
-          "depth": 2,
-          "guid": "19607b7d-f058-4979-8918-5b6ca5ae4429",
-          "subFolders": [],
-          "objects": [
-            {
-              "guid": "d3b86812-c37a-7044-ab95-4dbd7226587a"
-            }
-          ]
-        },
-        {
-          "name": "Space folder",
-          "path": "Assets/GDInfo/Mobs/Space folder",
-          "depth": 2,
-          "guid": "3a88197e-67fa-4a85-8985-81c8d2821135",
-          "subFolders": [],
-          "objects": [
-            {
-              "guid": "132942ba-cee7-d7f4-3882-360073789368"
-            }
-          ]
-        },
-        {
-          "name": "Two space folder",
-          "path": "Assets/GDInfo/Mobs/Two space folder",
-          "depth": 2,
-          "guid": "d8668b70-d913-4db5-89e8-2de1f4f42ff6",
-          "subFolders": [],
-          "objects": [
-            {
-              "guid": "714ad052-51d1-79b4-9bb5-706ae2908786"
-            }
-          ]
-        }
-      ],
+      "guid": "19607b7d-f058-4979-8918-5b6ca5ae4429",
+      "subFolders": [],
       "objects": [
         {
-          "guid": "4d1cca73-0eb2-5a94-3aa3-ddf5e019c327"
-        },
+          "guid": "d3b86812-c37a-7044-ab95-4dbd7226587a"
+        }
+      ]
+    },
+    {
+      "name": "Space folder4",
+      "path": "Assets/GDInfo/Test7/Mobs6/Space folder4",
+      "depth": 1,
+      "guid": "3a88197e-67fa-4a85-8985-81c8d2821135",
+      "subFolders": [],
+      "objects": [
         {
-          "guid": "a67522e2-681c-cd54-7bc1-77456fef667f"
-        },
+          "guid": "132942ba-cee7-d7f4-3882-360073789368"
+        }
+      ]
+    },
+    {
+      "name": "Two space folder",
+      "path": "Assets/GDInfo/Test7/Mobs6/Two space folder",
+      "depth": 1,
+      "guid": "d8668b70-d913-4db5-89e8-2de1f4f42ff6",
+      "subFolders": [],
+      "objects": [
         {
-          "guid": "79d0ddb9-7bbc-ee04-2b1f-441234aaf8e3"
-        },
-        {
-          "guid": "3af49c1f-eda9-1fd4-1a8d-1652bc5b3d63"
-        },
-        {
-          "guid": "cb595db9-ada0-d114-d80d-c074b374f7d4"
-        },
-        {
-          "guid": "43679cf1-65c8-96d4-790d-6b241c499fe4"
+          "guid": "714ad052-51d1-79b4-9bb5-706ae2908786"
         }
       ]
     }
   ],
   "objects": [
     {
-      "guid": "c9d1f11f-7bd5-5224-4be0-31c883375f18"
+      "guid": "4d1cca73-0eb2-5a94-3aa3-ddf5e019c327"
+    },
+    {
+      "guid": "cb595db9-ada0-d114-d80d-c074b374f7d4"
     }
   ]
 }

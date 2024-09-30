@@ -207,7 +207,7 @@ namespace GDDB
         {
             foldersCount++;
             var indentStr = new String(' ', indent);
-            Debug.Log($"{indentStr}{folder.Name}");
+            Debug.Log($"{indentStr}{folder.Name}/");
             foreach ( var subFolder in folder.SubFolders )
             {
                 PrintRecursively( subFolder, indent + 2, ref foldersCount, ref objectsCount );

@@ -12,13 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a05279d56eb144028ae3aa5aaddf78d8, type: 3}
   m_Name: Default.assets
   m_EditorClassIdentifier: 
-  Assets:
-  - Guid: 0000000000000000f000000000000000
-    LocalId: 10300
-    Asset: {fileID: 10300, guid: 0000000000000000f000000000000000, type: 0}
-  - Guid: 260be3ae7188a404b91972cc00114e34
-    LocalId: 6211874546738034317
-    Asset: {fileID: 6211874546738034317, guid: 260be3ae7188a404b91972cc00114e34, type: 3}
-  - Guid: 260be3ae7188a404b91972cc00114e34
-    LocalId: 6362591528722712133
-    Asset: {fileID: 6362591528722712133, guid: 260be3ae7188a404b91972cc00114e34, type: 3}
+  Assets: []

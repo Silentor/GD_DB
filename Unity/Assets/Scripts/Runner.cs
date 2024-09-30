@@ -26,18 +26,26 @@ namespace GDDB_User
         private void Awake( )
         {
             //var loader = new GdEditorLoader( );
-            //var loader = new GdScriptableLoader( "Default" );
-            var loader = new GdJsonLoader( "Default" );
+            var loader = new GdAssetLoader( "Default" );
+            //var loader = new GdJsonLoader( "Default" );
             var gdb         = loader.GetGameDataBase();
             gdb.Print();
 
-            var gdbHash = gdb.RootFolder.GetFoldersStructureHash();
+            var gdbInputHash = new GdEditorLoader().GetGameDataBase().RootFolder.GetFoldersStructureHash(); 
+            var gdbLoadedHash = gdb.RootFolder.GetFoldersStructureHash();
             var generatedRootType = GetRootFolderType( gdb );
 
 
-            DebugOutput.text = $"GDB hash: {gdbHash}\nRoot sourcegen: {generatedRootType}";
-            Debug.Log( gdbHash );
-            Debug.Log( generatedRootType );
+            DebugOutput.text = $"GDB hash: {gdbLoadedHash}\nRoot sourcegen: {generatedRootType}";
+
+            Debug.Log( $"Input hash {gdbInputHash}" );
+            Debug.Log( $"Loaded hash {gdbLoadedHash}" );
+            Debug.Log( $"Source generated root type {generatedRootType}" );
+
+            if( gdbInputHash != gdbLoadedHash )
+            {
+                Debug.LogError( "Hashes are different" );
+            }
 
             //var a = gdb.Root.Space_folder2;
 
