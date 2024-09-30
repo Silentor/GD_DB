@@ -10,7 +10,6 @@ namespace GDDB.Editor
     [InitializeOnLoad]
     public static class ProjectWindowsTypeDrawer 
     {
-        private static readonly GDTypeHierarchy             TypeHierarchy;
         private static readonly Dictionary<Int32, ItemData> GdTypeCache = new ();
         //private static readonly GDObjectsFinder             GDOFinder;
 
@@ -19,7 +18,7 @@ namespace GDDB.Editor
             //TypeHierarchy = new GDTypeHierarchy();
             //GDOFinder     = new GDObjectsFinder();
 
-            //EditorApplication.projectWindowItemInstanceOnGUI += DrawGDTypeString;
+            EditorApplication.projectWindowItemInstanceOnGUI += DrawGDTypeString;
             GDObjectEditor.Changed += GDObjectEditorOnChanged;
         }
 
@@ -35,9 +34,10 @@ namespace GDDB.Editor
                 return;
 
             var asset = EditorUtility.InstanceIDToObject(instanceid) as GDObject;
-            if ( !asset )
-                return;
+            if ( !asset ) return;
 
+            //GUI.Label( rect, "test", Styles.GDTypeStrLabel );
+            //GUI.DrawTexture( rect, EditorGUIUtility.whiteTexture );
 
             // var itemHash = HashCode.Combine( instanceid, asset.name.GetHashCode(), asset.Type.GetHashCode() );
             // if ( !GdTypeCache.TryGetValue( itemHash, out var itemData ) )

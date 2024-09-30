@@ -9,6 +9,9 @@ using Object = System.Object;
 
 namespace GDDB.Editor
 {
+    /// <summary>
+    /// Popup window for browsing GdDb
+    /// </summary>
     public class GdDbTreeWindow : EditorWindow
     {
         public static GdDbTreeWindow Open( GdDb db, [CanBeNull] String query, Type[] components, [CanBeNull] GDObject selectedObject, Rect dropDownRect )

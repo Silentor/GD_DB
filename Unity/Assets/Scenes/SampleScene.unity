@@ -758,6 +758,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 11400000, guid: 132942bacee7d7f43882360073789368, type: 2}
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
+      propertyPath: TestFolderReference
+      value: 
+      objectReference: {fileID: 102900000, guid: d7b70691850f97949881b5c65aea4492, type: 3}
+    - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: TestId.Serializalble1
       value: 5392103377966745527
       objectReference: {fileID: 0}

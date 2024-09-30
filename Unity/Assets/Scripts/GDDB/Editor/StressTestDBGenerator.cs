@@ -44,7 +44,7 @@ namespace GDDB.Editor
 
             var generateScriptsBtn = new Button( ( ) => GenerateComponents( settings ) ) { text = "Generate GDComponents" };
             rootVisualElement.Add( generateScriptsBtn );
-            var generateCategoriesBtn = new Button( ( ) => GenerateCategories( settings ) ) { text = "Generate categories" };
+            var generateCategoriesBtn = new Button( ( ) => GenerateFolders( settings ) ) { text = "Generate folders" };
             rootVisualElement.Add( generateCategoriesBtn );
             var generateObjectsBtn = new Button( ( ) => GenerateGDObjects( settings ) ) { text = "Generate GDObjects" };
             rootVisualElement.Add( generateObjectsBtn );
@@ -83,55 +83,9 @@ namespace GDDB.Editor
             AssetDatabase.Refresh();
         }
 
-        private void GenerateCategories( StressTestSettings settings )
+        private void GenerateFolders( StressTestSettings settings )
         {
-            var rnd = new Random();
-             var enumNames = GenerateEnumNames( settings.CategoriesCount );
-             
-             var rootCategory = GenerateCategory( enumNames[0], 0, 4, rnd.Next( 8, 15 ), rnd );
-             var itemsCounter = rootCategory.Items.Count;
-             var categories   = new List<CategoryHolder>(  ) { rootCategory, };
-             var infinityLoopCounter = 0;
-
-             for ( int i = 1; i < settings.CategoriesCount; i++ )
-             {
-                 var parent   = categories[ rnd.Next( categories.Count ) ];
-                 var freeItems = parent.Items.Where( i => i.Subcategory == null ).ToList();
-                 if( freeItems.Any() && parent.Depth < 3 )
-                 {
-                     var parentItem   = freeItems[ rnd.Next( freeItems.Count ) ];
-                     var remainsItems = Math.Max( (settings.CategoryItemsCount - itemsCounter) / (settings.CategoriesCount - categories.Count), 1 );
-                     var itemsCount   = rnd.Next( Math.Max( remainsItems - remainsItems / 2, 1 ), remainsItems + remainsItems / 2 );
-                     var category     = GenerateCategory( enumNames[ i ], parent.Depth + 1, 4, itemsCount, rnd );
-                     category.Parent = parentItem;
-                     parentItem.Subcategory = category;
-                     itemsCounter += category.Items.Count;
-                     categories.Add( category );
-                 }
-                 else
-                 {
-                     i--;
-                     if ( infinityLoopCounter++ > 10000 )
-                     {
-                         Debug.LogError( $"Infinity loop defence abort GenerateCategories()" );
-                         break;
-                     }
-
-                 }
-             }
-
-             //Save hierarchy to file
-             if ( !Directory.Exists( settings.OutputFolderCategories ) )
-             {
-                 Directory.CreateDirectory( settings.OutputFolderCategories );
-             }
-             var str = GenerateCategoriesString( categories, $"{settings.RootNamespace}.Categories" );
-             var categoriesFilePath = Path.Join( settings.OutputFolderCategories, "Categories.cs" );
-             File.WriteAllText( categoriesFilePath, str );
-
-             AssetDatabase.Refresh();
-
-             Debug.Log( $"Generated categories {categories.Count}, category items {itemsCounter}" );
+            //todo implement
         }
 
         private void GenerateGDObjects( StressTestSettings settings )
@@ -139,23 +93,6 @@ namespace GDDB.Editor
             var rnd = new Random();
             var gdos  = new List<GDObject>();
             var components = TypeCache.GetTypesDerivedFrom<GDComponent>().Where( t => t.Namespace?.StartsWith( settings.RootNamespace ) == true && !t.IsAbstract ).ToList();
-            var types = new GDTypeHierarchy(); 
-
-            //Generate typed objects
-            var categoriesToIndexate = GetFinalCategories( types.Root );
-            while ( gdos.Count < settings.GDObjectsCount && categoriesToIndexate.Count > 0 )
-            {
-                var randomIndex = rnd.Next( categoriesToIndexate.Count );
-                var categoryItem = categoriesToIndexate[ randomIndex];
-                categoriesToIndexate.RemoveAt( randomIndex );
-                if ( categoryItem.Owner.Index < 3 )
-                {
-                    for ( int i = 0; i < 10; i++ )
-                    {
-                        
-                    }
-                }
-            }
 
             var names = GenerateUniqueNouns( _settings.GDObjectsCount, new List<String>(), 2, 3 );
             while ( gdos.Count < settings.GDObjectsCount )
@@ -306,93 +243,6 @@ namespace GDDB.Editor
             }
 
             return result;
-        }
-
-        private CategoryHolder GenerateCategory( String name, Int32 depth, Int32 maxDepth, Int32 itemsCount, Random rnd )
-        {
-            var result = new CategoryHolder { TypeName = name, Depth = depth };
-            if ( depth < maxDepth )
-            {
-                var itemNames = GenerateUniqueNouns( itemsCount, new List<String>(), 1, 2 );
-                for ( var i = 0; i < itemsCount; i++ )
-                {
-                    result.Items.Add( new CategoryItemHolder
-                                      {
-                                              Name = itemNames[ i ],
-                                              Category = result,
-                                      } );
-                }
-            }
-
-            return result;
-        }
-
-        private String GenerateCategoriesString( IReadOnlyList<CategoryHolder> categories, String @namespace )
-        {
-            var result = new StringBuilder();
-            result.AppendLine( "using GDDB;" );
-            result.AppendLine( $"namespace {@namespace}" );
-            result.AppendLine( "{" );
-
-            for ( int i = 0; i < categories.Count; i++ )
-            {
-                 var category = categories[ i ];
-                 if ( category.Parent == null )
-                     result.AppendLine( "    [Category]" );
-                 else
-                     result.AppendLine( $"    [Category( {category.Parent.Category.TypeName}.{category.Parent.Name} )]" );
-                 result.AppendLine( $"    public enum {category.TypeName}" );
-                 result.AppendLine( "    {" );
-
-                 category.Items.ForEach( i =>
-                 {
-                     result.Append( "        " );
-                     result.Append( i.Name );
-                     result.AppendLine( "," );
-                 } );
-
-                 result.AppendLine( "    }" );
-                 result.AppendLine();
-            }
-            result.AppendLine( "}" );
-
-            return result.ToString();
-        }
-
-        private List<CategoryItem> GetFinalCategories( Category root )
-        {
-            var result = new List<CategoryItem>();
-            var stack  = new Stack<Category>();
-            stack.Push( root );
-
-            while ( stack.Count > 0 )
-            {
-                var current = stack.Pop();
-                foreach ( var item in current.Items )
-                {
-                    if ( item.Subcategory != null )
-                        stack.Push( item.Subcategory );  
-                    else
-                        result.Add( item );
-                }
-            }
-
-            return result;
-        }
-
-        private class CategoryHolder
-        {
-            public string                   TypeName;
-            public List<CategoryItemHolder> Items = new();
-            public CategoryItemHolder       Parent;
-            public Int32                    Depth;
-        }
-
-        private class CategoryItemHolder
-        {
-            public String         Name;
-            public CategoryHolder Category;
-            public CategoryHolder Subcategory;
         }
     }
 }

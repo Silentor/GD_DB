@@ -100,10 +100,11 @@ namespace GDDB.Editor
 
         public static class Settings
         {
-            private static readonly String AutoGenerateOnSourceChangeKey = $"{nameof(GDBSourceGenerator)}.{nameof(AutoGenerateOnSourceChanged)}";
-            private static readonly String AutoGenerateOnPlayModeKey = $"{nameof(GDBSourceGenerator)}.{nameof(AutoGenerateOnPlayMode)}";
-            private static readonly String AutoGenerateOnBuildKey = $"{nameof(GDBSourceGenerator)}.{nameof(AutoGenerateOnBuild)}";
-            private static readonly String AutoGenerateOnFocusLostKey = $"{nameof(GDBSourceGenerator)}.{nameof(AutoGenerateOnFocusLost)}";
+            private static readonly String ProjectPrefix                 = $"{Application.identifier}.";
+            private static readonly String AutoGenerateOnSourceChangeKey = $"{ProjectPrefix}.{nameof(GDBSourceGenerator)}.{nameof(AutoGenerateOnSourceChanged)}";
+            private static readonly String AutoGenerateOnPlayModeKey     = $"{ProjectPrefix}.{nameof(GDBSourceGenerator)}.{nameof(AutoGenerateOnPlayMode)}";
+            private static readonly String AutoGenerateOnBuildKey        = $"{ProjectPrefix}.{nameof(GDBSourceGenerator)}.{nameof(AutoGenerateOnBuild)}";
+            private static readonly String AutoGenerateOnFocusLostKey    = $"{ProjectPrefix}.{nameof(GDBSourceGenerator)}.{nameof(AutoGenerateOnFocusLost)}";
 
             public static Boolean AutoGenerateOnSourceChanged
             {

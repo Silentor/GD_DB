@@ -2,6 +2,7 @@ using System;
 using GDDB;
 using TMPro;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace GDDB_User
 {
@@ -13,7 +14,7 @@ namespace GDDB_User
         public GDObject         TestDirectObject;
         [GdTypeFilter("Mobs//", typeof(TestMobComponent))]
         public GdId             TestIdReference;
-        //public GdType           TestType;
+        public Object           TestFolderReference;
         public Classes          NullObject;
         [SerializeReference]
         public TestNullAbstract TestAbstract;

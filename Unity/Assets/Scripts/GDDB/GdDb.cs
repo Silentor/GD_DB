@@ -125,6 +125,18 @@ namespace GDDB
             return null;
         }
 
+        public GDObject GetObject( GdId objectId )
+        {
+            var guid = objectId.GUID;
+            foreach ( var gdObject in AllObjects )
+            {
+                if( gdObject.Guid == guid )
+                    return gdObject;
+            }
+
+            return null;
+        }
+
         // public GDObject GetObject( GdType type )
         // {
         //     return AllObjects.First( o => o.Type == type );
