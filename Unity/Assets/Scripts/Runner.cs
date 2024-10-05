@@ -31,8 +31,9 @@ namespace GDDB_User
             var gdb         = loader.GetGameDataBase();
             gdb.Print();
 
-            var gdbInputHash = new GdEditorLoader().GetGameDataBase().RootFolder.GetFoldersStructureHash(); 
-            var gdbLoadedHash = gdb.RootFolder.GetFoldersStructureHash();
+            var inputDB        = new GdEditorLoader().GetGameDataBase();
+            var gdbInputHash      = inputDB.RootFolder.GetFoldersStructureHash(); 
+            var gdbLoadedHash     = gdb.RootFolder.GetFoldersStructureHash();
             var generatedRootType = GetRootFolderType( gdb );
 
 
@@ -45,6 +46,8 @@ namespace GDDB_User
             if( gdbInputHash != gdbLoadedHash )
             {
                 Debug.LogError( "Hashes are different" );
+
+                CompareFolders( inputDB.RootFolder, gdb.RootFolder );
             }
 
             //var a = gdb.Root.Space_folder2;
@@ -62,6 +65,35 @@ namespace GDDB_User
             // }
 
             //var testGetMobs = gdb.GetMobs(  );          //Source generated
+        }
+
+        private Boolean CompareFolders( Folder f1, Folder f2 )
+        {
+            using var f1Iter = f1.EnumerateFoldersDFS().GetEnumerator();
+            using var f2Iter = f2.EnumerateFoldersDFS().GetEnumerator();
+            Boolean f1HasNext = false, f2HasNext = false;
+
+            while ( (f1HasNext = f1Iter.MoveNext()) && (f2HasNext = f2Iter.MoveNext()) )
+            {
+                if ( f1Iter.Current.GetPath() != f2Iter.Current.GetPath() )
+                {
+                    Debug.LogError( $"Different folders {f1Iter.Current.GetPath()} vs {f2Iter.Current.GetPath()}" );
+                    return false;
+                }    
+            }
+
+            if( !f1HasNext && f2HasNext )
+            {
+                Debug.LogError( "f1 has less folders" );
+                return false;
+            }
+            else if( f1HasNext && !f2HasNext )
+            {
+                Debug.LogError( "f1 has more folders" );
+                return false;
+            }
+
+            return true;
         }
 
         private GdLoader GetGD(  )

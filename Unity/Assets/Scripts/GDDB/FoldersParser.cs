@@ -18,7 +18,6 @@ namespace GDDB.Editor
     public class FoldersParser
     {
         public Folder Root           { get; private set; }
-        public String RootFolderPath => Root?.Path;
 
         public IReadOnlyList<GDObject> AllObjects   =>  _allObjects;
         public IReadOnlyList<Folder> AllFolders     =>  _allFolders;
@@ -41,7 +40,6 @@ namespace GDDB.Editor
         {
             var timer = System.Diagnostics.Stopwatch.StartNew();
 
-            //_allFolders.Clear();
             _allObjects.Clear();
 
             //Get all GDObjects
@@ -64,7 +62,7 @@ namespace GDDB.Editor
             }
 
             //Assign Assets folder guid for consistency (Unity is not counts Assets as a folder asset  )
-            var assetsFolder = new Folder( "Assets", "Assets", Guid.ParseExact( "A55E7500-F5B6-4EBA-825C-B1BC7331A193", "D" ) );
+            var assetsFolder = new Folder( "Assets", Guid.ParseExact( "A55E7500-F5B6-4EBA-825C-B1BC7331A193", "D" ) );
             var foldersCache = new List<(Guid, String )>( gdos.Length + 1 ){ (assetsFolder.FolderGuid, "Assets" ) };
 
             //Add GDObjects to hierarchy
@@ -86,7 +84,7 @@ namespace GDDB.Editor
                 addedObjectCount++;
             }
 
-            //Get GDB root folder
+            //Calculate GDB root folder
             foreach ( var folder in assetsFolder.EnumerateFoldersDFS(  ) )
             {
                 if ( folder.ObjectIds.Count > 0 || folder.SubFolders.Count > 1 )
@@ -109,7 +107,6 @@ namespace GDDB.Editor
             return true;
         }
 
-        
         public void DebugParse( Folder presetHierarchy )
         {
             Root = presetHierarchy;
@@ -121,18 +118,13 @@ namespace GDDB.Editor
             PrintRecursively( Root, 0 );
         }
 
-        public void CalculateDepth( Folder root )
+        private void CalculateDepth( Folder root )
         {
-            foreach ( var folder in root.EnumerateFoldersDFS(  ) )
+            root.Depth = 0;
+            foreach ( var folder in root.EnumerateFoldersDFS( false ) )
             {
-                var depth       = 0;
-                var checkFolder = folder;
-                while ( checkFolder.Parent != null )
-                {
-                    depth++;
-                    checkFolder = checkFolder.Parent;
-                }
-                folder.Depth = depth;
+                if( folder.Parent != null )
+                    folder.Depth = folder.Parent.Depth + 1;
             }
         }
 
@@ -203,7 +195,7 @@ namespace GDDB.Editor
                 var folder = parentFolder.SubFolders.Find( f => f.Name == pathPart );
                 if ( folder == null )
                 {
-                    var newFolderPath = String.Concat( parentFolder.Path, "/", pathPart );
+                    var newFolderPath = String.Concat( parentFolder.GetPath(), "/", pathPart );
                     var newFolderGuid = GetFolderGuid( newFolderPath, foldersCache );
                     folder = new Folder( pathPart, newFolderGuid, parentFolder );
                     //_allFolders.Add( folder );
@@ -391,7 +383,7 @@ namespace GDDB.Editor
             var  folders  = new FoldersParser();
             Debug.Log( "Root folder: " + folders.GetRootFolderPath() );
             folders.Parse();
-            Debug.Log( "Root folder2: " + folders.Root.Path );
+            Debug.Log( "Root folder2: " + folders.Root.GetPath() );
             folders.Print();
         }
     }

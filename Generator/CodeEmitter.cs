@@ -115,7 +115,7 @@ public class CodeEmitter
     {
         var classFolderName    = GetFolderClassName( folder );
 
-        sb.AppendLine( $"//Folder {folder.Path}, subfolders {folder.SubFolders.Count}, objects {folder.ObjectIds.Count}" );
+        sb.AppendLine( $"//Folder {folder.GetPath()}, subfolders {folder.SubFolders.Count}, objects {folder.ObjectIds.Count}" );
         sb.AppendLine( GeneratedTypeAttribute );
         sb.AppendLine(
                 $$"""

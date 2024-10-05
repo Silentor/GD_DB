@@ -404,13 +404,12 @@ namespace GDDB.Tests
         { 
                 if ( parent != null )
                 {
-                        var result = new Folder( parent.Path + name, name, Guid.NewGuid() ){Parent = parent};
-                        parent.SubFolders.Add( result );
+                        var result = new Folder( name, Guid.NewGuid(), parent );
                         return result;
                 }
                 else
                 {
-                        return new Folder( name, name, Guid.NewGuid() );
+                        return new Folder( name, Guid.NewGuid() );
                 }
         }
     }

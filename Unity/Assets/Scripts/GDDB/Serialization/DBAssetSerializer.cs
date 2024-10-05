@@ -59,7 +59,7 @@ namespace GDDB.Serialization
             var name = myData.Name;
             var guid = myData.Guid.Guid;
             
-            var folder = parent != null ? new Folder( name, guid, parent ) : new Folder( name, name, guid );
+            var folder = parent != null ? new Folder( name, guid, parent ) : new Folder( name, guid );
             folder.Depth = depth;
             folder.ObjectIds.AddRange( myData.Objects.Select( o => o.Guid ) );
             folder.Objects.AddRange( myData.Objects );

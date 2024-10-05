@@ -62,7 +62,7 @@ namespace GDDB.SourceGenerator
                     static (context, pair) => 
                     {
                         //DEBUG
-                        context.ReportDiagnostic( Diagnostic.Create( DebugInfo, null ) );
+                        //context.ReportDiagnostic( Diagnostic.Create( DebugInfo, null ) );
 
                         // #if DEBUG
                         // if (!Debugger.IsAttached)                                            !

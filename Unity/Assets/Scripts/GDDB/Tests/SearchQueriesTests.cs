@@ -51,7 +51,7 @@ namespace GDDB.Tests
             }
             else
             {
-                return new Folder( name, name, Guid.NewGuid() );
+                return new Folder( name, Guid.NewGuid() );
             }
         }
 
@@ -195,7 +195,7 @@ namespace GDDB.Tests
             var orcSkinFolder = chieftan.Single().Item1;
 
             //Assert
-            orcSkinFolder.Path.Should().Be( "GdDb/Mobs/Orcs/Skins" );
+            orcSkinFolder.GetPath().Should().Be( "GdDb/Mobs/Orcs/Skins" );
         }
     }
 }

@@ -82,8 +82,9 @@ namespace GDDB.Editor
 
         private void UpdateGDBInfo( )
         {
-            var rootFolder = GDBEditor.GDB.RootFolder;
-            _foldersInfoLbl.text          = $"GDB root folder: {rootFolder.Path}, objects {GDBEditor.AllObjects.Count}, folders {GDBEditor.AllFolders.Count}";
+            var rootFolder   = GDBEditor.GDB.RootFolder;
+            var rootFullPath = AssetDatabase.GUIDToAssetPath( rootFolder.FolderGuid.ToString("N") );
+            _foldersInfoLbl.text          = $"GDB root folder: {rootFolder.GetPath()}, objects {GDBEditor.AllObjects.Count}, folders {GDBEditor.AllFolders.Count}";
             _foldersStructureHashLbl.text = "Source hash: " + rootFolder.GetFoldersStructureHash( );
         }
 
