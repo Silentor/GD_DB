@@ -1,0 +1,141 @@
+{
+  "folders": {
+    "name": "GDInfo",
+    "depth": 0,
+    "guid": "1f03f292-22c2-78c4-0ba4-020059bcd90f",
+    "subFolders": [
+      {
+        "name": "Test7",
+        "depth": 1,
+        "guid": "0b970a29-d25e-b634-8add-087d2c38c4dd",
+        "subFolders": [
+          {
+            "name": "Mobs8",
+            "depth": 2,
+            "guid": "df2c75d1-87d0-d0f4-aaec-cfd353fa6514",
+            "subFolders": [
+              {
+                "name": "01 start with digit",
+                "depth": 3,
+                "guid": "d7b70691-850f-9794-9881-b5c65aea4492",
+                "subFolders": [],
+                "objects": [
+                  {
+                    "guid": "d3b86812-c37a-7044-ab95-4dbd7226587a"
+                  }
+                ]
+              },
+              {
+                "name": "Space folder7",
+                "depth": 3,
+                "guid": "e79188a3-af76-58a4-9858-188c2d281153",
+                "subFolders": [],
+                "objects": [
+                  {
+                    "guid": "132942ba-cee7-d7f4-3882-360073789368"
+                  }
+                ]
+              },
+              {
+                "name": "Two space folder",
+                "depth": 3,
+                "guid": "07b8668d-319d-5bd4-988e-d21e4f4ff26f",
+                "subFolders": [],
+                "objects": [
+                  {
+                    "guid": "714ad052-51d1-79b4-9bb5-706ae2908786"
+                  }
+                ]
+              }
+            ],
+            "objects": [
+              {
+                "guid": "4d1cca73-0eb2-5a94-3aa3-ddf5e019c327"
+              },
+              {
+                "guid": "cb595db9-ada0-d114-d80d-c074b374f7d4"
+              }
+            ]
+          }
+        ],
+        "objects": []
+      }
+    ],
+    "objects": [
+      {
+        "guid": "c9d1f11f-7bd5-5224-4be0-31c883375f18"
+      }
+    ]
+  },
+  "objects": [
+    {
+      ".Name": "!GDRoot",
+      ".Type": "GDDB.GDRoot",
+      ".Ref": "c9d1f11f-7bd5-5224-4be0-31c883375f18",
+      ".Components": [],
+      "Id": "GD1",
+      "Version": 3
+    },
+    {
+      ".Name": "Human1",
+      ".Type": "GDDB.GDObject",
+      ".Ref": "d3b86812-c37a-7044-ab95-4dbd7226587a",
+      ".Components": [
+        {
+          ".Type": "GDDB.TestMobComponent, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+          ".Value": {
+            "Name": ""
+          }
+        }
+      ]
+    },
+    {
+      ".Name": "MobsProgression",
+      ".Type": "GDDB.GDObject",
+      ".Ref": "4d1cca73-0eb2-5a94-3aa3-ddf5e019c327",
+      ".Components": [
+        {
+          ".Type": "GDDB.GDComponentChild3, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+          ".Value": {
+            "TexValue": {
+              ".Ref": "a76be275b4239ea4694ea45992a58b92",
+              ".Id": 2800000
+            }
+          }
+        }
+      ]
+    },
+    {
+      ".Name": "Human1",
+      ".Type": "GDDB.GDObject",
+      ".Ref": "132942ba-cee7-d7f4-3882-360073789368",
+      ".Components": [
+        {
+          ".Type": "GDDB.TestMobComponent, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+          ".Value": {
+            "Name": ""
+          }
+        }
+      ]
+    },
+    {
+      ".Name": "TestGDObject3",
+      ".Type": "GDDB.TestGDObject, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+      ".Ref": "cb595db9-ada0-d114-d80d-c074b374f7d4",
+      ".Components": []
+    },
+    {
+      ".Name": "Human1",
+      ".Type": "GDDB.GDObject",
+      ".Ref": "714ad052-51d1-79b4-9bb5-706ae2908786",
+      ".Components": [
+        {
+          ".Type": "GDDB.TestMobComponent, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+          ".Value": {
+            "Name": ""
+          }
+        }
+      ]
+    }
+  ]
+}

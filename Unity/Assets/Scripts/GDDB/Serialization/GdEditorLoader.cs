@@ -1,14 +1,8 @@
-using System;
 using System.Collections.Generic;
-using System.IO;
+using GDDB.Editor;
 using UnityEngine;
 
-#if UNITY_EDITOR
-using UnityEditor;
-using GDDB.Editor;
-#endif
-
-namespace GDDB
+namespace GDDB.Serialization
 {
     /// <summary>
     /// GD DB loader from AssetDatabase in Unity Editor. Used as fast loader for editor play mode without parsing saved DB. Logic sits in FolderParser class
@@ -21,7 +15,7 @@ namespace GDDB
         public GdEditorLoader(  )
         {
  #if !UNITY_EDITOR
-                throw new NotSupportedException( "GdEditorLoader can be used only in editor" );            
+                throw new System.NotSupportedException( "GdEditorLoader can be used only in editor" );            
  #else
 
                 var timer = System.Diagnostics.Stopwatch.StartNew();

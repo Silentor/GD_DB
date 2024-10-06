@@ -18,7 +18,6 @@ namespace GDDB
         
 
         public readonly List<Folder>   SubFolders = new ();
-        public readonly List<Guid>     ObjectIds  = new();
         public readonly List<GDObject> Objects    = new();
 
         public Folder( [NotNull] String name, Guid folderGuid )

@@ -754,6 +754,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
+      propertyPath: DebugImageOutput
+      value: 
+      objectReference: {fileID: 1433840826}
+    - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: TestDirectObject
       value: 
       objectReference: {fileID: 11400000, guid: 132942bacee7d7f43882360073789368, type: 2}

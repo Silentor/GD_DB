@@ -12,4 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a05279d56eb144028ae3aa5aaddf78d8, type: 3}
   m_Name: Default.assets
   m_EditorClassIdentifier: 
-  Assets: []
+  Assets:
+  - Guid: a76be275b4239ea4694ea45992a58b92
+    LocalId: 2800000
+    Asset: {fileID: 2800000, guid: a76be275b4239ea4694ea45992a58b92, type: 3}

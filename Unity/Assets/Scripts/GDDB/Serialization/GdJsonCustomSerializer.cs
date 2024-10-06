@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 using Object = System.Object;
 
-namespace GDDB
+namespace GDDB.Serialization
 {
     public abstract class GdJsonCustomSerializer
     {

@@ -1,59 +1,51 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 using Object = System.Object;
 
-namespace GDDB
+namespace GDDB.Serialization
 {
     //Reader part of GDJson
-    public partial class GDJson
+    public partial class ObjectsSerializer
     {
+        private List<GDObject>                           _headers;
 
 #region JSON-LINQ reader
 
-        public List<GDObject> JsonToGD( String json, GdAssetReference assetResolver = null )
+        public List<GDObject> Deserialize( JArray json, IGdAssetResolver assetResolver = null )
         {
-            _headers.Clear();
-            _assetReference = assetResolver ? assetResolver : ScriptableObject.CreateInstance<GdAssetReference>();
+            _headers          = new List<GDObject>( json.Count );
+            _assetResolver    = assetResolver ?? NullGdAssetResolver.Instance;
 
-            using ( var reader = new StringReader( json ) )
+            //Read GDObject headers
+            foreach ( var jObj in json )
             {
-                var o       = (JArray)JToken.ReadFrom( new JsonTextReader( reader ) );
-                var content = o.Children<JObject>().ToArray();
-                var result  = new List<GDObject>();
-
-                //Read GDObject headers
-                foreach ( var gdObject in content )
-                {
-                    var objHeader = ReadGDObjectHeaderFromJson( gdObject );
-                    _headers.Add( objHeader );
-                }
-
-                //Read GDObject content (and resolve references)
-                for ( var i = 0; i < content.Length; i++ )
-                {
-                    result.Add( ReadGDObjectContentFromJson( content[ i ], _headers[ i ] ) );
-                }
-
-                foreach ( var gdObject in result )
-                {
-                    if ( gdObject is ISerializationCallbackReceiver serializationCallbackReceiver )
-                        serializationCallbackReceiver.OnAfterDeserialize();
-
-                    foreach ( var gdComponent in gdObject.Components )
-                        if ( gdComponent is ISerializationCallbackReceiver componentSerializationCallbackReceiver )
-                            componentSerializationCallbackReceiver.OnAfterDeserialize();
-
-                }
-
-                return result;
+                var objHeader = ReadGDObjectHeaderFromJson( (JObject)jObj );
+                _headers.Add( objHeader );
             }
+
+            //Read GDObject content (and resolve references)
+            for ( var i = 0; i < json.Count; i++ )
+            {
+                _headers[ i ] = ReadGDObjectContentFromJson( (JObject)json[ i ], _headers[ i ] );
+            }
+
+            foreach ( var gdObject in _headers )
+            {
+                if ( gdObject is ISerializationCallbackReceiver serializationCallbackReceiver )
+                    serializationCallbackReceiver.OnAfterDeserialize();
+
+                foreach ( var gdComponent in gdObject.Components )
+                    if ( gdComponent is ISerializationCallbackReceiver componentSerializationCallbackReceiver )
+                        componentSerializationCallbackReceiver.OnAfterDeserialize();
+
+            }
+
+            return _headers;
         }
 
         private GDObject ReadGDObjectHeaderFromJson( JObject gdObjToken )
@@ -118,7 +110,7 @@ namespace GDDB
                 objectType = Type.GetType( typeValue );
 
                 if( objectType == null )
-                    throw new InvalidOperationException( $"[{nameof(GDJson)}]-[{nameof(ReadObjectFromJson)}] Cannot create Type from type string '{typeValue}'" );
+                    throw new InvalidOperationException( $"[{nameof(ObjectsSerializer)}]-[{nameof(ReadObjectFromJson)}] Cannot create Type from type string '{typeValue}'" );
 
                 valueObj   = (JObject)jObject[ ".Value" ];
             }
@@ -199,8 +191,7 @@ namespace GDDB
 
                 var guid    = value[ ".Ref" ].Value<String>();
                 var localId = value[ ".Id" ].Value<long>();
-                var asset   = _assetReference.Assets.Find( a => a.Guid.Equals( guid ) && a.LocalId == localId )?.Asset;
-                if ( asset == null )
+                if( !_assetResolver.TryGetAsset( guid, localId, out var asset ) )
                     Debug.LogError( $"Error resolving Unity asset reference {guid} : {localId}, type {propertyType}" );
                 return asset;
             }

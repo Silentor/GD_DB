@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.IO;
+using GDDB.Serialization;
 using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEngine;
@@ -62,7 +63,7 @@ namespace GDDB.Editor
 
                 //Update source generator data file
                 var serializer = new FoldersSerializer();
-                var json = serializer.Serialize( GDBEditor.GDB.RootFolder, databaseHash );
+                var json = serializer.Serialize( GDBEditor.GDB.RootFolder, databaseHash ).ToString();
                 File.WriteAllText( GDDBStructureFilePath, json );
 
                 //Trigger recompile of GDDB assembly and source generation

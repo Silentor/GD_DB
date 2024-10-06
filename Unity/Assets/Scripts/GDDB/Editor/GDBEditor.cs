@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using GDDB.Serialization;
 using UnityEditor;
 using UnityEngine;
 

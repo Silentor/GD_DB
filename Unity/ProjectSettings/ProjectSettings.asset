@@ -847,12 +847,8 @@ PlayerSettings:
   apiCompatibilityLevel: 6
   activeInputHandler: 0
   windowsGamepadBackendHint: 0
-  cloudProjectId: 043ea290-115e-4132-880a-81be5ffdce33
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: GDDB
-  organizationId: silentor666
-  cloudEnabled: 0
   legacyClampBlendShapeWeights: 0
   hmiLoadingImage: {fileID: 0}
   platformRequiresReadableAssets: 0

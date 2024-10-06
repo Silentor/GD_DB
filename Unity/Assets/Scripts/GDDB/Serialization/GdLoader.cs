@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace GDDB
+﻿namespace GDDB.Serialization
 {
     public abstract class GdLoader
     {
@@ -11,9 +7,6 @@ namespace GDDB
             return _db;
         }
 
-        
-
         protected GdDb _db;
-
     }
 }

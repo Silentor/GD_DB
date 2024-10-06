@@ -29,6 +29,7 @@ namespace GDDB.Editor
 
         private void OnEnable( )
         {
+            Debug.Log( $"[{nameof(ControlWindow)}]-[{nameof(OnEnable)}] " );
             AssetPostprocessor.GDBStructureChanged.Subscribe( 10, OnGddbStructureChanged );
         }
 
@@ -45,6 +46,7 @@ namespace GDDB.Editor
 
         private void CreateGUI( )
         {
+            Debug.Log( $"[{nameof(ControlWindow)}]-[{nameof(CreateGUI)}] " );
             var window = UnityEngine.Resources.Load<VisualTreeAsset>( "ControlWindow" ).Instantiate();
 
             _foldersInfoLbl = window.Q<Label>( "GDBInfo" );

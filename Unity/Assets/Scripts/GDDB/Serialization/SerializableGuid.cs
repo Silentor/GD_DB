@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace GDDB
+namespace GDDB.Serialization
 {
     [Serializable]
     [StructLayout(LayoutKind.Explicit, Pack = 1)]

@@ -1,23 +1,19 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using UnityEditor;
 using UnityEngine;
 using Object = System.Object;
 
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
-namespace GDDB
+namespace GDDB.Serialization
 {
-    public partial class GDJson
+    public partial class ObjectsSerializer
     {
-        public GDJson( )
+        public ObjectsSerializer( )
         {
             AddSerializer( new Vector3Serializer() );
             AddSerializer( new Vector3IntSerializer() );
@@ -37,10 +33,10 @@ namespace GDDB
         }
 
 #if UNITY_EDITOR
-        public String GDToJson( IEnumerable<GDObject> objects, GdAssetReference assetReference = null )
+        public JArray Serialize( IEnumerable<GDObject> objects, IGdAssetResolver assetResolver = null )
         {
             JArray resulObjects = new JArray();
-            _assetReference = assetReference ? assetReference : ScriptableObject.CreateInstance<GdAssetReference>();
+            _assetResolver = assetResolver ?? NullGdAssetResolver.Instance;
 
             foreach ( var gdObj in objects )
             {
@@ -54,17 +50,15 @@ namespace GDDB
                 resulObjects.Add(  WriteGDObjectToJson( gdObj ) );                    
             }
 
-            var result = resulObjects.ToString();
-            Debug.Log( $"[{nameof(GDJson)}] Written {objects.Count()} gd objects to json string {result.Length} symbols. Referenced {_assetReference.Assets.Count} assets, resolver {_assetReference.GetType().Name}" );
+            Debug.Log( $"[{nameof(ObjectsSerializer)}] Serialized {resulObjects.Count} gd objects to json, Referenced {_assetResolver.Count} assets, used asset resolver {_assetResolver.GetType().Name}" );
 
-            return result;
+            return resulObjects;
         }
         
 #endif
 
         private readonly Dictionary<Type, GdJsonCustomSerializer> _serializers = new();
-        private readonly List<GDObject>                           _headers     = new();
-        private          GdAssetReference                         _assetReference;
+        private          IGdAssetResolver                        _assetResolver;
 
 #if UNITY_EDITOR
 
@@ -265,7 +259,7 @@ namespace GDDB
                 result = new JObject();
                 result.Add( ".Ref", guid );
                 result.Add( ".Id", localId );
-                _assetReference.AddAsset( unityAsset, guid, localId );
+                _assetResolver.AddAsset( unityAsset, guid, localId );
             }
             else
             {

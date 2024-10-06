@@ -61,7 +61,6 @@ namespace GDDB.Serialization
             
             var folder = parent != null ? new Folder( name, guid, parent ) : new Folder( name, guid );
             folder.Depth = depth;
-            folder.ObjectIds.AddRange( myData.Objects.Select( o => o.Guid ) );
             folder.Objects.AddRange( myData.Objects );
 
             index++;

@@ -1,7 +1,12 @@
 using System;
+using System.IO;
+using System.Linq;
 using GDDB;
+using GDDB.Serialization;
 using TMPro;
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 namespace GDDB_User
@@ -9,6 +14,7 @@ namespace GDDB_User
     public class Runner : MonoBehaviour
     {
         public TMP_Text DebugOutput;
+        public RawImage DebugImageOutput;
 
         public Int32            TestField;
         public GDObject         TestDirectObject;
@@ -26,29 +32,52 @@ namespace GDDB_User
         private void Awake( )
         {
             //var loader = new GdEditorLoader( );
-            var loader = new GdAssetLoader( "Default" );
-            //var loader = new GdJsonLoader( "Default" );
-            var gdb         = loader.GetGameDataBase();
-            gdb.Print();
 
-            var inputDB        = new GdEditorLoader().GetGameDataBase();
-            var gdbInputHash      = inputDB.RootFolder.GetFoldersStructureHash(); 
-            var gdbLoadedHash     = gdb.RootFolder.GetFoldersStructureHash();
-            var generatedRootType = GetRootFolderType( gdb );
+            //Load GDDB from asset
+            var dbInAsset = Resources.Load<DBAsset>( "Default.folders" );
+            var aloader        = new GdAssetLoader( dbInAsset );
 
+            //Load GDDB from JSON with Unity assets resolver
+            var assetsResolver = Resources.Load<DirectAssetReferences>( "Default.assets" );
+            var dbInJson       =  File.ReadAllText( Application.streamingAssetsPath + "/Default.gddb.json" );
+            var jloader        = new GdJsonLoader( dbInJson, assetsResolver );
 
-            DebugOutput.text = $"GDB hash: {gdbLoadedHash}\nRoot sourcegen: {generatedRootType}";
+            var fromAssetGDB   = aloader.GetGameDataBase();
+            fromAssetGDB.Print();
+            var fromJsonGDB         = jloader.GetGameDataBase();
 
-            Debug.Log( $"Input hash {gdbInputHash}" );
-            Debug.Log( $"Loaded hash {gdbLoadedHash}" );
+#if UNITY_EDITOR
+            var inputDB           = new GdEditorLoader().GetGameDataBase();
+            var gdbInputHash      = inputDB.RootFolder.GetFoldersStructureHash();
+            Debug.Log( $"Editor hash {gdbInputHash}" );
+#endif
+            var agdbLoadedHash    = fromAssetGDB.RootFolder.GetFoldersStructureHash();
+            var jgdbLoadedHash    = fromJsonGDB.RootFolder.GetFoldersStructureHash();
+            var generatedRootType = GetRootFolderType( fromAssetGDB );
+
+            DebugOutput.text = $"AGDB hash: {agdbLoadedHash}\nJGDB hash: {jgdbLoadedHash}\nRoot sourcegen: {generatedRootType}";
+
+            
+            Debug.Log( $"Asset loaded hash {agdbLoadedHash}" );
+            Debug.Log( $"JSON loaded hash {jgdbLoadedHash}" );
             Debug.Log( $"Source generated root type {generatedRootType}" );
 
-            if( gdbInputHash != gdbLoadedHash )
+#if UNITY_EDITOR
+            if( gdbInputHash != agdbLoadedHash )
             {
                 Debug.LogError( "Hashes are different" );
-
-                CompareFolders( inputDB.RootFolder, gdb.RootFolder );
+                CompareFolders( inputDB.RootFolder, fromAssetGDB.RootFolder );
             }
+#endif
+
+            if ( agdbLoadedHash != jgdbLoadedHash )
+            {
+                Debug.LogError( "Hashes are different" );
+                CompareFolders( fromAssetGDB.RootFolder, fromJsonGDB.RootFolder );
+            }
+
+            var textureFromGD = fromJsonGDB.Root.Test7.Mobs8.Folder.Objects.First( gdo => gdo.HasComponent<GDComponentChild3>() ).GetComponent<GDComponentChild3>();
+            DebugImageOutput.texture = textureFromGD.TexValue;
 
             //var a = gdb.Root.Space_folder2;
 
@@ -94,15 +123,6 @@ namespace GDDB_User
             }
 
             return true;
-        }
-
-        private GdLoader GetGD(  )
-        {
-#if UNITY_EDITOR
-            return new GdEditorLoader( );
-#else
-            return new GdScriptableLoader( "Default" );
-#endif
         }
 
         private String GetRootFolderType( GdDb db )

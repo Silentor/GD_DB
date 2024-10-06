@@ -13,7 +13,7 @@ namespace GDDB.Editor
 
     /// <summary>
     /// Creates GDDB DOM from folders and GDO assets structure. Starts from Assets/ folder
-    /// Make sense only in Editor
+    /// Works only in Editor
     /// </summary>
     public class FoldersParser
     {
@@ -76,9 +76,6 @@ namespace GDDB.Editor
                     continue;
                 
                 var folder  = GetOrCreateFolderForSplittedPath( assetsFolder, Split( gdoData.Path ), foldersCache );
-                var guid    = Guid.ParseExact( gdoData.Guid, "N" );
-                folder.ObjectIds.Add( guid );
-                
                 folder.Objects.Add( gdobject );
                 _allObjects.Add( gdobject );
                 addedObjectCount++;
@@ -87,7 +84,7 @@ namespace GDDB.Editor
             //Calculate GDB root folder
             foreach ( var folder in assetsFolder.EnumerateFoldersDFS(  ) )
             {
-                if ( folder.ObjectIds.Count > 0 || folder.SubFolders.Count > 1 )
+                if ( folder.Objects.Count > 0 || folder.SubFolders.Count > 1 )
                 {
                     Root        = folder;
                     Root.Parent = null;
@@ -235,10 +232,12 @@ namespace GDDB.Editor
             return new PathPartsEnumerator( path );
         }
 
-        private Guid AssetPath2Guid( String assetPath )
+        private static Guid AssetPath2Guid( String assetPath )
         {
             var unityGuid = AssetDatabase.GUIDFromAssetPath( assetPath );
-            var clrGuid   = UnsafeUtility.As<GUID, Guid>( ref unityGuid );
+            var guidStr   = unityGuid.ToString( );
+            var clrGuid   = Guid.ParseExact( guidStr, "N" );
+            //var clrGuid   = UnsafeUtility.As<GUID, Guid>( ref unityGuid ); do not work directly
             return clrGuid;
         }
 
