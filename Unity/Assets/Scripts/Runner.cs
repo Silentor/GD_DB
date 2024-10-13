@@ -48,11 +48,11 @@ namespace GDDB_User
 
 #if UNITY_EDITOR
             var inputDB           = new GdEditorLoader().GetGameDataBase();
-            var gdbInputHash      = inputDB.RootFolder.GetFoldersStructureHash();
+            var gdbInputHash      = inputDB.RootFolder.GetFoldersStructureChecksum();
             Debug.Log( $"Editor hash {gdbInputHash}" );
 #endif
-            var agdbLoadedHash    = fromAssetGDB.RootFolder.GetFoldersStructureHash();
-            var jgdbLoadedHash    = fromJsonGDB.RootFolder.GetFoldersStructureHash();
+            var agdbLoadedHash    = fromAssetGDB.RootFolder.GetFoldersStructureChecksum();
+            var jgdbLoadedHash    = fromJsonGDB.RootFolder.GetFoldersStructureChecksum();
             var generatedRootType = GetRootFolderType( fromAssetGDB );
 
             DebugOutput.text = $"AGDB hash: {agdbLoadedHash}\nJGDB hash: {jgdbLoadedHash}\nRoot sourcegen: {generatedRootType}";
@@ -76,7 +76,7 @@ namespace GDDB_User
                 CompareFolders( fromAssetGDB.RootFolder, fromJsonGDB.RootFolder );
             }
 
-            var textureFromGD = fromJsonGDB.Root.Test7.Mobs8.Folder.Objects.First( gdo => gdo.HasComponent<GDComponentChild3>() ).GetComponent<GDComponentChild3>();
+            var textureFromGD = fromJsonGDB.Root.Test7.Mobs5.Folder.Objects.First( gdo => gdo.HasComponent<GDComponentChild3>() ).GetComponent<GDComponentChild3>();
             DebugImageOutput.texture = textureFromGD.TexValue;
 
             //var a = gdb.Root.Space_folder2;

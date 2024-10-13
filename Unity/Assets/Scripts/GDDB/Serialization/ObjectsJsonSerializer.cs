@@ -11,9 +11,9 @@ using Object = System.Object;
 
 namespace GDDB.Serialization
 {
-    public partial class ObjectsSerializer
+    public partial class ObjectsJsonSerializer
     {
-        public ObjectsSerializer( )
+        public ObjectsJsonSerializer( )
         {
             AddSerializer( new Vector3Serializer() );
             AddSerializer( new Vector3IntSerializer() );
@@ -27,7 +27,7 @@ namespace GDDB.Serialization
             AddSerializer( new AnimationCurveSerializer() );
         }
 
-        public void AddSerializer( GdJsonCustomSerializer serializer )
+        public void AddSerializer( TypeCustomSerializer serializer )
         {
             _serializers.Add( serializer.SerializedType, serializer );
         }
@@ -50,14 +50,14 @@ namespace GDDB.Serialization
                 resulObjects.Add(  WriteGDObjectToJson( gdObj ) );                    
             }
 
-            Debug.Log( $"[{nameof(ObjectsSerializer)}] Serialized {resulObjects.Count} gd objects to json, Referenced {_assetResolver.Count} assets, used asset resolver {_assetResolver.GetType().Name}" );
+            Debug.Log( $"[{nameof(ObjectsJsonSerializer)}] Serialized {resulObjects.Count} gd objects to json, Referenced {_assetResolver.Count} assets, used asset resolver {_assetResolver.GetType().Name}" );
 
             return resulObjects;
         }
         
 #endif
 
-        private readonly Dictionary<Type, GdJsonCustomSerializer> _serializers = new();
+        private readonly Dictionary<Type, TypeCustomSerializer> _serializers = new();
         private          IGdAssetResolver                        _assetResolver;
 
 #if UNITY_EDITOR

@@ -2,6 +2,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 using System.Text;
+using GDDB.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -12,25 +13,33 @@ namespace GDDB.SourceGenerator
     {
         private static readonly DiagnosticDescriptor JsonParsingError = new ( 
                 "GDDB001", 
-                "Tree structure json parsing error", 
+                "Folders json parsing error", 
                 "Error parsing GDDB type structure json {0}. Exception: {1}.", 
                 "Parsing",
                 DiagnosticSeverity.Error,
                 true );
-        private static readonly DiagnosticDescriptor BuildCategoryError = new ( 
+        private static readonly DiagnosticDescriptor FoldersDeserializingError = new ( 
                 "GDDB002", 
-                "Tree structure file parsing error", 
+                "Folders file parsing error", 
                 "Error building categories from json {0}. Exception: {1}.", 
                 "Parsing",
                 DiagnosticSeverity.Error,
                 true );
-        private static readonly DiagnosticDescriptor DebugInfo = new ( 
+        private static readonly DiagnosticDescriptor CodeEmittingError = new ( 
                 "GDDB003", 
-                "Just info", 
-                "Just info", 
-                "Info",
-                DiagnosticSeverity.Info,
+                "Folders access code emitting error", 
+                "Error emitting code from json {0}. Exception: {1}.", 
+                "Parsing",
+                DiagnosticSeverity.Error,
                 true );
+
+        // private static readonly DiagnosticDescriptor DebugInfo = new ( 
+        //         "GDDB003", 
+        //         "Just info", 
+        //         "Just info", 
+        //         "Info",
+        //         DiagnosticSeverity.Info,
+        //         true );
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
@@ -80,12 +89,13 @@ namespace GDDB.SourceGenerator
 
                         var json = pair.Left;
 
-                        var      serializer = new FoldersSerializer();
+                        var      foldersSerializer = new FoldersJsonSerializer();
                         Folder rootFolder;
-                        Int32? dataHash = null;
+                        UInt64? dataHash = null;
                         try
                         {
-                            rootFolder = serializer.Deserialize( pair.Left.code, out dataHash );
+                            var foldersJObject        = JObject.Parse( pair.Left.code );
+                            rootFolder = foldersSerializer.Deserialize( foldersJObject, FoldersJsonSerializer.IgnoreGDObjects, out dataHash );
                         }
                         catch ( JsonException e )
                         {
@@ -94,7 +104,7 @@ namespace GDDB.SourceGenerator
                         }
                         catch( Exception e ) when (e is not OperationCanceledException)
                         {
-                            context.ReportDiagnostic( Diagnostic.Create( BuildCategoryError, null, json.path, e.ToString() ) );
+                            context.ReportDiagnostic( Diagnostic.Create( FoldersDeserializingError, null, json.path, e.ToString() ) );
                             return;
                         }
                         
@@ -104,16 +114,18 @@ namespace GDDB.SourceGenerator
                         var emitter       = new CodeEmitter();
                         //var allCategories = new List<Category>();
                         var allFolders = rootFolder.EnumerateFoldersDFS(  ).ToArray();
-                        //var categoryEnum = emitter.GenerateEnums( json.path, rootFolder, allCategories );
-                        //context.AddSource( $"Categories.g.cs", SourceText.From( categoryEnum, Encoding.UTF8 ) );
-                        var foldersClasses = emitter.GenerateFolders( json.path, hash, now, allFolders );
-                        context.AddSource( "Folders.g.cs", SourceText.From( foldersClasses, Encoding.UTF8 ) );
-                        var gddbPartial = emitter.GenerateGdDbPartial( json.path, hash, now, rootFolder );
-                        context.AddSource( "GdDb.partial.g.cs", SourceText.From( gddbPartial, Encoding.UTF8 ) );
-                        //var gddbExtensions = emitter.GenerateGdDbExtensions( json.path, allFolders );
-                        //context.AddSource( $"GdDbExtensions.g.cs", SourceText.From( gddbExtensions, Encoding.UTF8 ) );
-                        //var gdTypeExtensions = emitter.GenerateGdTypeExtensions( json.path, rootFolder, allCategories );
-                        //context.AddSource( $"GdTypeExtensions.g.cs", SourceText.From( gdTypeExtensions, Encoding.UTF8 ) );
+
+                        try
+                        {
+                            var foldersClasses = emitter.GenerateFolders( json.path, hash, now, allFolders );
+                            context.AddSource( "Folders.g.cs", SourceText.From( foldersClasses, Encoding.UTF8 ) );
+                            var gddbPartial = emitter.GenerateGdDbPartial( json.path, hash, now, rootFolder );
+                            context.AddSource( "GdDb.partial.g.cs", SourceText.From( gddbPartial, Encoding.UTF8 ) );
+                        }
+                        catch( Exception e ) when (e is not OperationCanceledException)
+                        {
+                            context.ReportDiagnostic( Diagnostic.Create( CodeEmittingError, null, json.path, e.ToString() ) );
+                        }
 
                         Console.WriteLine( $"[DemoSourceGenerator] Finished" );
                     } );

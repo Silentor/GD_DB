@@ -1,13 +1,16 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using GDDB;
+using GDDB.Serialization;
 using GDDB.SourceGenerator;
+using Newtonsoft.Json.Linq;
 
 var file     = new System.IO.FileInfo("GDDBTreeStructure.json");
-var json     = System.IO.File.ReadAllText(file.FullName);
+var str     = System.IO.File.ReadAllText(file.FullName);
+var json = JObject.Parse( str );
 
-var parser   = new FoldersSerializer();
-var rootFolder = parser.Deserialize( json, out _ );
+var parser   = new FoldersJsonSerializer();
+var rootFolder = parser.Deserialize( json, FoldersJsonSerializer.IgnoreGDObjects, out _ );
 
 var emitter  = new CodeEmitter();
 var allFolders = rootFolder.EnumerateFoldersDFS(  ).ToArray();

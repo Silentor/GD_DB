@@ -55,14 +55,14 @@ namespace GDDB.Editor
 
         public static void GenerateGDBSource( Boolean forceRegenerate = false )
         {
-            var databaseHash = GDBEditor.GDB.RootFolder.GetFoldersStructureHash();
-            var generatedHash = GetGeneratedCodeHash();
+            var databaseHash = GDBEditor.GDB.RootFolder.GetFoldersStructureChecksum();
+            var generatedHash = GetGeneratedCodeChecksum();
             if( databaseHash != generatedHash || forceRegenerate )
             {
                 Debug.Log( $"GDBSourceGenerator: GenerateGDBSource" );
 
                 //Update source generator data file
-                var serializer = new FoldersSerializer();
+                var serializer = new FoldersJsonSerializer();
                 var json = serializer.Serialize( GDBEditor.GDB.RootFolder, databaseHash ).ToString();
                 File.WriteAllText( GDDBStructureFilePath, json );
 
@@ -84,15 +84,15 @@ namespace GDDB.Editor
             }
         }
 
-        public static Int32 GetGeneratedCodeHash( )
+        public static UInt64 GetGeneratedCodeChecksum( )
         {
             if ( !File.Exists( GDDBStructureFilePath ) )
                 return 0;
 
             var json    = File.ReadAllText( GDDBStructureFilePath );
             var jObject = JObject.Parse( json );
-            if( jObject.ContainsKey( "hash" ) )
-                return jObject["hash"].Value<Int32>();
+            if( jObject.TryGetValue( "hash", out var value ) )
+                return (UInt64)value;
 
             return 0;
         }

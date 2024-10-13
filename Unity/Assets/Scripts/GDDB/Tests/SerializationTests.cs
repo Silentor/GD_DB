@@ -21,7 +21,7 @@ namespace GDDB.Tests
             testObj.Components.Add( nonSerComp );
 
             //Act
-            var serializer = new ObjectsSerializer();
+            var serializer = new ObjectsJsonSerializer();
             var jsonString = serializer.Serialize( new GDObject[] { testObj } ).ToString();
 
             Debug.Log( jsonString );
@@ -77,7 +77,7 @@ namespace GDDB.Tests
             testObj.Components.Add( comp );
 
             //Act
-            var serializer = new ObjectsSerializer();
+            var serializer = new ObjectsJsonSerializer();
             var jsonString = serializer.Serialize( new GDObject[] { testObj } );
 
             Debug.Log( jsonString );
@@ -100,7 +100,7 @@ namespace GDDB.Tests
             testObj.Components.Add( nullComp );
 
             //Act
-            var serializer = new ObjectsSerializer();
+            var serializer = new ObjectsJsonSerializer();
             var jsonString = serializer.Serialize( new GDObject[] { testObj } );
 
             Debug.Log( jsonString );
@@ -140,7 +140,7 @@ namespace GDDB.Tests
             testObj.Components.Add( collComp );
 
             //Act
-            var serializer = new ObjectsSerializer();
+            var serializer = new ObjectsJsonSerializer();
             var json = serializer.Serialize( new GDObject[] { testObj } );
             var jsonString = json.ToString();
 
@@ -188,7 +188,7 @@ namespace GDDB.Tests
              var obj = GDObject.CreateInstance<GDObject>();
 
              //Act
-             var serializer = new ObjectsSerializer();
+             var serializer = new ObjectsJsonSerializer();
              var jsonString = serializer.Serialize( new GDObject[] { obj } );
              Debug.Log( jsonString );
              var copyObj = serializer.Deserialize( jsonString )[0];
@@ -212,7 +212,7 @@ namespace GDDB.Tests
                 obj2.ObjReference = obj3;
 
                 //Act
-                var serializer = new ObjectsSerializer();
+                var serializer = new ObjectsJsonSerializer();
                 var jsonString = serializer.Serialize( new GDObject[] { obj1, obj2, obj3 } );
                 Debug.Log( jsonString );
                 var copyObjects = serializer.Deserialize( jsonString );
@@ -237,7 +237,7 @@ namespace GDDB.Tests
                 obj1.Components.Add( comp );
 
                 //Act
-                var serializer = new ObjectsSerializer();
+                var serializer = new ObjectsJsonSerializer();
                 var jsonString = serializer.Serialize( new GDObject[] { obj1 } );
                 Debug.Log( jsonString );
                 var copyObjects = serializer.Deserialize( jsonString );
@@ -269,7 +269,7 @@ namespace GDDB.Tests
                 obj1.Components.Add( comp );
 
                 //Act
-                var serializer = new ObjectsSerializer();
+                var serializer = new ObjectsJsonSerializer();
                 var jsonString = serializer.Serialize( new GDObject[] { obj1 } );
                 Debug.Log( jsonString );
                 var copyObjects = serializer.Deserialize( jsonString );
@@ -290,7 +290,7 @@ namespace GDDB.Tests
                 disabledObj.EnabledObject = false;
 
                 //Act
-                var serializer = new ObjectsSerializer();
+                var serializer = new ObjectsJsonSerializer();
                 var jsonString = serializer.Serialize( new GDObject[] { root, enabledObj, disabledObj } );
                 Debug.Log( jsonString );
                 var deserializedObjects = serializer.Deserialize( jsonString );
@@ -306,7 +306,7 @@ namespace GDDB.Tests
                 var obj = GDObject.CreateInstance<TestObjectAwakeEnable>();
 
                 //Act
-                var serializer = new ObjectsSerializer();
+                var serializer = new ObjectsJsonSerializer();
                 var jsonString = serializer.Serialize( new GDObject[] { obj } );
                 Debug.Log( jsonString );
                 var copyObjects = serializer.Deserialize( jsonString );
@@ -338,7 +338,7 @@ namespace GDDB.Tests
                 var testAssetResolver = ScriptableObject.CreateInstance<DirectAssetReferences>();
 
                 //Act
-                var serializer = new ObjectsSerializer();
+                var serializer = new ObjectsJsonSerializer();
                 var jsonString = serializer.Serialize( new GDObject[] { obj }, testAssetResolver );
                 Debug.Log( jsonString );
                 var copyObjects = serializer.Deserialize( jsonString, testAssetResolver );

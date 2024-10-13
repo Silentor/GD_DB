@@ -347,7 +347,7 @@ namespace GDDB.Editor
             toolbar.Add( printHierarchy );
 
             var printObjBtn = new Button( ( ) => {
-                var json = new ObjectsSerializer().Serialize( new []{ _target } );
+                var json = new ObjectsJsonSerializer().Serialize( new []{ _target } );
                 Debug.Log( json );
             } );
             printObjBtn.text         = "Print obj";

@@ -6,7 +6,7 @@ using Object = System.Object;
 
 namespace GDDB.Serialization
 {
-    public abstract class GdJsonCustomSerializer
+    public abstract class TypeCustomSerializer
     {
         public abstract Type SerializedType { get; }
 
@@ -15,7 +15,7 @@ namespace GDDB.Serialization
         public abstract Object Deserialize( JToken json );
     }
 
-    public class Vector3Serializer : GdJsonCustomSerializer
+    public class Vector3Serializer : TypeCustomSerializer
     {
         public override Type SerializedType => typeof( Vector3 );
 
@@ -42,7 +42,7 @@ namespace GDDB.Serialization
         }
     }
 
-    public class Vector3IntSerializer : GdJsonCustomSerializer
+    public class Vector3IntSerializer : TypeCustomSerializer
     {
         public override Type SerializedType => typeof( Vector3Int );
 
@@ -70,7 +70,7 @@ namespace GDDB.Serialization
     }
 
 
-    public class Vector2Serializer : GdJsonCustomSerializer
+    public class Vector2Serializer : TypeCustomSerializer
     {
         public override Type SerializedType => typeof( UnityEngine.Vector2 );
 
@@ -95,7 +95,7 @@ namespace GDDB.Serialization
         }
     }
 
-    public class Vector2IntSerializer : GdJsonCustomSerializer
+    public class Vector2IntSerializer : TypeCustomSerializer
     {
         public override Type SerializedType => typeof( UnityEngine.Vector2Int );
 
@@ -120,7 +120,7 @@ namespace GDDB.Serialization
         }
     }
 
-    public class QuaternionSerializer : GdJsonCustomSerializer
+    public class QuaternionSerializer : TypeCustomSerializer
     {
         public override Type SerializedType => typeof( UnityEngine.Quaternion );
 
@@ -149,7 +149,7 @@ namespace GDDB.Serialization
         }
     }
 
-    public class BoundsSerializer : GdJsonCustomSerializer
+    public class BoundsSerializer : TypeCustomSerializer
     {
         public override Type SerializedType => typeof( UnityEngine.Bounds );
 
@@ -187,7 +187,7 @@ namespace GDDB.Serialization
         }
     }
 
-    public class RectSerializer : GdJsonCustomSerializer
+    public class RectSerializer : TypeCustomSerializer
     {
         public override Type SerializedType => typeof( UnityEngine.Rect );
 
@@ -218,7 +218,7 @@ namespace GDDB.Serialization
         }
     }
 
-    public class ColorSerializer : GdJsonCustomSerializer
+    public class ColorSerializer : TypeCustomSerializer
     {
         public override Type SerializedType => typeof( UnityEngine.Color );
 
@@ -249,7 +249,7 @@ namespace GDDB.Serialization
         }
     }
 
-    public class Color32Serializer : GdJsonCustomSerializer
+    public class Color32Serializer : TypeCustomSerializer
     {
         public override Type SerializedType => typeof( UnityEngine.Color32 );
 
@@ -280,7 +280,7 @@ namespace GDDB.Serialization
         }
     }
 
-    public class AnimationCurveSerializer : GdJsonCustomSerializer
+    public class AnimationCurveSerializer : TypeCustomSerializer
     {
         public override Type SerializedType => typeof( UnityEngine.AnimationCurve );
 

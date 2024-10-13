@@ -30,7 +30,7 @@ public class CodeEmitter
     //     return sb.ToString();
     // }
 
-    public String GenerateFolders( String treeFilePath, Int32 hash, DateTime generationTime, IReadOnlyCollection<Folder> allFolders  )
+    public String GenerateFolders( String treeFilePath, UInt64 hash, DateTime generationTime, IReadOnlyCollection<Folder> allFolders  )
     {
         var sb = new StringBuilder();
         sb.AppendLine( String.Format( FileHeader, treeFilePath, generationTime, hash ));
@@ -53,7 +53,7 @@ public class CodeEmitter
         return sb.ToString();
     }
 
-    public String GenerateGdDbPartial( String treeFilePath, Int32 hash, DateTime generationTime, Folder rootFolder )
+    public String GenerateGdDbPartial( String treeFilePath, UInt64 hash, DateTime generationTime, Folder rootFolder )
     {
         var sb = new StringBuilder();
         sb.AppendLine( String.Format( FileHeader, treeFilePath, generationTime, hash ));
@@ -115,7 +115,7 @@ public class CodeEmitter
     {
         var classFolderName    = GetFolderClassName( folder );
 
-        sb.AppendLine( $"//Folder {folder.GetPath()}, subfolders {folder.SubFolders.Count}, objects {folder.ObjectIds.Count}" );
+        sb.AppendLine( $"//Folder {folder.GetPath()}, subfolders {folder.SubFolders.Count}, objects {folder.Objects.Count}" );
         sb.AppendLine( GeneratedTypeAttribute );
         sb.AppendLine(
                 $$"""

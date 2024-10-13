@@ -87,13 +87,13 @@ namespace GDDB.Editor
             var rootFolder   = GDBEditor.GDB.RootFolder;
             var rootFullPath = AssetDatabase.GUIDToAssetPath( rootFolder.FolderGuid.ToString("N") );
             _foldersInfoLbl.text          = $"GDB root folder: {rootFolder.GetPath()}, objects {GDBEditor.AllObjects.Count}, folders {GDBEditor.AllFolders.Count}";
-            _foldersStructureHashLbl.text = "Source hash: " + rootFolder.GetFoldersStructureHash( );
+            _foldersStructureHashLbl.text = "Source hash: " + rootFolder.GetFoldersStructureChecksum( );
         }
 
         private void UpdateSourceGenInfo( )
         {
-            var rootFolderHash        = GDBEditor.GDB.RootFolder.GetFoldersStructureHash();
-            var generatedCodeHash = GDBSourceGenerator.GetGeneratedCodeHash();
+            var rootFolderHash        = GDBEditor.GDB.RootFolder.GetFoldersStructureChecksum();
+            var generatedCodeHash = GDBSourceGenerator.GetGeneratedCodeChecksum();
             _generatedStructureHashLbl.text = "Generated  hash: " + generatedCodeHash;
             _sourceGenHashIcon.style.backgroundImage = rootFolderHash == generatedCodeHash ? Resources.HashOkIcon : Resources.HashNotOkIcon;
         }

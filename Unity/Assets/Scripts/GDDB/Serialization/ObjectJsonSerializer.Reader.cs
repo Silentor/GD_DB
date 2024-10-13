@@ -10,7 +10,7 @@ using Object = System.Object;
 namespace GDDB.Serialization
 {
     //Reader part of GDJson
-    public partial class ObjectsSerializer
+    public partial class ObjectsJsonSerializer
     {
         private List<GDObject>                           _headers;
 
@@ -110,7 +110,7 @@ namespace GDDB.Serialization
                 objectType = Type.GetType( typeValue );
 
                 if( objectType == null )
-                    throw new InvalidOperationException( $"[{nameof(ObjectsSerializer)}]-[{nameof(ReadObjectFromJson)}] Cannot create Type from type string '{typeValue}'" );
+                    throw new InvalidOperationException( $"[{nameof(ObjectsJsonSerializer)}]-[{nameof(ReadObjectFromJson)}] Cannot create Type from type string '{typeValue}'" );
 
                 valueObj   = (JObject)jObject[ ".Value" ];
             }

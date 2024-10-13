@@ -85,15 +85,15 @@ namespace GDDB
         /// Get hash of folders tree structure
         /// </summary>
         /// <returns></returns>
-        public Int32 GetFoldersStructureHash( )
+        public UInt64 GetFoldersStructureChecksum( )
         {
-            var      result   = 0;
+            var      result   = 0ul;
             foreach ( var folder in EnumerateFoldersDFS(  ) )
             {
-                var folderHash = unchecked( folder.FolderGuid.GetHashCode() + GetHashString( folder.GetPath() ) );
                 unchecked
                 {
-                    result = result * 31 + folderHash;
+                    var folderHash = (UInt64)folder.FolderGuid.GetHashCode() + GetStringChecksum( folder.GetPath() );
+                    result += folderHash;
                 }
             }
 
@@ -126,17 +126,17 @@ namespace GDDB
             return true;
         }
 
-        private Int32 GetHashString( string text )
+        private UInt64 GetStringChecksum( string text )
         {
             if ( String.IsNullOrEmpty( text ) )
                 return 0;
 
             unchecked
             {
-                var hash = 23;
+                var hash = 0ul;
                 foreach (var c in text)
                 {
-                    hash = hash * 31 + c;
+                    hash = hash * 3 + c;
                 }
                 return hash;
             }

@@ -13,9 +13,9 @@ namespace GDDB.Serialization
         {
             var timer             = System.Diagnostics.Stopwatch.StartNew();
 
-            var folderSerializer  = new FoldersSerializer();
+            var folderSerializer  = new FoldersJsonSerializer();
             var foldersJson       = folderSerializer.Serialize( rootFolder );
-            var objectsSerializer = new ObjectsSerializer();
+            var objectsSerializer = new ObjectsJsonSerializer();
             var objectsJson       = objectsSerializer.Serialize( objects, assetsResolver );
             var json = new JObject
                        {
@@ -36,10 +36,10 @@ namespace GDDB.Serialization
             var timer             = System.Diagnostics.Stopwatch.StartNew();
 
             var dom = JObject.Parse( json );
-            var objectsSerializer = new ObjectsSerializer();
+            var objectsSerializer = new ObjectsJsonSerializer();
             var objectsJson = (JArray)dom["objects"];
             var objects    = objectsSerializer.Deserialize( objectsJson, assetsResolver );
-            var foldersSerializer = new FoldersSerializer();
+            var foldersSerializer = new FoldersJsonSerializer();
             var foldersJson = (JObject)dom["folders"];
             var rootFolder = foldersSerializer.Deserialize( foldersJson, objects, out _ );
 

@@ -5,24 +5,27 @@ using Newtonsoft.Json.Linq;
 
 namespace GDDB.Serialization
 {
-    public class FoldersSerializer
+    public class FoldersJsonSerializer
     {
-        public JObject Serialize( Folder root, Int32? hash = null )
+        //Parameter of Deserialize(). Ignore deserialization of GDObjects. Only folders deserialized
+        public static readonly IReadOnlyList<GDObject> IgnoreGDObjects = Array.Empty<GDObject>();
+
+        public JObject Serialize( Folder root, UInt64? hash = null )
         {
             var rootJson = SerializeFolder( root, hash );
             return rootJson;
         }
 
-        public Folder Deserialize( JObject json, IReadOnlyList<GDObject> objects, out Int32? hash )
+        public Folder Deserialize( JObject json, IReadOnlyList<GDObject> objects, out UInt64? checksum )
         {
-            if( json.TryGetValue( "hash", out var hashToken ) && hashToken.Type == JTokenType.Integer )
-                hash = hashToken.Value<Int32>();
+            if( json.TryGetValue( "hash", out var hashValue ) && hashValue.Type == JTokenType.Integer )
+                checksum = (UInt64)hashValue;
             else
-                hash = null;
+                checksum = null;
             return DeserializeFolder( json, null, objects );
         }
 
-        private JObject SerializeFolder( Folder folder, Int32? hash = null )
+        private JObject SerializeFolder( Folder folder, UInt64? hash = null )
         {
             var result = new JObject();
             if( hash.HasValue )
@@ -67,11 +70,14 @@ namespace GDDB.Serialization
                 folder.SubFolders.Add( subFolder );
             }
 
-            var jobjects = json["objects"];
-            foreach ( var objJson in jobjects )
+            if ( objects != IgnoreGDObjects )
             {
-                var objId = Guid.ParseExact( objJson[ "guid" ].Value<String>() , "D" );
-                folder.Objects.Add( objects.First( o => o.Guid == objId ) );                 //todo Optimize search by parallel iteration
+                var jobjects = json["objects"];
+                foreach ( var objJson in jobjects )
+                {
+                    var objId = Guid.ParseExact( objJson[ "guid" ].Value<String>() , "D" );
+                    folder.Objects.Add( objects.First( o => o.Guid == objId ) );                 //todo Optimize search by parallel iteration
+                }
             }
 
             return folder;
