@@ -84,6 +84,10 @@ namespace GDDB.Editor
 
         private void UpdateGDBInfo( )
         {
+            //Can be called before GUI is created somehow
+            if( _foldersInfoLbl == null )
+                return;
+
             var rootFolder   = GDBEditor.GDB.RootFolder;
             var rootFullPath = AssetDatabase.GUIDToAssetPath( rootFolder.FolderGuid.ToString("N") );
             _foldersInfoLbl.text          = $"GDB root folder: {rootFolder.GetPath()}, objects {GDBEditor.AllObjects.Count}, folders {GDBEditor.AllFolders.Count}";
@@ -92,6 +96,10 @@ namespace GDDB.Editor
 
         private void UpdateSourceGenInfo( )
         {
+            //Can be called before GUI is created somehow
+            if( _generatedStructureHashLbl == null )
+                return;
+
             var rootFolderHash        = GDBEditor.GDB.RootFolder.GetFoldersStructureChecksum();
             var generatedCodeHash = GDBSourceGenerator.GetGeneratedCodeChecksum();
             _generatedStructureHashLbl.text = "Generated  hash: " + generatedCodeHash;

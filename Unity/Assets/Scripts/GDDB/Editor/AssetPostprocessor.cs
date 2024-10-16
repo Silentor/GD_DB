@@ -14,7 +14,7 @@ namespace GDDB.Editor
     /// </summary>
     public class AssetPostprocessor : UnityEditor.AssetPostprocessor
     {
-        public static PriorityEvent GDBStructureChanged = new ();
+        public static readonly PriorityEvent GDBStructureChanged = new ();
 
         private static readonly List<GDObject> _gdObjects = new ();
         private static          Boolean        _isNeedRecompileGddb;
@@ -65,20 +65,20 @@ namespace GDDB.Editor
         private static void OnPostprocessAllAssets(String[] importedAssets, String[] deletedAssets, String[] movedAssets, String[] movedFromAssetPaths, bool isDomainReload )
         {
             //DEBUG
-            if ( isDomainReload )
-            {
-                var gdb           = GDBEditor.GDB;
-                var rootGenerated = typeof(GdDb).GetProperty( "Root" );
-                if ( rootGenerated != null )
-                {
-                    var rootObj        = rootGenerated.GetValue( gdb );
-                    var generatedProps = rootObj.GetType().GetProperties();
-                    foreach ( var propertyInfo in generatedProps )
-                    {
-                        Debug.Log( propertyInfo.Name );
-                    }
-                }
-            }
+            // if ( isDomainReload )
+            // {
+            //     var gdb           = GDBEditor.GDB;
+            //     var rootGenerated = typeof(GdDb).GetProperty( "Root" );
+            //     if ( rootGenerated != null )
+            //     {
+            //         var rootObj        = rootGenerated.GetValue( gdb );
+            //         var generatedProps = rootObj.GetType().GetProperties();
+            //         foreach ( var propertyInfo in generatedProps )
+            //         {
+            //             Debug.Log( propertyInfo.Name );
+            //         }
+            //     }
+            // }
 
             _gdObjects.Clear();
         

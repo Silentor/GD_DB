@@ -1,25 +1,38 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 using Object = System.Object;
 
 namespace GDDB.Editor
 {
+    /// <summary>
+    /// Draws validation errors and some icons in the project window
+    /// </summary>
     [InitializeOnLoad]
-    public static class ProjectWindowsTypeDrawer 
+    public static class ProjectWindowsEnchancer 
     {
         private static readonly Dictionary<Int32, ItemData> GdTypeCache = new ();
         //private static readonly GDObjectsFinder             GDOFinder;
 
-        static ProjectWindowsTypeDrawer()
+        static ProjectWindowsEnchancer()
         {
             //TypeHierarchy = new GDTypeHierarchy();
             //GDOFinder     = new GDObjectsFinder();
 
-            EditorApplication.projectWindowItemInstanceOnGUI += DrawGDTypeString;
+            EditorApplication.projectWindowItemInstanceOnGUI += DrawIcons;
+            //EditorApplication.projectWindowItemOnGUI += DrawIcons2;
+
             GDObjectEditor.Changed += GDObjectEditorOnChanged;
+            AssetPostprocessor.GDBStructureChanged.Subscribe( 1000, GbbdStructureChanged );
+        }
+
+        private static void GbbdStructureChanged( )
+        {
+            GdTypeCache.Clear();
         }
 
         private static void GDObjectEditorOnChanged( GDObject obj )
@@ -28,13 +41,54 @@ namespace GDDB.Editor
             //GDOFinder.Reload();
         }
 
-        private static void DrawGDTypeString(Int32 instanceid, Rect rect )
+        private static void DrawIcons(Int32 instanceid, Rect rect )
         {
+            const Single IconSize  = 18;
+
             if ( Event.current.type != EventType.Repaint || !IsMainListRect(rect) )
                 return;
 
-            var asset = EditorUtility.InstanceIDToObject(instanceid) as GDObject;
-            if ( !asset ) return;
+            var iconRect = new Rect( rect.x + rect.width, rect.y, IconSize, IconSize );
+            var itemData = GetItemData( instanceid );
+            if( itemData.IsGDRootFolder )
+            {
+                var oldColor = GUI.color;
+                //GUI.color = Color.red;
+                var content = new GUIContent( Styles.GDRootIcon, tooltip: "DB root folder" );
+                iconRect.x -= IconSize;
+                GUI.Label( iconRect, content );
+                GUI.color = oldColor;
+            }
+
+            if( itemData.IsGDRootObject )
+            {
+                var oldColor = GUI.color;
+                //GUI.color = Color.red;
+                var content = new GUIContent( Styles.GDRootIcon, tooltip: "DB root object" );
+                iconRect.x -= IconSize;
+                GUI.Label( iconRect, content );
+                GUI.color = oldColor;
+            }
+
+            if( itemData.DisabledObject )
+            {
+                var oldColor = GUI.color;
+                //GUI.color = Color.red;
+                var content = new GUIContent( Styles.DisabledIcon, tooltip: "Object disabled" );
+                iconRect.x -= IconSize;
+                GUI.Label( iconRect, content );
+                GUI.color = oldColor;
+            }
+
+            // var asset = EditorUtility.InstanceIDToObject(instanceid) as DefaultAsset;
+            // if( asset )
+            //     GUI.Label( rect, asset.name, Styles.GDTypeStrLabel );
+            // else
+            //     GUI.Label( rect, "null", Styles.GDTypeStrLabel );
+            // //var asset = EditorUtility.InstanceIDToObject(instanceid) as GDObject;
+            //if ( !asset ) return;
+
+            //GUI.Label( rect, instanceid.ToString(), Styles.GDTypeStrLabel );
 
             //GUI.Label( rect, "test", Styles.GDTypeStrLabel );
             //GUI.DrawTexture( rect, EditorGUIUtility.whiteTexture );
@@ -103,6 +157,47 @@ namespace GDDB.Editor
             
         }
 
+        private static ItemData GetItemData( Int32 instanceId )
+        {
+            if( GdTypeCache.TryGetValue( instanceId, out var itemData ) )
+                return itemData;
+
+            itemData = new ItemData();
+            var asset       = EditorUtility.InstanceIDToObject( instanceId );
+             if ( asset )
+            {
+                itemData.DebugName = asset.name;
+                var rootFolder  = GDBEditor.GDB.RootFolder;
+                if ( asset is DefaultAsset folderAsset )
+                {
+                    var folderGuid = new Guid( AssetDatabase.AssetPathToGUID( AssetDatabase.GetAssetPath( folderAsset ) ) );
+                    if( folderGuid == rootFolder.FolderGuid )
+                    {
+                        itemData.IsGDRootFolder = true;
+
+                        Debug.Log( $"[{nameof(ProjectWindowsEnchancer)}]-[{nameof(GetItemData)}] Folder {folderAsset.name} detected as DB root folder" );
+                    }
+                }
+                else if( asset is GDObject gdoAsset )
+                {
+                    if( !gdoAsset.EnabledObject )
+                        itemData.DisabledObject = true;
+                    else
+                    {
+                        if( gdoAsset is GDRoot )
+                            itemData.IsGDRootObject = true;
+                    }
+                }
+            }
+            else
+            {
+                itemData.DebugName = "null";
+            }
+
+            GdTypeCache.Add( instanceId, itemData );
+            return itemData;
+        }
+
         private static bool IsMainListRect(Rect rect)
         {
             // Don't draw details if project view shows large preview icons:
@@ -111,10 +206,10 @@ namespace GDDB.Editor
                 return false;
             }
             // Don't draw details if this asset is a sub asset:
-            if (rect.x > 16)
-            {
-                return false;
-            }
+            // if (rect.x > 16)
+            // {
+            //     return false;
+            // }
 
             return true;
         }
@@ -165,14 +260,22 @@ namespace GDDB.Editor
                                                                              fontStyle = FontStyle.Italic
                                                                      };
 
+            public static readonly Texture2D GDRootIcon = Resources.Load<Texture2D>( "database_24dp" );
+            public static readonly Texture2D DisabledIcon = Resources.Load<Texture2D>( "visibility_off_24dp" );
+
 
         }
 
+        [DebuggerDisplay("{DebugName}")]
         private struct ItemData
         {
-            public String GDTypeString;
-            public Single GDObjectNameWidth;
-            public Single GDTypeStrWidth;
+            public Boolean IsGDRootFolder;
+            public Boolean IsGDRootObject;
+            public Boolean DisabledObject;
+            public String  DebugName;
+            public String  GDTypeString;
+            public Single  GDObjectNameWidth;
+            public Single  GDTypeStrWidth;
         }
     }
 }

@@ -22,6 +22,12 @@ namespace GDDB.Editor
         public IReadOnlyList<GDObject> AllObjects   =>  _allObjects;
         public IReadOnlyList<Folder> AllFolders     =>  _allFolders;
 
+        /// <summary>
+        /// Equivalent to Unity's Assets folder.
+        /// </summary>
+        public static readonly Guid AssetsFolderGuid = Guid.ParseExact( "00000000-0000-0000-1000-000000000000", "D" );
+
+        [Obsolete]
         public String GetRootFolderPath( )
         {
             var timer = System.Diagnostics.Stopwatch.StartNew();
@@ -62,8 +68,8 @@ namespace GDDB.Editor
             }
 
             //Assign Assets folder guid for consistency (Unity is not counts Assets as a folder asset  )
-            var assetsFolder = new Folder( "Assets", Guid.ParseExact( "A55E7500-F5B6-4EBA-825C-B1BC7331A193", "D" ) );
-            var foldersCache = new List<(Guid, String )>( gdos.Length + 1 ){ (assetsFolder.FolderGuid, "Assets" ) };
+            var assetsFolder = new Folder( "Assets", AssetsFolderGuid );
+            var foldersCache = new List<(Guid, String )> { (assetsFolder.FolderGuid, assetsFolder.Name ) };
 
             //Add GDObjects to hierarchy
             var addedObjectCount = 0;
@@ -99,7 +105,7 @@ namespace GDDB.Editor
                 _allFolders.Add( folder );
 
             timer.Stop();
-            Debug.Log( $"[{nameof(FoldersParser)}]-[{nameof(Parse)}] processed {gdos.Length} GDObjects, added {addedObjectCount} GDObjects and {_allFolders.Count} folders, {timer.ElapsedMilliseconds} ms" );
+            Debug.Log( $"[{nameof(FoldersParser)}]-[{nameof(Parse)}] processed {gdos.Length} GDObjects, added {addedObjectCount} GDObjects and {_allFolders.Count} folders, root {Root.Name}, {timer.ElapsedMilliseconds} ms" );
 
             return true;
         }

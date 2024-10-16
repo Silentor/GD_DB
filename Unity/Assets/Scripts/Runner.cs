@@ -76,8 +76,8 @@ namespace GDDB_User
                 CompareFolders( fromAssetGDB.RootFolder, fromJsonGDB.RootFolder );
             }
 
-            var textureFromGD = fromJsonGDB.Root.Test7.Mobs5.Folder.Objects.First( gdo => gdo.HasComponent<GDComponentChild3>() ).GetComponent<GDComponentChild3>();
-            DebugImageOutput.texture = textureFromGD.TexValue;
+            //var textureFromGD = fromJsonGDB.Root.Test7.Mobs5.Folder.Objects.First( gdo => gdo.HasComponent<GDComponentChild3>() ).GetComponent<GDComponentChild3>();
+            //DebugImageOutput.texture = textureFromGD.TexValue;
 
             //var a = gdb.Root.Space_folder2;
 

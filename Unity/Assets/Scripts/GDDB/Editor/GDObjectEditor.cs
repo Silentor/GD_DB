@@ -44,7 +44,8 @@ namespace GDDB.Editor
         {
             var gdoVisualTreeAsset = Resources.GDObjectEditorAsset;
             var   gdoVisualTree      = gdoVisualTreeAsset.Instantiate();
-        
+            gdoVisualTree.TrackSerializedObjectValue( serializedObject, SerializedObjectChangedCallback );
+
             //Enabled toggle
             var enabledTgl = gdoVisualTree.Q<Toggle>( "Enabled" );
             enabledTgl.value = _target.EnabledObject;
@@ -56,8 +57,8 @@ namespace GDDB.Editor
             gdoName.RegisterCallback<ChangeEvent<String>>( ( newValue ) => GDOName_Changed( gdoName, newValue ) );
             
             var flagsLbl = gdoVisualTree.Q<Label>( "Flags" );
-            flagsLbl.TrackSerializedObjectValue( serializedObject, (so) => Flags_SerializedObjectChangedCallback( flagsLbl, so ) );
-            Flags_SerializedObjectChangedCallback( flagsLbl, serializedObject );
+            flagsLbl.TrackSerializedObjectValue( serializedObject, _ => Flags_MarkGDOBjectChangedState( flagsLbl ) );
+            Flags_MarkGDOBjectChangedState( flagsLbl );
 
             //GD Object guid label
             var guid = gdoVisualTree.Q<Label>( "Guid" );
@@ -195,13 +196,16 @@ namespace GDDB.Editor
             }
         }
 
-        private void Flags_SerializedObjectChangedCallback( Label sender, SerializedObject target )
+        private void Flags_MarkGDOBjectChangedState( Label sender )
         {
             if ( EditorUtility.IsDirty( _target ) )
                 sender.text = "*";
             else
                 sender.text = String.Empty;
+        }
 
+        private void SerializedObjectChangedCallback( SerializedObject target )
+        {
             Changed?.Invoke( _target );
         }
 

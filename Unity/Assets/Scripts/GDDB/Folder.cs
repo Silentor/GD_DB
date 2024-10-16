@@ -47,6 +47,10 @@ namespace GDDB
             parent.SubFolders.Add( this );
         }
 
+        /// <summary>
+        /// Get path relative top DB root folder
+        /// </summary>
+        /// <returns></returns>
         public String GetPath( )
         {
             //Some fast passes
