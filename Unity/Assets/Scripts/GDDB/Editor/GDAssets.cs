@@ -12,15 +12,17 @@ namespace GDDB.Editor
     /// <summary>
     /// Watch for changes of GDDB structure in Asset Database 
     /// </summary>
-    public class AssetPostprocessor : UnityEditor.AssetPostprocessor
+    public class GDAssets : UnityEditor.AssetPostprocessor
     {
-        public static readonly PriorityEvent GDBStructureChanged = new ();
+        /// <summary>
+        /// Lists are reused
+        /// </summary>
+        public static readonly PriorityEvent<IReadOnlyList<GDObject>, IReadOnlyList<String>> GDDBAssetsChanged = new ();
 
-        private static readonly List<GDObject> _gdObjects = new ();
-        private static          Boolean        _isNeedRecompileGddb;
-        private static String _rootFolderPath;
+        private static readonly List<GDObject>  _modifiedGDObjects = new ();
+        private static readonly List<String>    _removedGDObjects = new ();
 
-        static AssetPostprocessor()
+        static GDAssets()
         {
             CompilationPipeline.compilationStarted += CompilationPipelineOncompilationStarted;
 
@@ -49,17 +51,6 @@ namespace GDDB.Editor
             {
                 Debug.Log( $"not required compilation of assembly {obj} ({obj.GetHashCode()})" );
             }
-
-            EditorApplication.playModeStateChanged += EditorApplicationOnplayModeStateChanged;
-
-            void EditorApplicationOnplayModeStateChanged(PlayModeStateChange state )
-            {
-                if ( _isNeedRecompileGddb && state  == PlayModeStateChange.ExitingEditMode )
-                {
-                    _isNeedRecompileGddb = false;
-                    AssetDatabase.ImportAsset( "Assets/Scripts/GDDB/AssemblyInfo.cs", ImportAssetOptions.ForceUpdate );
-                }
-            }
         }
 
         private static void OnPostprocessAllAssets(String[] importedAssets, String[] deletedAssets, String[] movedAssets, String[] movedFromAssetPaths, bool isDomainReload )
@@ -79,8 +70,6 @@ namespace GDDB.Editor
             //         }
             //     }
             // }
-
-            _gdObjects.Clear();
         
             for ( var i = 0; i < importedAssets.Length; i++ )
             {
@@ -90,24 +79,27 @@ namespace GDDB.Editor
                     var gdObject  = AssetDatabase.LoadAssetAtPath<GDObject>( assetPath );
                     if ( gdObject )
                     {
-                        _gdObjects.Add( gdObject );
+                        _modifiedGDObjects.Add( gdObject );
                     }
                 }
             }
 
 
-            for ( int i = 0; i < deletedAssets.Length; i++ )
-            {
-                var assetPath = deletedAssets[ i ];
-                if ( assetPath.EndsWith( ".asset" ) )
-                {
-                    var gdObject  = AssetDatabase.LoadAssetAtPath<GDObject>( assetPath );
-                    if ( gdObject )
-                    {
-                        _gdObjects.Add( gdObject );
-                    }
-                }
-            }
+            // for ( int i = 0; i < deletedAssets.Length; i++ )
+            // {
+            //     Debug.Log( $"[{nameof(GDAssets)}]-[{nameof(OnPostprocessAllAssets)}] removed {deletedAssets[0]}" );
+            //
+            //     //Check if deleted assets was from GD DB (by path)
+            //     var assetPath = deletedAssets[ i ];
+            //     if ( assetPath.EndsWith( ".asset" ) )
+            //     {
+            //         var gdObject  = AssetDatabase.LoadAssetAtPath<GDObject>( assetPath );
+            //         if ( gdObject )
+            //         {
+            //             _modifiedObjects.Add( gdObject );
+            //         }
+            //     }
+            // }
 
             for ( int i = 0; i < movedAssets.Length; i++ )
             {
@@ -117,26 +109,29 @@ namespace GDDB.Editor
                     var gdObject  = AssetDatabase.LoadAssetAtPath<GDObject>( assetPath );
                     if ( gdObject )
                     {
-                        _gdObjects.Add( gdObject );
+                        _modifiedGDObjects.Add( gdObject );
                     }
                 }
             }
             
-            if( _gdObjects.Count > 0 )
+            if( _modifiedGDObjects.Count > 0 || _removedGDObjects.Count > 0 )
             {
-                Debug.Log( $"[{nameof(AssetPostprocessor)}] changed {_gdObjects.Count} GDObjects" );
-                GDBStructureChanged?.Invoke();
+                Debug.Log( $"[{nameof(GDAssets)}]-[{nameof(OnPostprocessAllAssets)}] changed {_modifiedGDObjects.Count}, removed {_removedGDObjects.Count} GDObjects" );
+                GDDBAssetsChanged?.Invoke( _modifiedGDObjects, _removedGDObjects );
             }
+
+            _modifiedGDObjects.Clear();
+            _removedGDObjects.Clear();
         }
 
         private static void ProcessImportedFolders( List<String> folders )
         {
             //if ( isGDFoldersChanged )
             {
-                var currentWindow = EditorWindow.focusedWindow;
-                if( currentWindow )
-                    currentWindow.ShowNotification( new GUIContent( "GDDB folders changed, need to recompile scripts" ) );
-                _isNeedRecompileGddb = true;
+                // var currentWindow = EditorWindow.focusedWindow;
+                // if( currentWindow )
+                //     currentWindow.ShowNotification( new GUIContent( "GDDB folders changed, need to recompile scripts" ) );
+                // _isNeedRecompileGddb = true;
 
                 //AssetDatabase.ImportAsset( "Assets/Scripts/GDDB/AssemblyInfo.cs", ImportAssetOptions.ForceUpdate );
             }
@@ -181,6 +176,25 @@ namespace GDDB.Editor
             //
             // Debug.Log( "Finished processing imported GDObjects" );
         }
+
+        private class GDAssetModificationProcessor : AssetModificationProcessor
+        {
+            private static AssetDeleteResult OnWillDeleteAsset(String assetPath, RemoveAssetOptions options )
+            {
+                if ( assetPath.EndsWith( ".asset" ) )
+                {
+                    var gdObject  = AssetDatabase.LoadAssetAtPath<GDObject>( assetPath );
+                    if ( gdObject )
+                    {
+                        _removedGDObjects.Add( assetPath );
+                    }
+                }
+
+                return AssetDeleteResult.DidNotDelete;
+            }
+        }
         
     }
+
+    
 }

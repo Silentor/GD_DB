@@ -45,6 +45,7 @@ namespace GDDB.Editor
         public Boolean Parse( )
         {
             var timer = System.Diagnostics.Stopwatch.StartNew();
+            var disabledObjects = 0;
 
             _allObjects.Clear();
 
@@ -78,8 +79,11 @@ namespace GDDB.Editor
             {
                 var gdoData  = gdos[ i ];
                 var gdobject = AssetDatabase.LoadAssetAtPath<GDObject>( gdoData.Path );
-                if( !gdobject.EnabledObject )
+                if ( !gdobject.EnabledObject )
+                {
+                    disabledObjects++;
                     continue;
+                }
                 
                 var folder  = GetOrCreateFolderForSplittedPath( assetsFolder, Split( gdoData.Path ), foldersCache );
                 folder.Objects.Add( gdobject );
@@ -105,7 +109,7 @@ namespace GDDB.Editor
                 _allFolders.Add( folder );
 
             timer.Stop();
-            Debug.Log( $"[{nameof(FoldersParser)}]-[{nameof(Parse)}] processed {gdos.Length} GDObjects, added {addedObjectCount} GDObjects and {_allFolders.Count} folders, root {Root.Name}, {timer.ElapsedMilliseconds} ms" );
+            Debug.Log( $"[{nameof(FoldersParser)}]-[{nameof(Parse)}] processed {gdos.Length} GDObject assets, added {addedObjectCount} GDObjects and {_allFolders.Count} folders, disabled {disabledObjects} objects, root folder {Root.Name}, time {timer.ElapsedMilliseconds} ms" );
 
             return true;
         }

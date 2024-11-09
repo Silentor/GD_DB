@@ -34,10 +34,19 @@ namespace GDDB.Editor
             _target   = (GDObject)target;
             _settings = new Settings();
             LoadFavoriteComponents();
+
+            GDAssets.GDDBAssetsChanged.Subscribe( OnGDDBChanged);
+        }
+
+        private void OnGDDBChanged(IReadOnlyList<GDObject> changedObjects, IReadOnlyList<String> removedObjects )
+        {
+            if ( changedObjects.Contains( _target ) ) 
+                Repaint();
         }
 
         protected virtual void OnDisable( )
         {
+            GDAssets.GDDBAssetsChanged.Unsubscribe( OnGDDBChanged );
         }
 
         public override VisualElement CreateInspectorGUI( )
@@ -57,7 +66,7 @@ namespace GDDB.Editor
             gdoName.RegisterCallback<ChangeEvent<String>>( ( newValue ) => GDOName_Changed( gdoName, newValue ) );
             
             var flagsLbl = gdoVisualTree.Q<Label>( "Flags" );
-            flagsLbl.TrackSerializedObjectValue( serializedObject, _ => Flags_MarkGDOBjectChangedState( flagsLbl ) );
+            flagsLbl.schedule.Execute( () => Flags_MarkGDOBjectChangedState( flagsLbl ) ).Every( 100 );
             Flags_MarkGDOBjectChangedState( flagsLbl );
 
             //GD Object guid label
@@ -89,7 +98,7 @@ namespace GDDB.Editor
             _componentsContainer = gdoVisualTree.Q<VisualElement>( "Components" );
             for ( var i = 0; i < compsProp.arraySize; i++ )
             {
-                CreateComponentGUI( compsProp , compsProp.GetArrayElementAtIndex( i ) );
+                CreateComponentGUI( compsProp , compsProp.GetArrayElementAtIndex( i ), i );
             }
 
             //New component add button
@@ -101,7 +110,7 @@ namespace GDDB.Editor
         }
 
         
-        private void CreateComponentGUI( SerializedProperty componentsProp, SerializedProperty componentProp )
+        private void CreateComponentGUI( SerializedProperty componentsProp, SerializedProperty componentProp, Int32 index )
         {
             VisualElement result  ;
             if ( componentProp.managedReferenceValue != null )
@@ -141,7 +150,7 @@ namespace GDDB.Editor
                 SetComponentFoldout( propertiesContainer, compType, typeFoldout.value );
                 typeFoldout.RegisterValueChangedCallback( evt => SetComponentFoldout( propertiesContainer, compType, evt.newValue ) );
             }
-            else
+            else          //Missed component 
             {
                 result = Resources.GDComponentEditorAsset.Instantiate();
 
@@ -155,8 +164,7 @@ namespace GDDB.Editor
                     typeFoldout.text = "Component somehow is null";
 
                 var removeBtn = result.Q<Button>( "Remove" );
-                var catchId   = componentProp.managedReferenceId;
-                removeBtn.clicked += () => RemoveComponent( componentsProp , catchId );
+                removeBtn.clicked += () => RemoveComponentByIndex( componentsProp, index );
             }
 
             _componentsContainer.Add( result );
@@ -206,6 +214,8 @@ namespace GDDB.Editor
 
         private void SerializedObjectChangedCallback( SerializedObject target )
         {
+            Debug.Log( $"[{nameof(GDObjectEditor)}]-[{nameof(SerializedObjectChangedCallback)}] changed" );
+
             Changed?.Invoke( _target );
         }
 
@@ -223,22 +233,32 @@ namespace GDDB.Editor
             components.InsertArrayElementAtIndex( lastIndex );
             var componentProp = components.GetArrayElementAtIndex( lastIndex );
             componentProp.managedReferenceValue = newComponent;
-            CreateComponentGUI( components, componentProp );
+            CreateComponentGUI( components, componentProp, lastIndex + 1 );
 
             serializedObject.ApplyModifiedProperties();
         }
 
         private void RemoveComponent( SerializedProperty components, Int64 id )
         {
-            for ( int index = 0; index < components.arraySize; index++ )
+            for ( int i = 0; i < components.arraySize; i++ )
             {
-                if ( components.GetArrayElementAtIndex( index ).managedReferenceId == id )
+                if ( components.GetArrayElementAtIndex( i ).managedReferenceId == id )
                 {
-                    components.DeleteArrayElementAtIndex( index );
-                    RemoveComponentGUI( index );
+                    components.DeleteArrayElementAtIndex( i );
+                    RemoveComponentGUI( i );
 
                     serializedObject.ApplyModifiedProperties();
                 }
+            }
+        }
+
+        private void RemoveComponentByIndex( SerializedProperty components, Int32 index )
+        {
+            if ( index >= 0 && index < components.arraySize )
+            {
+                components.DeleteArrayElementAtIndex( index );
+                RemoveComponentGUI( index );
+                serializedObject.ApplyModifiedProperties();
             }
         }
 
@@ -358,6 +378,14 @@ namespace GDDB.Editor
             printObjBtn.style.width  = 100;
             printObjBtn.style.height = 20;
             toolbar.Add( printObjBtn );
+
+            // var debugReferenceBtn = new Button( ( ) => {
+            //     _target.DebugReference = _target.Components.FirstOrDefault();
+            // } );
+            // debugReferenceBtn.text         = "Debug ref";
+            // debugReferenceBtn.style.width  = 100;
+            // debugReferenceBtn.style.height = 20;
+            // toolbar.Add( debugReferenceBtn );
         }
 
         private static class Resources

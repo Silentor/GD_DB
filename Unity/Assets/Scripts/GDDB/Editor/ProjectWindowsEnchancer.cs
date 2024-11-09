@@ -23,14 +23,14 @@ namespace GDDB.Editor
             //TypeHierarchy = new GDTypeHierarchy();
             //GDOFinder     = new GDObjectsFinder();
 
-            EditorApplication.projectWindowItemInstanceOnGUI += DrawIcons;
+            EditorApplication.projectWindowItemInstanceOnGUI += DrawIconsHandler;
             //EditorApplication.projectWindowItemOnGUI += DrawIcons2;
 
             GDObjectEditor.Changed += GDObjectEditorOnChanged;
-            AssetPostprocessor.GDBStructureChanged.Subscribe( 1000, GbbdStructureChanged );
+            GDAssets.GDDBAssetsChanged.Subscribe( 1000, GbbdStructureChanged );
         }
 
-        private static void GbbdStructureChanged( )
+        private static void GbbdStructureChanged( IReadOnlyList<GDObject> changedObjects, IReadOnlyList<String> deletedObjects )
         {
             GdTypeCache.Clear();
         }
@@ -41,7 +41,7 @@ namespace GDDB.Editor
             //GDOFinder.Reload();
         }
 
-        private static void DrawIcons(Int32 instanceid, Rect rect )
+        private static void DrawIconsHandler(Int32 instanceid, Rect rect )
         {
             const Single IconSize  = 18;
 
@@ -54,7 +54,7 @@ namespace GDDB.Editor
             {
                 var oldColor = GUI.color;
                 //GUI.color = Color.red;
-                var content = new GUIContent( Styles.GDRootIcon, tooltip: "DB root folder" );
+                var content = new GUIContent( Styles.GDRootIcon, tooltip: "GD root folder" );
                 iconRect.x -= IconSize;
                 GUI.Label( iconRect, content );
                 GUI.color = oldColor;
@@ -64,7 +64,7 @@ namespace GDDB.Editor
             {
                 var oldColor = GUI.color;
                 //GUI.color = Color.red;
-                var content = new GUIContent( Styles.GDRootIcon, tooltip: "DB root object" );
+                var content = new GUIContent( Styles.GDRootIcon, tooltip: "GD root object" );
                 iconRect.x -= IconSize;
                 GUI.Label( iconRect, content );
                 GUI.color = oldColor;
@@ -74,7 +74,17 @@ namespace GDDB.Editor
             {
                 var oldColor = GUI.color;
                 //GUI.color = Color.red;
-                var content = new GUIContent( Styles.DisabledIcon, tooltip: "Object disabled" );
+                var content = new GUIContent( Styles.DisabledIcon, tooltip: "Object disabled, it is invisible for database" );
+                iconRect.x -= IconSize;
+                GUI.Label( iconRect, content );
+                GUI.color = oldColor;
+            }
+
+            if( itemData.InvalidGDObject )
+            {
+                var oldColor = GUI.color;
+                //GUI.color = Color.red;
+                var content = new GUIContent( Styles.InvalidGDO, tooltip: itemData.InvalidGDOCustomTooltip );
                 iconRect.x -= IconSize;
                 GUI.Label( iconRect, content );
                 GUI.color = oldColor;
@@ -164,7 +174,7 @@ namespace GDDB.Editor
 
             itemData = new ItemData();
             var asset       = EditorUtility.InstanceIDToObject( instanceId );
-             if ( asset )
+            if ( asset )
             {
                 itemData.DebugName = asset.name;
                 var rootFolder  = GDBEditor.GDB.RootFolder;
@@ -174,18 +184,32 @@ namespace GDDB.Editor
                     if( folderGuid == rootFolder.FolderGuid )
                     {
                         itemData.IsGDRootFolder = true;
+                    }
 
-                        Debug.Log( $"[{nameof(ProjectWindowsEnchancer)}]-[{nameof(GetItemData)}] Folder {folderAsset.name} detected as DB root folder" );
+                    if ( Validator.Reports.TryFirst( r => r.Folder.EnumeratePath().Any( f => f.FolderGuid == folderGuid ), out var report ) )
+                    {
+                        itemData.InvalidGDObject         = true;
+                        itemData.InvalidGDOCustomTooltip = "There are errors in GDObjects in this folder";
                     }
                 }
                 else if( asset is GDObject gdoAsset )
                 {
-                    if( !gdoAsset.EnabledObject )
+                    if ( !gdoAsset.EnabledObject )
+                    {
                         itemData.DisabledObject = true;
+                    }
                     else
                     {
-                        if( gdoAsset is GDRoot )
+                        if ( gdoAsset is GDRoot )
+                        {
                             itemData.IsGDRootObject = true;
+                        }
+
+                        if ( Validator.Reports.TryFirst( r => r.GdObject == gdoAsset, out var report ))
+                        {
+                            itemData.InvalidGDObject = true;
+                            itemData.InvalidGDOCustomTooltip = report.Message;
+                        }
                     }
                 }
             }
@@ -262,6 +286,7 @@ namespace GDDB.Editor
 
             public static readonly Texture2D GDRootIcon = Resources.Load<Texture2D>( "database_24dp" );
             public static readonly Texture2D DisabledIcon = Resources.Load<Texture2D>( "visibility_off_24dp" );
+            public static readonly Texture2D InvalidGDO = Resources.Load<Texture2D>( "error_24dp" );
 
 
         }
@@ -272,6 +297,9 @@ namespace GDDB.Editor
             public Boolean IsGDRootFolder;
             public Boolean IsGDRootObject;
             public Boolean DisabledObject;
+            public Boolean InvalidGDObject;
+            public String  InvalidGDOCustomTooltip;
+
             public String  DebugName;
             public String  GDTypeString;
             public Single  GDObjectNameWidth;

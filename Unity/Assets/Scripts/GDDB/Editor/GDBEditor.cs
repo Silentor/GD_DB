@@ -19,7 +19,7 @@ namespace GDDB.Editor
 
         static GDBEditor( )
         {
-            AssetPostprocessor.GDBStructureChanged.Subscribe( -1000, OnGddbStructureChanged );
+            GDAssets.GDDBAssetsChanged.Subscribe( -1000, OnGddbStructureChanged );     //Update editor GDDB instance, so it need to be first call
         }
 
         public static IReadOnlyList<GDObject> AllObjects
@@ -61,9 +61,9 @@ namespace GDDB.Editor
             }
         }
 
-        private static void OnGddbStructureChanged( )
+        private static void OnGddbStructureChanged(IReadOnlyList<GDObject> changedObjects, IReadOnlyList<String> deletedObjects )
         {
-            Debug.Log( $"[{nameof(GDBEditor)}]-[{nameof(OnGddbStructureChanged)}] Editor GDB instance will be recreated " );
+            Debug.Log( $"[{nameof(GDBEditor)}]-[{nameof(OnGddbStructureChanged)}] Editor GDB instance will be recreated due to changed GDObjects assets " );
             _isGDAssetsChanged = true;
         }
     }

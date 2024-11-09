@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
-
-#if UNITY_2019_3_OR_NEWER
 using UnityEngine;
-#endif
 
 namespace GDDB
 {
@@ -12,8 +9,6 @@ namespace GDDB
     {
         [HideInInspector]
         public Boolean EnabledObject            = true;           //To temporary disable object in GD_DB queries
-
-        //public GdType Type;
 
         public Guid Guid
         {
@@ -126,5 +121,7 @@ namespace GDDB
     {
 
     }
+
+
     
 }

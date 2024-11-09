@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEngine;
@@ -30,10 +31,10 @@ namespace GDDB.Editor
         private void OnEnable( )
         {
             Debug.Log( $"[{nameof(ControlWindow)}]-[{nameof(OnEnable)}] " );
-            AssetPostprocessor.GDBStructureChanged.Subscribe( 10, OnGddbStructureChanged );
+            GDAssets.GDDBAssetsChanged.Subscribe( 10, OnGddbStructureChanged );
         }
 
-        private void OnGddbStructureChanged( )
+        private void OnGddbStructureChanged( IReadOnlyList<GDObject> changedObjects, IReadOnlyList<String> deletedObjects )
         {
             UpdateGDBInfo( );
             UpdateSourceGenInfo();
@@ -41,7 +42,7 @@ namespace GDDB.Editor
 
         private void OnDisable( )
         {
-            AssetPostprocessor.GDBStructureChanged.Unsubscribe( OnGddbStructureChanged );
+            GDAssets.GDDBAssetsChanged.Unsubscribe( OnGddbStructureChanged );
         }
 
         private void CreateGUI( )

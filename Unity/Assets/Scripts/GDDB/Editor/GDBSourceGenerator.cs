@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using GDDB.Serialization;
@@ -16,7 +17,7 @@ namespace GDDB.Editor
     {
         static GDBSourceGenerator( )
         {
-            AssetPostprocessor.GDBStructureChanged.Subscribe( 5, OnGddbStructureChanged );
+            GDAssets.GDDBAssetsChanged.Subscribe( 5, OnGddbStructureChanged );
             EditorApplication.focusChanged += EditorApplicationOnfocusChanged;
             EditorApplication.playModeStateChanged += EditorApplicationOnplayModeStateChanged;
             BuildPreprocessor.BuildPreprocessing += BuildPreprocessorOnBuildPreprocessing;
@@ -47,7 +48,7 @@ namespace GDDB.Editor
                 GenerateGDBSource(  );
         }
 
-        private static void OnGddbStructureChanged( )
+        private static void OnGddbStructureChanged(IReadOnlyList<GDObject> changedObjects, IReadOnlyList<String> deletedObjects )
         {
             if( Settings.AutoGenerateOnSourceChanged )
                 GenerateGDBSource(  );

@@ -18,7 +18,6 @@ namespace GDDB.Serialization
                 throw new System.NotSupportedException( "GdEditorLoader can be used only in editor" );            
  #else
 
-                var timer = System.Diagnostics.Stopwatch.StartNew();
                 var parser  = new FoldersParser();
                 parser.Parse();
                 var assetsFolder = parser.Root;
@@ -30,9 +29,7 @@ namespace GDDB.Serialization
                 AllObjects = parser.AllObjects;
                 AllFolders = parser.AllFolders;
 
-                timer.Stop();
-
-                Debug.Log( $"[GdEditorLoader] GD data base {_db.Name} loaded in {timer.ElapsedMilliseconds} msec" );
+                Debug.Log( $"[{nameof(GdEditorLoader)}]-[{nameof(GdEditorLoader)}] loaded GDDB from assets" );
 #endif           
 
         } 

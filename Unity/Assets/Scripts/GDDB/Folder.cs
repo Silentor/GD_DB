@@ -61,7 +61,17 @@ namespace GDDB
             else if ( Depth == 2 )
                 return String.Concat( Parent.Parent.Name, "/", Parent.Name, "/", Name );
 
-            else return String.Concat( Parent.GetPath(),         "/", Name );
+            else return String.Concat( Parent.GetPath(),  "/", Name );
+        }
+
+        public IEnumerable<Folder> EnumeratePath( )
+        {
+            var current = this;
+            while ( current != null )
+            {
+                yield return current;
+                current = current.Parent;
+            }
         }
 
         public IEnumerable<Folder> EnumerateFoldersDFS( Boolean includeSelf = true )
