@@ -9,6 +9,9 @@ namespace GDDB.Serialization
     /// </summary>
     public class GdEditorLoader : GdLoader
     {
+        /// <summary>
+        /// Get all enabled GD Objects
+        /// </summary>
         public readonly IReadOnlyList<GDObject> AllObjects;
         public readonly IReadOnlyList<Folder> AllFolders;
 

@@ -18,7 +18,7 @@ namespace GDDB.Editor
 
         public Settings( )
         {
-            _settingsPrefix = $"GDDB.Editor.Settings.{Application.identifier}.";
+            _settingsPrefix = $"{Application.identifier}.GDDB.Editor.Settings.";
             _mruKey = $"{_settingsPrefix}MRUComponents";
             _favKey = $"{_settingsPrefix}FavoriteComponents";
             _listModeKey = $"{_settingsPrefix}SearchListMode";

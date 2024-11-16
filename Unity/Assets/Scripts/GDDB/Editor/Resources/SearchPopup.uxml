@@ -2,7 +2,7 @@
     <Style src="project://database/Assets/Scripts/GDDB/Editor/Resources/GDO.uss?fileID=7433441132597879392&amp;guid=7bda1607dc850bf4b986f7b5e610a080&amp;type=3#GDO" />
     <ui:VisualElement name="SearchBox" style="flex-direction: row; height: 24px;">
         <ui:Button name="RecommendedBtn" tooltip="Recommended components" class="search-popup__toolbtn" style="background-image: resource(&apos;thumb_up_24dp&apos;);" />
-        <ui:Button name="SearchBtn" tooltip="Search mode" class="search-popup__toolbtn search-popup__toolbtn-toggled" style="background-image: resource(&apos;search_24dp&apos;);" />
+        <ui:Button name="SearchBtn" tooltip="Browse all components" class="search-popup__toolbtn search-popup__toolbtn-toggled" style="background-image: resource(&apos;search_24dp&apos;);" />
         <ui:TextField picking-mode="Ignore" name="SearchField" style="flex-grow: 1;" />
     </ui:VisualElement>
     <ui:VisualElement name="InfoBox" class="search-popup__info-box">

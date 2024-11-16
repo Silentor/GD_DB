@@ -11,6 +11,7 @@
     border-bottom-width: 1px;
     border-bottom-color: var(--unity-colors-highlight-background-hover);
     background-color: var(--unity-colors-inspector_titlebar-background);
+    height: 24px;
 }
 
 .component__header:hover {

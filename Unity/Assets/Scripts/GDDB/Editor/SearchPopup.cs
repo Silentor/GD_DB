@@ -10,10 +10,8 @@ namespace GDDB.Editor
 {
     public class SearchPopup : PopupWindowContent
     {
-        public SearchPopup( GDObjectEditor editor, SerializedProperty componentsProp, Settings settings )
+        public SearchPopup(   Settings settings )
         {
-            _editor         = editor;
-            _componentsProp = componentsProp;
             _settings       = settings;
         }
 
@@ -112,10 +110,16 @@ namespace GDDB.Editor
             Closed?.Invoke();
         }
 
+        /// <summary>
+        /// When user select type
+        /// </summary>
+        public event Action<Type> Selected; 
+
+        /// <summary>
+        /// When popup closed
+        /// </summary>
         public event Action Closed;
 
-        private readonly GDObjectEditor      _editor;
-        private readonly SerializedProperty  _componentsProp;
         private readonly List<ResultItem>    _resultsToList = new ();
         private          ListView            _resultsList;
         private          IReadOnlyList<Item> _allComponents;
@@ -180,7 +184,7 @@ namespace GDDB.Editor
         {
             if ( !resultItem.IsNamespace )          //Select component, add component to GDObject
             {
-                AddComponent( resultItem );
+                SelectComponent( resultItem );
             }
             else                                    //Show classes from selected namespace 
             {
@@ -250,7 +254,7 @@ namespace GDDB.Editor
             else if ( evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter )
             {
                 if ( SelectedItem >= 0 && SelectedItem < _resultsToList.Count )
-                    AddComponent( _resultsToList[ SelectedItem ] );
+                    SelectComponent( _resultsToList[ SelectedItem ] );
             }
             else if ( evt.keyCode == KeyCode.RightArrow )
             {
@@ -463,9 +467,9 @@ namespace GDDB.Editor
             _resultsList.RefreshItems();
         }
 
-        private void AddComponent( ResultItem item )
+        private void SelectComponent( ResultItem item )
         {
-            _editor.AddComponent( _componentsProp, item.Component.Type );
+            Selected?.Invoke( item.Type );
             _mru.Remove( item.Component.Type );
             _mru.Insert( 0, item.Component.Type );
             editorWindow.Close();

@@ -24,24 +24,24 @@ namespace GDDB.Editor
 
         private GDObject        _target;
         private VisualElement   _componentsContainer;
-        private VisualTreeAsset _gdcVisualTreeAsset;
-        private VisualTreeAsset _gdoVisualTreeAsset;
         private Settings        _settings;
         private List<Type>      _favorites;
+        private VisualElement   _root;
 
         protected virtual void OnEnable( )
         {
-            _target   = (GDObject)target;
-            _settings = new Settings();
-            LoadFavoriteComponents();
+            _target    = (GDObject)target;
+            _settings  = new Settings();
+            _favorites = new List<Type>();
+            _settings.LoadFavoriteComponents( _favorites );
 
             GDAssets.GDDBAssetsChanged.Subscribe( OnGDDBChanged);
         }
 
         private void OnGDDBChanged(IReadOnlyList<GDObject> changedObjects, IReadOnlyList<String> removedObjects )
         {
-            if ( changedObjects.Contains( _target ) ) 
-                Repaint();
+            //if ( changedObjects.Contains( _target ) ) 
+                //Repaint();
         }
 
         protected virtual void OnDisable( )
@@ -50,6 +50,14 @@ namespace GDDB.Editor
         }
 
         public override VisualElement CreateInspectorGUI( )
+        {
+            _root = new VisualElement();
+            _root.name = "GDObjectEditorRoot";
+            _root.Add( CreateAll() );
+            return _root;
+        }
+
+        public VisualElement CreateAll( )
         {
             var gdoVisualTreeAsset = Resources.GDObjectEditorAsset;
             var   gdoVisualTree      = gdoVisualTreeAsset.Instantiate();
@@ -94,26 +102,32 @@ namespace GDDB.Editor
                 properties.Add( new PropertyField( gdObjectProp ) );
             }
 
-            //Components widgets
+            //Component list widgets
             _componentsContainer = gdoVisualTree.Q<VisualElement>( "Components" );
             for ( var i = 0; i < compsProp.arraySize; i++ )
             {
-                CreateComponentGUI( compsProp , compsProp.GetArrayElementAtIndex( i ), i );
+                _componentsContainer.Add( CreateComponentGUI( compsProp , compsProp.GetArrayElementAtIndex( i ), i ) );
             }
 
             //New component add button
-            CreateComponentAddButton( compsProp, gdoVisualTree );
+            CreateAddComponentButton( compsProp, gdoVisualTree );
 
             ProcessDebugToolbar( gdoVisualTree );
 
             return gdoVisualTree;
         }
 
+        private void RecreateAll( )
+        {
+            _root.Clear();
+            _root.Add( CreateAll() );
+        }
+
         
-        private void CreateComponentGUI( SerializedProperty componentsProp, SerializedProperty componentProp, Int32 index )
+        private VisualElement CreateComponentGUI( SerializedProperty componentsProp, SerializedProperty componentProp, Int32 index )
         {
             VisualElement result  ;
-            if ( componentProp.managedReferenceValue != null )
+            if ( componentProp.managedReferenceValue != null )                        //Default component widget
             {
                 result = Resources.GDComponentEditorAsset.Instantiate();
 
@@ -123,7 +137,7 @@ namespace GDDB.Editor
                 typeFoldout.text = compType.Name;
                 
                 var typeInfoLabel = result.Q<Label>( "TypeInfo" );
-                typeInfoLabel.text = $"({compType.FullName}, {compType.Assembly.GetName().Name})";
+                typeInfoLabel.text = $"{compType.Assembly.GetName().Name} : {compType.Namespace}";
 
                 var removeBtn     = result.Q<Button>( "Remove" );
                 var catchId       = componentProp.managedReferenceId;
@@ -150,24 +164,48 @@ namespace GDDB.Editor
                 SetComponentFoldout( propertiesContainer, compType, typeFoldout.value );
                 typeFoldout.RegisterValueChangedCallback( evt => SetComponentFoldout( propertiesContainer, compType, evt.newValue ) );
             }
-            else          //Missed component 
+            else          //Missed component widget
             {
                 result = Resources.GDComponentEditorAsset.Instantiate();
+
+                var missedTypeWidget = result.Q<VisualElement>( "MissedType" );
+                missedTypeWidget.style.display = DisplayStyle.Flex;
 
                 var typeFoldout = result.Q<Foldout>( "Type" );
                 typeFoldout.AddToClassList( "component__type--error" );
                 typeFoldout.RemoveFromClassList( "component__type" );
 
-                if( String.IsNullOrEmpty( componentProp.managedReferenceFullTypename) )
-                    typeFoldout.text = "Component type cannot be found, look at the asset file";
+                var patcher          = new GDAssetPatcher( _target );
+                var compTypeId = patcher.ComponentIds[index];
+                var compTypeFromFile = patcher.GetComponentType( index );
+
+                var typeInfoLabel    = result.Q<Label>( "TypeInfo" );
+                typeInfoLabel.AddToClassList( "component__type--error" );
+                var descriptionLabel = result.Q<Label>( "ErrorDescription" );
+                if ( compTypeId < 0 || compTypeFromFile == GDAssetPatcher.ComponentType.Null )
+                {
+                    typeFoldout.text   = "Component type is null";
+                    typeInfoLabel.text = String.Empty;
+                    descriptionLabel.text = "Null component is not supported. Use fix buttons to REMOVE null component type from this object or in entire database.";
+                }
                 else
-                    typeFoldout.text = "Component somehow is null";
+                {
+                    typeFoldout.text   = compTypeFromFile.Type;
+                    typeInfoLabel.text = $"{compTypeFromFile.Assembly} : {compTypeFromFile.Namespace}";
+                    descriptionLabel.text = "Component type not found in project. It may have been renamed or moved to another namespace or assembly. Use fix buttons to replace missed component type with existing type.";
+                }
+
+                var fixOnceBtn = result.Q<Button>( "FixOnce" );
+                fixOnceBtn.clicked += () => FixComponentOnce( fixOnceBtn,  index, patcher );
+
+                var fixEverywhereBtn = result.Q<Button>( "FixEverywhere" );
+                fixEverywhereBtn.clicked += () => FixComponentEverywhere( fixOnceBtn,  index, patcher );
 
                 var removeBtn = result.Q<Button>( "Remove" );
                 removeBtn.clicked += () => RemoveComponentByIndex( componentsProp, index );
             }
 
-            _componentsContainer.Add( result );
+            return result;
         }
 
         private void RemoveComponentGUI( Int32 index )
@@ -175,14 +213,12 @@ namespace GDDB.Editor
             _componentsContainer.RemoveAt( index );
         }
 
-        private void CreateComponentAddButton( SerializedProperty componentsProp, VisualElement gdObjectVisualTree)
+        private void CreateAddComponentButton( SerializedProperty componentsProp, VisualElement gdObjectVisualTree)
         {
             var addComponentBtn = gdObjectVisualTree.Q<Button>( "AddComponentBtn" );
             addComponentBtn.clicked += ( ) =>
             {
-                var searchPopupLogic = new SearchPopup( this, componentsProp, _settings );
-                searchPopupLogic.Closed += LoadFavoriteComponents;
-                PopupWindow.Show( addComponentBtn.worldBound, searchPopupLogic );
+                ShowSelectComponentPopup( addComponentBtn, ( componentType ) => AddComponent( componentsProp, componentType ) );
             };
         }             
 
@@ -233,7 +269,7 @@ namespace GDDB.Editor
             components.InsertArrayElementAtIndex( lastIndex );
             var componentProp = components.GetArrayElementAtIndex( lastIndex );
             componentProp.managedReferenceValue = newComponent;
-            CreateComponentGUI( components, componentProp, lastIndex + 1 );
+            _componentsContainer.Add(  CreateComponentGUI( components, componentProp, lastIndex + 1 ) );
 
             serializedObject.ApplyModifiedProperties();
         }
@@ -262,6 +298,30 @@ namespace GDDB.Editor
             }
         }
 
+        private void FixComponentOnce( Button button, Int32 componentIndex, GDAssetPatcher objectPatcher)
+        {
+            //Show select component popup for select component to fix missed
+            ShowSelectComponentPopup( button, ( componentType ) =>
+            {
+                objectPatcher.ReplaceComponentType( componentIndex, new GDAssetPatcher.ComponentType( componentType ) );
+                serializedObject.Update();
+                RecreateAll();
+            } );
+        }
+
+        private void FixComponentEverywhere( Button button, Int32 componentIndex, GDAssetPatcher objectPatcher)
+        {
+            //Show select component popup for select component to fix missed
+            ShowSelectComponentPopup( button, ( newType ) =>
+            {
+                var oldType = objectPatcher.GetComponentType( componentIndex );
+                GDAssetPatcher.ReplaceComponentTypeEverywhere( oldType, new GDAssetPatcher.ComponentType( newType ) );
+                serializedObject.Update();
+                RecreateAll();
+            } );
+        }
+
+
         private void ComponentIconClicked( Button iconButton, Type componentType )
         {
             if ( _favorites.Contains( componentType ) )
@@ -280,19 +340,26 @@ namespace GDDB.Editor
 
         private Boolean IsComponentFoldout( Type componentType )
         {
-            return  EditorPrefs.GetBool( componentType.Name, true );
+            return  EditorPrefs.GetBool( GetComponentFoldoutKey(componentType), true );
         }
 
         private void SetComponentFoldout( VisualElement propertiesContainer, Type componentType, Boolean state )
         {
             propertiesContainer.style.display = state ? DisplayStyle.Flex : DisplayStyle.None;
-            EditorPrefs.SetBool( componentType.Name, state );
+            EditorPrefs.SetBool( GetComponentFoldoutKey(componentType), state );
         }
 
-        private void LoadFavoriteComponents( )
+        private static String GetComponentFoldoutKey( Type componentType )
         {
-            _favorites = new List<Type>();
-            _settings.LoadFavoriteComponents( _favorites );
+            return $"{Application.identifier}.{componentType.Name}_Foldout";
+        }
+
+        private void ShowSelectComponentPopup( Button sender, Action<Type> onSelectComponent )
+        {
+            var searchPopupLogic = new SearchPopup( _settings );
+            searchPopupLogic.Selected += onSelectComponent;
+            searchPopupLogic.Closed   += ( ) => _settings.LoadFavoriteComponents( _favorites );
+            PopupWindow.Show( sender.worldBound, searchPopupLogic );
         }
 
         private void ProcessDebugToolbar( VisualElement root )

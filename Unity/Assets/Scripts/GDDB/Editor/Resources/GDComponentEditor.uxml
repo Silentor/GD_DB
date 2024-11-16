@@ -9,9 +9,18 @@
             </ui:VisualElement>
             <ui:VisualElement name="Menu" style="flex-direction: row; align-items: center; justify-content: flex-end;">
                 <ui:Label tabindex="-1" text="typeinfo" parse-escape-sequences="true" display-tooltip-when-elided="true" name="TypeInfo" style="-unity-font-style: italic;" />
-                <ui:Button text="X" parse-escape-sequences="true" display-tooltip-when-elided="true" name="Remove" />
+                <ui:Button parse-escape-sequences="true" display-tooltip-when-elided="true" name="Remove" tooltip="Remove component" class="search-popup__info-box search-popup__toolbtn" style="background-image: resource(&apos;delete_forever_24dp&apos;);" />
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement name="Properties" style="margin-bottom: 10px;" />
+        <ui:VisualElement name="Properties" style="margin-bottom: 10px;">
+            <ui:VisualElement name="MissedType" style="flex-grow: 1; display: none;">
+                <ui:Label tabindex="-1" parse-escape-sequences="true" display-tooltip-when-elided="true" name="ErrorDescription" class="component__type--error" style="flex-grow: 1; text-overflow: clip; white-space: normal;" />
+                <ui:VisualElement name="Buttons" style="flex-direction: row;">
+                    <ui:VisualElement style="background-image: resource(&apos;build_24dp&apos;); width: 22px;" />
+                    <ui:Button text="Fix once" parse-escape-sequences="true" display-tooltip-when-elided="true" name="FixOnce" tooltip="Select existing component type and fix this component" style="height: 22px;" />
+                    <ui:Button text="Fix everywhere" parse-escape-sequences="true" display-tooltip-when-elided="true" name="FixEverywhere" tooltip="Select existing component type and this component across entire database" style="height: 22px;" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>
