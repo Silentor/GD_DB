@@ -66,14 +66,19 @@ namespace GDDB.Editor
             gdoVisualTree.TrackSerializedObjectValue( serializedObject, SerializedObjectChangedCallback );
 
             //Enabled toggle
-            var enabledTgl = gdoVisualTree.Q<Toggle>( "Enabled" );
-            enabledTgl.value = _target.EnabledObject;
-            enabledTgl.RegisterValueChangedCallback( EnabledToggle_Changed );
+            var enabledTgl  = gdoVisualTree.Q<Toggle>( "Enabled" );
+            var enabledProp = serializedObject.FindProperty( nameof(GDObject.EnabledObject) );
+            enabledTgl.BindProperty( enabledProp );
 
             //GD Object name field with renaming support
             var gdoName = gdoVisualTree.Q<TextField>( "Name" );
             gdoName.value = _target.name;
             gdoName.RegisterCallback<ChangeEvent<String>>( ( newValue ) => GDOName_Changed( gdoName, newValue ) );
+            gdoName.TrackSerializedObjectValue( serializedObject, _ =>
+            {
+                if ( _target.name != gdoName.value )
+                    gdoName.SetValueWithoutNotify( _target.name );
+            });                    
             
             var flagsLbl = gdoVisualTree.Q<Label>( "Flags" );
             flagsLbl.schedule.Execute( () => Flags_MarkGDOBjectChangedState( flagsLbl ) ).Every( 100 );
@@ -84,14 +89,15 @@ namespace GDDB.Editor
             guid.text = _target.Guid.ToString();
 
             //Disabled GD Object script reference field
-            var script = gdoVisualTree.Q<PropertyField>( "Script" );
+            var script = gdoVisualTree.Q<ObjectField>( "Script" );
             script.SetEnabled( false );
+            var scriptProp   = serializedObject.FindProperty( "m_Script" );
+            script.BindProperty( scriptProp );
         
             //GD Object custom properties
             var properties   = gdoVisualTree.Q<VisualElement>( "Properties" );
-            var scriptProp   = serializedObject.FindProperty( "m_Script" );
             var compsProp    = serializedObject.FindProperty( nameof(GDObject.Components) );
-            var enabledProp    = serializedObject.FindProperty( "Enabled" );
+            
             var gdObjectProp = serializedObject.GetIterator();
             for (var enterChildren = true; gdObjectProp.NextVisible(enterChildren); enterChildren = false)
             {
@@ -256,14 +262,6 @@ namespace GDDB.Editor
                 ShowSelectComponentPopup( addComponentBtn, ( componentType ) => AddComponent( componentsProp, componentType ) );
             };
         }             
-
-        private void EnabledToggle_Changed(ChangeEvent<Boolean> evt )
-        {
-            serializedObject.Update();
-            var enabledObjProp = serializedObject.FindProperty( nameof(GDObject.EnabledObject) );
-            enabledObjProp.boolValue = evt.newValue;
-            serializedObject.ApplyModifiedProperties();
-        }
 
         private void GDOName_Changed( TextField sender, ChangeEvent<String> newName )
         {

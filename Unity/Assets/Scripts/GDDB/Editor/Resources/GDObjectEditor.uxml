@@ -5,10 +5,10 @@
             <ui:VisualElement name="GDOHeader1" class="hor-line">
                 <ui:Toggle name="Enabled" binding-path="Enabled" value="true" />
                 <ui:Label tabindex="-1" text="*" parse-escape-sequences="true" display-tooltip-when-elided="true" name="Flags" style="width: 15px; max-width: 15px; -unity-font-style: bold; -unity-text-align: upper-right;" />
-                <ui:TextField picking-mode="Ignore" value="Name" name="Name" is-delayed="true" style="flex-grow: 1; flex-shrink: 1; -unity-font-style: bold;" />
+                <ui:TextField picking-mode="Ignore" value="Name" name="Name" is-delayed="true" style="flex-grow: 1; flex-shrink: 1; -unity-font-style: bold; min-width: 100px;" />
+                <uie:ObjectField name="Script" style="width: 150px; max-width: 300px; flex-shrink: 1; flex-grow: 1; min-width: 100px;" />
             </ui:VisualElement>
             <ui:Label tabindex="-1" text="Guid" parse-escape-sequences="true" display-tooltip-when-elided="true" name="Guid" style="-unity-font-style: italic;" />
-            <uie:PropertyField binding-path="m_Script" name="Script" class="unity-disabled" />
             <ui:VisualElement name="Properties" />
         </ui:VisualElement>
         <ui:VisualElement name="Components" />
