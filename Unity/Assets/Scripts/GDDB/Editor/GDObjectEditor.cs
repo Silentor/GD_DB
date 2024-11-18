@@ -8,6 +8,7 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UIElements;
 using Object = System.Object;
 using PopupWindow = UnityEditor.PopupWindow;
@@ -20,6 +21,7 @@ namespace GDDB.Editor
     {
         public VisualElement Components => _componentsContainer;
 
+        //Any changes in edited GDObject
         public static event Action<GDObject> Changed;
 
         private GDObject        _target;
@@ -88,7 +90,7 @@ namespace GDDB.Editor
             //GD Object custom properties
             var properties   = gdoVisualTree.Q<VisualElement>( "Properties" );
             var scriptProp   = serializedObject.FindProperty( "m_Script" );
-            var compsProp    = serializedObject.FindProperty( "Components" );
+            var compsProp    = serializedObject.FindProperty( nameof(GDObject.Components) );
             var enabledProp    = serializedObject.FindProperty( "Enabled" );
             var gdObjectProp = serializedObject.GetIterator();
             for (var enterChildren = true; gdObjectProp.NextVisible(enterChildren); enterChildren = false)
@@ -104,10 +106,12 @@ namespace GDDB.Editor
 
             //Component list widgets
             _componentsContainer = gdoVisualTree.Q<VisualElement>( "Components" );
-            for ( var i = 0; i < compsProp.arraySize; i++ )
+            CreateComponents( compsProp );
+            _componentsContainer.TrackPropertyValue( compsProp, _ =>
             {
-                _componentsContainer.Add( CreateComponentGUI( compsProp , compsProp.GetArrayElementAtIndex( i ), i ) );
-            }
+                Debug.Log( $"Changed Components prop" );
+                RecreateComponents();
+            } );
 
             //New component add button
             CreateAddComponentButton( compsProp, gdoVisualTree );
@@ -123,11 +127,33 @@ namespace GDDB.Editor
             _root.Add( CreateAll() );
         }
 
+        private void CreateComponents( SerializedProperty componentsProp )
+        {
+            var hasMissedTypes = SerializationUtility.HasManagedReferencesWithMissingTypes( _target );
+            if ( hasMissedTypes && EditorUtility.IsDirty( _target ) )
+            {
+                Debug.Log( $"[{nameof(GDObjectEditor)}]-[{nameof(CreateComponents)}] Missing reference types was detected in GDObject {_target.name}. Changes in GDObject was saved to disk. To handle missing Component type editor needs to read raw serialized data from asset file", _target );
+                AssetDatabase.SaveAssetIfDirty( _target );      //We need be sure that in memory and on disk object is same (because we will use direct file reading)
+            }
+
+            for ( var i = 0; i < componentsProp.arraySize; i++ )
+            {
+                _componentsContainer.Add( CreateComponentGUI( componentsProp, componentsProp.GetArrayElementAtIndex( i ), i, hasMissedTypes ) );
+            }
+        }
+
+        private void RecreateComponents( )
+        {
+            _componentsContainer.Clear();
+            var componentsProp = serializedObject.FindProperty( nameof(GDObject.Components) );
+            CreateComponents( componentsProp );
+        }
+
         
-        private VisualElement CreateComponentGUI( SerializedProperty componentsProp, SerializedProperty componentProp, Int32 index )
+        private VisualElement CreateComponentGUI( SerializedProperty componentsProp, SerializedProperty componentProp, Int32 index, Boolean hasMissingTypes )
         {
             VisualElement result  ;
-            if ( componentProp.managedReferenceValue != null )                        //Default component widget
+            if ( componentProp.managedReferenceValue != null )                        //Component present, show default component widget
             {
                 result = Resources.GDComponentEditorAsset.Instantiate();
 
@@ -164,7 +190,7 @@ namespace GDDB.Editor
                 SetComponentFoldout( propertiesContainer, compType, typeFoldout.value );
                 typeFoldout.RegisterValueChangedCallback( evt => SetComponentFoldout( propertiesContainer, compType, evt.newValue ) );
             }
-            else          //Missed component widget
+            else          //Missed or null component, show error widget
             {
                 result = Resources.GDComponentEditorAsset.Instantiate();
 
@@ -175,42 +201,51 @@ namespace GDDB.Editor
                 typeFoldout.AddToClassList( "component__type--error" );
                 typeFoldout.RemoveFromClassList( "component__type" );
 
-                var patcher          = new GDAssetPatcher( _target );
-                var compTypeId = patcher.ComponentIds[index];
-                var compTypeFromFile = patcher.GetComponentType( index );
-
                 var typeInfoLabel    = result.Q<Label>( "TypeInfo" );
                 typeInfoLabel.AddToClassList( "component__type--error" );
                 var descriptionLabel = result.Q<Label>( "ErrorDescription" );
-                if ( compTypeId < 0 || compTypeFromFile == GDAssetPatcher.ComponentType.Null )
+
+                if ( !hasMissingTypes )         //Definitely null ref
                 {
-                    typeFoldout.text   = "Component type is null";
+                    typeFoldout.text   = "Component reference is null";
                     typeInfoLabel.text = String.Empty;
-                    descriptionLabel.text = "Null component is not supported. Use fix buttons to REMOVE null component type from this object or in entire database.";
+                    descriptionLabel.text = "Null components is not supported. Use fix buttons to REMOVE null component type from this object or in entire database.";
+
+                    var fixOnceBtn = result.Q<Button>( "FixOnce" );
+                    fixOnceBtn.text = "Remove once";
+                    fixOnceBtn.tooltip = "Remove this null component from this object";
+                    fixOnceBtn.clicked += () => RemoveComponentByIndex( componentsProp, index );
+
+                    var fixEverywhereBtn = result.Q<Button>( "FixEverywhere" );
+                    fixEverywhereBtn.text = "Remove everywhere";
+                    fixEverywhereBtn.tooltip = "Remove all null components from all objects in database";
+                    fixEverywhereBtn.clicked += RemoveNullComponentsEverywhere;
+
+                    Debug.Log( $"[{nameof(GDObjectEditor)}]-[{nameof(CreateComponentGUI)}] created component editor {index} for NULL component type" );
                 }
-                else
+                else              //Definitely missed ref
                 {
+                    var patcher          = new GDAssetPatcher( _target );
+                    var compTypeFromFile = patcher.GetComponentType( index );
+
                     typeFoldout.text   = compTypeFromFile.Type;
                     typeInfoLabel.text = $"{compTypeFromFile.Assembly} : {compTypeFromFile.Namespace}";
-                    descriptionLabel.text = "Component type not found in project. It may have been renamed or moved to another namespace or assembly. Use fix buttons to replace missed component type with existing type.";
+                    descriptionLabel.text = "Component type not found in project. It may have been renamed or moved to another namespace or assembly. Use fix buttons to replace missed component type with existing type. Is cause direct asset file modification! Attention, this operation is no undoable.";
+
+                    var fixOnceBtn = result.Q<Button>( "FixOnce" );
+                    fixOnceBtn.clicked += () => FixComponentOnce( fixOnceBtn,  index, patcher );
+
+                    var fixEverywhereBtn = result.Q<Button>( "FixEverywhere" );
+                    fixEverywhereBtn.clicked += () => FixComponentEverywhere( fixOnceBtn,  index, patcher );
+
+                    Debug.Log( $"[{nameof(GDObjectEditor)}]-[{nameof(CreateComponentGUI)}] created component editor {index} for missed component type {compTypeFromFile}" );
                 }
-
-                var fixOnceBtn = result.Q<Button>( "FixOnce" );
-                fixOnceBtn.clicked += () => FixComponentOnce( fixOnceBtn,  index, patcher );
-
-                var fixEverywhereBtn = result.Q<Button>( "FixEverywhere" );
-                fixEverywhereBtn.clicked += () => FixComponentEverywhere( fixOnceBtn,  index, patcher );
 
                 var removeBtn = result.Q<Button>( "Remove" );
                 removeBtn.clicked += () => RemoveComponentByIndex( componentsProp, index );
             }
 
             return result;
-        }
-
-        private void RemoveComponentGUI( Int32 index )
-        {
-            _componentsContainer.RemoveAt( index );
         }
 
         private void CreateAddComponentButton( SerializedProperty componentsProp, VisualElement gdObjectVisualTree)
@@ -269,8 +304,6 @@ namespace GDDB.Editor
             components.InsertArrayElementAtIndex( lastIndex );
             var componentProp = components.GetArrayElementAtIndex( lastIndex );
             componentProp.managedReferenceValue = newComponent;
-            _componentsContainer.Add(  CreateComponentGUI( components, componentProp, lastIndex + 1 ) );
-
             serializedObject.ApplyModifiedProperties();
         }
 
@@ -281,8 +314,7 @@ namespace GDDB.Editor
                 if ( components.GetArrayElementAtIndex( i ).managedReferenceId == id )
                 {
                     components.DeleteArrayElementAtIndex( i );
-                    RemoveComponentGUI( i );
-
+                    //RemoveComponentGUI( i );
                     serializedObject.ApplyModifiedProperties();
                 }
             }
@@ -292,9 +324,60 @@ namespace GDDB.Editor
         {
             if ( index >= 0 && index < components.arraySize )
             {
+                Debug.Log( $"[{nameof(GDObjectEditor)}]-[{nameof(RemoveComponentByIndex)}] removing component index {index}" );
                 components.DeleteArrayElementAtIndex( index );
-                RemoveComponentGUI( index );
                 serializedObject.ApplyModifiedProperties();
+            }
+        }
+
+        private void RemoveNullComponentsEverywhere( )
+        {
+            AssetDatabase.SaveAssets();
+            var counter = 0;
+
+            try
+            {
+                foreach ( var gdObject in GDBEditor.AllObjects )
+                {
+                    if ( gdObject.Components.Any( c => c is null ) )            //Something wrong here (null ref component of missed component type)
+                    {
+                        var isChangedObject = false;
+                        var result          = false;
+                        do
+                        {
+                            result = FindAndRemoveNullComponent( gdObject );
+                            isChangedObject |= result;
+                        } while ( result );
+
+                        if ( isChangedObject )
+                        {
+                            counter++;
+                        }
+                    }
+
+                    if( EditorUtility.DisplayCancelableProgressBar( "GDDB component fix", "Remove null components", counter / (Single)GDBEditor.AllObjects.Count ) )
+                        break;
+                }
+            }
+            finally
+            {
+                Debug.Log( $"[{nameof(GDObjectEditor)}]-[{nameof(RemoveNullComponentsEverywhere)}] Removed all null components from {counter} GDObjects" );
+                EditorUtility.ClearProgressBar();    
+            }
+
+            Boolean FindAndRemoveNullComponent(GDObject gdObject )
+            {
+                var isChanged      = false;
+                var patcher        = new GDAssetPatcher( gdObject );
+                var nullRefIdIndex = patcher.ComponentIds.FindIndex( cid => cid == ManagedReferenceUtility.RefIdNull );
+                if ( nullRefIdIndex >= 0 )
+                {
+                    var componentsProp = new SerializedObject( gdObject ).FindProperty( nameof(GDObject.Components) );
+                    componentsProp.DeleteArrayElementAtIndex( nullRefIdIndex );
+                    isChanged = componentsProp.serializedObject.ApplyModifiedProperties();
+                }
+
+                return isChanged;
             }
         }
 
@@ -305,7 +388,6 @@ namespace GDDB.Editor
             {
                 objectPatcher.ReplaceComponentType( componentIndex, new GDAssetPatcher.ComponentType( componentType ) );
                 serializedObject.Update();
-                RecreateAll();
             } );
         }
 
@@ -317,7 +399,6 @@ namespace GDDB.Editor
                 var oldType = objectPatcher.GetComponentType( componentIndex );
                 GDAssetPatcher.ReplaceComponentTypeEverywhere( oldType, new GDAssetPatcher.ComponentType( newType ) );
                 serializedObject.Update();
-                RecreateAll();
             } );
         }
 

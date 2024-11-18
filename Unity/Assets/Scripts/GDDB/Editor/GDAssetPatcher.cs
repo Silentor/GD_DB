@@ -29,7 +29,12 @@ namespace GDDB.Editor
 
         public ComponentType GetComponentType( Int32 componentIndex )
         {
+            if( componentIndex < 0 || componentIndex >= ComponentIds.Length )
+                return ComponentType.NullRef;
             var componentId        = ComponentIds[componentIndex];
+            if( componentId == ManagedReferenceUtility.RefIdNull || componentId == ManagedReferenceUtility.RefIdUnknown )
+                return ComponentType.NullRef;
+
             var path               = AssetDatabase.GetAssetPath( _gdObject );
             var fileText           = System.IO.File.ReadAllText( path );
             var searchStr          = ComponentIdTypeRegexStr.Replace( "{id}", componentId.ToString( CultureInfo.InvariantCulture ) );
@@ -40,7 +45,7 @@ namespace GDDB.Editor
                 return new ComponentType( match.Groups["class"].Value, match.Groups["ns"].Value, match.Groups["asm"].Value );
             }
 
-            return default;
+            return ComponentType.NullRef;
         }
 
         public void ReplaceComponentType( Int32 componentIndex, ComponentType newType )
@@ -55,6 +60,7 @@ namespace GDDB.Editor
             var componentTypeRegex = new Regex( searchStr );
             fileText              = componentTypeRegex.Replace( fileText, replaceStr );
             System.IO.File.WriteAllText( path, fileText );
+
             AssetDatabase.Refresh( ImportAssetOptions.ForceSynchronousImport );
             Debug.Log( $"[{nameof(GDAssetPatcher)}]-[{nameof(ReplaceComponentType)}] Replaced component type {oldType} for {newType} at GDObject asset {_gdObject.name}" );
         }
@@ -65,6 +71,8 @@ namespace GDDB.Editor
              var replaceStr      = ComponentTypeReplacementStr.Replace( "{class}", newType.Type ).Replace( "{ns}", newType.Namespace ).Replace( "{asm}", newType.Assembly );
              var allObjects = GDBEditor.AllObjects;
 
+             AssetDatabase.SaveAssets();
+             AssetDatabase.Refresh( ImportAssetOptions.ForceSynchronousImport );
              AssetDatabase.StartAssetEditing();
              var counter = 0;
 
@@ -122,7 +130,7 @@ namespace GDDB.Editor
             public readonly string Type;
             public readonly string Assembly;
 
-            public static readonly ComponentType Null = new ComponentType( );
+            public static readonly ComponentType NullRef = new ComponentType( );
 
             public ComponentType(  String type, String ns, String assembly )
             {

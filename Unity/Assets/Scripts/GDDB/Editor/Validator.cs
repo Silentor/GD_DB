@@ -40,13 +40,13 @@ namespace GDDB.Editor
 
             var validationTime = DateTime.Now - timer;
 
-            if ( _reports.Any() )
-            {
-                foreach ( var report in _reports )
-                {
-                    Debug.LogError( $"[{nameof(Validator)}] Error at {report.Folder.GetPath()}/{report.GdObject.Name}: {report.Message}", report.GdObject );
-                }
-            }
+            // if ( _reports.Any() )
+            // {
+            //     foreach ( var report in _reports )
+            //     {
+            //         Debug.LogError( $"[{nameof(Validator)}] Error at {report.Folder.GetPath()}/{report.GdObject.Name}: {report.Message}", report.GdObject );
+            //     }
+            // }
 
             Debug.Log( $"[{nameof(Validator)}] Validation taken {validationTime.Milliseconds} ms, validated {validatedCounter} objects, errors {_reports.Count}" );
         }
