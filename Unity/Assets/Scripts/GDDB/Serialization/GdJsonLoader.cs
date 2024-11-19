@@ -11,11 +11,12 @@ namespace GDDB.Serialization
     {
         public GdJsonLoader( String jsonStr, IGdAssetResolver referencedAssets = null )
         {
-            var serializer = new DBJsonSerializer();
-            var data       = serializer.Deserialize( jsonStr, referencedAssets ?? NullGdAssetResolver.Instance );
+            var serializer      = new DBJsonSerializer();
+            var assetsResolver = referencedAssets ?? NullGdAssetResolver.Instance;
+            var data            = serializer.Deserialize( jsonStr, assetsResolver );
             _db = new GdDb( data.rootFolder, data.objects );
 
-            Debug.Log( $"[{nameof(GdJsonLoader)}]-[{nameof(GdJsonLoader)}] Loaded GDDB from json string" );
+            Debug.Log( $"[{nameof(GdJsonLoader)}]-[{nameof(GdJsonLoader)}] Loaded GDDB ({_db.AllObjects.Count} objects) from json string length {jsonStr.Length}, Unity assets referenced {assetsResolver.Count}" );
         }
     }
 }

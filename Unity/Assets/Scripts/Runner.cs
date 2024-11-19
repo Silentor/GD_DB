@@ -43,7 +43,7 @@ namespace GDDB_User
             var jloader        = new GdJsonLoader( dbInJson, assetsResolver );
 
             var fromAssetGDB   = aloader.GetGameDataBase();
-            fromAssetGDB.Print();
+            //fromAssetGDB.Print();
             var fromJsonGDB         = jloader.GetGameDataBase();
 
 #if UNITY_EDITOR
@@ -54,6 +54,8 @@ namespace GDDB_User
             var agdbLoadedHash    = fromAssetGDB.RootFolder.GetFoldersStructureChecksum();
             var jgdbLoadedHash    = fromJsonGDB.RootFolder.GetFoldersStructureChecksum();
             var generatedRootType = GetRootFolderType( fromAssetGDB );
+
+            //fromJsonGDB.Root.
 
             DebugOutput.text = $"AGDB hash: {agdbLoadedHash}\nJGDB hash: {jgdbLoadedHash}\nRoot sourcegen: {generatedRootType}";
 

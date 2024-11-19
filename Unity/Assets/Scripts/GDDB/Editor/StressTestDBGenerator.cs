@@ -33,19 +33,20 @@ namespace GDDB.Editor
             window.Show();
         }
 
+        private void OnDestroy( )
+        {
+            StressTestSettings.instance.Save();
+        }
+
         private void CreateGUI( )
         {
             var settings = StressTestSettings.instance;
-            settings.Save();
             var so       = new SerializedObject( settings );
-
             var settingsWidget = new InspectorElement( so );
             rootVisualElement.Add( settingsWidget );
 
             var generateScriptsBtn = new Button( ( ) => GenerateComponents( settings ) ) { text = "Generate GDComponents" };
             rootVisualElement.Add( generateScriptsBtn );
-            var generateCategoriesBtn = new Button( ( ) => GenerateFolders( settings ) ) { text = "Generate folders" };
-            rootVisualElement.Add( generateCategoriesBtn );
             var generateObjectsBtn = new Button( ( ) => GenerateGDObjects( settings ) ) { text = "Generate GDObjects" };
             rootVisualElement.Add( generateObjectsBtn );
 
@@ -83,22 +84,47 @@ namespace GDDB.Editor
             AssetDatabase.Refresh();
         }
 
-        private void GenerateFolders( StressTestSettings settings )
-        {
-            //todo implement
-        }
-
         private void GenerateGDObjects( StressTestSettings settings )
         {
             var rnd = new Random();
-            var gdos  = new List<GDObject>();
             var components = TypeCache.GetTypesDerivedFrom<GDComponent>().Where( t => t.Namespace?.StartsWith( settings.RootNamespace ) == true && !t.IsAbstract ).ToList();
 
+            //Prepare output folder
+            if ( !AssetDatabase.IsValidFolder( settings.OutputFolderDB ) )
+            {
+                var baseFolderGuid = AssetDatabase.CreateFolder( Path.GetDirectoryName( settings.OutputFolderDB ), Path.GetFileName( settings.OutputFolderDB ) );
+                if ( String.IsNullOrEmpty( baseFolderGuid ) )
+                {
+                    Debug.LogError( $"[{nameof(StressTestDBGenerator)}]-[{nameof(GenerateGDObjects)}] Base folder for objects {settings.OutputFolderDB} is not created properly!" );
+                    return;
+                }
+            }
+
             var names = GenerateUniqueNouns( _settings.GDObjectsCount, new List<String>(), 2, 3 );
-            while ( gdos.Count < settings.GDObjectsCount )
+            var objectsCount = 0;
+
+            AssetDatabase.StartAssetEditing();
+            try
+            {
+                GenerateGDObjectsInFolderRecursive( ref objectsCount, 0, settings.OutputFolderDB, names, components, settings, rnd );
+            }
+            finally
+            {
+                AssetDatabase.StopAssetEditing();
+            }
+        }
+
+        private void GenerateGDObjectsInFolderRecursive( ref Int32 objectsCount, Int32 folderDepth, String folderPath, IReadOnlyList<String> objectNames, IReadOnlyList<Type> components, StressTestSettings settings, Random rnd )
+        {
+            if ( objectsCount >= settings.GDObjectsCount )
+                return;
+
+            //Generate files
+            var objectsCountInFolder = rnd.Next( settings.ObjectsPerFolders.x, settings.ObjectsPerFolders.y + 1 );
+            while ( objectsCountInFolder-- > 0 && objectsCount < settings.GDObjectsCount )
             {
                 var go = ScriptableObject.CreateInstance<GDObject>();
-                go.name       = names[ rnd.Next( names.Count ) ];
+                go.name       = objectNames[ rnd.Next( objectNames.Count ) ];
                 go.Components = new List<GDComponent>();
 
                 var componentsCount = rnd.Next( 1, settings.MaxComponentsPerObject + 1 );
@@ -109,39 +135,31 @@ namespace GDDB.Editor
                     go.Components.Add( component );
                 }
 
-                gdos.Add( go );
+                AssetDatabase.CreateAsset( go, Path.Join( folderPath, $"{go.name}.asset" ) );
+                objectsCount++;
             }
 
-            //Save gdobject assets
-            if ( !Directory.Exists( settings.OutputFolderDB ) )
-            {
-                Directory.CreateDirectory( settings.OutputFolderDB );
-            }
+            if ( folderDepth >= settings.SubfoldersMaxDepth || objectsCount >= settings.GDObjectsCount )
+                return;
 
-            AssetDatabase.StartAssetEditing();
-            try
+            var subfoldersCount = rnd.Next( settings.SubfoldersCount.x, settings.SubfoldersCount.y + 1 );
+            for ( int i = 0; i < subfoldersCount; i++ )
             {
-                foreach ( var gdo in gdos )
-                {
-                    AssetDatabase.CreateAsset( gdo, Path.Join( settings.OutputFolderDB, $"{gdo.name}.asset" ) );
-                }
-            }
-            finally
-            {
-                AssetDatabase.StopAssetEditing();
+                var subfolderName = objectNames[ rnd.Next( objectNames.Count ) ];
+                var subfolderPath = Path.Join( folderPath, subfolderName );
+                if( !AssetDatabase.IsValidFolder( subfolderPath ) )
+                    AssetDatabase.CreateFolder( folderPath, subfolderName );
+
+                GenerateGDObjectsInFolderRecursive( ref objectsCount, folderDepth + 1, subfolderPath, objectNames, components, settings, rnd );
+
+                if ( objectsCount >= settings.GDObjectsCount )
+                    return;
             }
         }
-
-        
 
         private IReadOnlyList<String> GenerateClassNames(  )
         {
             return GenerateUniqueNouns( _settings.ComponentScriptsCount, new List<String>(), 2, 3 );
-        }
-
-        private IReadOnlyList<String> GenerateEnumNames(  Int32 count )
-        {
-            return GenerateUniqueNouns( count, new List<String>(), 1, 3 ).Select( s => $"E{s}" ).ToList();
         }
 
         private IReadOnlyList<String> GenerateNamespaces( )

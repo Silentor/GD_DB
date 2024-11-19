@@ -471,7 +471,7 @@ namespace GDDB.Editor
 
                 AssetDatabase.Refresh();
 
-                Debug.Log( $"[{nameof(GDObjectEditor)}] Saved gddb to {dbOutputPath}, size {EditorUtility.FormatBytes( dbFile.Length)}, asset resolver to {assetsPath}" );
+                Debug.Log( $"[{nameof(GDObjectEditor)}] Saved gddb to {dbOutputPath}, size {EditorUtility.FormatBytes( dbFile.Length)}, asset resolver to {assetsPath}"  );
             } );
             toJsonBtn.text         = $"DB to Json ({GDBEditor.GDB.Name}.gddb.json)";
             toJsonBtn.style.width  = 100;
@@ -481,8 +481,10 @@ namespace GDDB.Editor
             //Save db to scriptable object
             var toSoBtn = new Button( ( ) => {
                 var serializer = new DBAssetSerializer();
-                var dbAsset = serializer.Serialize( GDBEditor.GDB.RootFolder);
-                AssetDatabase.CreateAsset( dbAsset, $"Assets/Resources/{GDBEditor.GDB.Name}.folders.asset" );
+                var dbAsset    = serializer.Serialize( GDBEditor.GDB.RootFolder);
+                var path       = $"Assets/Resources/{GDBEditor.GDB.Name}.folders.asset";
+                AssetDatabase.CreateAsset( dbAsset, path );
+                Debug.Log( $"[{nameof(GDObjectEditor)}]-[{nameof(ProcessDebugToolbar)}] Saved GDDB in asset form to {path}", dbAsset );
             } );
             toSoBtn.text       = "DB to SO";
             toSoBtn.style.width  = 100;
