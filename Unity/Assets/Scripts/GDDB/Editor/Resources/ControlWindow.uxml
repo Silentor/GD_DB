@@ -1,7 +1,8 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
     <ui:Label tabindex="-1" text="Game Data Base info:" parse-escape-sequences="true" display-tooltip-when-elided="true" name="GDBInfo" />
     <ui:Label tabindex="-1" text="Game Data Base assets hash:" parse-escape-sequences="true" display-tooltip-when-elided="true" name="GDBHash" />
-    <ui:VisualElement name="SourceGenSettings" style="border-left-color: rgb(156, 156, 156); border-right-color: rgb(156, 156, 156); border-top-color: rgb(156, 156, 156); border-bottom-color: rgb(156, 156, 156); border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; max-width: 300px;">
+    <ui:Label tabindex="-1" text="Validation:" parse-escape-sequences="true" display-tooltip-when-elided="true" name="Validation" />
+    <ui:VisualElement name="SourceGenSettings" style="border-left-color: rgb(156, 156, 156); border-right-color: rgb(156, 156, 156); border-top-color: rgb(156, 156, 156); border-bottom-color: rgb(156, 156, 156); border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px;">
         <ui:Label tabindex="-1" text="Source generator settings" parse-escape-sequences="true" display-tooltip-when-elided="true" />
         <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
             <ui:VisualElement name="Indent" style="flex-shrink: 0; width: 15px;" />
@@ -10,11 +11,21 @@
                     <ui:Label tabindex="-1" text="Generated code GDB hash:" parse-escape-sequences="true" display-tooltip-when-elided="true" name="SourceGenHash" />
                     <ui:VisualElement name="SourceGenHashIcon" style="width: 18px; height: 18px; background-image: resource(&apos;check_24dp&apos;);" />
                 </ui:VisualElement>
-                <ui:Toggle label="Generate at every change" name="GenerateOnChange" />
-                <ui:Toggle label="Generate on losing focus" name="GenerateOnFocus" />
-                <ui:Toggle label="Generate on play mode" name="GenerateOnPlayMode" />
-                <ui:Toggle label="Generate on build" name="GenerateOnBuild" />
+                <ui:VisualElement name="SerializedSettings" style="flex-grow: 1;" />
                 <ui:Button text="Force Generate" parse-escape-sequences="true" display-tooltip-when-elided="true" name="SourceGenBtn" style="width: 150px;" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+    <ui:VisualElement name="DBUpdateSettings" style="border-left-color: rgb(156, 156, 156); border-right-color: rgb(156, 156, 156); border-top-color: rgb(156, 156, 156); border-bottom-color: rgb(156, 156, 156); border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px;">
+        <ui:Label tabindex="-1" text="Database update settings" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+        <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
+            <ui:VisualElement name="Indent" style="flex-shrink: 0; width: 15px;" />
+            <ui:VisualElement name="Content" style="flex-grow: 1;">
+                <ui:VisualElement name="SerializedSettings" style="flex-grow: 1;" />
+                <ui:VisualElement name="Buttons" style="flex-grow: 1; flex-direction: row;">
+                    <ui:Button text="Update SO database" parse-escape-sequences="true" display-tooltip-when-elided="true" name="SoDBUpdate" style="width: 150px;" />
+                    <ui:Button text="Update JSON database" parse-escape-sequences="true" display-tooltip-when-elided="true" name="JsonDBUpdate" style="width: 150px;" />
+                </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

@@ -11,6 +11,8 @@ namespace GDDB.Editor
     {
         public static IReadOnlyList<ValidationReport> Reports => _reports;
 
+        public static event Action<IReadOnlyList<ValidationReport>> Validated; 
+
         static Validator( )
         {
             GDAssets.GDDBAssetsChanged.Subscribe( 500, OnGDDBChanged );      //After editor GDDB updated and Before project window drawer
@@ -49,6 +51,8 @@ namespace GDDB.Editor
             // }
 
             Debug.Log( $"[{nameof(Validator)}] Validation taken {validationTime.Milliseconds} ms, validated {validatedCounter} objects, errors {_reports.Count}" );
+
+            Validated?.Invoke( Reports );
         }
 
         private static void DefaultGDOValidations( GDObject gdo, Folder folder, List<ValidationReport> reports )
@@ -58,17 +62,14 @@ namespace GDDB.Editor
 
         private static void CheckMissedComponentsVaslidation( GDObject gdo, Folder folder, List<ValidationReport> reports )
         {
-            //if ( SerializationUtility.HasManagedReferencesWithMissingTypes( gdo ) )
+            var so        = new SerializedObject( gdo );
+            var compsProp = so.FindProperty( "Components" );
+            for ( int i = 0; i < compsProp.arraySize; i++ )
             {
-                var so        = new SerializedObject( gdo );
-                var compsProp = so.FindProperty( "Components" );
-                for ( int i = 0; i < compsProp.arraySize; i++ )
+                var compProp = compsProp.GetArrayElementAtIndex( i );
+                if( compProp.managedReferenceValue == null )
                 {
-                    var compProp = compsProp.GetArrayElementAtIndex( i );
-                    if( compProp.managedReferenceValue == null )
-                    {
-                        reports.Add( new ValidationReport( folder,  gdo, $"Component at index {i} is null or missed reference" ) );
-                    }
+                    reports.Add( new ValidationReport( folder,  gdo, $"Component at index {i} is null or missed reference" ) );
                 }
             }
         }
