@@ -9,23 +9,29 @@ using UnityEngine;
 namespace GDDB.Editor
 {
     /// <summary>
-    /// Trigger GDB source generation if GD assets changed, play mode entered, build started etc
+    /// Trigger GDB source generation by updating json additional file. Source code generation makes DB folder access simpler. Trigger events: GD assets changed, play mode entered, build started etc
     /// </summary>
     [InitializeOnLoad]
     public static class GDBSourceGenerator
     {
+        //Additional file to generate sources from
+        private static readonly String  GDDBStructureFilePath = $"{Application.dataPath}/../Library/GDDBTreeStructure.json";
+        private static SourceGeneratorSettings Settings => SourceGeneratorSettings.instance;
+
+        public static event Action SourceUpdated;
+
         static GDBSourceGenerator( )
         {
             GDAssets.GDDBAssetsChanged.Subscribe( 5, OnGddbStructureChanged );
             EditorApplication.focusChanged += EditorApplicationOnfocusChanged;
             EditorApplication.playModeStateChanged += EditorApplicationOnplayModeStateChanged;
-            BuildPreprocessor.BuildPreprocessing += BuildPreprocessorOnBuildPreprocessing;
-            Settings.SettingChanged += SettingChanged;
+            GDDBUpdater.BuildPreprocessing += BuildPreprocessorOnBuildPreprocessing;
+            Settings.Changed += SettingChanged;
         }
 
-        private static void SettingChanged(String settingName)
+        private static void SettingChanged( SourceGeneratorSettings settings )
         {
-            if( settingName == nameof(Settings.AutoGenerateOnSourceChanged) && Settings.AutoGenerateOnSourceChanged )
+            if( settings.AutoGenerateOnSourceChanged )
                 GenerateGDBSource();        //Its check changes inside
         }
 
@@ -59,12 +65,14 @@ namespace GDDB.Editor
             var generatedHash = GetGeneratedCodeChecksum();
             if( databaseHash != generatedHash || forceRegenerate )
             {
-                Debug.Log( $"GDBSourceGenerator: GenerateGDBSource" );
+                Debug.Log( $"[{nameof(GDBSourceGenerator)}]-[{nameof(GenerateGDBSource)}] db hash {databaseHash}, generated code hash {generatedHash}, force mode {forceRegenerate}" );
 
                 //Update source generator data file
                 var serializer = new FoldersJsonSerializer();
                 var json = serializer.Serialize( GDBEditor.GDB.RootFolder, databaseHash ).ToString();
                 File.WriteAllText( GDDBStructureFilePath, json );
+
+                SourceUpdated?.Invoke();
 
                 //Trigger recompile of GDDB assembly and source generation
                 var gddbSourceFile = AssetDatabase.FindAssets( "t:MonoScript GdDb" );
@@ -95,48 +103,6 @@ namespace GDDB.Editor
                 return (UInt64)value;
 
             return 0;
-        }
-
-        private static readonly String  GDDBStructureFilePath = $"{Application.dataPath}/../Library/GDDBTreeStructure.json";
-
-        public static class Settings
-        {
-            private static readonly String ProjectPrefix                 = $"{Application.identifier}.";
-            private static readonly String AutoGenerateOnSourceChangeKey = $"{ProjectPrefix}.{nameof(GDBSourceGenerator)}.{nameof(AutoGenerateOnSourceChanged)}";
-            private static readonly String AutoGenerateOnPlayModeKey     = $"{ProjectPrefix}.{nameof(GDBSourceGenerator)}.{nameof(AutoGenerateOnPlayMode)}";
-            private static readonly String AutoGenerateOnBuildKey        = $"{ProjectPrefix}.{nameof(GDBSourceGenerator)}.{nameof(AutoGenerateOnBuild)}";
-            private static readonly String AutoGenerateOnFocusLostKey    = $"{ProjectPrefix}.{nameof(GDBSourceGenerator)}.{nameof(AutoGenerateOnFocusLost)}";
-
-            public static Boolean AutoGenerateOnSourceChanged
-            {
-                get => EditorPrefs.GetBool( AutoGenerateOnSourceChangeKey, false );
-                set
-                {
-                    EditorPrefs.SetBool( AutoGenerateOnSourceChangeKey, value );
-                    SettingChanged?.Invoke( nameof(AutoGenerateOnSourceChanged) );
-                }
-            }
-
-            public static Boolean AutoGenerateOnPlayMode
-            {
-                get => EditorPrefs.GetBool( AutoGenerateOnPlayModeKey, true );
-                set => EditorPrefs.SetBool( AutoGenerateOnPlayModeKey, value );
-            }
-
-            public static Boolean AutoGenerateOnBuild
-            {
-                get => EditorPrefs.GetBool( AutoGenerateOnBuildKey, true );
-                set => EditorPrefs.SetBool( AutoGenerateOnBuildKey, value );
-            }
-
-            public static Boolean AutoGenerateOnFocusLost
-            {
-                get => EditorPrefs.GetBool( AutoGenerateOnFocusLostKey, true );
-                set => EditorPrefs.SetBool( AutoGenerateOnFocusLostKey, value );
-            }
-
-            public static event Action<String> SettingChanged;
-
         }
     }
 }

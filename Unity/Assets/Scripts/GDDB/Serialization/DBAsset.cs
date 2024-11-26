@@ -6,6 +6,7 @@ namespace GDDB.Serialization
 {
     public class DBAsset : ScriptableObject
     {
+        public UInt64                   Hash;
         public List<SerializableFolder> Folders;
     }
 

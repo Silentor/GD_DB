@@ -16,5 +16,10 @@ namespace GDDB
         public GDObject     GdObject    { get; }
         public String       Message     { get; }
         //public Boolean IsWarning { get; }
+
+        public override String ToString( )
+        {
+            return $"{Folder.GetPath()}/{GdObject.Name}: {Message}";
+        }
     }
 }

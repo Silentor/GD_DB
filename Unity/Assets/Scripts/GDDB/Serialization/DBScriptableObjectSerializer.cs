@@ -8,7 +8,7 @@ namespace GDDB.Serialization
     /// <summary>
     /// Serialize folders tree to one unity asset
     /// </summary>
-    public class DBAssetSerializer
+    public class DBScriptableObjectSerializer
     {
         public DBAsset Serialize( Folder rootFolder )
         {
@@ -28,10 +28,11 @@ namespace GDDB.Serialization
             }
 
             var result = ScriptableObject.CreateInstance<DBAsset>();
-            result.Folders = folders;  
+            result.Folders = folders; 
+            result.Hash = rootFolder.GetFoldersStructureChecksum();
 
             timer.Stop();
-            Debug.Log( $"[{nameof(DBAssetSerializer)}]-[{nameof(Serialize)}] serialized db {result.Folders.Count} folders to Unity asset for {timer.ElapsedMilliseconds} ms" );
+            Debug.Log( $"[{nameof(DBScriptableObjectSerializer)}]-[{nameof(Serialize)}] serialized db {rootFolder.Name} ({folders.SelectMany( f => f.Objects ).Count()} objects, {folders.Count} folders) to Scriptable object for {timer.ElapsedMilliseconds} ms" );
 
             return result;
         }       
@@ -47,7 +48,7 @@ namespace GDDB.Serialization
             var rootFolder = LoadFolder( asset.Folders, ref index, null );
 
             timer.Stop();
-            Debug.Log( $"[{nameof(DBAssetSerializer)}]-[{nameof(Deserialize)}] deserialized db {asset.Folders.Count} folders from Unity asset for {timer.ElapsedMilliseconds} ms" );
+            Debug.Log( $"[{nameof(DBScriptableObjectSerializer)}]-[{nameof(Deserialize)}] deserialized db folders from Scriptable object {asset.name} for {timer.ElapsedMilliseconds} ms" );
 
             return rootFolder;
         }

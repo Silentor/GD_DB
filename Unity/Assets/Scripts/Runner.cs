@@ -13,6 +13,8 @@ namespace GDDB_User
 {
     public class Runner : MonoBehaviour
     {
+        public DBAsset DB;
+
         public TMP_Text DebugOutput;
         public RawImage DebugImageOutput;
 
@@ -33,13 +35,20 @@ namespace GDDB_User
         {
             //var loader = new GdEditorLoader( );
 
+            // var all = Resources.LoadAll( "" );
+            // foreach ( var res in all )
+            // {
+            //     Debug.Log( res.name );
+            // }
+
             //Load GDDB from asset
-            var dbInAsset = Resources.Load<DBAsset>( "Default.folders" );
-            var aloader        = new GdAssetLoader( dbInAsset );
+            DBAsset db;
+            db = DB ? DB : Resources.Load<DBAsset>( "DefaultGDDB" );
+            var     aloader   = new GdScriptableObjectLoader( db );
 
             //Load GDDB from JSON with Unity assets resolver
-            var assetsResolver = Resources.Load<DirectAssetReferences>( "Default.assets" );
-            var dbInJson       =  File.ReadAllText( Application.streamingAssetsPath + "/Default.gddb.json" );
+            var assetsResolver = Resources.Load<DirectAssetReferences>( "DefaultGDDBAssetsRef" );
+            var dbInJson       =  File.ReadAllText( Application.streamingAssetsPath + "/DefaultGDDB.json" );
             var jloader        = new GdJsonLoader( dbInJson, assetsResolver );
 
             var fromAssetGDB   = aloader.GetGameDataBase();
@@ -57,24 +66,32 @@ namespace GDDB_User
 
             //fromJsonGDB.Root.
 
-            DebugOutput.text = $"AGDB hash: {agdbLoadedHash}\nJGDB hash: {jgdbLoadedHash}\nRoot sourcegen: {generatedRootType}";
+            DebugOutput.text = $"AGDB hash: {agdbLoadedHash}\nJGDB hash: {jgdbLoadedHash}\nRoot sourcegen: {generatedRootType}\nRoot SO folder: {fromAssetGDB.RootFolder.Name}\nRoot json folder: {fromJsonGDB.RootFolder.Name}";
 
             
             Debug.Log( $"Asset loaded hash {agdbLoadedHash}" );
             Debug.Log( $"JSON loaded hash {jgdbLoadedHash}" );
             Debug.Log( $"Source generated root type {generatedRootType}" );
+            Debug.Log( $"Asset loaded root folder name {fromAssetGDB.RootFolder.Name}" );
+            Debug.Log( $"Json loaded root folder name {fromJsonGDB.RootFolder.Name}" );
 
 #if UNITY_EDITOR
             if( gdbInputHash != agdbLoadedHash )
             {
-                Debug.LogError( "Hashes are different" );
+                Debug.LogError( "Input and SO db hashes are different" );
                 CompareFolders( inputDB.RootFolder, fromAssetGDB.RootFolder );
+            }
+
+            if( gdbInputHash != jgdbLoadedHash )
+            {
+                Debug.LogError( "Input and json db hashes are different" );
+                CompareFolders( inputDB.RootFolder, fromJsonGDB.RootFolder );
             }
 #endif
 
             if ( agdbLoadedHash != jgdbLoadedHash )
             {
-                Debug.LogError( "Hashes are different" );
+                Debug.LogError( "SO and json hashes are different" );
                 CompareFolders( fromAssetGDB.RootFolder, fromJsonGDB.RootFolder );
             }
 

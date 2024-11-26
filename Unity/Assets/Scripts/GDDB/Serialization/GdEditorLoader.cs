@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using GDDB.Editor;
 using UnityEngine;
@@ -22,17 +23,24 @@ namespace GDDB.Serialization
  #else
 
                 var parser  = new FoldersParser();
-                parser.Parse();
-                var assetsFolder = parser.Root;
+                if ( parser.Parse() )
+                {
+                    // if( !gdRoot )
+                    //     throw new ArgumentException( $"Game design data base name {name} is incorrect" );
 
-                // if( !gdRoot )
-                //     throw new ArgumentException( $"Game design data base name {name} is incorrect" );
+                    _db        = new GdDb( parser.Root, parser.AllObjects );
+                    AllObjects = parser.AllObjects;
+                    AllFolders = parser.AllFolders;
 
-                _db = new GdDb( assetsFolder, parser.AllObjects );
-                AllObjects = parser.AllObjects;
-                AllFolders = parser.AllFolders;
-
-                Debug.Log( $"[{nameof(GdEditorLoader)}]-[{nameof(GdEditorLoader)}] loaded GDDB from assets" );
+                    Debug.Log( $"[{nameof(GdEditorLoader)}]-[{nameof(GdEditorLoader)}] loaded GDDB from assets" );
+                }
+                else
+                {
+                    _db        = new GdDb( parser.Root, parser.AllObjects );
+                    AllObjects = parser.AllObjects;
+                    AllFolders = parser.AllFolders;
+                    Debug.Log( $"[{nameof(GdEditorLoader)}]-[{nameof(GdEditorLoader)}] No GDDB assets found" );
+                }
 #endif           
 
         } 

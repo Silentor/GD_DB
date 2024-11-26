@@ -48,7 +48,7 @@ namespace GDDB
         }
 
         /// <summary>
-        /// Get path relative top DB root folder
+        /// Get path relative to DB root folder
         /// </summary>
         /// <returns></returns>
         public String GetPath( )

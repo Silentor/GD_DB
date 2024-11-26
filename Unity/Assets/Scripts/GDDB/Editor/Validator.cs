@@ -17,15 +17,16 @@ namespace GDDB.Editor
         {
             GDAssets.GDDBAssetsChanged.Subscribe( 500, OnGDDBChanged );      //After editor GDDB updated and Before project window drawer
             OnGDDBChanged( Array.Empty<GDObject>(), ArraySegment<String>.Empty );
+            GDObjectEditor.Changed += _ => Validate();
         }
 
         private static readonly List<ValidationReport> _reports = new();
 
-        private static void OnGDDBChanged(IReadOnlyList<GDObject> changedObjects, IReadOnlyList<String> deletedObjects )
+        public static IReadOnlyList<ValidationReport> Validate( )
         {
             var gddb    = GDBEditor.GDB;
             _reports.Clear();                     
-            var timer = DateTime.Now;
+            var timer            = DateTime.Now;
             int validatedCounter = 0;
 
             foreach ( var folder in gddb.RootFolder.EnumerateFoldersDFS(  ) )
@@ -53,6 +54,13 @@ namespace GDDB.Editor
             Debug.Log( $"[{nameof(Validator)}] Validation taken {validationTime.Milliseconds} ms, validated {validatedCounter} objects, errors {_reports.Count}" );
 
             Validated?.Invoke( Reports );
+
+            return Reports;
+        }
+
+        private static void OnGDDBChanged(IReadOnlyList<GDObject> changedObjects, IReadOnlyList<String> deletedObjects )
+        {
+            Validate();
         }
 
         private static void DefaultGDOValidations( GDObject gdo, Folder folder, List<ValidationReport> reports )

@@ -33,6 +33,7 @@ namespace GDDB.Editor
             //Debug.Log( $"[{nameof(ControlWindow)}]-[{nameof(OnEnable)}] " );
             GDAssets.GDDBAssetsChanged.Subscribe( 10, OnGddbStructureChanged );
             Validator.Validated += OnValidated;
+            GDBSourceGenerator.SourceUpdated += UpdateSourceGenInfo;
         }
 
         private void OnValidated( IReadOnlyList<ValidationReport> reports )
@@ -52,7 +53,8 @@ namespace GDDB.Editor
         private void OnDisable( )
         {
             GDAssets.GDDBAssetsChanged.Unsubscribe( OnGddbStructureChanged );
-            Validator.Validated -= OnValidated;
+            Validator.Validated              -= OnValidated;
+            GDBSourceGenerator.SourceUpdated -= UpdateSourceGenInfo;
         }
 
         private void CreateGUI( )
@@ -102,7 +104,7 @@ namespace GDDB.Editor
             if ( String.IsNullOrEmpty( updateSettings.ScriptableObjectDBPath ) ) throw new InvalidOperationException( "Output path is empty" );
 
             var editorDB   = GDBEditor.GDB;
-            var serializer = new DBAssetSerializer();
+            var serializer = new DBScriptableObjectSerializer();
             var soDB       = serializer.Serialize( editorDB.RootFolder );
             AssetDatabase.CreateAsset( soDB, updateSettings.ScriptableObjectDBPath );
             if ( Validator.Reports.Count > 0 ) Debug.LogError( $"[{nameof(ControlWindow)}] GDDB validation errors detected, count {Validator.Reports.Count}" );

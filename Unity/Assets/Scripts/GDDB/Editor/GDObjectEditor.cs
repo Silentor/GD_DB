@@ -227,7 +227,7 @@ namespace GDDB.Editor
                     fixEverywhereBtn.tooltip = "Remove all null components from all objects in database";
                     fixEverywhereBtn.clicked += RemoveNullComponentsEverywhere;
 
-                    Debug.Log( $"[{nameof(GDObjectEditor)}]-[{nameof(CreateComponentGUI)}] created component editor {index} for NULL component type" );
+                    //Debug.Log( $"[{nameof(GDObjectEditor)}]-[{nameof(CreateComponentGUI)}] created component editor {index} for NULL component type" );
                 }
                 else              //Definitely missed ref
                 {
@@ -244,7 +244,7 @@ namespace GDDB.Editor
                     var fixEverywhereBtn = result.Q<Button>( "FixEverywhere" );
                     fixEverywhereBtn.clicked += () => FixComponentEverywhere( fixOnceBtn,  index, patcher );
 
-                    Debug.Log( $"[{nameof(GDObjectEditor)}]-[{nameof(CreateComponentGUI)}] created component editor {index} for missed component type {compTypeFromFile}" );
+                    //Debug.Log( $"[{nameof(GDObjectEditor)}]-[{nameof(CreateComponentGUI)}] created component editor {index} for missed component type {compTypeFromFile}" );
                 }
 
                 var removeBtn = result.Q<Button>( "Remove" );
@@ -480,7 +480,7 @@ namespace GDDB.Editor
 
             //Save db to scriptable object
             var toSoBtn = new Button( ( ) => {
-                var serializer = new DBAssetSerializer();
+                var serializer = new DBScriptableObjectSerializer();
                 var dbAsset    = serializer.Serialize( GDBEditor.GDB.RootFolder);
                 var path       = $"Assets/Resources/{GDBEditor.GDB.Name}.folders.asset";
                 AssetDatabase.CreateAsset( dbAsset, path );

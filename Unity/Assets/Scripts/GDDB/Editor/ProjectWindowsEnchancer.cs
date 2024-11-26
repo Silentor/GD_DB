@@ -176,6 +176,14 @@ namespace GDDB.Editor
             var asset       = EditorUtility.InstanceIDToObject( instanceId );
             if ( asset )
             {
+                var editorDB = GDBEditor.GDB;
+                if( editorDB.AllObjects.Count == 0 )
+                {
+                    itemData.DebugName = "GDDB is empty";
+                    GdTypeCache.Add( instanceId, itemData );
+                    return itemData;
+                }
+
                 itemData.DebugName = asset.name;
                 var rootFolder  = GDBEditor.GDB.RootFolder;
                 if ( asset is DefaultAsset folderAsset )

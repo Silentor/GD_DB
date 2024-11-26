@@ -50,7 +50,7 @@ namespace GDDB.Serialization
                 resulObjects.Add(  WriteGDObjectToJson( gdObj ) );                    
             }
 
-            Debug.Log( $"[{nameof(ObjectsJsonSerializer)}] Serialized {resulObjects.Count} gd objects to json, Referenced {_assetResolver.Count} assets, used asset resolver {_assetResolver.GetType().Name}" );
+            Debug.Log( $"[{nameof(ObjectsJsonSerializer)}] Serialized {resulObjects.Count} gd objects to json, referenced {_assetResolver.Count} assets, used asset resolver {_assetResolver.GetType().Name}" );
 
             return resulObjects;
         }

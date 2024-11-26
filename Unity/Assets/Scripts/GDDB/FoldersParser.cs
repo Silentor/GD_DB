@@ -27,17 +27,6 @@ namespace GDDB.Editor
         /// </summary>
         public static readonly Guid AssetsFolderGuid = Guid.ParseExact( "00000000-0000-0000-1000-000000000000", "D" );
 
-        [Obsolete]
-        public String GetRootFolderPath( )
-        {
-            var timer = System.Diagnostics.Stopwatch.StartNew();
-
-            var result = GetGdDbRootFolder( out var gdos );
-
-            timer.Stop();
-            Debug.Log( $"[{nameof(FoldersParser)}]-[{nameof(GetRootFolderPath)}] processed {gdos.Length} GDObjects, {timer.ElapsedMilliseconds} ms, result {result}" );
-            return result;
-        }
 
         /// <summary>
         /// Parse physical folder structure
@@ -89,6 +78,15 @@ namespace GDDB.Editor
                 folder.Objects.Add( gdobject );
                 _allObjects.Add( gdobject );
                 addedObjectCount++;
+            }
+
+            if( addedObjectCount == 0 )
+            {
+                _allObjects.Clear();
+                _allFolders.Clear();
+                Root  = assetsFolder;
+                Debug.LogWarning( $"[{nameof(FoldersParser)}] No enabled GDObjects found, impossible to parse game data base" );
+                return false;
             }
 
             //Calculate GDB root folder
@@ -389,11 +387,13 @@ namespace GDDB.Editor
         [MenuItem( "GDDB/Print hierarchy" )]
         private static void PrintHierarchyToConsole( )
         {
-            var  folders  = new FoldersParser();
-            Debug.Log( "Root folder: " + folders.GetRootFolderPath() );
-            folders.Parse();
-            Debug.Log( "Root folder2: " + folders.Root.GetPath() );
-            folders.Print();
+            var  parser  = new FoldersParser();
+            if ( parser.Parse() )
+            {
+                Debug.Log( "Root folder: " + parser.Root.GetPath() );
+                parser.Print();
+            }
+            Debug.Log( "No GDDB assets found" );
         }
     }
 

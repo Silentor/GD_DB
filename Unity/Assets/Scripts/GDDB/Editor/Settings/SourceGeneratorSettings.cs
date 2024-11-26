@@ -12,6 +12,13 @@ namespace GDDB.Editor
         public Boolean AutoGenerateOnBuild     = true;
         public Boolean AutoGenerateOnFocusLost = true;
 
+        public event Action<SourceGeneratorSettings> Changed;
+
+        private void OnValidate( )
+        {
+            Changed?.Invoke( this );
+        }
+
         private void OnDestroy( )
         {
             Save();
