@@ -15,8 +15,6 @@ namespace GDDB
         public          Int32   Depth;
         public readonly Guid    FolderGuid;
 
-        
-
         public readonly List<Folder>   SubFolders = new ();
         public readonly List<GDObject> Objects    = new();
 
@@ -106,7 +104,7 @@ namespace GDDB
             {
                 unchecked
                 {
-                    var folderHash = (UInt64)folder.FolderGuid.GetHashCode() + GetStringChecksum( folder.GetPath() );
+                    var folderHash = (UInt64)folder.FolderGuid.GetHashCode() + GetStringChecksum( folder.GetPath() ) + (UInt64)Objects.Count;
                     result += folderHash;
                 }
             }

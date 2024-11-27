@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace GDDB.Serialization
 {
@@ -34,15 +35,27 @@ namespace GDDB.Serialization
 
         public (Folder rootFolder, IReadOnlyList<GDObject> objects) Deserialize( String json, IGdAssetResolver assetsResolver )
         {
+            var totalParserTimer = CustomSampler.Create( "JObject.Parse" );
+            var deserObjectsTimer = CustomSampler.Create( "objectsSerializer.Deserialize" );
+            var deserFoldersTimer = CustomSampler.Create( "foldersSerializer.Deserialize" );
+
             var timer             = System.Diagnostics.Stopwatch.StartNew();
 
+            totalParserTimer.Begin();
             var dom = JObject.Parse( json );
+            totalParserTimer.End();
+
+            deserObjectsTimer.Begin();
             var objectsSerializer = new ObjectsJsonSerializer();
             var objectsJson = (JArray)dom["objects"];
             var objects    = objectsSerializer.Deserialize( objectsJson, assetsResolver );
+            deserObjectsTimer.End();
+
+            deserFoldersTimer.Begin();
             var foldersSerializer = new FoldersJsonSerializer();
             var foldersJson = (JObject)dom["folders"];
             var rootFolder = foldersSerializer.Deserialize( foldersJson, objects, out _ );
+            deserFoldersTimer.End();
 
             timer.Stop();
             Debug.Log( $"[{nameof(DBJsonSerializer)}]-[{nameof(Deserialize)}] deserialized db from json string, objects {objects.Count}, referenced {assetsResolver.Count} assets, time {timer.ElapsedMilliseconds} ms" );

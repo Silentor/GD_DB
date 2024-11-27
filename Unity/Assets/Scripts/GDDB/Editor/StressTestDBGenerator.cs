@@ -16,7 +16,6 @@ namespace GDDB.Editor
     {
         private String[]           _nouns;
         private String[]           _verbs;
-        private StressTestSettings _settings;
         private string[]           _types;
 
         [MenuItem( "GDDB/Generate GDDB" )]
@@ -60,15 +59,14 @@ namespace GDDB.Editor
 
         private void GenerateComponents( StressTestSettings settings )
         {
-            _settings = settings;
             var rnd = new Random();
 
-            var namespaces = GenerateNamespaces(  );
-            var classNames = GenerateClassNames(  );
+            var namespaces = GenerateNamespaces( settings );
+            var classNames = GenerateClassNames( settings );
 
-            if ( !Directory.Exists( _settings.OutputFolderComponents ) )
+            if ( !Directory.Exists( settings.OutputFolderComponents ) )
             {
-                Directory.CreateDirectory( _settings.OutputFolderComponents );
+                Directory.CreateDirectory( settings.OutputFolderComponents );
             }
 
             var componentTypeNames = new List<String>();
@@ -76,7 +74,7 @@ namespace GDDB.Editor
             {
                 var ns            = namespaces[ rnd.Next( namespaces.Count ) ];
                 var componentCode = GenerateComponentScript( ns, className );
-                var path          = Path.Join( _settings.OutputFolderComponents, $"{className}.cs" );
+                var path          = Path.Join( settings.OutputFolderComponents, $"{className}.cs" );
                 File.WriteAllText( path, componentCode );
                 componentTypeNames.Add( $"{ns}.{className}" );
             }
@@ -100,7 +98,7 @@ namespace GDDB.Editor
                 }
             }
 
-            var names = GenerateUniqueNouns( _settings.GDObjectsCount, new List<String>(), 2, 3 );
+            var names = GenerateUniqueNouns( settings.GDObjectsCount, new List<String>(), 2, 3 );
             var objectsCount = 0;
 
             AssetDatabase.StartAssetEditing();
@@ -157,29 +155,29 @@ namespace GDDB.Editor
             }
         }
 
-        private IReadOnlyList<String> GenerateClassNames(  )
+        private IReadOnlyList<String> GenerateClassNames(StressTestSettings settings  )
         {
-            return GenerateUniqueNouns( _settings.ComponentScriptsCount, new List<String>(), 2, 3 );
+            return GenerateUniqueNouns( settings.ComponentScriptsCount, new List<String>(), 2, 3 );
         }
 
-        private IReadOnlyList<String> GenerateNamespaces( )
+        private IReadOnlyList<String> GenerateNamespaces(StressTestSettings settings )
         {
             var rnd    = new Random();
-            var result = new List<String>( _settings.ComponentNamespacesCount );
-            result.Add( _settings.RootNamespace );
+            var result = new List<String>( settings.ComponentNamespacesCount );
+            result.Add( settings.RootNamespace );
 
-            while ( result.Count < _settings.ComponentNamespacesCount )
+            while ( result.Count < settings.ComponentNamespacesCount )
                 for ( var i = 0; i < 10; i++ )
-                    GenerateNamespaceRecursive( _settings.RootNamespace, 1, rnd, result );
+                    GenerateNamespaceRecursive( settings.RootNamespace, 1, rnd, settings, result );
 
             return result;
         }
 
 
 
-        private void GenerateNamespaceRecursive( String ns, Int32 depth, Random rnd, List<String> result )
+        private void GenerateNamespaceRecursive(    String ns, Int32 depth, Random rnd, StressTestSettings settings, List<String> result )
         {
-            if ( result.Count > _settings.ComponentNamespacesCount )
+            if ( result.Count > settings.ComponentNamespacesCount )
                 return;
 
             if ( rnd.NextDouble() < depth / 4 )    //Discard too deep namespaces
@@ -194,7 +192,7 @@ namespace GDDB.Editor
             {
                 result.Add( ns );
                 var childsCount = rnd.Next( 1, 3 + 1 );
-                for ( var i = 0; i < childsCount; i++ ) GenerateNamespaceRecursive( ns, depth + 1, rnd, result  );
+                for ( var i = 0; i < childsCount; i++ ) GenerateNamespaceRecursive( ns, depth + 1, rnd, settings, result  );
             }
         }
 

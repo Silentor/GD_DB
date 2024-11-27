@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using Newtonsoft.Json.Linq;
+using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace GDDB.Serialization
 {
@@ -9,6 +12,8 @@ namespace GDDB.Serialization
     {
         //Parameter of Deserialize(). Ignore deserialization of GDObjects. Only folders deserialized
         public static readonly IReadOnlyList<GDObject> IgnoreGDObjects = Array.Empty<GDObject>();
+
+        private CustomSampler _findObjectSampler = CustomSampler.Create( "FindObjectSampler" );
 
         public JObject Serialize( Folder root, UInt64? hash = null )
         {
@@ -22,7 +27,8 @@ namespace GDDB.Serialization
                 checksum = (UInt64)hashValue;
             else
                 checksum = null;
-            return DeserializeFolder( json, null, objects );
+            var objectsIndex = 0;
+            return DeserializeFolder( json, null, objects, ref objectsIndex );
         }
 
         private JObject SerializeFolder( Folder folder, UInt64? hash = null )
@@ -55,7 +61,7 @@ namespace GDDB.Serialization
             return result;
         }
 
-        private Folder DeserializeFolder( JObject json, Folder? parent, IReadOnlyList<GDObject> objects )
+        private Folder DeserializeFolder( JObject json, Folder? parent, IReadOnlyList<GDObject> objects, ref Int32 objectsIndex )
         {
             var folder = new Folder( json["name"].Value<String>(), Guid.ParseExact( json["guid"].Value<String>(), "D" ) )
             {
@@ -66,7 +72,7 @@ namespace GDDB.Serialization
             var subFolders = json["subFolders"];
             foreach ( var subFolderJson in subFolders )
             {
-                var subFolder = DeserializeFolder( ( JObject ) subFolderJson, folder, objects );
+                var subFolder = DeserializeFolder( ( JObject ) subFolderJson, folder, objects, ref objectsIndex );
                 folder.SubFolders.Add( subFolder );
             }
 
@@ -75,8 +81,28 @@ namespace GDDB.Serialization
                 var jobjects = json["objects"];
                 foreach ( var objJson in jobjects )
                 {
-                    var objId = Guid.ParseExact( objJson[ "guid" ].Value<String>() , "D" );
-                    folder.Objects.Add( objects.First( o => o.Guid == objId ) );                 //todo Optimize search by parallel iteration
+                    var      objId = Guid.ParseExact( objJson[ "guid" ].Value<String>() , "D" );
+                    GDObject objectInFolder = null;
+                    _findObjectSampler.Begin();
+                    if( objects[objectsIndex].Guid == objId )
+                        objectInFolder = objects[objectsIndex++];
+                    else
+                    {
+                        for ( int i = 0; i < objects.Count; i++ )
+                        {
+                            if( objects[i].Guid == objId )
+                            {
+                                objectInFolder = objects[i];
+                                objectsIndex = i + 1;
+                                break;
+                            }
+                        }
+                    }
+                    if( objectInFolder )
+                        folder.Objects.Add( objectInFolder );
+                    else
+                        Debug.LogError( $"[{nameof(FoldersJsonSerializer)}]-[{nameof(DeserializeFolder)}] Cannot deserialize GDObject id {objId} in Folder {folder.GetPath()}. Object data not found." );
+                    _findObjectSampler.End();
                 }
             }
 
