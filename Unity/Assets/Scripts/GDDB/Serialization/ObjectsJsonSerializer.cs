@@ -122,12 +122,12 @@ namespace GDDB.Serialization
             return result;
         }
 
-        private JSONObject WriteReferenceToJson( Type propertyType, Guid guid )
-        {
-            var result = new JSONObject();
-            result.Add( ".Ref", guid.ToString() );
-            return result;
-        }
+        // private JSONObject WriteReferenceToJson( Type propertyType, Guid guid )
+        // {
+        //     var result = new JSONObject();
+        //     result.Add( ".Ref", guid.ToString() );
+        //     return result;
+        // }
 
 
         private void WriteObjectContent( Type actualType, Object obj, JSONObject writer )
@@ -205,7 +205,8 @@ namespace GDDB.Serialization
             else if( typeof(GDObject).IsAssignableFrom( valueType) )
             {
                 var gdObject = (GDObject)value;
-                return WriteReferenceToJson( propertyType, gdObject.Guid );
+                return new JSONString( gdObject.Guid.ToString("D") );
+                //return WriteReferenceToJson( propertyType, gdObject.Guid );
             }
             else if ( _serializers.TryGetValue( propertyType, out var serializer ) )
             {
@@ -224,12 +225,12 @@ namespace GDDB.Serialization
         private JSONNode WriteSomethingNullToJson(Type propertyType )
         {
             if( propertyType == typeof(String) )
-                return JSONNull.CreateOrGet();
+                return new JSONString( String.Empty );
             else if( propertyType.IsArray || (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() ==  typeof(List<>)))
                 return new JSONArray();
             else
             {
-                //Create and serialize empty object (Unity-way compatibility)       //todo consider write JSON null, drop Unity compatibility
+                //Create and serialize empty object (Unity-way compatibility)       //todo consider write JSON null, restore object at loading
                 var emptyObject  = CreateEmptyObject( propertyType );
                 var jEmptyObject = emptyObject != null ? WriteObjectToJson( propertyType, emptyObject ) : new JSONObject();
                 return jEmptyObject;

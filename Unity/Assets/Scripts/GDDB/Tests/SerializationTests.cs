@@ -27,9 +27,8 @@ namespace GDDB.Tests
             Debug.Log( jsonString );
 
             //Assert
-            var jObjects    = (JSONArray)JSONNode.Parse( jsonString );
-            var jRoot       = (JSONObject)jObjects[ 0 ];
-            var jComponents = (JSONArray)jRoot[ ".Components" ];
+            var jObject     = (JSONObject)JSONNode.Parse( jsonString );
+            var jComponents = (JSONArray)jObject[ ".Components" ];
             var jsonSerComp = (JSONObject)jComponents[ 0 ][ ".Value" ];
 
             Assert.That( jsonSerComp.Children, Is.Empty );
@@ -149,8 +148,9 @@ namespace GDDB.Tests
             var jComponents = (JSONArray)jObject[ ".Components" ];
             var jsonSerComp = (JSONObject)jComponents[ 0 ][ ".Value" ];
 
-            Assert.IsNull( jsonSerComp[ nameof(CollectionTestComponent.OldIntArray) ] );
-            Assert.IsNull( jsonSerComp[ nameof(CollectionTestComponent.ClassListNonSerializable) ] );
+            //Should not be serialized
+            jsonSerComp.HasKey( nameof(CollectionTestComponent.OldIntArray) ).Should().BeFalse(  );
+            jsonSerComp.HasKey( nameof(CollectionTestComponent.ClassListNonSerializable) ).Should().BeFalse(  );
 
             //Asset deserialized data
             var copy = serializer.Deserialize( json ).Components.First() as CollectionTestComponent;
@@ -207,10 +207,10 @@ namespace GDDB.Tests
                 obj2.ObjReference = obj3;
 
                 //Act
-                var serializer = new ObjectsJsonSerializer();
-                var jsonString1 = serializer.Serialize( obj1 );
-                var jsonString2 = serializer.Serialize( obj2 );
-                var jsonString3 = serializer.Serialize( obj3 );
+                var serializer  = new ObjectsJsonSerializer();
+                var jsonString1 = serializer.Serialize( obj1 ).ToString(2);
+                var jsonString2 = serializer.Serialize( obj2 ).ToString(2);
+                var jsonString3 = serializer.Serialize( obj3 ).ToString(2);
                 Debug.Log( jsonString1 );
                 Debug.Log( jsonString2 );
                 Debug.Log( jsonString3 );
@@ -240,13 +240,13 @@ namespace GDDB.Tests
 
                 //Act
                 var serializer = new ObjectsJsonSerializer();
-                var jsonString = serializer.Serialize( obj1 );
+                var jsonString = serializer.Serialize( obj1 ).ToString(2);
                 Debug.Log( jsonString );
                 var copyObjects = serializer.Deserialize( jsonString );
 
                 //Assert
                 var obj1_copy = (TestObjectSerializationCallback)copyObjects;
-                obj1_copy.NonSerialized.Should().Be( obj1.NonSerialized );
+                obj1_copy.NonSerialized.Should().Be( obj1.NonSerialized );    //Should restore value from serialized field
                 obj1_copy.GetComponent<SerializationCallbackComponent>().NonSerialized.Should().Be( comp.NonSerialized );
         }
 

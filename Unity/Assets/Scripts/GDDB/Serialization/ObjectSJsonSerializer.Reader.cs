@@ -37,6 +37,13 @@ namespace GDDB.Serialization
             var result = ReadGDObjectFromJson( json );
             _deserObjectSampler.End();
 
+            if( result is ISerializationCallbackReceiver serializationCallbackReceiver)
+                serializationCallbackReceiver.OnAfterDeserialize();
+
+            foreach ( var gdComponent in result.Components )
+                if( gdComponent is ISerializationCallbackReceiver componentSerializationCallbackReceiver )
+                    componentSerializationCallbackReceiver.OnAfterDeserialize();
+
             _loadedObjects.Add( result );
             return result;
         }
