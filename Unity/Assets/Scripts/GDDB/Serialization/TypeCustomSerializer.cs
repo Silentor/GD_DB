@@ -1,44 +1,37 @@
 ﻿using System;
 using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
+using SimpleJSON;
 using UnityEngine;
+using UnityEngine.Scripting;
 using Object = System.Object;
 
 namespace GDDB.Serialization
 {
+    [RequireDerived]
     public abstract class TypeCustomSerializer
     {
         public abstract Type SerializedType { get; }
 
-        public abstract JToken Serialize(  Object obj );
+        public abstract JSONNode Serialize(  Object obj );
 
-        public abstract Object Deserialize( JToken json );
+        public abstract Object Deserialize( JSONNode json );
     }
 
     public class Vector3Serializer : TypeCustomSerializer
     {
         public override Type SerializedType => typeof( Vector3 );
 
-        public override JToken Serialize(  Object obj )
+        public override JSONNode Serialize(  Object obj )
         {
             var vector3 = (UnityEngine.Vector3) obj;
-
-            return new JArray
-                         {
-                                 vector3.x,
-                                 vector3.y,
-                                 vector3.z
-                         }                ;
+            var result = new JSONArray();
+            result.WriteVector3( vector3 );
+            return result;
         }
 
-        public override Object Deserialize( JToken json )
+        public override Object Deserialize( JSONNode json )
         {
-            var vector3Values = (JArray)json;
-            var obj           = new UnityEngine.Vector3();
-            obj.x = vector3Values[0].Value<Single>();
-            obj.y = vector3Values[1].Value<Single>();
-            obj.z = vector3Values[2].Value<Single>();
-            return obj;
+            return json.ReadVector3();
         }
     }
 
@@ -46,25 +39,25 @@ namespace GDDB.Serialization
     {
         public override Type SerializedType => typeof( Vector3Int );
 
-        public override JToken Serialize(  Object obj )
+        public override JSONNode Serialize(  Object obj )
         {
             var vector3 = (UnityEngine.Vector3Int) obj;
-
-            return new JArray
-                   {
-                           vector3.x,
-                           vector3.y,
-                           vector3.z
-                   }                ;
+            var result  = new JSONArray
+                          {
+                                  [ 0 ] = vector3[ 0 ],
+                                  [ 1 ] = vector3[ 1 ],
+                                  [ 2 ] = vector3[ 2 ]
+                          };
+            return result;
         }
 
-        public override Object Deserialize( JToken json )
+        public override Object Deserialize( JSONNode json )
         {
-            var vector3Values = (JArray)json;
+            var vector3Values = json.AsArray;
             var obj           = new UnityEngine.Vector3Int();
-            obj.x = vector3Values[0].Value<Int32>();
-            obj.y = vector3Values[1].Value<Int32>();
-            obj.z = vector3Values[2].Value<Int32>();
+            obj[0] = vector3Values[0];
+            obj[1] = vector3Values[1];
+            obj[2] = vector3Values[2];
             return obj;
         }
     }
@@ -74,24 +67,17 @@ namespace GDDB.Serialization
     {
         public override Type SerializedType => typeof( UnityEngine.Vector2 );
 
-        public override JToken Serialize(  Object obj )
+        public override JSONNode Serialize(  Object obj )
         {
-            var vector3 = (UnityEngine.Vector2) obj;
-
-            return new JArray
-                   {
-                           vector3.x,
-                           vector3.y,
-                   } ;
+            var vec = (UnityEngine.Vector2) obj;
+            var result = new JSONArray();
+            result.WriteVector2( vec );
+            return result;
         }
 
-        public override Object Deserialize( JToken json )
+        public override Object Deserialize( JSONNode json )
         {
-            var vector3Values = (JArray)json;
-            var obj           = new UnityEngine.Vector2();
-            obj.x = vector3Values[0].Value<Single>();
-            obj.y = vector3Values[1].Value<Single>();
-            return obj;
+            return json.ReadVector2();
         }
     }
 
@@ -99,23 +85,23 @@ namespace GDDB.Serialization
     {
         public override Type SerializedType => typeof( UnityEngine.Vector2Int );
 
-        public override JToken Serialize(  Object obj )
+        public override JSONNode Serialize(  Object obj )
         {
             var vector3 = (UnityEngine.Vector2Int) obj;
-
-            return new JArray
-                   {
-                           vector3.x,
-                           vector3.y,
-                   } ;
+            var result  = new JSONArray
+                          {
+                                  [ 0 ] = vector3[ 0 ],
+                                  [ 1 ] = vector3[ 1 ],
+                          };
+            return result;
         }
 
-        public override Object Deserialize( JToken json )
+        public override Object Deserialize( JSONNode json )
         {
-            var vector3Values = (JArray)json;
+            var vector3Values = json.AsArray;
             var obj           = new UnityEngine.Vector2Int();
-            obj.x = vector3Values[0].Value<Int32>();
-            obj.y = vector3Values[1].Value<Int32>();
+            obj[0] = vector3Values[0];
+            obj[1] = vector3Values[1];
             return obj;
         }
     }
@@ -124,28 +110,17 @@ namespace GDDB.Serialization
     {
         public override Type SerializedType => typeof( UnityEngine.Quaternion );
 
-        public override JToken Serialize(  Object obj )
+        public override JSONNode Serialize(  Object obj )
         {
-            var vector3 = (UnityEngine.Quaternion) obj;
-
-            return new JArray
-                   {
-                           vector3.x,
-                           vector3.y,
-                           vector3.z,
-                           vector3.w,
-                   }                ;
+            var value = (UnityEngine.Quaternion) obj;
+            var result = new JSONArray();
+            result.WriteQuaternion( value );
+            return result;
         }
 
-        public override Object Deserialize( JToken json )
+        public override Object Deserialize( JSONNode json )
         {
-            var quatValues = (JArray)json;
-            var obj        = new UnityEngine.Quaternion();
-            obj.x = quatValues[0].Value<Single>();
-            obj.y = quatValues[1].Value<Single>();
-            obj.z = quatValues[2].Value<Single>();
-            obj.w = quatValues[3].Value<Single>();
-            return obj;
+            return json.ReadQuaternion();
         }
     }
 
@@ -153,35 +128,31 @@ namespace GDDB.Serialization
     {
         public override Type SerializedType => typeof( UnityEngine.Bounds );
 
-        public override JToken Serialize(  Object obj )
+        public override JSONNode Serialize(  Object obj )
         {
-            var vector3 = (UnityEngine.Bounds) obj;
-            var center  = vector3.center; 
-            var size  = vector3.size; 
-
-            return new JArray
-                   {
-                           center.x,
-                           center.y,
-                           center.z,
-                           size.x,
-                           size.y,
-                           size.z,
-                   }    ;
+            var value = (UnityEngine.Bounds) obj;
+            var result = new JSONArray();
+            result[0] = value.center.x;
+            result[1] = value.center.y;
+            result[2] = value.center.z;
+            result[3] = value.extents.x;
+            result[4] = value.extents.y;
+            result[5] = value.extents.z;
+            return result;
         }
 
-        public override Object Deserialize( JToken json )
+        public override Object Deserialize( JSONNode json )
         {
-            var quatValues = (JArray)json;
+            var quatValues = json.AsArray;
             //var obj        = new UnityEngine.Bounds();
             var center = new UnityEngine.Vector3(
-                    quatValues[0].Value<Single>(),
-                    quatValues[1].Value<Single>(),
-                    quatValues[2].Value<Single>() );
+                    quatValues[0],
+                    quatValues[1],
+                    quatValues[2] );
             var size = new UnityEngine.Vector3(
-                    quatValues[3].Value<Single>(),
-                    quatValues[4].Value<Single>(),
-                    quatValues[5].Value<Single>() );
+                    quatValues[3],
+                    quatValues[4],
+                    quatValues[5] );
 
             return new Bounds( center, size );
         }
@@ -191,30 +162,17 @@ namespace GDDB.Serialization
     {
         public override Type SerializedType => typeof( UnityEngine.Rect );
 
-        public override JToken Serialize(  Object obj )
+        public override JSONNode Serialize(  Object obj )
         {
-            var rect = (UnityEngine.Rect) obj;
-
-            return new JArray
-                   {
-                           rect.x,
-                           rect.y,
-                           rect.width,
-                           rect.height
-                   }    ;
+            var value = (UnityEngine.Rect) obj;
+            var result = new JSONArray();
+            result.WriteRect( value );
+            return result;
         }
 
-        public override Object Deserialize( JToken json )
+        public override Object Deserialize( JSONNode json )
         {
-            var values = (JArray)json;
-            var obj        = new UnityEngine.Rect(
-                    values[0].Value<Single>(),
-                    values[1].Value<Single>(),
-                    values[2].Value<Single>(),
-                    values[3].Value<Single>()
-                    );
-
-            return obj;
+            return json.ReadRect();
         }
     }
 
@@ -222,30 +180,17 @@ namespace GDDB.Serialization
     {
         public override Type SerializedType => typeof( UnityEngine.Color );
 
-        public override JToken Serialize(  Object obj )
+        public override JSONNode Serialize(  Object obj )
         {
-            var color = (UnityEngine.Color) obj;
-
-            return new JArray
-                   {
-                           color.r,
-                           color.g,
-                           color.b,
-                           color.a
-                   }    ;
+            var value  = (UnityEngine.Color) obj;
+            var result = new JSONArray();
+            result.WriteColor( value );
+            return result;
         }
 
-        public override Object Deserialize( JToken json )
+        public override Object Deserialize( JSONNode json )
         {
-            var values = (JArray)json;
-            var obj = new UnityEngine.Color(
-                    values[0].Value<Single>(),
-                    values[1].Value<Single>(),
-                    values[2].Value<Single>(),
-                    values[3].Value<Single>()
-            );
-
-            return obj;
+            return json.ReadColor();
         }
     }
 
@@ -253,30 +198,17 @@ namespace GDDB.Serialization
     {
         public override Type SerializedType => typeof( UnityEngine.Color32 );
 
-        public override JToken Serialize(  Object obj )
+        public override JSONNode Serialize(  Object obj )
         {
-            var color = (UnityEngine.Color32) obj;
-
-            return new JArray
-                   {
-                           color.r,
-                           color.g,
-                           color.b,
-                           color.a
-                   }    ;
+            var value  = (UnityEngine.Color32) obj;
+            var result = new JSONArray();
+            result.WriteColor32( value );
+            return result;
         }
 
-        public override Object Deserialize( JToken json )
+        public override Object Deserialize( JSONNode json )
         {
-            var values = (JArray)json;
-            var obj = new UnityEngine.Color32(
-                    values[0].Value<Byte>(),
-                    values[1].Value<Byte>(),
-                    values[2].Value<Byte>(),
-                    values[3].Value<Byte>()
-            );
-
-            return obj;
+            return json.ReadColor32();
         }
     }
 
@@ -284,10 +216,10 @@ namespace GDDB.Serialization
     {
         public override Type SerializedType => typeof( UnityEngine.AnimationCurve );
 
-        public override JToken Serialize(  Object obj )
+        public override JSONNode Serialize(  Object obj )
         {
-            var result = new JObject();
-            var keys = new JArray();
+            var result = new JSONObject();
+            var keys = new JSONArray();
             result.Add( "Keys", keys );
             var ac     = (UnityEngine.AnimationCurve) obj;
             foreach ( var key in ac.keys )
@@ -301,48 +233,49 @@ namespace GDDB.Serialization
             return result;
         }
 
-        public override Object Deserialize( JToken json )
+        public override Object Deserialize( JSONNode json )
         {
-            var ac        = (JObject)json;
-            var keysToken = (JArray)ac[ "Keys" ];
+            var ac        = (JSONObject)json;
+            var keysToken = (JSONArray)ac[ "Keys" ];
             var keys      = new List<Keyframe>();
-            foreach ( var keyToken in keysToken.Children() )
+            for ( int i = 0; i < keysToken.Count; i++ )
             {
-                keys.Add( DeserializeKey( (JObject)keyToken ) );                
+                keys.Add( DeserializeKey( (JSONObject)keysToken[ i ] ) );                
             }
 
             var result = new AnimationCurve( keys.ToArray() );
-            result.preWrapMode  = (WrapMode)ac[ "PreWrapMode" ].Value<Int32>();
-            result.postWrapMode = (WrapMode)ac[ "PostWrapMode" ].Value<Int32>();
+            result.preWrapMode  = (WrapMode)ac[ "PreWrapMode" ].AsInt;
+            result.postWrapMode = (WrapMode)ac[ "PostWrapMode" ].AsInt;
 
             return result;
         }
 
-        private JObject SerializeKey( Keyframe key )
+        private JSONObject SerializeKey( Keyframe key )
         {
-            return new JObject()
-                   {
-                            { "Time", key.time },
-                            { "Value", key.value },
-                            { "InTangent", key.inTangent },
-                            { "OutTangent", key.outTangent },
-                            { "InWeight", key.inWeight },
-                            { "OutWeight", key.outWeight },
-                            { "WeightedMode", (Int32)key.weightedMode }
-                     };
-       }
+            var result = new JSONObject();
+            result.Add( "Time",         key.time );
+            result.Add( "Value",        key.value );
+            result.Add( "InTangent",    key.inTangent );
+            result.Add( "OutTangent",   key.outTangent );
+            result.Add( "InWeight",     key.inWeight );
+            result.Add( "OutWeight",    key.outWeight );
+            result.Add( "WeightedMode", (Int32)key.weightedMode );
+            return result;
+        }
 
-        private Keyframe DeserializeKey( JObject key )
+        private Keyframe DeserializeKey( JSONObject key )
         {
             var result = new Keyframe(
-                    key[ "Time" ].Value<Single>(),
-                    key[ "Value" ].Value<Single>(),
-                    key[ "InTangent" ].Value<Single>(),
-                    key[ "OutTangent" ].Value<Single>(),
-                    key[ "InWeight" ].Value<Single>(),
-                    key[ "OutWeight" ].Value<Single>()
-            );
-            result.weightedMode = (WeightedMode)key[ "WeightedMode" ].Value<Int32>();
+                    key[ "Time" ],
+                    key[ "Value" ],
+                    key[ "InTangent" ],
+                    key[ "OutTangent" ],
+                    key[ "InWeight" ],
+                    key[ "OutWeight" ]
+            )
+            {
+                    weightedMode = (WeightedMode)key[ "WeightedMode" ].AsInt
+            };
             return result;
         }
     }

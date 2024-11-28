@@ -6,6 +6,7 @@ using GDDB.Serialization;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Profiling;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
@@ -27,6 +28,12 @@ namespace GDDB_User
         [SerializeReference]
         public TestNullAbstract TestAbstract;
 
+        private GdDb _soGDDB;
+        private GdDb _jsonGDDB;
+        private GdDb _editorGDDB;
+
+        private CustomSampler _sjsonSampler = CustomSampler.Create( "SimpleJson.Parse" );
+
         //[GdTypeFilter(MainCategory.Mobs, EMobs.Elves)]
         //[GdTypeFilter(MainCategory.Game)]                      
         //public GdType TestTypeRestrictedMobs;
@@ -45,55 +52,19 @@ namespace GDDB_User
             DBAsset db;
             db = DB ? DB : Resources.Load<DBAsset>( "DefaultGDDB" );
             var     aloader   = new GdScriptableObjectLoader( db );
+            _soGDDB   = aloader.GetGameDataBase();
 
             //Load GDDB from JSON with Unity assets resolver
             var assetsResolver = Resources.Load<DirectAssetReferences>( "DefaultGDDBAssetsRef" );
             var dbInJson       =  File.ReadAllText( Application.streamingAssetsPath + "/DefaultGDDB.json" );
             var jloader        = new GdJsonLoader( dbInJson, assetsResolver );
-
-            var fromAssetGDB   = aloader.GetGameDataBase();
-            //fromAssetGDB.Print();
-            var fromJsonGDB         = jloader.GetGameDataBase();
+            _jsonGDDB         = jloader.GetGameDataBase();
 
 #if UNITY_EDITOR
-            var inputDB           = new GdEditorLoader().GetGameDataBase();
-            var gdbInputHash      = inputDB.RootFolder.GetFoldersStructureChecksum();
-            Debug.Log( $"Editor hash {gdbInputHash}" );
+            _editorGDDB           = new GdEditorLoader().GetGameDataBase();
 #endif
-            var agdbLoadedHash    = fromAssetGDB.RootFolder.GetFoldersStructureChecksum();
-            var jgdbLoadedHash    = fromJsonGDB.RootFolder.GetFoldersStructureChecksum();
-            var generatedRootType = GetRootFolderType( fromAssetGDB );
+            UpdateDebugLabel();
 
-            //fromJsonGDB.Root.
-
-            DebugOutput.text = $"AGDB hash: {agdbLoadedHash}\nJGDB hash: {jgdbLoadedHash}\nRoot sourcegen: {generatedRootType}\nRoot SO folder: {fromAssetGDB.RootFolder.Name}\nRoot json folder: {fromJsonGDB.RootFolder.Name}";
-
-            
-            Debug.Log( $"Asset loaded hash {agdbLoadedHash}" );
-            Debug.Log( $"JSON loaded hash {jgdbLoadedHash}" );
-            Debug.Log( $"Source generated root type {generatedRootType}" );
-            Debug.Log( $"Asset loaded root folder name {fromAssetGDB.RootFolder.Name}" );
-            Debug.Log( $"Json loaded root folder name {fromJsonGDB.RootFolder.Name}" );
-
-#if UNITY_EDITOR
-            if( gdbInputHash != agdbLoadedHash )
-            {
-                Debug.LogError( "Input and SO db hashes are different" );
-                CompareFolders( inputDB.RootFolder, fromAssetGDB.RootFolder );
-            }
-
-            if( gdbInputHash != jgdbLoadedHash )
-            {
-                Debug.LogError( "Input and json db hashes are different" );
-                CompareFolders( inputDB.RootFolder, fromJsonGDB.RootFolder );
-            }
-#endif
-
-            if ( agdbLoadedHash != jgdbLoadedHash )
-            {
-                Debug.LogError( "SO and json hashes are different" );
-                CompareFolders( fromAssetGDB.RootFolder, fromJsonGDB.RootFolder );
-            }
 
             //var textureFromGD = fromJsonGDB.Root.Test7.Mobs5.Folder.Objects.First( gdo => gdo.HasComponent<GDComponentChild3>() ).GetComponent<GDComponentChild3>();
             //DebugImageOutput.texture = textureFromGD.TexValue;
@@ -113,6 +84,48 @@ namespace GDDB_User
             // }
 
             //var testGetMobs = gdb.GetMobs(  );          //Source generated
+        }
+
+        private void UpdateDebugLabel( )
+        {
+            var    soGdbLoadedHash   = _soGDDB.RootFolder.GetFoldersStructureChecksum();
+            var    jsonGdbLoadedHash = _jsonGDDB.RootFolder.GetFoldersStructureChecksum();
+            var    generatedRootType = GetRootFolderTypeReflection( _soGDDB );
+            UInt64 editorGDDBHash;
+#if UNITY_EDITOR
+            editorGDDBHash = _editorGDDB.RootFolder.GetFoldersStructureChecksum();
+            DebugOutput.text = $"Editor hash: {editorGDDBHash}\nSO GDB hash: {soGdbLoadedHash}\nJSON GDB hash: {jsonGdbLoadedHash}\nRoot sourcegen: {generatedRootType}\nRoot SO folder: {_soGDDB.RootFolder.Name}\nRoot json folder: {_jsonGDDB.RootFolder.Name}";
+
+            Debug.Log( $"editor hash {editorGDDBHash}" );
+#else
+            DebugOutput.text = $"AGDB hash: {soGdbLoadedHash}\nJGDB hash: {jsonGdbLoadedHash}\nRoot sourcegen: {generatedRootType}\nRoot SO folder: {_soGDDB.RootFolder.Name}\nRoot json folder: {_jsonGDDB.RootFolder.Name}";
+#endif
+            Debug.Log( $"so hash {soGdbLoadedHash}" );
+            Debug.Log( $"json hash {jsonGdbLoadedHash}" );
+            Debug.Log( $"Asset loaded root folder name {_soGDDB.RootFolder.Name}" );
+            Debug.Log( $"Json loaded root folder name {_jsonGDDB.RootFolder.Name}" );
+            Debug.Log( $"Json loaded root folder name {_jsonGDDB.RootFolder.Name}" );
+
+#if UNITY_EDITOR
+            if( editorGDDBHash != soGdbLoadedHash )
+            {
+                Debug.LogError( "Input and SO db hashes are different" );
+                CompareFolders( _editorGDDB.RootFolder, _soGDDB.RootFolder );
+            }
+
+            if( editorGDDBHash != jsonGdbLoadedHash )
+            {
+                Debug.LogError( "Input and json db hashes are different" );
+                CompareFolders( _editorGDDB.RootFolder, _jsonGDDB.RootFolder );
+            }
+#endif
+
+            if ( soGdbLoadedHash != jsonGdbLoadedHash )
+            {
+                Debug.LogError( "SO and json hashes are different" );
+                CompareFolders( _soGDDB.RootFolder, _jsonGDDB.RootFolder );
+            }
+
         }
 
         private Boolean CompareFolders( Folder f1, Folder f2 )
@@ -144,13 +157,33 @@ namespace GDDB_User
             return true;
         }
 
-        private String GetRootFolderType( GdDb db )
+        private String GetRootFolderTypeReflection( GdDb db )
         {
             var prop = db.GetType().GetProperty( "Root" );
             if( prop != null )
                 return prop.PropertyType.Name;
 
             return "???";
+        }
+
+        public void LoadJSONViaSimpleJSON( )
+        {
+              var jsonStr = File.ReadAllText( Application.streamingAssetsPath + "/DefaultGDDB.json" );
+
+              var timer = System.Diagnostics.Stopwatch.StartNew();
+              _sjsonSampler.Begin();
+              var json    = SimpleJSON.JSON.Parse( jsonStr );
+              _sjsonSampler.End();
+              Debug.Log( $"Simple json parse {timer.ElapsedMilliseconds} ms" );
+        }
+
+        public void LoadJSONViaJsonNet( )
+        {
+            //Load GDDB from JSON with Unity assets resolver
+            var assetsResolver = Resources.Load<DirectAssetReferences>( "DefaultGDDBAssetsRef" );
+            var dbInJson       =  File.ReadAllText( Application.streamingAssetsPath + "/DefaultGDDB.json" );
+            var jloader        = new GdJsonLoader( dbInJson, assetsResolver );
+            _jsonGDDB         = jloader.GetGameDataBase();
         }
     }
 

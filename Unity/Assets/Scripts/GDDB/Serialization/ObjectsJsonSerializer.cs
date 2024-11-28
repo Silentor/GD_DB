@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using SimpleJSON;
 using UnityEditor;
 using UnityEngine;
 using Object = System.Object;
@@ -33,26 +33,26 @@ namespace GDDB.Serialization
         }
 
 #if UNITY_EDITOR
-        public JArray Serialize( IEnumerable<GDObject> objects, IGdAssetResolver assetResolver = null )
+
+        public JSONObject Serialize( GDObject @object, IGdAssetResolver assetResolver = null )
         {
-            JArray resulObjects = new JArray();
+            if ( !@object.EnabledObject )
+                return null;
+
             _assetResolver = assetResolver ?? NullGdAssetResolver.Instance;
+            
+            if( @object is ISerializationCallbackReceiver serializationCallbackReceiver)
+                serializationCallbackReceiver.OnBeforeSerialize();
 
-            foreach ( var gdObj in objects )
-            {
-                if( gdObj is ISerializationCallbackReceiver serializationCallbackReceiver)
-                    serializationCallbackReceiver.OnBeforeSerialize();
+            foreach ( var gdComponent in @object.Components )
+                if( gdComponent is ISerializationCallbackReceiver componentSerializationCallbackReceiver )
+                    componentSerializationCallbackReceiver.OnBeforeSerialize();
 
-                foreach ( var gdComponent in gdObj.Components )
-                    if( gdComponent is ISerializationCallbackReceiver componentSerializationCallbackReceiver )
-                        componentSerializationCallbackReceiver.OnBeforeSerialize();
+            var result =  WriteGDObjectToJson( @object );                    
 
-                resulObjects.Add(  WriteGDObjectToJson( gdObj ) );                    
-            }
+            Debug.Log( $"[{nameof(ObjectsJsonSerializer)}] Serialized gd object {@object.Name} to json, referenced {_assetResolver.Count} assets, used asset resolver {_assetResolver.GetType().Name}" );
 
-            Debug.Log( $"[{nameof(ObjectsJsonSerializer)}] Serialized {resulObjects.Count} gd objects to json, referenced {_assetResolver.Count} assets, used asset resolver {_assetResolver.GetType().Name}" );
-
-            return resulObjects;
+            return result;
         }
         
 #endif
@@ -62,25 +62,20 @@ namespace GDDB.Serialization
 
 #if UNITY_EDITOR
 
-        private void WriteNullPropertyToJson( String name, JsonWriter writer )
-        {
-            writer.WritePropertyName(name);
-            writer.WriteNull();
-        }
-
-        private JObject  WriteGDObjectToJson( GDObject obj )
+        private JSONObject  WriteGDObjectToJson( GDObject obj )
         {
             try
             {
-                var result = new JObject();
+                var result = new JSONObject();
                 result.Add( ".Name", obj.name );
                 var type = obj.GetType();
-                result.Add( ".Type", type.Assembly == GetType().Assembly ? type.FullName : type.AssemblyQualifiedName );
+                if( obj.GetType() != typeof(GDObject) )
+                    result.Add( ".Type", type.Assembly == typeof(GDObject).Assembly ? type.FullName : type.AssemblyQualifiedName );
                 result.Add( ".Ref",  obj.Guid.ToString("D") );
                 if( !obj.EnabledObject )
                     result.Add( ".Enabled", false );
 
-                var componentsArray = new JArray();
+                var componentsArray = new JSONArray();
                 result.Add( ".Components", componentsArray );
                 foreach ( var gdComponent in obj.Components )
                 {
@@ -99,9 +94,9 @@ namespace GDDB.Serialization
             }
         }
 
-        private JObject WriteObjectToJson( Type propertyType, Object obj )
+        private JSONObject WriteObjectToJson( Type propertyType, Object obj )
         {
-            var result = new JObject();
+            var result = new JSONObject();
             var value  = result;
 
             var actualType = obj.GetType();
@@ -110,7 +105,7 @@ namespace GDDB.Serialization
             if ( propertyType != actualType )
             {
                 result.Add( ".Type", actualType.Assembly == GetType().Assembly ? actualType.FullName : actualType.AssemblyQualifiedName );
-                value = new JObject();
+                value = new JSONObject();
                 result.Add( ".Value", value );
             }
 
@@ -127,15 +122,15 @@ namespace GDDB.Serialization
             return result;
         }
 
-        private JObject WriteReferenceToJson( Type propertyType, Guid guid )
+        private JSONObject WriteReferenceToJson( Type propertyType, Guid guid )
         {
-            var result = new JObject();
+            var result = new JSONObject();
             result.Add( ".Ref", guid.ToString() );
             return result;
         }
 
 
-        private void WriteObjectContent( Type actualType, Object obj, JObject writer )
+        private void WriteObjectContent( Type actualType, Object obj, JSONObject writer )
         {
             foreach (var field in actualType.GetFields( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance ))
             {
@@ -145,25 +140,23 @@ namespace GDDB.Serialization
                     if ( value != null )
                     {
                         var property = WritePropertyToJson( field.Name, field.FieldType, value, value.GetType() );
-                        writer.Add( property );
+                        writer.Add( field.Name, property );
                     }
                     else
                     {
                         var property = WriteNullPropertyToJson( field.Name, field.FieldType );
-                        writer.Add( property );
+                        writer.Add( field.Name, property );
                     }
                 }
             }
         }
 
        
-        private JProperty WritePropertyToJson( String propertyName, Type propertyType, Object value, Type valueType )
+        private JSONNode WritePropertyToJson( String propertyName, Type propertyType, Object value, Type valueType )
         {
             try
             {
-                var result = new JProperty( propertyName );
-                result.Value = WriteSomethingToJson( propertyType, value, valueType );
-                return result;
+                return WriteSomethingToJson( propertyType, value, valueType );
             }
             catch ( Exception e )
             {
@@ -172,36 +165,42 @@ namespace GDDB.Serialization
             
         }
 
-        private JProperty WriteNullPropertyToJson( String propertyName, Type propertyType )
+        private JSONNode WriteNullPropertyToJson( String propertyName, Type propertyType )
         {
-            var result = new JProperty( propertyName );
-            result.Value = WriteSomethingNullToJson( propertyType );
-            return result;
+            return WriteSomethingNullToJson( propertyType );
         }
 
-        private JToken WriteSomethingToJson(Type propertyType, Object value, Type valueType )
+        private JSONNode WriteSomethingToJson(Type propertyType, Object value, Type valueType )
         {
             if ( valueType == typeof(Char) )
             {
-                return new JValue( Convert.ToUInt16( value) );
+                return new JSONString( Convert.ToString( value, CultureInfo.InvariantCulture ) );
             }
-            else if( valueType.IsPrimitive || valueType == typeof(String) )
+            else if ( valueType == typeof(String) )
             {
-                return new JValue( value );
+                return new JSONString( value.ToString() );
+            }
+            else if( valueType == typeof(Boolean) )
+            {
+                return new JSONBool( (Boolean)value );
+            }
+            else if ( valueType.IsPrimitive)
+            {
+                return new JSONNumber( Convert.ToString( value, CultureInfo.InvariantCulture ) );
             }
             else if ( valueType.IsEnum )
             {
-                return new JValue( value );
+                return new JSONString( Convert.ToString( value, CultureInfo.InvariantCulture ) );
             }
             else if( valueType.IsArray)
             {
                 var elementType = valueType.GetElementType();
-                return WriteCollectionToJson( elementType, (IEnumerable)value );
+                return WriteCollectionToJson( elementType, (IList)value );
             }
             else if( valueType.IsGenericType && valueType.GetGenericTypeDefinition() ==  typeof(List<>))
             {
                 var elementType = valueType.GetGenericArguments()[0];
-                return WriteCollectionToJson( elementType, (IEnumerable)value );
+                return WriteCollectionToJson( elementType, (IList)value );
             }
             else if( typeof(GDObject).IsAssignableFrom( valueType) )
             {
@@ -222,26 +221,27 @@ namespace GDDB.Serialization
             }
         }
 
-        private JToken WriteSomethingNullToJson(Type propertyType )
+        private JSONNode WriteSomethingNullToJson(Type propertyType )
         {
             if( propertyType == typeof(String) )
-                return new JValue( String.Empty );
+                return JSONNull.CreateOrGet();
             else if( propertyType.IsArray || (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() ==  typeof(List<>)))
-                return new JArray();
+                return new JSONArray();
             else
             {
-                //Create and serialize empty object
+                //Create and serialize empty object (Unity-way compatibility)       //todo consider write JSON null, drop Unity compatibility
                 var emptyObject  = CreateEmptyObject( propertyType );
-                var jEmptyObject = emptyObject != null ? WriteObjectToJson( propertyType, emptyObject ) : new JObject();
+                var jEmptyObject = emptyObject != null ? WriteObjectToJson( propertyType, emptyObject ) : new JSONObject();
                 return jEmptyObject;
             }
         }
 
-        private JArray WriteCollectionToJson( Type elementType, IEnumerable collection )
+        private JSONArray WriteCollectionToJson( Type elementType, IList collection )
         {
-            var result = new JArray();
-            foreach (var obj in collection)
+            var result = new JSONArray();
+            for ( int i = 0; i < collection.Count; i++ )
             {
+                var obj = collection[i];
                 if( obj != null )
                     result.Add( WriteSomethingToJson( elementType, obj, obj.GetType() ) );
                 else
@@ -251,12 +251,12 @@ namespace GDDB.Serialization
             return result;
         }
 
-        private JObject WriteUnityObjectToJson( UnityEngine.Object unityAsset )
+        private JSONObject WriteUnityObjectToJson( UnityEngine.Object unityAsset )
         {
-            JObject result = new JObject();
+            JSONObject result = new JSONObject();
             if ( AssetDatabase.TryGetGUIDAndLocalFileIdentifier( unityAsset, out var guid, out long localId ))
             {
-                result = new JObject();
+                result = new JSONObject();
                 result.Add( ".Ref", guid );
                 result.Add( ".Id", localId );
                 _assetResolver.AddAsset( unityAsset, guid, localId );
@@ -357,22 +357,22 @@ namespace GDDB.Serialization
 
     public class JsonPropertyException : Exception
     {
-        public String PropertyName { get; }
-        public JToken JToken { get; }
+        public String   PropertyName { get; }
+        public JSONNode JToken       { get; }
 
         public JsonPropertyException()
         {
             
         }
 
-        public JsonPropertyException( String propertyName, JToken jToken, string message )
+        public JsonPropertyException( String propertyName, JSONNode jToken, string message )
                 : base(message)
         {
             PropertyName = propertyName;
             JToken  = jToken;
         }
 
-        public JsonPropertyException(String propertyName, JToken jToken, string message, Exception inner )
+        public JsonPropertyException(String propertyName, JSONNode jToken, string message, Exception inner )
                 : base(message, inner)
         {
             PropertyName = propertyName;
@@ -382,15 +382,15 @@ namespace GDDB.Serialization
 
     public class JsonObjectException : Exception
     {
-        public String ObjectName { get; }
-        public Type   ObjectType { get; }
-        public JToken JToken     { get; }
+        public String   ObjectName { get; }
+        public Type     ObjectType { get; }
+        public JSONNode JToken     { get; }
 
         public JsonObjectException()
         {
         }
 
-        public JsonObjectException( String objectName, Type objectType, JToken jToken, string message)
+        public JsonObjectException( String objectName, Type objectType, JSONNode jToken, string message)
                 : base(message)
         {
             JToken     = jToken;
@@ -398,7 +398,7 @@ namespace GDDB.Serialization
             ObjectType = objectType;
         }
 
-        public JsonObjectException( String objectName, Type objectType, JToken jToken, string message, Exception inner)
+        public JsonObjectException( String objectName, Type objectType, JSONNode jToken, string message, Exception inner)
                 : base(message, inner)
         {
             ObjectName = objectName;
@@ -409,21 +409,21 @@ namespace GDDB.Serialization
 
     public class JsonComponentException : Exception
     {
-        public Int32  ComponentIndex { get; }
-        public JToken JToken         { get; }
+        public Int32    ComponentIndex { get; }
+        public JSONNode JToken         { get; }
 
         public JsonComponentException()
         {
         }
 
-        public JsonComponentException( Int32 index, JToken jToken, string message)
+        public JsonComponentException( Int32 index, JSONNode jToken, string message)
                 : base(message)
         {
             ComponentIndex = index;
             JToken         = jToken;
         }
 
-        public JsonComponentException( Int32 index, JToken jToken, string message, Exception inner)
+        public JsonComponentException( Int32 index, JSONNode jToken, string message, Exception inner)
                 : base(message, inner)
         {
             ComponentIndex = index;

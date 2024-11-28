@@ -3,8 +3,8 @@ using System.IO;
 using System.Linq;
 using FluentAssertions;
 using GDDB.Serialization;
-using Newtonsoft.Json.Linq;
 using NUnit.Framework;
+using SimpleJSON;
 using UnityEditor;
 using UnityEngine;
 
@@ -22,17 +22,17 @@ namespace GDDB.Tests
 
             //Act
             var serializer = new ObjectsJsonSerializer();
-            var jsonString = serializer.Serialize( new GDObject[] { testObj } ).ToString();
+            var jsonString = serializer.Serialize( testObj ).ToString();
 
             Debug.Log( jsonString );
 
             //Assert
-            var jObjects    = (JArray)JToken.Parse( jsonString );
-            var jRoot       = (JObject)jObjects[ 0 ];
-            var jComponents = (JArray)jRoot[ ".Components" ];
-            var jsonSerComp = (JObject)jComponents[ 0 ][ ".Value" ];
+            var jObjects    = (JSONArray)JSONNode.Parse( jsonString );
+            var jRoot       = (JSONObject)jObjects[ 0 ];
+            var jComponents = (JSONArray)jRoot[ ".Components" ];
+            var jsonSerComp = (JSONObject)jComponents[ 0 ][ ".Value" ];
 
-            Assert.That( jsonSerComp.Children(), Is.Empty );
+            Assert.That( jsonSerComp.Children, Is.Empty );
         }
 
         [TestCase( false, 0D,              0F,              0, 0,              0, "", 'a',
@@ -78,12 +78,12 @@ namespace GDDB.Tests
 
             //Act
             var serializer = new ObjectsJsonSerializer();
-            var jsonString = serializer.Serialize( new GDObject[] { testObj } );
+            var jsonString = serializer.Serialize( testObj );
 
             Debug.Log( jsonString );
 
             //Assert
-            var comp_copy = serializer.Deserialize( jsonString ).First().Components.First() as PrimitivesComponent;
+            var comp_copy = serializer.Deserialize( jsonString ).Components.First() as PrimitivesComponent;
             comp_copy.Should().BeEquivalentTo( comp );
         }
 
@@ -101,14 +101,12 @@ namespace GDDB.Tests
 
             //Act
             var serializer = new ObjectsJsonSerializer();
-            var jsonString = serializer.Serialize( new GDObject[] { testObj } );
+            var jsonString = serializer.Serialize( testObj );
 
             Debug.Log( jsonString );
 
             //Assert
-            var copy =
-                    serializer.Deserialize( jsonString ).First().Components.First() as
-                            NullReferencesAsEmptyComponent;
+            var copy = serializer.Deserialize( jsonString ).Components.First() as NullReferencesAsEmptyComponent;
             copy.StringMustBeEmpty.Should().BeEmpty(  );
             copy.NestedClassMustBeEmpty.StringMustBeEmpty.Should().BeEmpty(  );
             copy.NestedClassMustBeEmpty.IntParam.Should()
@@ -141,24 +139,21 @@ namespace GDDB.Tests
 
             //Act
             var serializer = new ObjectsJsonSerializer();
-            var json = serializer.Serialize( new GDObject[] { testObj } );
+            var json = serializer.Serialize( testObj );
             var jsonString = json.ToString();
 
             Debug.Log( jsonString );
 
             //Assert json
-            var jObjects    = (JArray)JToken.Parse( jsonString );
-            var jRoot       = (JObject)jObjects[ 0 ];
-            var jComponents = (JArray)jRoot[ ".Components" ];
-            var jsonSerComp = (JObject)jComponents[ 0 ][ ".Value" ];
+            var jObject     = (JSONObject)JSONNode.Parse( jsonString );
+            var jComponents = (JSONArray)jObject[ ".Components" ];
+            var jsonSerComp = (JSONObject)jComponents[ 0 ][ ".Value" ];
 
             Assert.IsNull( jsonSerComp[ nameof(CollectionTestComponent.OldIntArray) ] );
             Assert.IsNull( jsonSerComp[ nameof(CollectionTestComponent.ClassListNonSerializable) ] );
 
             //Asset deserialized data
-            var copy =
-                    serializer.Deserialize( json ).First().Components.First() as
-                            CollectionTestComponent;
+            var copy = serializer.Deserialize( json ).Components.First() as CollectionTestComponent;
             copy.OldIntArray.Should().BeEquivalentTo( new CollectionTestComponent().OldIntArray );
             copy.IntArray.Should().BeEquivalentTo( collComp.IntArray );
             copy.StrArray.Should().BeEquivalentTo( new String[] { String.Empty, String.Empty, "3" } );
@@ -189,9 +184,9 @@ namespace GDDB.Tests
 
              //Act
              var serializer = new ObjectsJsonSerializer();
-             var jsonString = serializer.Serialize( new GDObject[] { obj } );
+             var jsonString = serializer.Serialize( obj );
              Debug.Log( jsonString );
-             var copyObj = serializer.Deserialize( jsonString )[0];
+             var copyObj = serializer.Deserialize( jsonString );
 
              //Assert
              obj.Guid.Should().NotBe( default(Guid) );
@@ -213,14 +208,21 @@ namespace GDDB.Tests
 
                 //Act
                 var serializer = new ObjectsJsonSerializer();
-                var jsonString = serializer.Serialize( new GDObject[] { obj1, obj2, obj3 } );
-                Debug.Log( jsonString );
-                var copyObjects = serializer.Deserialize( jsonString );
+                var jsonString1 = serializer.Serialize( obj1 );
+                var jsonString2 = serializer.Serialize( obj2 );
+                var jsonString3 = serializer.Serialize( obj3 );
+                Debug.Log( jsonString1 );
+                Debug.Log( jsonString2 );
+                Debug.Log( jsonString3 );
+                var copyObject1 = serializer.Deserialize( jsonString1 );
+                var copyObject2 = serializer.Deserialize( jsonString2 );
+                var copyObject3 = serializer.Deserialize( jsonString3 );
+                serializer.ResolveGDObjectReferences();
 
                 //Assert
-                var obj1_copy   = (TestObjectWithReference)copyObjects[ 0 ];
-                var obj2_copy   = (TestObjectWithReference)copyObjects[ 1 ];
-                var obj3_copy   = copyObjects[ 2 ];
+                var obj1_copy   = (TestObjectWithReference)copyObject1;
+                var obj2_copy   = (TestObjectWithReference)copyObject2;
+                var obj3_copy   = copyObject3;
                 obj1_copy.ObjReference.Should().NotBeNull(  );
                 obj1_copy.ObjReference.Should().BeSameAs( obj2_copy.ObjReference );
                 obj1_copy.ObjReference.Should().BeSameAs( obj3_copy );
@@ -238,12 +240,12 @@ namespace GDDB.Tests
 
                 //Act
                 var serializer = new ObjectsJsonSerializer();
-                var jsonString = serializer.Serialize( new GDObject[] { obj1 } );
+                var jsonString = serializer.Serialize( obj1 );
                 Debug.Log( jsonString );
                 var copyObjects = serializer.Deserialize( jsonString );
 
                 //Assert
-                var obj1_copy = (TestObjectSerializationCallback)copyObjects[ 0 ];
+                var obj1_copy = (TestObjectSerializationCallback)copyObjects;
                 obj1_copy.NonSerialized.Should().Be( obj1.NonSerialized );
                 obj1_copy.GetComponent<SerializationCallbackComponent>().NonSerialized.Should().Be( comp.NonSerialized );
         }
@@ -270,12 +272,12 @@ namespace GDDB.Tests
 
                 //Act
                 var serializer = new ObjectsJsonSerializer();
-                var jsonString = serializer.Serialize( new GDObject[] { obj1 } );
+                var jsonString = serializer.Serialize( obj1 );
                 Debug.Log( jsonString );
                 var copyObjects = serializer.Deserialize( jsonString );
 
                 //Assert
-                var obj1_copy = (GDObject)copyObjects[ 0 ];
+                var obj1_copy = (GDObject)copyObjects;
                 obj1_copy.GetComponent<UnitySimpleTypesComponent>().Should().BeEquivalentTo( comp );
         }
 
@@ -283,20 +285,15 @@ namespace GDDB.Tests
         public void DisabledGDObjectTest( )
         {
                 //Arrange
-                var root = GDObject.CreateInstance<GDRoot>();
-                root.Id = "TestRoot";
-                var enabledObj = GDObject.CreateInstance<GDObject>();
                 var disabledObj = GDObject.CreateInstance<GDObject>();
                 disabledObj.EnabledObject = false;
 
                 //Act
                 var serializer = new ObjectsJsonSerializer();
-                var jsonString = serializer.Serialize( new GDObject[] { root, enabledObj, disabledObj } );
-                Debug.Log( jsonString );
-                var deserializedObjects = serializer.Deserialize( jsonString );
+                var jsonString = serializer.Serialize( disabledObj );
 
                 //Assert
-                deserializedObjects.Count( gdo => gdo.EnabledObject ).Should().Be( 2 );
+                jsonString.Should().BeNull(  );
         }
 
         [Test]
@@ -307,10 +304,10 @@ namespace GDDB.Tests
 
                 //Act
                 var serializer = new ObjectsJsonSerializer();
-                var jsonString = serializer.Serialize( new GDObject[] { obj } );
+                var jsonString = serializer.Serialize( obj );
                 Debug.Log( jsonString );
                 var copyObjects = serializer.Deserialize( jsonString );
-                var copy = (TestObjectAwakeEnable)copyObjects[ 0 ];
+                var copy = (TestObjectAwakeEnable)copyObjects;
 
                 //Assert
                 copy.IsAwaked.Should().BeTrue();
@@ -339,12 +336,12 @@ namespace GDDB.Tests
 
                 //Act
                 var serializer = new ObjectsJsonSerializer();
-                var jsonString = serializer.Serialize( new GDObject[] { obj }, testAssetResolver );
+                var jsonString = serializer.Serialize( obj , testAssetResolver );
                 Debug.Log( jsonString );
                 var copyObjects = serializer.Deserialize( jsonString, testAssetResolver );
 
                 //Assert
-                var copyComp = copyObjects[ 0 ].GetComponent<UnityAssetReferenceComponent>();
+                var copyComp = copyObjects.GetComponent<UnityAssetReferenceComponent>();
                 copyComp.Texture2D.Should().BeSameAs( testTexture );
                 copyComp.Material.Should().BeSameAs( testMat );
                 copyComp.GameObject.Should().BeSameAs( testGO );

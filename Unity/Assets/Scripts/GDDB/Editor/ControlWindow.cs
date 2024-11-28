@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using GDDB.Serialization;
-using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;

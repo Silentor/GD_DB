@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using GDDB.Serialization;
-using Newtonsoft.Json.Linq;
+using SimpleJSON;
 using UnityEditor;
 using UnityEngine;
 
@@ -69,7 +69,7 @@ namespace GDDB.Editor
 
                 //Update source generator data file
                 var serializer = new FoldersJsonSerializer();
-                var json = serializer.Serialize( GDBEditor.GDB.RootFolder, databaseHash ).ToString();
+                var json = serializer.Serialize( GDBEditor.GDB.RootFolder, null, databaseHash ).ToString();
                 File.WriteAllText( GDDBStructureFilePath, json );
 
                 SourceUpdated?.Invoke();
@@ -98,9 +98,9 @@ namespace GDDB.Editor
                 return 0;
 
             var json    = File.ReadAllText( GDDBStructureFilePath );
-            var jObject = JObject.Parse( json );
-            if( jObject.TryGetValue( "hash", out var value ) )
-                return (UInt64)value;
+            var jObject = JSONObject.Parse( json );
+            if( jObject.HasKey( "hash") )
+                return jObject["hash"].AsULong;
 
             return 0;
         }

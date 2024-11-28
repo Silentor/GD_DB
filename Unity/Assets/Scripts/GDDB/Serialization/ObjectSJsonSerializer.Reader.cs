@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using Newtonsoft.Json.Linq;
+using SimpleJSON;
 using UnityEngine;
+using UnityEngine.Profiling;
 using Object = System.Object;
 
 namespace GDDB.Serialization
@@ -12,69 +14,112 @@ namespace GDDB.Serialization
     //Reader part of GDJson
     public partial class ObjectsJsonSerializer
     {
-        private List<GDObject>                           _headers;
+        private readonly List<UnresolvedGDObjectReference> _unresolvedReferences = new ();
+        private readonly List<GDObject>                    _loadedObjects        = new ();     //To resolve loaded references in place
+        private readonly CustomSampler _deserObjectSampler     = CustomSampler.Create( "ObjectsJsonSerializer.Deserialize" );
+        private readonly CustomSampler _resolveObjectSampler   = CustomSampler.Create( "ObjectsJsonSerializer.ResolveGDObjectReferences" );
+
 
 #region JSON-LINQ reader
 
-        public List<GDObject> Deserialize( JArray json, IGdAssetResolver assetResolver = null )
+        public IReadOnlyList<GDObject> LoadedObjects => _loadedObjects;
+
+        public GDObject Deserialize( String json, IGdAssetResolver assetResolver = null )
         {
-            _headers          = new List<GDObject>( json.Count );
-            _assetResolver    = assetResolver ?? NullGdAssetResolver.Instance;
-
-            //Read GDObject headers
-            foreach ( var jObj in json )
-            {
-                var objHeader = ReadGDObjectHeaderFromJson( (JObject)jObj );
-                _headers.Add( objHeader );
-            }
-
-            //Read GDObject content (and resolve references)
-            for ( var i = 0; i < json.Count; i++ )
-            {
-                _headers[ i ] = ReadGDObjectContentFromJson( (JObject)json[ i ], _headers[ i ] );
-            }
-
-            foreach ( var gdObject in _headers )
-            {
-                if ( gdObject is ISerializationCallbackReceiver serializationCallbackReceiver )
-                    serializationCallbackReceiver.OnAfterDeserialize();
-
-                foreach ( var gdComponent in gdObject.Components )
-                    if ( gdComponent is ISerializationCallbackReceiver componentSerializationCallbackReceiver )
-                        componentSerializationCallbackReceiver.OnAfterDeserialize();
-
-            }
-
-            return _headers;
+            return Deserialize( JSONNode.Parse( json ).AsObject, assetResolver );
         }
 
-        private GDObject ReadGDObjectHeaderFromJson( JObject gdObjToken )
+        public GDObject Deserialize( JSONObject json, IGdAssetResolver assetResolver = null )
         {
-            var name    = gdObjToken[ ".Name" ].Value<String>();
-            var type    = Type.GetType( gdObjToken[ ".Type" ].Value<String>() );
-            var guid    = Guid.ParseExact( gdObjToken[ ".Ref" ].Value<String>(), "D" );
-            var enabled = gdObjToken[ ".Enabled" ]?.Value<Boolean>() ?? true;
+            _assetResolver    = assetResolver ?? NullGdAssetResolver.Instance;
+
+            _deserObjectSampler.Begin();
+            var result = ReadGDObjectFromJson( json );
+            _deserObjectSampler.End();
+
+            _loadedObjects.Add( result );
+            return result;
+        }
+
+        public void ResolveGDObjectReferences( )
+        {
+            _resolveObjectSampler.Begin();
+            foreach ( var unresolvedReference in _unresolvedReferences )
+            {
+                if( unresolvedReference.Guids != null )                //Collection target field
+                {
+                    if ( unresolvedReference.Field.FieldType.IsArray )
+                    {
+                        var result = Array.CreateInstance( unresolvedReference.Field.FieldType.GetElementType(), unresolvedReference.Guids.Length );
+                        for ( int i = 0; i < unresolvedReference.Guids.Length; i++ )
+                        {
+                            var guid           = unresolvedReference.Guids[i];
+                            var resolvedObject = _loadedObjects.FirstOrDefault( gdo => gdo.Guid == guid );
+                            if ( resolvedObject )
+                            {
+                                result.SetValue( resolvedObject, i );
+                            }
+                            else
+                            {
+                                Debug.LogError( $"[{nameof(ObjectsJsonSerializer)}]-[{nameof(ResolveGDObjectReferences)}] cannot resolve GDObject reference {guid}. Target object {unresolvedReference.TargetObject.GetType().Name}, field {unresolvedReference.Field}" );
+                            }
+                        }
+                        unresolvedReference.Field.SetValue( unresolvedReference.TargetObject, result );
+                    }
+                    else
+                    {
+                        var result = (IList)Activator.CreateInstance( unresolvedReference.Field.FieldType );
+                        for ( int i = 0; i < unresolvedReference.Guids.Length; i++ )
+                        {
+                            var guid           = unresolvedReference.Guids[i];
+                            var resolvedObject = _loadedObjects.FirstOrDefault( gdo => gdo.Guid == guid );
+                            if ( resolvedObject )
+                            {
+                                result.Add( resolvedObject );
+                            }
+                            else
+                            {
+                                Debug.LogError( $"[{nameof(ObjectsJsonSerializer)}]-[{nameof(ResolveGDObjectReferences)}] cannot resolve GDObject reference {guid}. Target object {unresolvedReference.TargetObject.GetType().Name}, field {unresolvedReference.Field}" );
+                            }
+                        }
+                        unresolvedReference.Field.SetValue( unresolvedReference.TargetObject, result );
+                    }
+                }
+                else                                 //Scalar target field
+                {
+                    var resolvedObject = _loadedObjects.FirstOrDefault( gdo => gdo.Guid == unresolvedReference.Guid );
+                    if( resolvedObject )
+                        unresolvedReference.Field.SetValue( unresolvedReference.TargetObject, resolvedObject );
+                    else
+                    {
+                        Debug.LogError( $"[{nameof(ObjectsJsonSerializer)}]-[{nameof(ResolveGDObjectReferences)}] cannot resolve GDObject reference {unresolvedReference.Guid}. Target object {unresolvedReference.TargetObject.GetType().Name}, field {unresolvedReference.Field}" );
+                    }
+                }
+            }
+            _resolveObjectSampler.End();
+        }
+
+        private GDObject ReadGDObjectFromJson( JSONObject gdObj )
+        {
+            var name    = gdObj[ ".Name" ].Value;
+            var type    = gdObj.HasKey( ".Type" ) ? Type.GetType( gdObj[ ".Type" ].Value ) : typeof(GDObject);
+            var guid    = Guid.ParseExact( gdObj[ ".Ref" ].Value, "D" );
+            var enabled = !gdObj.HasKey( ".Enabled" ) || gdObj[ ".Enabled" ].AsBool;
             var obj     = GDObject.CreateInstance( type ).SetGuid( guid );
             obj.hideFlags     = HideFlags.HideAndDontSave;
             obj.name          = name;
             obj.EnabledObject = enabled;
 
-            return obj;
-        }
-
-
-        private GDObject ReadGDObjectContentFromJson( JObject gdObjToken, GDObject obj )
-        {
             try
             {
                 //Components should be read from reserved property
-                var componentsProp = gdObjToken[ ".Components" ] as JArray;
+                var componentsProp = gdObj[ ".Components" ].AsArray;
                 for ( var i = 0; i < componentsProp.Count; i++ )
                 {
                     var componentjToken = componentsProp[ i ];
                     try
                     {
-                        var component = (GDComponent)ReadObjectFromJson( (JObject)componentjToken, typeof(GDComponent) );
+                        var component = (GDComponent)ReadObjectFromJson( (JSONObject)componentjToken, typeof(GDComponent) );
                         obj.Components.Add( component );
                     }
                     catch ( Exception e )
@@ -84,35 +129,35 @@ namespace GDDB.Serialization
                     }
                 }
 
-                ReadContentFromJson( gdObjToken, obj );
+                ReadContentFromJson( gdObj, obj );
                 return obj;
             }
             catch ( Exception e )
             {
-                throw new JsonObjectException( obj.Name, obj.GetType(), gdObjToken,
-                        $"Error reading object {obj.Name} of type {obj.GetType()} from jobject {gdObjToken}", e );
+                throw new JsonObjectException( obj.Name, obj.GetType(), gdObj,
+                        $"Error reading object {obj.Name} of type {obj.GetType()} from jobject {gdObj}", e );
             }
         }
 
-        private Object ReadObjectFromJson( JObject jObject, Type propertyType )
+        private Object ReadObjectFromJson( JSONObject jObject, Type propertyType )
         {
-            if ( !jObject.HasValues )
+            if ( jObject.Count == 0)
                 return null;
 
             var objectType = propertyType;
 
             //Check polymorphic object
             var valueObj = jObject;
-            var typeProp = jObject.Property( ".Type" );
-            if ( typeProp != null )
+            var typeProp = jObject[ ".Type" ];
+            if ( !String.IsNullOrEmpty(typeProp.Value) )
             {
-                var typeValue = (String)typeProp.Value;
+                var typeValue = typeProp.Value;
                 objectType = Type.GetType( typeValue );
 
                 if( objectType == null )
                     throw new InvalidOperationException( $"[{nameof(ObjectsJsonSerializer)}]-[{nameof(ReadObjectFromJson)}] Cannot create Type from type string '{typeValue}'" );
 
-                valueObj   = (JObject)jObject[ ".Value" ];
+                valueObj   = (JSONObject)jObject[ ".Value" ];
             }
 
             // if ( _serializers.TryGetValue( objectType, out var serializer ) )
@@ -135,7 +180,7 @@ namespace GDDB.Serialization
             return obj;
         }
 
-        private void ReadContentFromJson( JObject jObject, Object obj )
+        private void ReadContentFromJson( JSONObject jObject, Object obj )
         {
             foreach ( var field in obj.GetType().GetFields( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance ) )
             {
@@ -148,7 +193,14 @@ namespace GDDB.Serialization
                         try
                         {
                             var value = ReadSomethingFromJson( valueToken, field.FieldType );
-                            field.SetValue( obj, value );
+                            if ( value is UnresolvedGDObjectReference gdRef )                        //Should be resolved after all objects deserialization
+                            {
+                                gdRef.TargetObject = obj;
+                                gdRef.Field        = field;
+                                _unresolvedReferences.Add( gdRef );
+                            }
+                            else
+                                field.SetValue( obj, value );
                         }
                         catch ( Exception ex )
                         {
@@ -158,27 +210,40 @@ namespace GDDB.Serialization
             }
         }
 
-        private Object ReadSomethingFromJson( JToken value, Type propertyType )
+        private Object ReadSomethingFromJson( JSONNode value, Type propertyType )
         {
             if ( propertyType == typeof(Char) )
             {
-                return Convert.ChangeType( value.Value<Object>(), typeof(Char) );
+                return value.AsChar;
             }
-            else if ( propertyType.IsPrimitive || propertyType == typeof(String) )
+            else if ( propertyType == typeof(String) )
             {
-                return Convert.ChangeType( value.Value<Object>(), propertyType );
+                return value.Value;
+            }
+            else if ( propertyType.IsPrimitive )
+            {
+                return Convert.ChangeType( value.Value, propertyType, CultureInfo.InvariantCulture );
             }
             else if ( propertyType.IsEnum )
             {
-                return Convert.ChangeType( value.Value<Object>(), propertyType );
+                if( Enum.TryParse( propertyType, value.Value, out var enumValue ) )
+                    return enumValue;
+                else
+                    return Activator.CreateInstance( propertyType );
             }
             else if ( propertyType.IsArray || (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() ==  typeof(List<>) ) )
             {
-                return ReadCollectionFromJson( (JArray)value, propertyType );
+                return ReadCollectionFromJson( (JSONArray)value, propertyType );
             }
             else if ( typeof(GDObject).IsAssignableFrom( propertyType ) )
             {
-                return ReadGDObjectReferenceFromJson( (JObject)value );
+                var guidStr = value.Value;
+                var guid    = Guid.ParseExact( guidStr, "D" );
+                var referencedObj = _loadedObjects.FirstOrDefault( gdo => gdo.Guid == guid );
+                if( referencedObj )
+                    return referencedObj;
+                else
+                    return new UnresolvedGDObjectReference(){Guid = guid};
             }
             else if ( _serializers.TryGetValue( propertyType, out var deserializer ) )
             {
@@ -186,65 +251,78 @@ namespace GDDB.Serialization
             }
             else if ( typeof(UnityEngine.Object).IsAssignableFrom( propertyType ) )      //Read Unity asset by reference
             {
-                if ( !value.HasValues )                  //Seems like missed reference or null reference
+                if ( value.Count == 0 )                  //Seems like missed reference or null reference
                     return null;
 
-                var guid    = value[ ".Ref" ].Value<String>();
-                var localId = value[ ".Id" ].Value<long>();
+                var guid    = value[ ".Ref" ].Value;
+                var localId = value[ ".Id" ].AsLong;
                 if( !_assetResolver.TryGetAsset( guid, localId, out var asset ) )
                     Debug.LogError( $"Error resolving Unity asset reference {guid} : {localId}, type {propertyType}" );
                 return asset;
             }
             else
             {
-                return ReadObjectFromJson( (JObject)value, propertyType );
+                return ReadObjectFromJson( (JSONObject)value, propertyType );
             }
         }
-
-
-
-        private Object ReadCollectionFromJson(JArray token, Type type )
+ 
+        private Object ReadCollectionFromJson(JSONArray jArray, Type type )
         {
-            if ( type.IsArray )
+            if ( type.IsArray )                   //Array class not handled
             {
-                var values      = token.Children().ToArray();
-                var array       = Array.CreateInstance( type.GetElementType(), values.Length );
-                var elementType = type.GetElementType();
+                var elementType = type.GetElementType() ?? typeof(Object);
+                if ( elementType == typeof(GDObject) )
+                    return GetUnresolvedGDORefCollection( jArray);
 
-                for ( int i = 0; i < values.Length; i++ )
+                var array       = Array.CreateInstance( elementType, jArray.Count );
+                for ( int i = 0; i < jArray.Count; i++ )
                 {
-
-                    array.SetValue( ReadSomethingFromJson( values[ i ], elementType ), i );
+                    array.SetValue( ReadSomethingFromJson( jArray[ i ], elementType ), i );
                 }
 
                 return array;
             }
             else if ( type.IsGenericType && type.GetGenericTypeDefinition() ==  typeof(List<>) )
             {
-                var values      = token.Children().ToArray();
-                var list        = (IList)Activator.CreateInstance( type );
                 var elementType = type.GetGenericArguments()[ 0 ];
+                if ( elementType == typeof(GDObject) )
+                    return GetUnresolvedGDORefCollection( jArray);
 
-                foreach ( var valueToken in values )
+                var list        = (IList)Activator.CreateInstance( type );
+                foreach ( var valueToken in jArray )
                 {
-                    list.Add( ReadSomethingFromJson( valueToken, elementType ) );
+                    list.Add( ReadSomethingFromJson( valueToken.Value, elementType ) );
                 }
 
                 return list;
             }
 
             return null;
-        }
 
-        private GDObject ReadGDObjectReferenceFromJson( JObject jObject )
-        {
-            var guid = Guid.Parse( jObject[ ".Ref" ].Value<String>() );
-            return _headers.Find( o => o.Guid == guid );
+            UnresolvedGDObjectReference GetUnresolvedGDORefCollection(JSONArray jsonArray )
+            {
+                var guids = new Guid[ jsonArray.Count ];
+                for ( int i = 0; i < jsonArray.Count; i++ )                        
+                    guids[ i ] = Guid.ParseExact( jsonArray[ i ].Value, "D" );
+                return new UnresolvedGDObjectReference()
+                                         {
+                                                 Guids = guids,
+                                         };
+            }
         }
 
 #endregion
 
+        private struct UnresolvedGDObjectReference
+        {
+            //GDObject guid
+            public Guid         Guid;
+            public Guid[]       Guids;          //Collection field
 
+            //Target info
+            public Object  TargetObject;
+            public FieldInfo Field;
+        }
 
 #region Fast forward reader
 
