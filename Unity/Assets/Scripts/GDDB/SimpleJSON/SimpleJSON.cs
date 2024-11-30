@@ -1074,7 +1074,8 @@ namespace SimpleJSON
 
     public partial class JSONNumber : JSONNode
     {
-        private double m_Data;
+        private double   m_Data;
+        private TypeCode m_numberType = TypeCode.Double;
 
         public override JSONNodeType Tag { get { return JSONNodeType.Number; } }
         public override bool IsNumber { get { return true; } }
@@ -1082,11 +1083,10 @@ namespace SimpleJSON
 
         public override string Value
         {
-            get { return m_Data.ToString(CultureInfo.InvariantCulture); }
+            get { return m_numberType == TypeCode.Double ? m_Data.ToString( "R", CultureInfo.InvariantCulture ) : AsLong.ToString( CultureInfo.InvariantCulture ); }
             set
             {
-                double v;
-                if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out v))
+                if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var v))
                     m_Data = v;
             }
         }
@@ -1109,11 +1109,19 @@ namespace SimpleJSON
 
         public JSONNumber(double aData)
         {
+            m_numberType = TypeCode.Double;
+            m_Data = aData;
+        }
+
+        public JSONNumber(long aData)
+        {
+            m_numberType = TypeCode.Int64;
             m_Data = aData;
         }
 
         public JSONNumber(string aData)
         {
+            m_numberType = TypeCode.Double;
             Value = aData;
         }
 
@@ -1124,7 +1132,7 @@ namespace SimpleJSON
 
         internal override void WriteToStringBuilder(StringBuilder aSB, int aIndent, int aIndentInc, JSONTextMode aMode)
         {
-            aSB.Append(Value.ToString(CultureInfo.InvariantCulture));
+            aSB.Append(Value);
         }
         private static bool IsNumeric(object value)
         {

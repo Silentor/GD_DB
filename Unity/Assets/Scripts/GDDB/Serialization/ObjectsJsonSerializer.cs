@@ -186,7 +186,12 @@ namespace GDDB.Serialization
             }
             else if ( valueType.IsPrimitive)
             {
-                return new JSONNumber( Convert.ToString( value, CultureInfo.InvariantCulture ) );
+                if ( valueType == typeof(Boolean) )
+                    return new JSONBool( (Boolean)value );
+                if ( valueType == typeof(Single) || valueType == typeof(Double) )
+                    return new JSONNumber( Convert.ToDouble(value) );
+                else
+                    return new JSONNumber( Convert.ToInt64(value) );
             }
             else if ( valueType.IsEnum )
             {

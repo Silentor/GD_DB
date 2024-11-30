@@ -48,7 +48,7 @@ namespace GDDB.Tests
                 PrimitivesComponent.EIntEnum.Last )]
         [TestCase( true, Double.PositiveInfinity, Single.PositiveInfinity, 0, 0, 0,
                 "some chinese \uD846",
-                Char.MaxValue, PrimitivesComponent.EByteEnum.Last,
+                Char.MaxValue, PrimitivesComponent.EByteEnum.Zero | PrimitivesComponent.EByteEnum.One,
                 PrimitivesComponent.EIntEnum.Last )]
         [TestCase( true, Double.NaN, Single.NaN, 0, 0, 0, "some smile \uD83D", '!',
                 PrimitivesComponent.EByteEnum.Last,
@@ -77,7 +77,7 @@ namespace GDDB.Tests
 
             //Act
             var serializer = new ObjectsJsonSerializer();
-            var jsonString = serializer.Serialize( testObj );
+            var jsonString = serializer.Serialize( testObj ).ToString( 2 );
 
             Debug.Log( jsonString );
 

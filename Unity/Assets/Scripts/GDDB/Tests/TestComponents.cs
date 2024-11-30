@@ -40,6 +40,7 @@ namespace GDDB.Tests
          public EIntEnum  IntEnumField = EIntEnum.Last;
          public Char      CharField = 'a';
 
+         [Flags]
          public enum EByteEnum : Byte
          {
              Zero,

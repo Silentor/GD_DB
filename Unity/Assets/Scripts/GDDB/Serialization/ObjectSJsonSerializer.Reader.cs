@@ -229,7 +229,12 @@ namespace GDDB.Serialization
             }
             else if ( propertyType.IsPrimitive )
             {
-                return Convert.ChangeType( value.Value, propertyType, CultureInfo.InvariantCulture );
+                if( propertyType == typeof(Boolean) )
+                    return value.AsBool;
+                if( propertyType == typeof(Single) || propertyType == typeof(Double) )
+                    return Convert.ChangeType( value.AsDouble, propertyType, CultureInfo.InvariantCulture );
+                else
+                    return Convert.ChangeType( value.AsLong, propertyType, CultureInfo.InvariantCulture );
             }
             else if ( propertyType.IsEnum )
             {
