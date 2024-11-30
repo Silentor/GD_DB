@@ -190,6 +190,8 @@ namespace GDDB.Serialization
                     return new JSONBool( (Boolean)value );
                 if ( valueType == typeof(Single) || valueType == typeof(Double) )
                     return new JSONNumber( Convert.ToDouble(value) );
+                else if ( valueType == typeof(UInt64) )
+                    return new JSONNumber( (UInt64)value );
                 else
                     return new JSONNumber( Convert.ToInt64(value) );
             }

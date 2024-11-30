@@ -233,8 +233,9 @@ namespace GDDB.Serialization
                     return value.AsBool;
                 if( propertyType == typeof(Single) || propertyType == typeof(Double) )
                     return Convert.ChangeType( value.AsDouble, propertyType, CultureInfo.InvariantCulture );
-                else
-                    return Convert.ChangeType( value.AsLong, propertyType, CultureInfo.InvariantCulture );
+                if ( propertyType == typeof(UInt64) )
+                    return value.AsULong;
+                return Convert.ChangeType( value.AsLong, propertyType, CultureInfo.InvariantCulture );
             }
             else if ( propertyType.IsEnum )
             {

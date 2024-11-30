@@ -38,20 +38,22 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace SimpleJSON
 {
     public enum JSONNodeType
     {
-        Array = 1,
-        Object = 2,
-        String = 3,
-        Number = 4,
-        NullValue = 5,
-        Boolean = 6,
-        None = 7,
-        Custom = 0xFF,
+        Array     = 1,
+        Object    = 2,
+        String    = 3,
+        Number    = 4,
+        NumberInt = 5,
+        NullValue = 6,
+        Boolean   = 7,
+        None      = 8,
+        Custom    = 0xFF,
     }
     public enum JSONTextMode
     {
@@ -531,8 +533,12 @@ namespace SimpleJSON
                 if (tmp == "null")
                     return JSONNull.CreateOrGet();
             }
-            double val;
-            if (double.TryParse(token, NumberStyles.Float, CultureInfo.InvariantCulture, out val))
+
+            if ( long.TryParse( token, NumberStyles.Integer, CultureInfo.InvariantCulture, out var l ) )
+                return l;
+            if ( ulong.TryParse( token, NumberStyles.Integer, CultureInfo.InvariantCulture, out var ul ) )
+                return ul;
+            if (double.TryParse(token, NumberStyles.Float, CultureInfo.InvariantCulture, out var val))
                 return val;
             else
                 return token;
@@ -1074,60 +1080,150 @@ namespace SimpleJSON
 
     public partial class JSONNumber : JSONNode
     {
-        private double   m_Data;
-        private TypeCode m_numberType = TypeCode.Double;
+        private Reinterpret m_Data;
+        private TypeCode    m_numberType = TypeCode.Double;
 
-        public override JSONNodeType Tag { get { return JSONNodeType.Number; } }
-        public override bool IsNumber { get { return true; } }
-        public override Enumerator GetEnumerator() { return new Enumerator(); }
+        public override JSONNodeType Tag             { get { return m_numberType == TypeCode.Double ? JSONNodeType.Number : JSONNodeType.NumberInt; } }
+        public override bool         IsNumber        { get { return true; } }
+        public override Enumerator   GetEnumerator() { return new Enumerator(); }
 
         public override string Value
         {
-            get { return m_numberType == TypeCode.Double ? m_Data.ToString( "R", CultureInfo.InvariantCulture ) : AsLong.ToString( CultureInfo.InvariantCulture ); }
+            get
+            {
+                return m_numberType switch
+                       {
+                               TypeCode.Int64  => AsLong.ToString( CultureInfo.InvariantCulture ),
+                               TypeCode.UInt64 => AsULong.ToString( CultureInfo.InvariantCulture ),
+                               _               => m_Data.d.ToString( "R", CultureInfo.InvariantCulture ),
+                       };
+            }
             set
             {
-                if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var v))
-                    m_Data = v;
+                if ( long.TryParse( value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var l ) )
+                {
+                    AsLong = l;
+                }
+                else if ( ulong.TryParse( value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var ul ) )
+                {
+                    AsULong = ul;
+                }
+                else if ( double.TryParse( value, NumberStyles.Float, CultureInfo.InvariantCulture, out var v ) )
+                {
+                    AsDouble = v;
+                }
             }
         }
 
         public override double AsDouble
         {
-            get { return m_Data; }
-            set { m_Data = value; }
+            get
+            {
+                return m_numberType switch
+                       {
+                               TypeCode.Double => m_Data.d,
+                               TypeCode.Int64  => m_Data.l,
+                               TypeCode.UInt64 => unchecked((UInt64)m_Data.l),
+                       };
+
+            }
+            set
+            {
+                m_numberType = TypeCode.Double;
+                m_Data.d = value;
+            }
         }
         public override long AsLong
         {
-            get { return (long)m_Data; }
-            set { m_Data = value; }
+            get
+            {
+                return m_numberType switch
+                       {
+                               TypeCode.Double => (long)m_Data.d,
+                               TypeCode.Int64  => m_Data.l,
+                               TypeCode.UInt64 => (long)unchecked((ulong)m_Data.l),         //To catch possible overflow
+                       };
+            }
+            set
+            {
+                m_numberType = TypeCode.Int64;
+                m_Data.l = value;
+            }
         }
         public override ulong AsULong
         {
-            get { return (ulong)m_Data; }
-            set { m_Data = value; }
+            get
+            {
+                return m_numberType switch
+                       {
+                               TypeCode.Double => (ulong)m_Data.d,
+                               TypeCode.Int64  => (ulong)m_Data.l,
+                               TypeCode.UInt64 => unchecked((ulong)m_Data.l),         
+                       };
+            }
+            set
+            {
+                m_numberType = TypeCode.UInt64;
+                m_Data.l = unchecked((long)value);
+            }
+        }
+
+        public override byte AsByte
+        {
+            get => (byte)AsULong;
+            set => AsULong = value;
+        }
+
+        public override sbyte AsSByte
+        {
+            get => (sbyte)AsLong;
+            set => AsLong = value;
+        }
+
+        public override short AsShort
+        {
+            get => (short)m_Data.l;
+            set => AsLong = value;
+        }
+
+        public override ushort AsUShort
+        {
+            get => (ushort)AsULong;
+            set => AsULong = value;
+        }
+
+        public override int AsInt 
+        {
+            get => (int)AsLong;
+            set => AsLong = value;
+        }
+
+        public override uint AsUInt
+        {
+            get => (uint)AsULong;
+            set => AsULong = value;
         }
 
         public JSONNumber(double aData)
         {
             m_numberType = TypeCode.Double;
-            m_Data = aData;
+            m_Data.d = aData;
         }
 
         public JSONNumber(long aData)
         {
             m_numberType = TypeCode.Int64;
-            m_Data = aData;
+            m_Data.l = aData;
         }
 
-        public JSONNumber(string aData)
+        public JSONNumber(ulong aData)
         {
-            m_numberType = TypeCode.Double;
-            Value = aData;
+            AsULong = aData;
         }
 
         public override JSONNode Clone()
         {
-            return new JSONNumber(m_Data);
+            return new JSONNumber(m_Data.d){ m_numberType = this.m_numberType };
         }
 
         internal override void WriteToStringBuilder(StringBuilder aSB, int aIndent, int aIndentInc, JSONTextMode aMode)
@@ -1151,9 +1247,9 @@ namespace SimpleJSON
                 return true;
             JSONNumber s2 = obj as JSONNumber;
             if (s2 != null)
-                return m_Data == s2.m_Data;
+                return m_Data.l == s2.m_Data.l && m_numberType == s2.m_numberType;
             if (IsNumeric(obj))
-                return Convert.ToDouble(obj) == m_Data;
+                return Convert.ToDouble(obj) == m_Data.d;
             return false;
         }
         public override int GetHashCode()
@@ -1162,7 +1258,16 @@ namespace SimpleJSON
         }
         public override void Clear()
         {
-            m_Data = 0;
+            m_Data.l = 0;
+        }
+
+        [StructLayout(LayoutKind.Explicit)]
+        private struct Reinterpret
+        {
+            [FieldOffset(0)]
+            public long  l;
+            [FieldOffset(0)]
+            public double d;
         }
     }
     // End of JSONNumber

@@ -135,9 +135,9 @@ namespace GDDB.Serialization
             result[0] = value.center.x;
             result[1] = value.center.y;
             result[2] = value.center.z;
-            result[3] = value.extents.x;
-            result[4] = value.extents.y;
-            result[5] = value.extents.z;
+            result[3] = value.size.x;
+            result[4] = value.size.y;
+            result[5] = value.size.z;
             return result;
         }
 

@@ -153,6 +153,10 @@ namespace SimpleJSON
                     {
                         return new JSONNumber(aReader.ReadDouble());
                     }
+                case JSONNodeType.NumberInt:
+                {
+                    return new JSONNumber(aReader.ReadInt64());
+                }
                 case JSONNodeType.Boolean:
                     {
                         return new JSONBool(aReader.ReadBoolean());
@@ -270,8 +274,16 @@ namespace SimpleJSON
     {
         public override void SerializeBinary(System.IO.BinaryWriter aWriter)
         {
-            aWriter.Write((byte)JSONNodeType.Number);
-            aWriter.Write(m_Data);
+            if ( m_numberType == TypeCode.Double )
+            {
+                aWriter.Write((byte)JSONNodeType.Number);
+                aWriter.Write(m_Data.d);
+            }
+            else
+            {
+                aWriter.Write((byte)JSONNodeType.NumberInt);
+                aWriter.Write(m_Data.l);
+            }
         }
     }
 

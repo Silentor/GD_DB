@@ -29,23 +29,24 @@ namespace GDDB.Tests
 
     public class PrimitivesComponent : GDComponent
     { 
-        public SByte     SByteField  = SByte.MinValue; 
-         public Int32     IntField    = Int32.MaxValue;
-         public Int64     BigIntField = Int64.MinValue;
-         public Single    FloatField  = Single.PositiveInfinity;
-         public Double    DoubleField = Double.NaN;
+        public  SByte     SByteField   = SByte.MinValue; 
+         public Int32     IntField     = Int32.MaxValue;
+         public Int64     BigIntField  = Int64.MinValue;
+         public UInt64    BigUIntField = UInt64.MaxValue;
+         public Single    FloatField   = Single.PositiveInfinity;
+         public Double    DoubleField  = Double.NaN;
          public Boolean   BoolField;
          public String    StringField   = "some text";
-         public EByteEnum ByteEnumField = EByteEnum.One;
-         public EIntEnum  IntEnumField = EIntEnum.Last;
-         public Char      CharField = 'a';
+         public EByteFlagEnum ByteEnumField = EByteFlagEnum.Zero | EByteFlagEnum.One;
+         public EIntEnum  IntEnumField  = EIntEnum.Last;
+         public Char      CharField     = 'a';
 
          [Flags]
-         public enum EByteEnum : Byte
+         public enum EByteFlagEnum : Byte
          {
-             Zero,
-             One,
-             Last = 255
+             Zero = 1 << 0,
+             One  = 1 << 1,
+             Last = 1 << 7
          }
 
          public enum EIntEnum : UInt32

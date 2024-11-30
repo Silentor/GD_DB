@@ -34,30 +34,31 @@ namespace GDDB.Tests
             Assert.That( jsonSerComp.Children, Is.Empty );
         }
 
-        [TestCase( false, 0D,              0F,              0, 0,              0, "", 'a',
-                PrimitivesComponent.EByteEnum.Zero, PrimitivesComponent.EIntEnum.Zero )]
-        [TestCase( true,  Double.MinValue, Single.MinValue, SByte.MinValue, Int32.MinValue, Int64.MinValue, "",
+        [TestCase( false, 0D, 0F,  0, 0, 0L, 0UL, "", 'a',
+                PrimitivesComponent.EByteFlagEnum.Zero, PrimitivesComponent.EIntEnum.Zero )]
+        [TestCase( true,  Double.MinValue, Single.MinValue, SByte.MinValue, Int32.MinValue, Int64.MinValue, UInt64.MinValue, 
+                        "", 
                 'Я',
-                PrimitivesComponent.EByteEnum.One,
+                PrimitivesComponent.EByteFlagEnum.One,
                 PrimitivesComponent.EIntEnum.One )]
-        [TestCase( true, Double.MaxValue, Single.MaxValue, SByte.MaxValue, Int32.MaxValue, Int64.MaxValue,
-                "some ansi text", '\uD846', PrimitivesComponent.EByteEnum.Last,
+        [TestCase(                true,     Double.MaxValue, Single.MaxValue, SByte.MaxValue, Int32.MaxValue, Int64.MaxValue, UInt64.MaxValue,
+                "some ansi text", '\uD846', PrimitivesComponent.EByteFlagEnum.Last,
                 PrimitivesComponent.EIntEnum.Last )]
-        [TestCase( true, Double.NegativeInfinity, Single.NegativeInfinity, 0, 0, 0, "кирилиця", Char.MinValue,
-                PrimitivesComponent.EByteEnum.Last,
+        [TestCase( true, Double.NegativeInfinity, Single.NegativeInfinity, 0, 0, 0, UInt64.MaxValue - 1, "кирилиця", Char.MinValue,
+                PrimitivesComponent.EByteFlagEnum.Last,
                 PrimitivesComponent.EIntEnum.Last )]
-        [TestCase( true, Double.PositiveInfinity, Single.PositiveInfinity, 0, 0, 0,
+        [TestCase( true, Double.PositiveInfinity, Single.PositiveInfinity, 0, 0, Int64.MinValue + 1, 0UL,
                 "some chinese \uD846",
-                Char.MaxValue, PrimitivesComponent.EByteEnum.Zero | PrimitivesComponent.EByteEnum.One,
+                Char.MaxValue, PrimitivesComponent.EByteFlagEnum.Zero | PrimitivesComponent.EByteFlagEnum.One,
                 PrimitivesComponent.EIntEnum.Last )]
-        [TestCase( true, Double.NaN, Single.NaN, 0, 0, 0, "some smile \uD83D", '!',
-                PrimitivesComponent.EByteEnum.Last,
+        [TestCase( true, Double.NaN, Single.NaN, 0, 0, 0, UInt64.MaxValue - 2, "some smile \uD83D", '!',
+                PrimitivesComponent.EByteFlagEnum.Last,
                 PrimitivesComponent.EIntEnum.Last )]
-        public void PrimitivesComponentTest( Boolean boolParam, Double  doubleParam, Single floatParam,
-                                             SByte sbyteParam, Int32 intParam, Int64 bigIntParam,
-                                             String  strParam,  Char charParam,
-                                             PrimitivesComponent.EByteEnum byteEnumParam,
-                                             PrimitivesComponent.EIntEnum intEnumParam  )
+        public void PrimitivesComponentTest( Boolean                       boolParam,  Double doubleParam, Single floatParam,
+                                             SByte                         sbyteParam, Int32  intParam,    Int64  bigIntParam, UInt64 bigUIntParam,
+                                             String                        strParam,   Char   charParam,
+                                             PrimitivesComponent.EByteFlagEnum byteEnumParam,
+                                             PrimitivesComponent.EIntEnum  intEnumParam  )
         {
             //Arrange
             var comp = new PrimitivesComponent()
@@ -67,6 +68,7 @@ namespace GDDB.Tests
                                FloatField    = floatParam,
                                IntField      = intParam,
                                BigIntField   = bigIntParam,
+                               BigUIntField   = bigUIntParam,
                                StringField   = strParam,
                                ByteEnumField = byteEnumParam,
                                IntEnumField  = intEnumParam,
@@ -257,13 +259,13 @@ namespace GDDB.Tests
                 var obj1 = GDObject.CreateInstance<GDObject>();
                 var comp = new  UnitySimpleTypesComponent
                            {
-                                           Vector3    = -Vector3.one,
+                                           Vector3    = -Vector3.one * 0.5f,
                                            Quaternion = Quaternion.Euler( 100, 200, 300 ),
                                            Color      = Color.green,
                                            Color32    = new Color32( 200, 200, 200, 200 ),
                                            AnimCurve  = new (new Keyframe( 0, 1 ), new Keyframe( 0.5f, 0 ), new Keyframe( 1, 1 )),
                                            Bounds = new Bounds( Vector3.back, Vector3.down ),
-                                           Rect = new Rect( 4, 3,2,1 ),
+                                           Rect = new Rect( 4.0f, 3, 2.1f, 1 ),
                                            Vector2 = -Vector2.one,
                                            Vector2Int = Vector2Int.up,
                                            Vector3Int = Vector3Int.up,
@@ -272,7 +274,7 @@ namespace GDDB.Tests
 
                 //Act
                 var serializer = new ObjectsJsonSerializer();
-                var jsonString = serializer.Serialize( obj1 );
+                var jsonString = serializer.Serialize( obj1 ).ToString( 2 );
                 Debug.Log( jsonString );
                 var copyObjects = serializer.Deserialize( jsonString );
 
