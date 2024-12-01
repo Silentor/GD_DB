@@ -18,7 +18,7 @@ namespace GDDB.Editor
         {
             if ( db == null ) throw new ArgumentNullException( nameof(db) );
 
-            var treeBrowser = EditorWindow.GetWindow<GdDbTreeWindow>( true, "Gddb", true );
+            var treeBrowser = EditorWindow.GetWindow<GdDbTreeWindow>( true, "Select GD Object", true );
             treeBrowser.Init( db, query, components, selectedObject );
             treeBrowser.ShowAsDropDown( dropDownRect, new Vector2( dropDownRect.width, 400 ) );
             return treeBrowser;
@@ -28,12 +28,16 @@ namespace GDDB.Editor
         public event Action<GDObject> Chosed;
 
         private TreeView                       _tree;
+        private Label                           _hintLabel;
         //private Folder                         _rootFolder;
         private List<TreeViewItemData<Object>> _treeItems;
         private TreeView                       _treeView;
 
         private void CreateGUI( )
         {
+            _hintLabel = new Label( "No objects found" );
+            rootVisualElement.Add( _hintLabel );
+
             _treeView                  =  new TreeView();
             _treeView.fixedItemHeight  =  18;
             _treeView.makeItem         =  () => Resources.TreeItemElem.Instantiate();
@@ -92,6 +96,17 @@ namespace GDDB.Editor
                      tempFolder.Objects.Add( obj );
                 }
 
+                if( queryFolders.Count == 0 )
+                {
+                    _hintLabel.style.display = DisplayStyle.Flex;
+                    var hintLabelText = $"No objects found for query string '{query}'";
+                    if( components != null && components.Length > 0 )
+                        hintLabelText += $" with components <{String.Join(", ", components.Select( c => c.Name ).ToArray())}>";
+
+                    _hintLabel.text = hintLabelText;
+                    return;
+                }
+
                 rootFolder = queryFolders.Values.First();
 
                 var objCount = rootFolder.EnumerateFoldersDFS(  ).SelectMany( f => f.Objects ).Count();
@@ -114,8 +129,8 @@ namespace GDDB.Editor
                     return tempFolder;
                 }
             }
-            
 
+            _hintLabel.style.display = DisplayStyle.None;
             var rootTreeItem         = PrepareTreeRoot( rootFolder );
             _treeView.SetRootItems( new []{ rootTreeItem } );
             _treeView.Rebuild();
