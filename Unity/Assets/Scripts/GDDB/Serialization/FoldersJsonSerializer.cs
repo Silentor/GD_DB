@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Serialization;
 using SimpleJSON;
-using UnityEngine;
 using UnityEngine.Profiling;
 
 namespace GDDB.Serialization
@@ -16,6 +13,8 @@ namespace GDDB.Serialization
         private          CustomSampler _serFolderSampler   = CustomSampler.Create( "FoldersJsonSerializer.Serialize" );
         private readonly CustomSampler _deserFolderSampler = CustomSampler.Create( "FoldersJsonSerializer.Deserialize" );
 
+#if UNITY_EDITOR
+
         public JSONObject Serialize( Folder root, ObjectsJsonSerializer objectSerializer, UInt64? hash = null )
         {
             _serFolderSampler.Begin();
@@ -23,6 +22,8 @@ namespace GDDB.Serialization
             _serFolderSampler.End();
             return rootJson;
         }
+
+#endif
 
         public Folder Deserialize( JSONObject json, ObjectsJsonSerializer objectSerializer, out UInt64? checksum )
         {
@@ -32,6 +33,8 @@ namespace GDDB.Serialization
                 checksum = null;
             return DeserializeFolder( json, null, objectSerializer );
         }
+
+#if UNITY_EDITOR
 
         private JSONObject SerializeFolder( Folder folder, ObjectsJsonSerializer objectSerializer, UInt64? hash = null )
         {
@@ -76,6 +79,8 @@ namespace GDDB.Serialization
 
             return result;
         }
+
+#endif
 
         private Folder DeserializeFolder( JSONObject json, Folder? parent, ObjectsJsonSerializer objectSerializer )
         {
