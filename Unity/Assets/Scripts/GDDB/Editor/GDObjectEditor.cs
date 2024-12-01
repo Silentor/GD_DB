@@ -461,7 +461,7 @@ namespace GDDB.Editor
                 var dbOutputPath   = Application.streamingAssetsPath + $"/{editorDB.Name}.gddb.json";
                 using var dbFile = File.Create( dbOutputPath );
                 using var writer = new StreamWriter( dbFile );
-                writer.Write( jsonStr );
+                writer.Write( jsonStr.ToString(2) );
                 writer.Flush();
                 dbFile.Flush();
 

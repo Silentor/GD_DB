@@ -10,7 +10,7 @@ namespace GDDB.Serialization
     /// </summary>
     public class GdScriptableObjectLoader : GdLoader
     {
-        public GdScriptableObjectLoader( [NotNull] DBAsset database )
+        public GdScriptableObjectLoader( [NotNull] DBScriptableObject database )
         {
             if ( !database ) throw new ArgumentNullException( nameof(database) );
 

@@ -367,7 +367,7 @@ namespace GDDB.Tests
 
             //Act
             var serializer = new DBJsonSerializer();
-            var gddbJson = serializer.Serialize( root, root.EnumerateFoldersDFS(  ).SelectMany( f => f.Objects ).ToArray() , NullGdAssetResolver.Instance );
+            var gddbJson = serializer.Serialize( root, root.EnumerateFoldersDFS(  ).SelectMany( f => f.Objects ).ToArray() , NullGdAssetResolver.Instance ).ToString();
             var db       = new GdJsonLoader( gddbJson ).GetGameDataBase();
 
             //Assert

@@ -14,7 +14,7 @@ namespace GDDB_User
 {
     public class Runner : MonoBehaviour
     {
-        public DBAsset DB;
+        public DBScriptableObject DB;
 
         public TMP_Text DebugOutput;
         public RawImage DebugImageOutput;
@@ -49,8 +49,8 @@ namespace GDDB_User
             // }
 
             //Load GDDB from asset
-            DBAsset db;
-            db = DB ? DB : Resources.Load<DBAsset>( "DefaultGDDB" );
+            DBScriptableObject db;
+            db = DB ? DB : Resources.Load<DBScriptableObject>( "DefaultGDDB" );
             var     aloader   = new GdScriptableObjectLoader( db );
             _soGDDB   = aloader.GetGameDataBase();
 

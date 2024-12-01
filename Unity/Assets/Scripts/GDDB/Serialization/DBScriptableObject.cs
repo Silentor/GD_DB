@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace GDDB.Serialization
 {
-    public class DBAsset : ScriptableObject
+    public class DBScriptableObject : ScriptableObject
     {
         public UInt64                   Hash;
         public List<SerializableFolder> Folders;

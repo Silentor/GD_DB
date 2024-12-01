@@ -71,18 +71,16 @@ namespace GDDB.Editor
 
                 if ( editorDB.AllObjects.Any() )
                 {
-                    _isDBDirty = true;
                     try
                     {
-                        UpdateScriptableObjectDB( settings, editorDB );
-                        UpdateJsonDB( settings, editorDB );
+                        UpdateScriptableObjectDB( settings, editorDB, force: true );
+                        UpdateJsonDB( settings, editorDB, force: true );
                     }
                     catch ( Exception e )
                     {
                         Debug.LogError( $"[{nameof(GDDBUpdater)}]-[{nameof(OnPreprocessBuild)}] Exception {e} while saving GDDB. Build aborted." );
                         throw new BuildFailedException( e );
                     }
-                    _isDBDirty = false;
                 }
                 else
                 {
@@ -92,16 +90,17 @@ namespace GDDB.Editor
             }
         }
 
-        private static void UpdateJsonDB(UpdateDBSettings settings, GdDb editorDB )
+        public static Boolean UpdateJsonDB(UpdateDBSettings settings, GdDb editorDB, Boolean force = false )
         {
             if ( settings.UpdateJsonDB && !String.IsNullOrEmpty( settings.JsonDBPath ) 
-                && (_isDBDirty || !File.Exists( settings.JsonDBPath ) || (!string.IsNullOrEmpty(settings.JsonAssetsReferencePath) && !File.Exists( settings.JsonAssetsReferencePath ))) )
+                && (_isDBDirty || force || !File.Exists( settings.JsonDBPath ) || (!string.IsNullOrEmpty(settings.JsonAssetsReferencePath) && !File.Exists( settings.JsonAssetsReferencePath ))) )
             {
                 var serializer      = new DBJsonSerializer();
                 var rootFolder      = editorDB.RootFolder;
                 var assetReferencer = ScriptableObject.CreateInstance<DirectAssetReferences>();
                 var json            = serializer.Serialize( rootFolder, editorDB.AllObjects, assetReferencer );
-                File.WriteAllText( settings.JsonDBPath, json );
+                var indent          = BuildPipeline.isBuildingPlayer ? settings.JsonDBPlayerIndent : settings.JsonDBEditorIndent;
+                File.WriteAllText( settings.JsonDBPath, indent > 0 ? json.ToString( indent ) : json.ToString() );
                 var jsonLog = $"Saved GDDB to json format to {settings.JsonDBPath}";
                 if ( !String.IsNullOrEmpty( settings.JsonAssetsReferencePath ) )
                 {
@@ -111,13 +110,17 @@ namespace GDDB.Editor
                 }
                     
                 Debug.Log( $"[{nameof(GDDBUpdater)}]-[{nameof(OnPreprocessBuild)}] " + jsonLog );
+
+                return true;
             }
+
+            return false;
         }
 
-        private static void UpdateScriptableObjectDB(UpdateDBSettings settings, GdDb editorDB )
+        public static void UpdateScriptableObjectDB(UpdateDBSettings settings, GdDb editorDB, Boolean force = false )
         {
             if ( settings.UpdateScriptableObjectDB && !String.IsNullOrEmpty( settings.ScriptableObjectDBPath )
-                && (_isDBDirty || !AssetDatabase.LoadAssetAtPath<DBAsset>( settings.ScriptableObjectDBPath ) ) )
+                && (_isDBDirty || force|| !AssetDatabase.LoadAssetAtPath<DBScriptableObject>( settings.ScriptableObjectDBPath ) ) )
             {
                 var serializer = new DBScriptableObjectSerializer();
                 var rootFolder = editorDB.RootFolder;

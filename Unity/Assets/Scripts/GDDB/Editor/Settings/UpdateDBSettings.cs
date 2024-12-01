@@ -14,6 +14,8 @@ namespace GDDB.Editor
         public String  ScriptableObjectDBPath   = "Assets/Resources/DefaultGDDB.asset";
         public Boolean UpdateJsonDB             = true;
         public String  JsonDBPath               = "Assets/StreamingAssets/DefaultGDDB.json";
+        public Int32   JsonDBEditorIndent             = 4;
+        public Int32   JsonDBPlayerIndent             = 0;
         public String  JsonAssetsReferencePath  = "Assets/Resources/DefaultGDDBAssetsRef.asset";
 
         private void OnDestroy( )

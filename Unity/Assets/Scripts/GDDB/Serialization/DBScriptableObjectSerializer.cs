@@ -10,7 +10,7 @@ namespace GDDB.Serialization
     /// </summary>
     public class DBScriptableObjectSerializer
     {
-        public DBAsset Serialize( Folder rootFolder )
+        public DBScriptableObject Serialize( Folder rootFolder )
         {
             var timer = new System.Diagnostics.Stopwatch();
 
@@ -27,7 +27,7 @@ namespace GDDB.Serialization
                 folders.Add( serializableFolder );
             }
 
-            var result = ScriptableObject.CreateInstance<DBAsset>();
+            var result = ScriptableObject.CreateInstance<DBScriptableObject>();
             result.Folders = folders; 
             result.Hash = rootFolder.GetFoldersStructureChecksum();
 
@@ -37,18 +37,18 @@ namespace GDDB.Serialization
             return result;
         }       
 
-        public Folder Deserialize( DBAsset asset )
+        public Folder Deserialize( DBScriptableObject dbso )
         {
-            if ( asset.Folders.Count == 0 )
+            if ( dbso.Folders.Count == 0 )
                 return null;
 
             var timer = new System.Diagnostics.Stopwatch();
 
             var index = 0;
-            var rootFolder = LoadFolder( asset.Folders, ref index, null );
+            var rootFolder = LoadFolder( dbso.Folders, ref index, null );
 
             timer.Stop();
-            Debug.Log( $"[{nameof(DBScriptableObjectSerializer)}]-[{nameof(Deserialize)}] deserialized db folders from Scriptable object {asset.name} for {timer.ElapsedMilliseconds} ms" );
+            Debug.Log( $"[{nameof(DBScriptableObjectSerializer)}]-[{nameof(Deserialize)}] deserialized db folders from Scriptable object {dbso.name} for {timer.ElapsedMilliseconds} ms" );
 
             return rootFolder;
         }

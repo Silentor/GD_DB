@@ -12,19 +12,18 @@ namespace GDDB.Serialization
         private readonly CustomSampler _jsonParserTimer = CustomSampler.Create( "DBJsonSerializer.SimpleJSON.Parse" );
 
 #if UNITY_EDITOR
-        public String Serialize( Folder rootFolder, IReadOnlyList<GDObject> objects, IGdAssetResolver assetsResolver )
+        public JSONObject Serialize( Folder rootFolder, IReadOnlyList<GDObject> objects, IGdAssetResolver assetsResolver )
         {
             var timer             = System.Diagnostics.Stopwatch.StartNew();
 
             var objectsSerializer = new ObjectsJsonSerializer();
             var folderSerializer  = new FoldersJsonSerializer();
             var foldersJson       = folderSerializer.Serialize( rootFolder, objectsSerializer );
-            var result = foldersJson.ToString( 1 );
 
             timer.Stop();
             Debug.Log( $"[{nameof(DBJsonSerializer)}]-[{nameof(Serialize)}] serialized db to json, objects {objects.Count}, folders {rootFolder.EnumerateFoldersDFS(  ).Count()} referenced {assetsResolver.Count} assets, time {timer.ElapsedMilliseconds} ms" );
 
-            return result;
+            return foldersJson;
         }
 #endif
 

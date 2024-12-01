@@ -102,35 +102,20 @@ namespace GDDB.Editor
         {
             if ( String.IsNullOrEmpty( updateSettings.ScriptableObjectDBPath ) ) throw new InvalidOperationException( "Output path is empty" );
 
-            var editorDB   = GDBEditor.GDB;
-            var serializer = new DBScriptableObjectSerializer();
-            var soDB       = serializer.Serialize( editorDB.RootFolder );
-            AssetDatabase.CreateAsset( soDB, updateSettings.ScriptableObjectDBPath );
+            GDDBUpdater.UpdateScriptableObjectDB( updateSettings, GDBEditor.GDB );
+            var result = AssetDatabase.LoadAssetAtPath<DBScriptableObject>( updateSettings.ScriptableObjectDBPath  );
+            if( result )
+                EditorGUIUtility.PingObject( result );
+
             if ( Validator.Reports.Count > 0 ) Debug.LogError( $"[{nameof(ControlWindow)}] GDDB validation errors detected, count {Validator.Reports.Count}" );
-            if ( AssetDatabase.Contains( soDB ) )
-            {
-                Debug.Log( $"[{nameof(ControlWindow)}] GDDB saved to scriptable object {updateSettings.ScriptableObjectDBPath}", soDB );
-                EditorGUIUtility.PingObject( soDB );
-            }
         }
 
         private void SaveGDDBToJson( UpdateDBSettings updateSettings )
         {
             if ( String.IsNullOrEmpty( updateSettings.JsonDBPath ) ) throw new InvalidOperationException( "Output path is empty" );
 
-            var editorDB        = GDBEditor.GDB;
-            var serializer      = new DBJsonSerializer();
-            var assetsReference = CreateInstance<DirectAssetReferences>();
-            var jsonDBStr       = serializer.Serialize( editorDB.RootFolder, editorDB.AllObjects, assetsReference );
-            File.WriteAllText( updateSettings.JsonDBPath, jsonDBStr );
-            Debug.Log( $"[{nameof(ControlWindow)}] GDDB json file saved to {updateSettings.JsonDBPath}" );
+            GDDBUpdater.UpdateJsonDB( updateSettings, GDBEditor.GDB, true );
             EditorUtility.RevealInFinder( updateSettings.JsonDBPath );
-
-            if ( !String.IsNullOrEmpty( updateSettings.JsonAssetsReferencePath ) )
-            {
-                AssetDatabase.CreateAsset( assetsReference, updateSettings.ScriptableObjectDBPath );
-                Debug.Log( $"[{nameof(ControlWindow)}] GDDB assets reference saved to {updateSettings.JsonAssetsReferencePath}" );
-            }
 
             if ( Validator.Reports.Count > 0 ) Debug.LogError( $"[{nameof(ControlWindow)}] GDDB validation errors detected, count {Validator.Reports.Count}" );
         }
