@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using SimpleJSON;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.Profiling;
 
@@ -12,7 +12,7 @@ namespace GDDB.Serialization
         private readonly CustomSampler _jsonParserTimer = CustomSampler.Create( "DBJsonSerializer.SimpleJSON.Parse" );
 
 #if UNITY_EDITOR
-        public JSONObject Serialize( Folder rootFolder, IReadOnlyList<GDObject> objects, IGdAssetResolver assetsResolver )
+        public JObject Serialize( Folder rootFolder, IReadOnlyList<GDObject> objects, IGdAssetResolver assetsResolver )
         {
             var timer             = System.Diagnostics.Stopwatch.StartNew();
 

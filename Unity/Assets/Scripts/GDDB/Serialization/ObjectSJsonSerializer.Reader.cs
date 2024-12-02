@@ -4,8 +4,10 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using Newtonsoft.Json;
 using SimpleJSON;
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.Profiling;
 using Object = System.Object;
 
@@ -29,7 +31,7 @@ namespace GDDB.Serialization
             return Deserialize( JSONNode.Parse( json ).AsObject, assetResolver );
         }
 
-        public GDObject Deserialize( JSONObject json, IGdAssetResolver assetResolver = null )
+        public GDObject Deserialize( JsonReader json, IGdAssetResolver assetResolver = null )
         {
             _assetResolver    = assetResolver ?? NullGdAssetResolver.Instance;
 
@@ -106,20 +108,33 @@ namespace GDDB.Serialization
             _resolveObjectSampler.End();
         }
 
-        private GDObject ReadGDObjectFromJson( JSONObject gdObj )
+        private GDObject ReadGDObjectFromJson( JsonReader json )
         {
-            var name    = gdObj[ ".Name" ].Value;
-            var type    = gdObj.HasKey( ".Type" ) ? Type.GetType( gdObj[ ".Type" ].Value ) : typeof(GDObject);
-            var guid    = Guid.ParseExact( gdObj[ ".Ref" ].Value, "D" );
-            var enabled = !gdObj.HasKey( ".Enabled" ) || gdObj[ ".Enabled" ].AsBool;
+            //json.Read();        Assert.IsTrue( json.TokenType == JsonToken.StartObject );
+            json.Read();        Assert.IsTrue( json.TokenType == JsonToken.PropertyName && (String)json.Value == ".Name" );      
+            var name = json.ReadAsString()!;
+
+            Type type = typeof(GDObject);
+            Guid guid;
+            var  propName = json.ReadAsString();        Assert.IsTrue( json.TokenType == JsonToken.PropertyName );
+            if ( propName == ".Type" )
+            {
+                type     = Type.GetType( json.ReadAsString()! );
+                propName = json.ReadAsString();        Assert.IsTrue( json.TokenType == JsonToken.PropertyName );
+            }
+            Assert.IsTrue( propName == ".Ref" );
+            guid = Guid.ParseExact( json.ReadAsString()!, "D" );
+
             var obj     = GDObject.CreateInstance( type ).SetGuid( guid );
             obj.hideFlags     = HideFlags.HideAndDontSave;
             obj.name          = name;
-            obj.EnabledObject = enabled;
 
             try
             {
                 //Components should be read from reserved property
+                json.Read();        Assert.IsTrue( json.TokenType == JsonToken.PropertyName && (String)json.Value == ".Components" );    
+                
+
                 var componentsProp = gdObj[ ".Components" ].AsArray;
                 for ( var i = 0; i < componentsProp.Count; i++ )
                 {

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using SimpleJSON;
 using UnityEngine;
 using UnityEngine.Scripting;
@@ -12,20 +14,19 @@ namespace GDDB.Serialization
     {
         public abstract Type SerializedType { get; }
 
-        public abstract JSONNode Serialize(  Object obj );
+        public abstract JToken Serialize(  Object obj );
 
-        public abstract Object Deserialize( JSONNode json );
+        public abstract Object Deserialize( JsonReader json );
     }
 
     public class Vector3Serializer : TypeCustomSerializer
     {
         public override Type SerializedType => typeof( Vector3 );
 
-        public override JSONNode Serialize(  Object obj )
+        public override JToken Serialize(  Object obj )
         {
             var vector3 = (UnityEngine.Vector3) obj;
-            var result = new JSONArray();
-            result.WriteVector3( vector3 );
+            var result = new JArray { vector3.x, vector3.y, vector3.z };
             return result;
         }
 
