@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEngine;
@@ -361,26 +362,26 @@ namespace GDDB.Serialization
 
     public class JsonPropertyException : Exception
     {
-        public String PropertyName { get; }
-        public JToken JToken       { get; }
+        public String     PropertyName { get; }
+        public JsonReader Json       { get; }
 
         public JsonPropertyException()
         {
             
         }
 
-        public JsonPropertyException( String propertyName, JToken jToken, string message )
+        public JsonPropertyException( String propertyName, JsonReader json, string message )
                 : base(message)
         {
             PropertyName = propertyName;
-            JToken  = jToken;
+            Json  = json;
         }
 
-        public JsonPropertyException(String propertyName, JToken jToken, string message, Exception inner )
+        public JsonPropertyException(String propertyName, JsonReader json, string message, Exception inner )
                 : base(message, inner)
         {
             PropertyName = propertyName;
-            JToken  = jToken;
+            Json  = json;
         }
     }
 
@@ -413,21 +414,21 @@ namespace GDDB.Serialization
 
     public class JsonComponentException : Exception
     {
-        public Int32    ComponentIndex { get; }
-        public JToken JToken         { get; }
+        public Int32      ComponentIndex { get; }
+        public JsonReader JToken         { get; }
 
         public JsonComponentException()
         {
         }
 
-        public JsonComponentException( Int32 index, JToken jToken, string message)
+        public JsonComponentException( Int32 index, JsonReader jToken, string message)
                 : base(message)
         {
             ComponentIndex = index;
             JToken         = jToken;
         }
 
-        public JsonComponentException( Int32 index, JToken jToken, string message, Exception inner)
+        public JsonComponentException( Int32 index, JsonReader jToken, string message, Exception inner)
                 : base(message, inner)
         {
             ComponentIndex = index;
