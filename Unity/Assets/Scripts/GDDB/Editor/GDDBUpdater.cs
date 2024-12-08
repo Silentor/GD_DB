@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using GDDB.Serialization;
+using Newtonsoft.Json;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -100,7 +101,7 @@ namespace GDDB.Editor
                 var assetReferencer = ScriptableObject.CreateInstance<DirectAssetReferences>();
                 var json            = serializer.Serialize( rootFolder, editorDB.AllObjects, assetReferencer );
                 var indent          = BuildPipeline.isBuildingPlayer ? settings.JsonDBPlayerIndent : settings.JsonDBEditorIndent;
-                File.WriteAllText( settings.JsonDBPath, indent > 0 ? json.ToString( indent ) : json.ToString() );
+                File.WriteAllText( settings.JsonDBPath, indent > 0 ? json.ToString( Formatting.Indented ) : json.ToString( Formatting.None ) );
                 var jsonLog = $"Saved GDDB to json format to {settings.JsonDBPath}";
                 if ( !String.IsNullOrEmpty( settings.JsonAssetsReferencePath ) )
                 {

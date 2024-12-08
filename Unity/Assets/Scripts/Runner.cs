@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using GDDB;
 using GDDB.Serialization;
@@ -162,17 +163,6 @@ namespace GDDB_User
                 return prop.PropertyType.Name;
 
             return "???";
-        }
-
-        public void LoadJSONViaSimpleJSON( )
-        {
-              var jsonStr = File.ReadAllText( Application.streamingAssetsPath + "/DefaultGDDB.json" );
-
-              var timer = System.Diagnostics.Stopwatch.StartNew();
-              _sjsonSampler.Begin();
-              var json    = SimpleJSON.JSON.Parse( jsonStr );
-              _sjsonSampler.End();
-              Debug.Log( $"Simple json parse {timer.ElapsedMilliseconds} ms" );
         }
 
         public void LoadJSONViaJsonNet( )

@@ -2,10 +2,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using Newtonsoft.Json;
-using SimpleJSON;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.Profiling;
@@ -27,14 +29,24 @@ namespace GDDB.Serialization
 
         public GDObject Deserialize( String json, IGdAssetResolver assetResolver = null )
         {
-            return Deserialize( JSONNode.Parse( json ).AsObject, assetResolver );
+            using var strReader = new StringReader( json );
+            using var jsonReader = new JsonTextReader( strReader );
+            jsonReader.EnsureNextToken( JsonToken.StartObject );
+            return Deserialize( jsonReader, assetResolver );
         }
 
+        /// <summary>
+        /// Reader stands on StartObject token
+        /// </summary>
+        /// <param name="json"></param>
+        /// <param name="assetResolver"></param>
+        /// <returns></returns>
         public GDObject Deserialize( JsonReader json, IGdAssetResolver assetResolver = null )
         {
             _assetResolver    = assetResolver ?? NullGdAssetResolver.Instance;
 
             _deserObjectSampler.Begin();
+            json.EnsureToken( JsonToken.StartObject );
             var result = ReadGDObjectFromJson( json );
             _deserObjectSampler.End();
 
@@ -58,8 +70,8 @@ namespace GDDB.Serialization
                 {
                     if ( unresolvedReference.Field.FieldType.IsArray )
                     {
-                        var result = Array.CreateInstance( unresolvedReference.Field.FieldType.GetElementType(), unresolvedReference.Guids.Length );
-                        for ( int i = 0; i < unresolvedReference.Guids.Length; i++ )
+                        var result = Array.CreateInstance( unresolvedReference.Field.FieldType.GetElementType(), unresolvedReference.Guids.Count );
+                        for ( int i = 0; i < unresolvedReference.Guids.Count; i++ )
                         {
                             var guid           = unresolvedReference.Guids[i];
                             var resolvedObject = _loadedObjects.FirstOrDefault( gdo => gdo.Guid == guid );
@@ -77,7 +89,7 @@ namespace GDDB.Serialization
                     else
                     {
                         var result = (IList)Activator.CreateInstance( unresolvedReference.Field.FieldType );
-                        for ( int i = 0; i < unresolvedReference.Guids.Length; i++ )
+                        for ( int i = 0; i < unresolvedReference.Guids.Count; i++ )
                         {
                             var guid           = unresolvedReference.Guids[i];
                             var resolvedObject = _loadedObjects.FirstOrDefault( gdo => gdo.Guid == guid );
@@ -109,14 +121,19 @@ namespace GDDB.Serialization
 
         private GDObject ReadGDObjectFromJson( JsonReader json )
         {
-            EnsureToken( json, JsonToken.StartObject );
-            var name = ReadPropertyString(json, ".Name", false );
+            json.EnsureToken( JsonToken.StartObject );
+            var name = json.ReadPropertyString( ".Name", false );
 
             var type = typeof(GDObject);
-            var  propName = json.ReadAsString();        Assert.IsTrue( json.TokenType == JsonToken.PropertyName );
-            if ( propName == ".Type" )                
-                type     = Type.GetType( json.ReadAsString()! );
-            var guid = Guid.ParseExact( ReadPropertyString( json, ".Ref", true ), "D" );
+            var guid = default(Guid);
+            var  propName = json.ReadPropertyName();
+            if ( propName == ".Type" )
+            {
+                type = Type.GetType( json.ReadAsString()! );
+                guid = Guid.ParseExact( json.ReadPropertyString( ".Ref", false ), "D" );
+            }
+            else
+                guid = Guid.ParseExact( json.ReadPropertyString( ".Ref", true ), "D" );
 
             var obj     = GDObject.CreateInstance( type ).SetGuid( guid );
             obj.hideFlags     = HideFlags.HideAndDontSave;
@@ -125,9 +142,8 @@ namespace GDDB.Serialization
             try
             {
                 //Components should be read from reserved property
-                EnsureNextToken( json, JsonToken.PropertyName );
-                Assert.IsTrue( (String)json.Value == ".Components" );
-                EnsureNextToken( json, JsonToken.StartArray );
+                json.EnsureNextProperty( ".Components" );
+                json.EnsureNextToken( JsonToken.StartArray );
 
                 json.Read();
                 var objectStartOrArrayEnd = json.TokenType;
@@ -141,42 +157,50 @@ namespace GDDB.Serialization
                     catch ( Exception e )
                     {
                         throw new JsonComponentException( obj.Components.Count, json,
-                                $"Error reading component index {obj.Components.Count} of GDObject {obj.Name} ({obj.Guid}) from json {json}", e );
+                                $"Error reading component index {obj.Components.Count} of GDObject {obj.Name} ({obj.Guid}) from {json.Path}", e );
                     }
-                    
+
+                    json.Read();
                     objectStartOrArrayEnd = json.TokenType;
                 }
-                EnsureToken( json, JsonToken.EndArray );
+                json.EnsureToken( JsonToken.EndArray );
 
-                if ( type != typeof(GDObject) )         //It can be descendants properties
+                if ( type != typeof(GDObject) )         //There are can be descendants properties
                 {
-                    throw new NotImplementedException();
+                    json.Read();
+                    if( json.TokenType == JsonToken.PropertyName )
+                    {
+                        ReadObjectPropertiesFromJson( json, obj );
+                    }
                 }
-                
+                else
+                    json.EnsureNextToken( JsonToken.EndObject );
+
                 return obj;
             }
             catch ( Exception e )
             {
-                throw new JsonObjectException( obj.Name, obj.GetType(), gdObj,
-                        $"Error reading object {obj.Name} of type {obj.GetType()} from jobject {gdObj}", e );
+                throw new JsonObjectException( obj.Name, obj.GetType(), json,
+                        $"Error reading object {obj.Name} of type {obj.GetType()} from {json.Path}", e );
             }
         }
 
         private Object ReadObjectFromJson( JsonReader json, Type propertyType )
         {
-            EnsureToken( json, JsonToken.StartObject );
+            json.EnsureToken( JsonToken.StartObject );
             json.Read();
 
             if( json.TokenType == JsonToken.EndObject )
                 return new Object();                    //Unity doesn't deserialize null objects
             
-            EnsureToken( json, JsonToken.PropertyName );
+            json.EnsureToken( JsonToken.PropertyName );
 
             var objectType = propertyType;
             if ( (String)json.Value == ".Type" )
             {
                 var typeStr = json.ReadAsString()!;
                 objectType = Type.GetType( typeStr );
+                json.Read();                                //Step on object next property name (or end object if no properties present)
                 if( objectType == null )
                     throw new InvalidOperationException( $"[{nameof(ObjectsJsonSerializer)}]-[{nameof(ReadObjectFromJson)}] Cannot create Type from type string '{typeStr}'" );
             }
@@ -190,14 +214,19 @@ namespace GDDB.Serialization
             }
 
             var obj = defaultConstructor.Invoke( Array.Empty<Object>() );
-
             ReadObjectPropertiesFromJson( json, obj );
 
-            EnsureToken( json, JsonToken.EndObject );
+            json.EnsureToken( JsonToken.EndObject );
 
             return obj;
         }
 
+        /// <summary>
+        /// Reader stands on PropertyName token or EndObject token
+        /// </summary>
+        /// <param name="json"></param>
+        /// <param name="obj"></param>
+        /// <exception cref="JsonPropertyException"></exception>
         private void ReadObjectPropertiesFromJson( JsonReader json, Object obj )
         {
             var propNameOrEndObject = json.TokenType;
@@ -205,90 +234,100 @@ namespace GDDB.Serialization
                 return;
 
             var fields = GetTypeFields( obj.GetType() );
-            var propName = (String)json.Value;
-            var field = fields.FirstOrDefault( f => f.Name == propName );
-            if ( field == null )
+
+            do
             {
-                json.Skip();
-            }
-            else
-            {
-                if ( IsFieldSerializable( field ) )
-                {
-                    try
-                    {
-                        var value = ReadSomethingFromJson( json, field.FieldType );
-                        if ( value is UnresolvedGDObjectReference gdRef )                        //Should be resolved after all objects deserialization
-                        {
-                            gdRef.TargetObject = obj;
-                            gdRef.Field        = field;
-                            _unresolvedReferences.Add( gdRef );
-                        }
-                        else
-                            field.SetValue( obj, value );
-                    }
-                    catch ( Exception ex )
-                    {
-                        throw new JsonPropertyException( field.Name, json, $"Error setting field {field} from json {json}", ex );
-                    }
-                }
-                else
+                var propName = (String)json.Value;
+                var field    = fields.FirstOrDefault( f => f.Name == propName );
+                if ( field == null )
                 {
                     json.Skip();
                 }
+                else
+                {
+                    if ( IsFieldSerializable( field ) )
+                    {
+                        try
+                        {
+                            var value = ReadSomethingFromJson( json, field.FieldType );
+                            if ( value is UnresolvedGDObjectReference gdRef )                        //Should be resolved after all objects deserialization
+                            {
+                                gdRef.TargetObject = obj;
+                                gdRef.Field        = field;
+                                _unresolvedReferences.Add( gdRef );
+                            }
+                            else
+                                field.SetValue( obj, value );
+                        }
+                        catch ( Exception ex )
+                        {
+                            throw new JsonPropertyException( field.Name, json, $"Error setting field {field} from json {json.Path}", ex );
+                        }
+                    }
+                    else
+                    {
+                        json.Skip();
+                    }
+                }
+                json.Read();
+                propNameOrEndObject = json.TokenType;
             }
+            while( propNameOrEndObject != JsonToken.EndObject );
 
-
-            EnsureToken( json, JsonToken.EndObject );
+            json.EnsureToken( JsonToken.EndObject );
         }
 
-        private Object ReadSomethingFromJson( JsonReader value, Type propertyType )
+        private Object ReadSomethingFromJson( JsonReader json, Type propertyType )
         {
+            json.Read();
+            if( json.TokenType == JsonToken.EndArray || json.TokenType == JsonToken.EndObject )
+                return null;
+
+            UnityEngine.Debug.Log( $"Reading value {json.Path} of type {propertyType}" );
+
             if ( propertyType == typeof(Char) )
             {
-                return value.ReadAsString()![0];
+                return Convert.ChangeType(json.Value, propertyType);
             }
             else if ( propertyType == typeof(String) )
             {
-                return value.ReadAsString();
+                return (String)json.Value;
             }
             else if ( propertyType.IsPrimitive )
             {
                 if( propertyType == typeof(Boolean) )
-                    return value.ReadAsBoolean();
-                if( propertyType == typeof(Single) || propertyType == typeof(Double) )
-                    return value.ReadAsDouble();
-                if ( propertyType == typeof(Int64) )
+                    return (Boolean)json.Value;
+                if ( json.ValueType == typeof(BigInteger) )
                 {
-                    value.Read();
-                    return (Int64)value.Value;
+                    var bigInt = (BigInteger)json.Value;
+                    if( propertyType == typeof(Int64) )
+                        return (Int64)bigInt;
+                    if( propertyType == typeof(UInt32) )
+                        return (UInt32)bigInt;
+                    if( propertyType == typeof(UInt64) )
+                        return (UInt64)bigInt;
+                    if( propertyType == typeof(Single) )
+                        return (Single)bigInt;
+                    if( propertyType == typeof(Double) )
+                        return (Double)bigInt;
                 }
-                if ( propertyType == typeof(UInt64) )
-                {
-                    value.Read();
-                    return (UInt64)value.Value;
-                }
-                if ( propertyType == typeof(UInt32) )
-                {
-                    value.Read();
-                    return (UInt32)value.Value;
-                }
-                return value.ReadAsInt32();
+                
+                return Convert.ChangeType(json.Value, propertyType);
             }
             else if ( propertyType.IsEnum )
             {
-                if( Enum.TryParse( propertyType, value.ReadAsString(), out var enumValue ) )
+                if( Enum.TryParse( propertyType, (String)json.Value, out var enumValue ) )
                     return enumValue;
                 else
                     return null;                                //do not change default value
             }
             else if ( propertyType.IsArray || (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() ==  typeof(List<>) ) )
             {
-                return ReadCollectionFromJson( value, propertyType );
+                return ReadCollectionFromJson( json, propertyType );
             }
             else if ( typeof(GDObject).IsAssignableFrom( propertyType ) )
             {
-                var guidStr = value.ReadAsString()!;
+                var guidStr = (String)json.Value;
                 var guid    = Guid.ParseExact( guidStr, "D" );
                 var referencedObj = _loadedObjects.FirstOrDefault( gdo => gdo.Guid == guid );
                 if( referencedObj )
@@ -298,60 +337,71 @@ namespace GDDB.Serialization
             }
             else if ( _serializers.TryGetValue( propertyType, out var deserializer ) )
             {
-                return deserializer.Deserialize( value );
+                return deserializer.Deserialize( json );
             }
             else if ( typeof(UnityEngine.Object).IsAssignableFrom( propertyType ) )      //Read Unity asset by reference
             {
-                EnsureNextToken( value, JsonToken.StartObject );
-                value.Read();
+                json.EnsureToken( JsonToken.StartObject );
+                json.Read();
 
-                if( value.TokenType == JsonToken.EndObject )
+                if( json.TokenType == JsonToken.EndObject )
                     return null;
 
-                var guidStr = ReadPropertyString( value, ".Ref", true );
-                var localId = ReadPropertyLong( value, ".Id", false );
+                var guidStr = json.ReadPropertyString( ".Ref", true );
+                var localId = json.ReadPropertyLong( ".Id", false );
 
                 if( !_assetResolver.TryGetAsset( guidStr, localId, out var asset ) )
                     Debug.LogError( $"Error resolving Unity asset reference {guidStr} : {localId}, type {propertyType}" );
+                json.EnsureNextToken( JsonToken.EndObject );
                 return asset;
             }
             else
             {
-                return ReadObjectFromJson( value, propertyType );
+                return ReadObjectFromJson( json, propertyType );
             }
         }
  
         private Object ReadCollectionFromJson( JsonReader json, Type type )
         {
-            EnsureNextToken( json, JsonToken.StartArray );
+            json.EnsureToken( JsonToken.StartArray );
 
-            if ( type.IsArray )                   //Array class not handled
+            if ( type.IsArray )                   //Old Array class not handled
             {
                 var elementType = type.GetElementType() ?? typeof(Object);
                 if ( elementType == typeof(GDObject) )
-                    return GetUnresolvedGDORefCollection( jArray);
+                    return GetUnresolvedGDORefCollection( json);
 
                 var bufferType = typeof(List<>).MakeGenericType( elementType );
-                var list       = (IList)Activator.CreateInstance( bufferType );
+                var buffer       = (IList)Activator.CreateInstance( bufferType );
 
-                json.Read();
-                while ( json.TokenType != JsonToken.EndArray)
+                while ( true )
                 {
-                    list.Add( ReadSomethingFromJson( json, elementType ) );
+                    var collectionValue = ReadSomethingFromJson( json, elementType );
+                    if( json.TokenType == JsonToken.EndArray )
+                        break;
+                    buffer.Add( collectionValue );
                 }
                 
-                return list.;
+                var result = Array.CreateInstance( elementType, buffer.Count );
+                for ( int i = 0; i < result.Length; i++ )
+                {
+                    result.SetValue( buffer[i], i );
+                }
+                return result;
             }
             else if ( type.IsGenericType && type.GetGenericTypeDefinition() ==  typeof(List<>) )
             {
                 var elementType = type.GetGenericArguments()[ 0 ];
                 if ( elementType == typeof(GDObject) )
-                    return GetUnresolvedGDORefCollection( jArray);
+                    return GetUnresolvedGDORefCollection( json );
 
                 var list        = (IList)Activator.CreateInstance( type );
-                foreach ( var valueToken in jArray )
+                while ( true )
                 {
-                    list.Add( ReadSomethingFromJson( valueToken.Value, elementType ) );
+                    var collectionValue = ReadSomethingFromJson( json, elementType );
+                    if( json.TokenType == JsonToken.EndArray )
+                        break;
+                    list.Add( collectionValue );
                 }
 
                 return list;
@@ -359,14 +409,20 @@ namespace GDDB.Serialization
 
             return null;
 
-            UnresolvedGDObjectReference GetUnresolvedGDORefCollection( JsonReader jsonArray )
+            //Read collection of references to process later
+            UnresolvedGDObjectReference GetUnresolvedGDORefCollection( JsonReader json )
             {
-                var guids = new Guid[ jsonArray.Count ];
-                for ( int i = 0; i < jsonArray.Count; i++ )                        
-                    guids[ i ] = Guid.ParseExact( jsonArray[ i ].Value, "D" );
+                var references = new List<Guid>();
+                json.Read();
+                while ( json.TokenType != JsonToken.EndArray)
+                {
+                    var guidStr = json.ReadAsString()!;
+                    references.Add( Guid.ParseExact( guidStr, "D" ) );
+                }
+               
                 return new UnresolvedGDObjectReference()
                                          {
-                                                 Guids = guids,
+                                                 Guids = references,
                                          };
             }
         }
@@ -381,9 +437,9 @@ namespace GDDB.Serialization
 
         private struct UnresolvedGDObjectReference
         {
-            //GDObject guid
-            public Guid         Guid;
-            public Guid[]       Guids;          //Collection field
+            
+            public Guid       Guid;             //GDObject field
+            public List<Guid> Guids;            //or collection of GDObjects field
 
             //Target info
             public Object  TargetObject;
@@ -484,73 +540,7 @@ namespace GDDB.Serialization
         //     return null;
         // }
         //
-        private void EnsureProperty( JsonReader reader, String propertyName )
-        {
-            if ( reader.TokenType == JsonToken.PropertyName && String.Equals( reader.Value, propertyName ) )
-            {
-                //It's ok
-            }
-            else
-                throw new Exception( $"Expected property {propertyName} but got token {reader.TokenType}, value {reader.Value}" );
-        }
-        private void EnsureNextProperty( JsonReader reader, String propertyName )
-        {
-            if ( reader.Read() )
-            {
-                EnsureProperty( reader, propertyName );
-            }
-            else
-                throw new Exception( $"Unexpected end of file" );
-        }
-        private void EnsureToken( JsonReader reader, JsonToken tokenType )
-        {
-            if ( reader.TokenType == tokenType )
-            {
-                //It's ok
-            }
-            else
-                throw new Exception( $"Expected token {tokenType} but got {reader.TokenType} = {reader.Value}" );
-        }
         
-        private void EnsureNextToken( JsonReader reader, JsonToken tokenType )
-        {
-            if ( reader.Read() )
-            {
-                EnsureToken( reader, tokenType );
-            }
-            else
-                throw new Exception( $"Unexpected end of file" );
-        }
-        
-        private String ReadPropertyString( JsonReader reader, String propertyName, Boolean alreadyOnStart )
-        {
-            if( alreadyOnStart )
-                EnsureToken( reader, JsonToken.PropertyName );
-            else
-                EnsureNextToken( reader, JsonToken.PropertyName );
-            if ( String.Equals(reader.Value, propertyName )) 
-            {
-                EnsureNextToken( reader, JsonToken.String );
-                return (String)reader.Value;
-            }
-            else
-                throw new Exception( $"Expected property {propertyName} but got {reader.Value}" );
-        }
-
-        private Int64 ReadPropertyLong( JsonReader reader, String propertyName, Boolean alreadyOnStart )
-        {
-            if( alreadyOnStart )
-                EnsureToken( reader, JsonToken.PropertyName );
-            else
-                EnsureNextToken( reader, JsonToken.PropertyName );
-            if ( String.Equals(reader.Value, propertyName )) 
-            {
-                EnsureNextToken( reader, JsonToken.String );
-                return Int64.Parse((String)reader.Value, CultureInfo.InvariantCulture);
-            }
-            else
-                throw new Exception( $"Expected property {propertyName} but got {reader.Value}" );
-        }
 
 #endregion
 

@@ -3,8 +3,9 @@ using System.IO;
 using System.Linq;
 using FluentAssertions;
 using GDDB.Serialization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NUnit.Framework;
-using SimpleJSON;
 using UnityEditor;
 using UnityEngine;
 
@@ -27,11 +28,13 @@ namespace GDDB.Tests
             Debug.Log( jsonString );
 
             //Assert
-            var jObject     = (JSONObject)JSONNode.Parse( jsonString );
-            var jComponents = (JSONArray)jObject[ ".Components" ];
-            var jsonSerComp = (JSONObject)jComponents[ 0 ][ ".Value" ];
+            var jObject     = (JObject)JToken.Parse( jsonString );
+            var jComponents = (JArray)jObject[ ".Components" ];
+            var jsonNotSerializableFieldsComponent = (JObject)jComponents[ 0 ];
 
-            Assert.That( jsonSerComp.Children, Is.Empty );
+            var properties = jsonNotSerializableFieldsComponent.Children<JProperty>();
+            Assert.That( properties.Count(), Is.EqualTo( 1 ) );
+            Assert.That( properties.First().Name, Is.EqualTo( ".Type" ) );
         }
 
         [TestCase( false, 0D, 0F,  0, 0, 0L, 0UL, "", 'a',
@@ -79,7 +82,7 @@ namespace GDDB.Tests
 
             //Act
             var serializer = new ObjectsJsonSerializer();
-            var jsonString = serializer.Serialize( testObj ).ToString( 2 );
+            var jsonString = serializer.Serialize( testObj ).ToString( );
 
             Debug.Log( jsonString );
 
@@ -102,7 +105,7 @@ namespace GDDB.Tests
 
             //Act
             var serializer = new ObjectsJsonSerializer();
-            var jsonString = serializer.Serialize( testObj );
+            var jsonString = serializer.Serialize( testObj ).ToString();
 
             Debug.Log( jsonString );
 
@@ -146,16 +149,16 @@ namespace GDDB.Tests
             Debug.Log( jsonString );
 
             //Assert json
-            var jObject     = (JSONObject)JSONNode.Parse( jsonString );
-            var jComponents = (JSONArray)jObject[ ".Components" ];
-            var jsonSerComp = (JSONObject)jComponents[ 0 ][ ".Value" ];
+            var jObject     = (JObject)JToken.Parse( jsonString );
+            var jComponents = (JArray)jObject[ ".Components" ];
+            var jsonSerComp = (JObject)jComponents[ 0 ];
 
             //Should not be serialized
-            jsonSerComp.HasKey( nameof(CollectionTestComponent.OldIntArray) ).Should().BeFalse(  );
-            jsonSerComp.HasKey( nameof(CollectionTestComponent.ClassListNonSerializable) ).Should().BeFalse(  );
+            jsonSerComp.ContainsKey( nameof(CollectionTestComponent.OldIntArray) ).Should().BeFalse(  );
+            jsonSerComp.ContainsKey( nameof(CollectionTestComponent.ClassListNonSerializable) ).Should().BeFalse(  );
 
             //Asset deserialized data
-            var copy = serializer.Deserialize( json ).Components.First() as CollectionTestComponent;
+            var copy = serializer.Deserialize( jsonString ).Components.First() as CollectionTestComponent;
             copy.OldIntArray.Should().BeEquivalentTo( new CollectionTestComponent().OldIntArray );
             copy.IntArray.Should().BeEquivalentTo( collComp.IntArray );
             copy.StrArray.Should().BeEquivalentTo( new String[] { String.Empty, String.Empty, "3" } );
@@ -186,7 +189,7 @@ namespace GDDB.Tests
 
              //Act
              var serializer = new ObjectsJsonSerializer();
-             var jsonString = serializer.Serialize( obj );
+             var jsonString = serializer.Serialize( obj ).ToString();
              Debug.Log( jsonString );
              var copyObj = serializer.Deserialize( jsonString );
 
@@ -210,9 +213,9 @@ namespace GDDB.Tests
 
                 //Act
                 var serializer  = new ObjectsJsonSerializer();
-                var jsonString1 = serializer.Serialize( obj1 ).ToString(2);
-                var jsonString2 = serializer.Serialize( obj2 ).ToString(2);
-                var jsonString3 = serializer.Serialize( obj3 ).ToString(2);
+                var jsonString1 = serializer.Serialize( obj1 ).ToString();
+                var jsonString2 = serializer.Serialize( obj2 ).ToString();
+                var jsonString3 = serializer.Serialize( obj3 ).ToString();
                 Debug.Log( jsonString1 );
                 Debug.Log( jsonString2 );
                 Debug.Log( jsonString3 );
@@ -242,7 +245,7 @@ namespace GDDB.Tests
 
                 //Act
                 var serializer = new ObjectsJsonSerializer();
-                var jsonString = serializer.Serialize( obj1 ).ToString(2);
+                var jsonString = serializer.Serialize( obj1 ).ToString();
                 Debug.Log( jsonString );
                 var copyObjects = serializer.Deserialize( jsonString );
 
@@ -274,7 +277,7 @@ namespace GDDB.Tests
 
                 //Act
                 var serializer = new ObjectsJsonSerializer();
-                var jsonString = serializer.Serialize( obj1 ).ToString( 2 );
+                var jsonString = serializer.Serialize( obj1 ).ToString( );
                 Debug.Log( jsonString );
                 var copyObjects = serializer.Deserialize( jsonString );
 
@@ -306,8 +309,9 @@ namespace GDDB.Tests
 
                 //Act
                 var serializer = new ObjectsJsonSerializer();
-                var jsonString = serializer.Serialize( obj );
+                var jsonString = serializer.Serialize( obj ).ToString();
                 Debug.Log( jsonString );
+                DumpJsonTokens( jsonString );
                 var copyObjects = serializer.Deserialize( jsonString );
                 var copy = (TestObjectAwakeEnable)copyObjects;
 
@@ -338,7 +342,7 @@ namespace GDDB.Tests
 
                 //Act
                 var serializer = new ObjectsJsonSerializer();
-                var jsonString = serializer.Serialize( obj , testAssetResolver );
+                var jsonString = serializer.Serialize( obj , testAssetResolver ).ToString();
                 Debug.Log( jsonString );
                 var copyObjects = serializer.Deserialize( jsonString, testAssetResolver );
 
@@ -368,6 +372,7 @@ namespace GDDB.Tests
             //Act
             var serializer = new DBJsonSerializer();
             var gddbJson = serializer.Serialize( root, root.EnumerateFoldersDFS(  ).SelectMany( f => f.Objects ).ToArray() , NullGdAssetResolver.Instance ).ToString();
+            Debug.Log( gddbJson );
             var db       = new GdJsonLoader( gddbJson ).GetGameDataBase();
 
             //Assert
@@ -409,6 +414,17 @@ namespace GDDB.Tests
                 else
                 {
                         return new Folder( name, Guid.NewGuid() );
+                }
+        }
+
+        private void DumpJsonTokens( String json )
+        {
+                using var stringReader = new StringReader( json );
+                using var jsonReader = new JsonTextReader( stringReader );
+
+                while( jsonReader.Read(  ) )
+                {
+                        Debug.Log( $"{jsonReader.TokenType} = {jsonReader.Value}" );
                 }
         }
     }

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using GDDB.Serialization;
-using SimpleJSON;
+using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -98,9 +98,9 @@ namespace GDDB.Editor
                 return 0;
 
             var json    = File.ReadAllText( GDDBStructureFilePath );
-            var jObject = JSONObject.Parse( json );
-            if( jObject.HasKey( "hash") )
-                return jObject["hash"].AsULong;
+            var jObject = (JObject)JToken.Parse( json );
+            if( jObject.ContainsKey( "hash") )
+                return jObject["hash"].Value<UInt64>();
 
             return 0;
         }

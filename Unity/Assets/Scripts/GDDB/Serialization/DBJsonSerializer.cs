@@ -31,14 +31,11 @@ namespace GDDB.Serialization
         {
             var timer             = System.Diagnostics.Stopwatch.StartNew();
 
-            _jsonParserTimer.Begin();
-            var dom = JSONNode.Parse( json );
-            _jsonParserTimer.End();
-
-            var objectsSerializer = new ObjectsJsonSerializer();
-            var foldersSerializer = new FoldersJsonSerializer();
-            var foldersJson       = dom.AsObject;
-            var rootFolder        = foldersSerializer.Deserialize( foldersJson, objectsSerializer, out _ );
+            using var stringReader      = new System.IO.StringReader( json );
+            using var jsonReader        = new Newtonsoft.Json.JsonTextReader( stringReader );
+            var       objectsSerializer = new ObjectsJsonSerializer();
+            var       foldersSerializer = new FoldersJsonSerializer();
+            var       rootFolder        = foldersSerializer.Deserialize( jsonReader, objectsSerializer, out _ );
             objectsSerializer.ResolveGDObjectReferences();
 
             timer.Stop();
