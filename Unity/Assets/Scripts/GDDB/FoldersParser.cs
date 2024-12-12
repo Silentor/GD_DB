@@ -118,11 +118,6 @@ namespace GDDB.Editor
             CalculateDepth( Root );
         }
 
-        public void Print( )
-        {
-            PrintRecursively( Root, 0 );
-        }
-
         private void CalculateDepth( Folder root )
         {
             root.Depth = 0;
@@ -130,21 +125,6 @@ namespace GDDB.Editor
             {
                 if( folder.Parent != null )
                     folder.Depth = folder.Parent.Depth + 1;
-            }
-        }
-
-        private void PrintRecursively(Folder folder, int indent )
-        {
-            var indentStr = new String(' ', indent);
-            Debug.Log($"{indentStr}{folder.Name}/");
-            foreach ( var subFolder in folder.SubFolders )
-            {
-                PrintRecursively( subFolder, indent + 2 );
-            }
-
-            foreach ( var obj in folder.Objects )
-            {
-                Debug.Log($"  {indentStr}{obj.Name}");
             }
         }
 
@@ -384,17 +364,7 @@ namespace GDDB.Editor
             public String Current => _path.Substring( _prevIndex, _delimiterIndex - _prevIndex );  //todo use Span
         }
 
-        [MenuItem( "GDDB/Print hierarchy" )]
-        private static void PrintHierarchyToConsole( )
-        {
-            var  parser  = new FoldersParser();
-            if ( parser.Parse() )
-            {
-                Debug.Log( "Root folder: " + parser.Root.GetPath() );
-                parser.Print();
-            }
-            Debug.Log( "No GDDB assets found" );
-        }
+        
     }
 
 #endif

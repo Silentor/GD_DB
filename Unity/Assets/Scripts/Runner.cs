@@ -27,6 +27,8 @@ namespace GDDB_User
         [SerializeReference]
         public TestNullAbstract TestAbstract;
 
+        public TextAsset FolderJson;
+
         private GdDb _soGDDB;
         private GdDb _jsonGDDB;
         private GdDb _editorGDDB;
@@ -39,6 +41,16 @@ namespace GDDB_User
 
         private void Awake( )
         {
+            if ( FolderJson )
+            {
+                var       json       = FolderJson.text;
+                using var strReader  = new StringReader( json );
+                using var jsonReader = new Newtonsoft.Json.JsonTextReader( strReader );
+                var       deser      = new FoldersJsonSerializer();
+                var       folder     = deser.Deserialize( jsonReader, null, out var hash );
+            }
+
+
             //var loader = new GdEditorLoader( );
 
             // var all = Resources.LoadAll( "" );
@@ -49,7 +61,7 @@ namespace GDDB_User
 
             //Load GDDB from asset
             DBScriptableObject db;
-            db = DB ? DB : Resources.Load<DBScriptableObject>( "DefaultGDDB" );
+            db = DB ? DB : Resources.Load<DBScriptableObject>( "Default.folders" );
             var     aloader   = new GdScriptableObjectLoader( db );
             _soGDDB   = aloader.GetGameDataBase();
 
@@ -83,16 +95,18 @@ namespace GDDB_User
             // }
 
             //var testGetMobs = gdb.GetMobs(  );          //Source generated
+
+            
         }
 
         private void UpdateDebugLabel( )
         {
-            var    soGdbLoadedHash   = _soGDDB.RootFolder.GetFoldersStructureChecksum();
-            var    jsonGdbLoadedHash = _jsonGDDB.RootFolder.GetFoldersStructureChecksum();
+            var    soGdbLoadedHash   = _soGDDB.RootFolder.GetFoldersChecksum();
+            var    jsonGdbLoadedHash = _jsonGDDB.RootFolder.GetFoldersChecksum();
             var    generatedRootType = GetRootFolderTypeReflection( _soGDDB );
             UInt64 editorGDDBHash;
 #if UNITY_EDITOR
-            editorGDDBHash = _editorGDDB.RootFolder.GetFoldersStructureChecksum();
+            editorGDDBHash = _editorGDDB.RootFolder.GetFoldersChecksum();
             DebugOutput.text = $"Editor hash: {editorGDDBHash}\nSO GDB hash: {soGdbLoadedHash}\nJSON GDB hash: {jsonGdbLoadedHash}\nRoot sourcegen: {generatedRootType}\nRoot SO folder: {_soGDDB.RootFolder.Name}\nRoot json folder: {_jsonGDDB.RootFolder.Name}";
 
             Debug.Log( $"editor hash {editorGDDBHash}" );

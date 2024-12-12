@@ -28,8 +28,14 @@
       <Compile Include="..\Unity\Assets\Scripts\GDDB\GdId.cs">
         <Link>Stubs\GdId.cs</Link>
       </Compile>
+      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\Exceptions.cs">
+        <Link>Exceptions.cs</Link>
+      </Compile>
       <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\FoldersJsonSerializer.cs">
         <Link>FoldersSerializer.cs</Link>
+      </Compile>
+      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\JsonReaderExtensions.cs">
+        <Link>JsonReaderExtensions.cs</Link>
       </Compile>
     </ItemGroup>
 

@@ -1,7 +1,9 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using JetBrains.Annotations;
 
 namespace GDDB
@@ -57,7 +59,7 @@ namespace GDDB
             else if( Depth == 1)
                 return String.Concat( Parent.Name, "/", Name );
             else if ( Depth == 2 )
-                return String.Concat( Parent.Parent.Name, "/", Parent.Name, "/", Name );
+                return String.Concat( Parent.Parent!.Name, "/", Parent.Name, "/", Name );
 
             else return String.Concat( Parent.GetPath(),  "/", Name );
         }
@@ -94,22 +96,29 @@ namespace GDDB
         }
 
         /// <summary>
-        /// Get hash of folders tree structure
+        /// Get hash of folders tree structure (ignore objects)
         /// </summary>
         /// <returns></returns>
-        public UInt64 GetFoldersStructureChecksum( )
+        public UInt64 GetFoldersChecksum( )
         {
             var      result   = 0ul;
             foreach ( var folder in EnumerateFoldersDFS(  ) )
             {
                 unchecked
                 {
-                    var folderHash = (UInt64)folder.FolderGuid.GetHashCode() + GetStringChecksum( folder.GetPath() ) + (UInt64)Objects.Count;
+                    var folderHash = (UInt64)folder.FolderGuid.GetHashCode() + GetStringChecksum( folder.GetPath() )/* + (UInt64)Objects.Count*/;
                     result += folderHash;
                 }
             }
 
             return result;
+        }
+
+        public String ToHierarchyString( )
+        {
+            var result = new StringBuilder();
+            ToHierarchyString( 0, result );
+            return result.ToString();
         }
 
         private static Boolean IsFolderNameValid( String folderName )
@@ -151,6 +160,25 @@ namespace GDDB
                     hash = hash * 3 + c;
                 }
                 return hash;
+            }
+        }
+
+        private void ToHierarchyString( Int32 indent, StringBuilder result )
+        {
+            result.Append( ' ', indent );
+            result.Append( Name );
+            result.AppendLine( "/" );
+
+            var childIndent = indent + 2;
+            foreach ( var subFolder in SubFolders )
+            {
+                subFolder.ToHierarchyString( childIndent, result );
+            }
+
+            foreach ( var obj in Objects )
+            {
+                result.Append( ' ', childIndent );
+                result.AppendLine( obj.Name );
             }
         }
 

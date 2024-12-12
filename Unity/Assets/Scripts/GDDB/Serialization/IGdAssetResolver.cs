@@ -1,5 +1,12 @@
 ﻿using System;
 
+#if !UNITY_2021_2_OR_NEWER
+using Object = GDDB.Shims.UnityEngine.Object;
+#else
+using Object = UnityEngine.Object;
+#endif
+
+
 namespace GDDB.Serialization
 {
     /// <summary>
@@ -18,7 +25,7 @@ namespace GDDB.Serialization
         /// <param name="asset"></param>
         /// <param name="guid"></param>
         /// <param name="localId"></param>
-        void AddAsset( UnityEngine.Object asset, String guid, long localId );
+        void AddAsset( Object asset, String guid, long localId );
 
         /// <summary>
         /// Get asset during GDDB deserialization todo consider string name support for Addressables
@@ -27,18 +34,18 @@ namespace GDDB.Serialization
         /// <param name="localId"></param>
         /// <param name="asset"></param>
         /// <returns></returns>
-        Boolean TryGetAsset( String guid, long localId, out UnityEngine.Object asset );
+        Boolean TryGetAsset( String guid, long localId, out Object asset );
     }
 
     public class NullGdAssetResolver : IGdAssetResolver
     {
         public Int32 Count => 0;
 
-        public void AddAsset(UnityEngine.Object asset, String guid, long localId )
+        public void AddAsset(Object asset, String guid, long localId )
         {
         }
 
-        public Boolean TryGetAsset( String guid, long localId, out UnityEngine.Object asset )
+        public Boolean TryGetAsset( String guid, long localId, out Object asset )
         {
             asset = null;
             return true;

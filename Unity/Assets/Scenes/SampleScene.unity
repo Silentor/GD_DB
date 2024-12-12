@@ -1283,10 +1283,14 @@ PrefabInstance:
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: DB
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 11400000, guid: 812ad8b2b5e0d76408d1f46142bb0ca0, type: 2}
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: TestField
       value: 141
+      objectReference: {fileID: 0}
+    - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
+      propertyPath: FolderJson
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: TestObject

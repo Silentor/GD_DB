@@ -18,20 +18,6 @@ namespace GDDB.Editor
         private String[]           _verbs;
         private string[]           _types;
 
-        [MenuItem( "GDDB/Generate GDDB" )]
-        private static void ShowWindow( )
-        {
-            // if ( !Directory.Exists( "Assets/TestFile/" ) )
-            //     Directory.CreateDirectory( "Assets/TestFile/" );
-            // File.AppendAllText( "Assets/TestFile/file.txt", "test text" );
-            // AssetDatabase.Refresh();
-            // return;
-
-            var window = GetWindow<StressTestDBGenerator>();
-            window.titleContent = new GUIContent( "GDDB Generator" );
-            window.Show();
-        }
-
         private void OnDestroy( )
         {
             StressTestSettings.instance.Save();

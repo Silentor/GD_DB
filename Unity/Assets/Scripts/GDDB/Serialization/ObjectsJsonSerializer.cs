@@ -5,9 +5,12 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using Newtonsoft.Json.Linq;
+using Object = System.Object;
+
+#if UNITY_2021_2_OR_NEWER
 using UnityEditor;
 using UnityEngine;
-using Object = System.Object;
+#endif
 
 namespace GDDB.Serialization
 {
@@ -15,6 +18,7 @@ namespace GDDB.Serialization
     {
         public ObjectsJsonSerializer( )
         {
+#if UNITY_2021_2_OR_NEWER
             AddSerializer( new Vector3Serializer() );
             AddSerializer( new Vector3IntSerializer() );
             AddSerializer( new Vector2Serializer() );
@@ -25,6 +29,7 @@ namespace GDDB.Serialization
             AddSerializer( new Color32Serializer() );
             AddSerializer( new ColorSerializer() );
             AddSerializer( new AnimationCurveSerializer() );
+#endif
         }
 
         public void AddSerializer( TypeCustomSerializer serializer )

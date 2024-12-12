@@ -48,8 +48,23 @@
       <Compile Include="..\Unity\Assets\Scripts\GDDB\GdId.cs">
         <Link>Stubs\GdId.cs</Link>
       </Compile>
+      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\Exceptions.cs">
+        <Link>Exceptions.cs</Link>
+      </Compile>
       <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\FoldersJsonSerializer.cs">
         <Link>FoldersSerializer.cs</Link>
+      </Compile>
+      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\IGdAssetResolver.cs">
+        <Link>IGdAssetResolver.cs</Link>
+      </Compile>
+      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\JsonReaderExtensions.cs">
+        <Link>JsonReaderExtensions.cs</Link>
+      </Compile>
+      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\TypeCustomSerializer.cs">
+        <Link>TypeCustomSerializer.cs</Link>
+      </Compile>
+      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\UnityShimTypes.cs">
+        <Link>UnityShimTypes.cs</Link>
       </Compile>
     </ItemGroup>
 	

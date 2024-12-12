@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Numerics;
 using Newtonsoft.Json;
 
 namespace GDDB.Serialization
@@ -43,7 +44,24 @@ namespace GDDB.Serialization
             else
                 throw new Exception( $"Unexpected end of file" );
         }
+
+        public static void SeekProperty( this JsonReader reader, String propertyName )
+        {
+            do
+            {
+                if ( reader.TokenType == JsonToken.PropertyName && String.Equals( reader.Value, propertyName ) )
+                    return;
+
+                if( reader.TokenType == JsonToken.EndObject )
+                    throw new JsonPropertyException( propertyName, reader, $"Property {propertyName} not found" );
+            }
+            while ( reader.Read() ) ;
+
+            throw new JsonPropertyException( propertyName, reader, $"Property {propertyName} not found" );
+        }
+
         
+
         public static String ReadPropertyName( this JsonReader reader )
         {
             EnsureNextToken( reader, JsonToken.PropertyName );
@@ -78,6 +96,25 @@ namespace GDDB.Serialization
             else
                 throw new Exception( $"Expected property {propertyName} but got {reader.Value}" );
         }
+        public static UInt64 ReadPropertyULong( this JsonReader reader, String propertyName, Boolean alreadyOnStart )
+        {
+            if( alreadyOnStart )
+                EnsureToken( reader, JsonToken.PropertyName );
+            else
+                EnsureNextToken( reader, JsonToken.PropertyName );
+            if ( String.Equals(reader.Value, propertyName )) 
+            {
+                EnsureNextToken( reader, JsonToken.Integer );
+                if ( reader.ValueType == typeof(BigInteger) )
+                {
+                    var bi = (BigInteger)reader.Value;
+                    return (UInt64)bi;
+                }
+                return (UInt64)reader.Value;
+            }
+            else
+                throw new Exception( $"Expected property {propertyName} but got {reader.Value}" );
+        }
         public static Int32 ReadPropertyInt( this JsonReader reader, String propertyName, Boolean alreadyOnStart )
         {
             if( alreadyOnStart )
@@ -90,6 +127,23 @@ namespace GDDB.Serialization
             }
             else
                 throw new Exception( $"Expected property {propertyName} but got {reader.Value}" );
+        }
+
+        public static String SeekPropertyString( this JsonReader reader, String propertyName )
+        {
+            do
+            {
+                if ( reader.TokenType == JsonToken.PropertyName && String.Equals( reader.Value, propertyName ) )
+                {
+                    return reader.ReadAsString();
+                }
+
+                if( reader.TokenType == JsonToken.EndObject )
+                    throw new JsonPropertyException( propertyName, reader, $"Property {propertyName} not found" );
+            }
+            while ( reader.Read() ) ;
+
+            throw new JsonPropertyException( propertyName, reader, $"Property {propertyName} not found" );
         }
     }
 }

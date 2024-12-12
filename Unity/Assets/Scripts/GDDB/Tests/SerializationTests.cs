@@ -390,6 +390,40 @@ namespace GDDB.Tests
             
         }
 
+        [Test]
+        public void FoldersWithoutObjectsSerializationTest( )
+        {
+                //Arrange
+                var root      = GetFolder( "Root",      null  ) ;
+                var mobs      = GetFolder( "Mobs",      root); 
+                var elves     = GetFolder( "Elves",     mobs); 
+                var locations = GetFolder( "Locations", root);
+
+                var gdRoot         = CreateGDObject<GDRoot>( "Root" ); root.Objects.Add( gdRoot );
+                var elf1           = CreateGDObject( "Elf1" ); elves.Objects.Add( elf1 );
+                var elf2           = CreateGDObject( "Elf2" ); elves.Objects.Add( elf2 );
+                var mobsSettings   = CreateGDObject( "MobsSettings" ); mobs.Objects.Add( mobsSettings );
+                var forestLocation = CreateGDObject( "Forest" ); locations.Objects.Add( forestLocation );
+
+                //Act
+                var serializer = new DBJsonSerializer();
+                var gddbJson = serializer.Serialize( root, root.EnumerateFoldersDFS(  ).SelectMany( f => f.Objects ).ToArray() , NullGdAssetResolver.Instance ).ToString();
+                Debug.Log( gddbJson );
+                var folderSerializer = new FoldersJsonSerializer();
+                using var stringReader = new StringReader( gddbJson );
+                using var jsonReader = new JsonTextReader( stringReader );
+                var rootFolder       = folderSerializer.Deserialize( jsonReader, null, out _ );
+
+                //Assert
+                rootFolder.SubFolders.Count.Should().Be( 2 );
+                rootFolder.Name.Should().Be( "Root" );
+                var mobsFolder = rootFolder.SubFolders.Single( f => f.Name == "Mobs" );
+                mobsFolder.Objects.Count.Should().Be( 0 );
+                var elvesFolder = mobsFolder.SubFolders.Single( f => f.Name == "Elves" );
+                elvesFolder.Objects.Count.Should().Be( 0 );
+                elvesFolder.SubFolders.Should().BeEmpty();
+        }
+
         GDObject CreateGDObject( String name )
         {
                 var gdo = GDObject.CreateInstance<GDObject>();

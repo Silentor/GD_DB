@@ -29,7 +29,7 @@ namespace GDDB.Serialization
 
             var result = ScriptableObject.CreateInstance<DBScriptableObject>();
             result.Folders = folders; 
-            result.Hash = rootFolder.GetFoldersStructureChecksum();
+            result.Hash = rootFolder.GetFoldersChecksum();
 
             timer.Stop();
             Debug.Log( $"[{nameof(DBScriptableObjectSerializer)}]-[{nameof(Serialize)}] serialized db {rootFolder.Name} ({folders.SelectMany( f => f.Objects ).Count()} objects, {folders.Count} folders) to Scriptable object for {timer.ElapsedMilliseconds} ms" );

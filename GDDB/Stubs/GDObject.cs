@@ -1,6 +1,6 @@
 namespace GDDB;
 
-public  class GDObject
+internal  class GDObject
 {
     public String Name { get; }
     public Guid   Guid { get; }

@@ -14,14 +14,14 @@ namespace GDDB.SourceGenerator
         private static readonly DiagnosticDescriptor JsonParsingError = new ( 
                 "GDDB001", 
                 "Folders json parsing error", 
-                "Error parsing GDDB type structure json {0}. Exception: {1}.", 
+                "Error parsing json {0}. Exception: {1}.", 
                 "Parsing",
                 DiagnosticSeverity.Error,
                 true );
         private static readonly DiagnosticDescriptor FoldersDeserializingError = new ( 
                 "GDDB002", 
                 "Folders file parsing error", 
-                "Error building categories from json {0}. Exception: {1}.", 
+                "Error deserializing json to Folders structure {0}. Exception: {1}.", 
                 "Parsing",
                 DiagnosticSeverity.Error,
                 true );
@@ -94,8 +94,9 @@ namespace GDDB.SourceGenerator
                         UInt64? dataHash = null;
                         try
                         {
-                            var foldersJObject        = JObject.Parse( pair.Left.code );
-                            rootFolder = foldersSerializer.Deserialize( foldersJObject, FoldersJsonSerializer.IgnoreGDObjects, out dataHash );
+                            using var strReader = new StringReader( pair.Left.code );
+                            using var jsonReader = new JsonTextReader( strReader );
+                            rootFolder = foldersSerializer.Deserialize( jsonReader, null, out dataHash );
                         }
                         catch ( JsonException e )
                         {

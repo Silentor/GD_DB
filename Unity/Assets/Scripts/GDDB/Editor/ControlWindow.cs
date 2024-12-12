@@ -19,14 +19,7 @@ namespace GDDB.Editor
         private VisualElement _sourceGenHashIcon;
         private Button        _sourceGenBtn;
 
-        [MenuItem( "GDDB/Control Window" )]
-        private static void ShowWindow( )
-        {
-            var window = GetWindow<ControlWindow>();
-            window.titleContent = new GUIContent( "GDDB Control Window" );
-            window.Show();
-        }
-
+        
         private void OnEnable( )
         {
             //Debug.Log( $"[{nameof(ControlWindow)}]-[{nameof(OnEnable)}] " );
@@ -129,7 +122,7 @@ namespace GDDB.Editor
             var rootFolder   = GDBEditor.GDB.RootFolder;
             var rootFullPath = AssetDatabase.GUIDToAssetPath( rootFolder.FolderGuid.ToString("N") );
             _dbStatsLbl.text = $"GDB root folder: {rootFullPath}, objects {GDBEditor.AllObjects.Count}, folders {GDBEditor.AllFolders.Count}";
-            _dbHashLbl.text  = "DB structure hash: " + rootFolder.GetFoldersStructureChecksum( );
+            _dbHashLbl.text  = "DB structure hash: " + rootFolder.GetFoldersChecksum( );
         }
 
         private void UpdateSourceGenInfo( )
@@ -138,7 +131,7 @@ namespace GDDB.Editor
             if( _generatedStructureHashLbl == null )
                 return;
 
-            var rootFolderHash        = GDBEditor.GDB.RootFolder.GetFoldersStructureChecksum();
+            var rootFolderHash        = GDBEditor.GDB.RootFolder.GetFoldersChecksum();
             var generatedCodeHash = GDBSourceGenerator.GetGeneratedCodeChecksum();
             _generatedStructureHashLbl.text = "Generated source hash: " + generatedCodeHash;
             _sourceGenHashIcon.style.backgroundImage = rootFolderHash == generatedCodeHash ? Resources.HashOkIcon : Resources.HashNotOkIcon;

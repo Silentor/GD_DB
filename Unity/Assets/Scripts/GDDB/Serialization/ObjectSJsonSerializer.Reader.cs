@@ -283,7 +283,7 @@ namespace GDDB.Serialization
             if( json.TokenType == JsonToken.EndArray || json.TokenType == JsonToken.EndObject )
                 return null;
 
-            UnityEngine.Debug.Log( $"Reading value {json.Path} of type {propertyType}" );
+            //UnityEngine.Debug.Log( $"Reading value {json.Path} of type {propertyType}" );
 
             if ( propertyType == typeof(Char) )
             {

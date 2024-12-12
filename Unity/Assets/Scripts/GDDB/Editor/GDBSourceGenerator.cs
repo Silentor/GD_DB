@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Numerics;
 using GDDB.Serialization;
 using Newtonsoft.Json.Linq;
 using UnityEditor;
@@ -61,7 +62,7 @@ namespace GDDB.Editor
 
         public static void GenerateGDBSource( Boolean forceRegenerate = false )
         {
-            var databaseHash = GDBEditor.GDB.RootFolder.GetFoldersStructureChecksum();
+            var databaseHash = GDBEditor.GDB.RootFolder.GetFoldersChecksum();
             var generatedHash = GetGeneratedCodeChecksum();
             if( databaseHash != generatedHash || forceRegenerate )
             {
@@ -100,7 +101,7 @@ namespace GDDB.Editor
             var json    = File.ReadAllText( GDDBStructureFilePath );
             var jObject = (JObject)JToken.Parse( json );
             if( jObject.ContainsKey( "hash") )
-                return jObject["hash"].Value<UInt64>();
+                return (UInt64)jObject["hash"].Value<BigInteger>();
 
             return 0;
         }
