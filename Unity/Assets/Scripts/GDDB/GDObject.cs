@@ -14,11 +14,11 @@ namespace GDDB
             get
             {
 #if UNITY_EDITOR
-                if ( _guid == default )
+                if ( _guid == Guid.Empty )
                 {
                     //GDObject do not store guid in asset, we just use AssetDatabase guid if needed
                     _guid = EditorGetAssetGuid();
-                    if ( _guid == default )
+                    if ( _guid == Guid.Empty )
                     {
                         Debug.LogWarning( $"[GDObject] Cannot get GDObject asset guid, probably GDObject was created via ScriptableObject.CreateInstance(), but should via GDObject.CreateInstance(), name {Name}. " +
                                           $"Assigned temporary guid, will be changed if saved to AssetDatabase." );

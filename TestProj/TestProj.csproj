@@ -25,9 +25,6 @@
       <Compile Include="..\Unity\Assets\Scripts\GDDB\Folder.cs">
         <Link>Folder.cs</Link>
       </Compile>
-      <Compile Include="..\Unity\Assets\Scripts\GDDB\GdId.cs">
-        <Link>Stubs\GdId.cs</Link>
-      </Compile>
       <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\Exceptions.cs">
         <Link>Exceptions.cs</Link>
       </Compile>
@@ -48,6 +45,10 @@
         <Link>GDDBTreeStructure.json</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </AdditionalFiles>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Stubs\" />
     </ItemGroup>
 
 </Project>

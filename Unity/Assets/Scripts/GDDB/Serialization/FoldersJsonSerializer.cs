@@ -1,22 +1,19 @@
-﻿#nullable enable
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-
-#if UNITY_2021_2_OR_NEWER
+using UnityEngine.Assertions;
 using UnityEngine.Profiling;
-#endif
 
 namespace GDDB.Serialization
 {
     public class FoldersJsonSerializer
     {
-        
-#if UNITY_2021_2_OR_NEWER
-        private readonly CustomSampler _serFolderSampler   = CustomSampler.Create( "FoldersJsonSerializer.Serialize" );
+        //Parameter of Deserialize(). Ignore deserialization of GDObjects. Only folders deserialized
+        public static readonly IReadOnlyList<GDObject> IgnoreGDObjects = Array.Empty<GDObject>();
+
+        private          CustomSampler _serFolderSampler   = CustomSampler.Create( "FoldersJsonSerializer.Serialize" );
         private readonly CustomSampler _deserFolderSampler = CustomSampler.Create( "FoldersJsonSerializer.Deserialize" );
-#endif
 
 #if UNITY_EDITOR
 
@@ -30,15 +27,14 @@ namespace GDDB.Serialization
 
 #endif
 
-        public Folder Deserialize( JsonReader json, ObjectsJsonSerializer? objectSerializer, out UInt64? checksum )
+        public Folder Deserialize( JsonReader json, ObjectsJsonSerializer objectSerializer, out UInt64? checksum )
         {
             // if( json.HasKey( "hash" ))
             //     checksum = json["hash"].AsULong;
             // else
             //     checksum = null;
             checksum = 0;
-            json.EnsureNextToken( JsonToken.StartObject );
-            return DeserializeFolder( json, null, objectSerializer, out checksum );
+            return DeserializeFolder( json, null, objectSerializer );
         }
 
 #if UNITY_EDITOR
@@ -49,7 +45,7 @@ namespace GDDB.Serialization
             if( hash.HasValue )
                 result["hash"] = hash.Value;
             result["name"] = folder.Name;
-            //result["depth"] = folder.Depth;
+            result["depth"] = folder.Depth;
             result["guid"] = folder.FolderGuid.ToString("D");
 
             var subFolders = new JArray();
@@ -58,7 +54,7 @@ namespace GDDB.Serialization
                 subFolders.Add( SerializeFolder( subFolder, objectSerializer ) );
             }
 
-            result["subfolders"] = subFolders;
+            result["subFolders"] = subFolders;
 
             var objects = new JArray();
             if( objectSerializer != null )
@@ -89,37 +85,15 @@ namespace GDDB.Serialization
 
 #endif
 
-        /// <summary>
-        /// Already stands on StartObject token
-        /// </summary>
-        /// <param name="json"></param>
-        /// <param name="parent"></param>
-        /// <param name="objectSerializer"></param>
-        /// <returns></returns>
-        private Folder DeserializeFolder( JsonReader json, Folder? parent, ObjectsJsonSerializer? objectSerializer, out UInt64? hash )
+        private Folder DeserializeFolder( JsonReader json, Folder? parent, ObjectsJsonSerializer objectSerializer )
         {
-#if UNITY_2021_2_OR_NEWER            
             _deserFolderSampler.Begin();
-#endif
-            json.EnsureToken( JsonToken.StartObject );
-            var propName = json.ReadPropertyName();
-            if ( propName == "version" )        //Not implemented for now
-            {
-                json.Skip(  );
-                propName = json.ReadPropertyName();
-            }
-
-            hash = null;
-            if ( propName == "hash" )
-            {
-                hash = json.ReadPropertyULong( "hash", true );
-            }
-
-            //Can be another properties in the future...
-
-            var name    = json.SeekPropertyString( "name" );
-            var guidStr = json.ReadPropertyString( "guid", false );
-            var guid    = Guid.ParseExact( guidStr, "D" );
+            //json.Read();        Assert.IsTrue( json.TokenType == JsonToken.StartObject );
+            json.Read();        Assert.IsTrue( json.TokenType == JsonToken.PropertyName && (String)json.Value == "name" );      
+            var name = json.ReadAsString()!;                      
+            json.Read();        Assert.IsTrue( json.TokenType == JsonToken.PropertyName && 
+                                               (String)json.Value == "guid" );      
+            var guid = Guid.ParseExact( json.ReadAsString()!, "D" );
 
             var folder = new Folder( name, guid )
             {
@@ -127,51 +101,28 @@ namespace GDDB.Serialization
                 Parent = parent
             };
 
-            try
+            json.Read();        Assert.IsTrue( (String)json.Value == "subfolders" );
+            json.Read();        Assert.IsTrue( json.TokenType  == JsonToken.StartArray  );
+            json.Read();        var objectStartOrArrayEnd = json.TokenType;
+            while( objectStartOrArrayEnd == JsonToken.StartObject )
             {
-                json.EnsureNextProperty( "subfolders" );
-                json.EnsureNextToken( JsonToken.StartArray );
-                json.Read();        var objectStartOrArrayEnd = json.TokenType;
-                while( objectStartOrArrayEnd == JsonToken.StartObject )
-                {
-                    var subFolder = DeserializeFolder( json, folder, objectSerializer, out _ );
-                    folder.SubFolders.Add( subFolder );
-                    json.Read();        objectStartOrArrayEnd = json.TokenType;
-                }
-                json.EnsureToken( JsonToken.EndArray );
+                var subFolder = DeserializeFolder( json, folder, objectSerializer );
+                folder.SubFolders.Add( subFolder );
+                json.Read();        objectStartOrArrayEnd = json.TokenType;
             }
-            catch ( Exception e )
+            Assert.IsTrue( json.TokenType  == JsonToken.EndArray  );
+
+            json.Read();        Assert.IsTrue( (String)json.Value == "objects" );
+            json.Read();        Assert.IsTrue( json.TokenType     == JsonToken.StartArray  );
+            json.Read();        objectStartOrArrayEnd = json.TokenType;
+            while( objectStartOrArrayEnd == JsonToken.StartObject )
             {
-                throw new JsonFolderException( folder, json, $"Error deserializing subfolders of folder {folder.Name}", e );
+                var gdo     = objectSerializer.Deserialize( json );
+                folder.Objects.Add( gdo );
+                json.Read();        objectStartOrArrayEnd = json.TokenType;
             }
 
-            try
-            {
-                json.EnsureNextProperty( "objects" );
-                if ( objectSerializer != null )
-                {
-                    json.EnsureNextToken( JsonToken.StartArray );
-                    json.Read();        var objectStartOrArrayEnd = json.TokenType;
-                    while( objectStartOrArrayEnd == JsonToken.StartObject )
-                    {
-                        var gdo     = objectSerializer.Deserialize( json );
-                        folder.Objects.Add( gdo );
-                        json.Read();        objectStartOrArrayEnd = json.TokenType;
-                    }
-                }
-                else
-                    json.Skip();
-            }
-            catch ( Exception e )
-            {
-                throw new JsonFolderException( folder, json, $"Error deserializing objects of folder {folder.Name}", e );
-            }
-
-            json.EnsureNextToken( JsonToken.EndObject );
-
-#if UNITY_2021_2_OR_NEWER
             _deserFolderSampler.End();
-#endif
 
             return folder;
         }

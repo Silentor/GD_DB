@@ -39,32 +39,32 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Include="..\GDDB\Stubs\GDObject.cs">
-        <Link>Stubs\GDObject.cs</Link>
+      <Compile Include="..\Unity\Assets\Scripts\GDDB\Crossplatform\UnityAttributes.cs">
+        <Link>Crossplatform\UnityAttributes.cs</Link>
+      </Compile>
+      <Compile Include="..\Unity\Assets\Scripts\GDDB\Crossplatform\UnityObject.cs">
+        <Link>Crossplatform\UnityObject.cs</Link>
       </Compile>
       <Compile Include="..\Unity\Assets\Scripts\GDDB\Folder.cs">
-        <Link>Folder.cs</Link>
+        <Link>GDDB\Folder.cs</Link>
       </Compile>
-      <Compile Include="..\Unity\Assets\Scripts\GDDB\GdId.cs">
-        <Link>Stubs\GdId.cs</Link>
+      <Compile Include="..\Unity\Assets\Scripts\GDDB\GDObject.cs">
+        <Link>GDDB\GDObject.cs</Link>
       </Compile>
       <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\Exceptions.cs">
-        <Link>Exceptions.cs</Link>
+        <Link>GDDB\Exceptions.cs</Link>
       </Compile>
       <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\FoldersJsonSerializer.cs">
-        <Link>FoldersSerializer.cs</Link>
+        <Link>GDDB\FoldersSerializer.cs</Link>
       </Compile>
       <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\IGdAssetResolver.cs">
-        <Link>IGdAssetResolver.cs</Link>
+        <Link>GDDB\IGdAssetResolver.cs</Link>
       </Compile>
       <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\JsonReaderExtensions.cs">
-        <Link>JsonReaderExtensions.cs</Link>
+        <Link>GDDB\JsonReaderExtensions.cs</Link>
       </Compile>
       <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\TypeCustomSerializer.cs">
-        <Link>TypeCustomSerializer.cs</Link>
-      </Compile>
-      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\UnityShimTypes.cs">
-        <Link>UnityShimTypes.cs</Link>
+        <Link>GDDB\TypeCustomSerializer.cs</Link>
       </Compile>
     </ItemGroup>
 	
