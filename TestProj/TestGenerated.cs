@@ -7,7 +7,7 @@ namespace GDDB;
 
 public partial class GdDb
 {
-    public TestRootFolder TestRoot => new( RootFolder );
+    //public TestRootFolder TestRoot => new( RootFolder );
 }
 
 public readonly struct TestRootFolder : IEnumerable<GDObject>, IEquatable<TestRootFolder>

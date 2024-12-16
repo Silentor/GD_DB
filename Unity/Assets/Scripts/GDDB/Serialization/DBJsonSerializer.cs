@@ -30,10 +30,9 @@ namespace GDDB.Serialization
         public (Folder rootFolder, IReadOnlyList<GDObject> objects) Deserialize( String json, IGdAssetResolver assetsResolver )
         {
             var timer             = System.Diagnostics.Stopwatch.StartNew();
-
             using var stringReader      = new System.IO.StringReader( json );
             using var jsonReader        = new Newtonsoft.Json.JsonTextReader( stringReader );
-            var       objectsSerializer = new ObjectsJsonSerializer();
+            var       objectsSerializer = new ObjectsJsonDeserializer();
             var       foldersSerializer = new FoldersJsonSerializer();
             var       rootFolder        = foldersSerializer.Deserialize( jsonReader, objectsSerializer, out _ );
             objectsSerializer.ResolveGDObjectReferences();

@@ -4,7 +4,7 @@ namespace UnityEngine
 {
 #if !UNITY_2021_2_OR_NEWER
     [AttributeUsage(AttributeTargets.Field)]
-    public class SerializeReference : Attribute
+    public sealed class SerializeReference : Attribute
     {
         
     }
@@ -27,6 +27,10 @@ namespace UnityEngine
       /// </summary>
       public int order { get; set; }
     }
+
+   public sealed class SerializeField : Attribute
+  {
+  }
 
 #endif
 }

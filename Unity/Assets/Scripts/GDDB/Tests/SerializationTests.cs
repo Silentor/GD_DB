@@ -82,12 +82,13 @@ namespace GDDB.Tests
 
             //Act
             var serializer = new ObjectsJsonSerializer();
+            var deserializer = new ObjectsJsonDeserializer();
             var jsonString = serializer.Serialize( testObj ).ToString( );
 
             Debug.Log( jsonString );
 
             //Assert
-            var comp_copy = serializer.Deserialize( jsonString ).Components.First() as PrimitivesComponent;
+            var comp_copy = deserializer.Deserialize( jsonString ).Components.First() as PrimitivesComponent;
             comp_copy.Should().BeEquivalentTo( comp );
         }
 
@@ -110,7 +111,8 @@ namespace GDDB.Tests
             Debug.Log( jsonString );
 
             //Assert
-            var copy = serializer.Deserialize( jsonString ).Components.First() as NullReferencesAsEmptyComponent;
+            var deserializer = new ObjectsJsonDeserializer();
+            var copy       = deserializer.Deserialize( jsonString ).Components.First() as NullReferencesAsEmptyComponent;
             copy.StringMustBeEmpty.Should().BeEmpty(  );
             copy.NestedClassMustBeEmpty.StringMustBeEmpty.Should().BeEmpty(  );
             copy.NestedClassMustBeEmpty.IntParam.Should()
@@ -158,7 +160,8 @@ namespace GDDB.Tests
             jsonSerComp.ContainsKey( nameof(CollectionTestComponent.ClassListNonSerializable) ).Should().BeFalse(  );
 
             //Asset deserialized data
-            var copy = serializer.Deserialize( jsonString ).Components.First() as CollectionTestComponent;
+            var deserializer = new ObjectsJsonDeserializer();
+            var copy       = deserializer.Deserialize( jsonString ).Components.First() as CollectionTestComponent;
             copy.OldIntArray.Should().BeEquivalentTo( new CollectionTestComponent().OldIntArray );
             copy.IntArray.Should().BeEquivalentTo( collComp.IntArray );
             copy.StrArray.Should().BeEquivalentTo( new String[] { String.Empty, String.Empty, "3" } );
@@ -189,9 +192,10 @@ namespace GDDB.Tests
 
              //Act
              var serializer = new ObjectsJsonSerializer();
+             var deserializer = new ObjectsJsonDeserializer();
              var jsonString = serializer.Serialize( obj ).ToString();
              Debug.Log( jsonString );
-             var copyObj = serializer.Deserialize( jsonString );
+             var copyObj = deserializer.Deserialize( jsonString );
 
              //Assert
              obj.Guid.Should().NotBe( default(Guid) );
@@ -213,16 +217,17 @@ namespace GDDB.Tests
 
                 //Act
                 var serializer  = new ObjectsJsonSerializer();
+                var deserializer  = new ObjectsJsonDeserializer();
                 var jsonString1 = serializer.Serialize( obj1 ).ToString();
                 var jsonString2 = serializer.Serialize( obj2 ).ToString();
                 var jsonString3 = serializer.Serialize( obj3 ).ToString();
                 Debug.Log( jsonString1 );
                 Debug.Log( jsonString2 );
                 Debug.Log( jsonString3 );
-                var copyObject1 = serializer.Deserialize( jsonString1 );
-                var copyObject2 = serializer.Deserialize( jsonString2 );
-                var copyObject3 = serializer.Deserialize( jsonString3 );
-                serializer.ResolveGDObjectReferences();
+                var copyObject1 = deserializer.Deserialize( jsonString1 );
+                var copyObject2 = deserializer.Deserialize( jsonString2 );
+                var copyObject3 = deserializer.Deserialize( jsonString3 );
+                deserializer.ResolveGDObjectReferences();
 
                 //Assert
                 var obj1_copy   = (TestObjectWithReference)copyObject1;
@@ -245,9 +250,10 @@ namespace GDDB.Tests
 
                 //Act
                 var serializer = new ObjectsJsonSerializer();
+                var deserializer = new ObjectsJsonDeserializer();
                 var jsonString = serializer.Serialize( obj1 ).ToString();
                 Debug.Log( jsonString );
-                var copyObjects = serializer.Deserialize( jsonString );
+                var copyObjects = deserializer.Deserialize( jsonString );
 
                 //Assert
                 var obj1_copy = (TestObjectSerializationCallback)copyObjects;
@@ -277,9 +283,10 @@ namespace GDDB.Tests
 
                 //Act
                 var serializer = new ObjectsJsonSerializer();
+                var deserializer = new ObjectsJsonDeserializer();
                 var jsonString = serializer.Serialize( obj1 ).ToString( );
                 Debug.Log( jsonString );
-                var copyObjects = serializer.Deserialize( jsonString );
+                var copyObjects = deserializer.Deserialize( jsonString );
 
                 //Assert
                 var obj1_copy = (GDObject)copyObjects;
@@ -308,11 +315,12 @@ namespace GDDB.Tests
                 var obj = GDObject.CreateInstance<TestObjectAwakeEnable>();
 
                 //Act
-                var serializer = new ObjectsJsonSerializer();
+                var serializer   = new ObjectsJsonSerializer();
+                var deserializer = new ObjectsJsonDeserializer();
                 var jsonString = serializer.Serialize( obj ).ToString();
                 Debug.Log( jsonString );
                 DumpJsonTokens( jsonString );
-                var copyObjects = serializer.Deserialize( jsonString );
+                var copyObjects = deserializer.Deserialize( jsonString );
                 var copy = (TestObjectAwakeEnable)copyObjects;
 
                 //Assert
@@ -341,10 +349,11 @@ namespace GDDB.Tests
                 var testAssetResolver = ScriptableObject.CreateInstance<DirectAssetReferences>();
 
                 //Act
-                var serializer = new ObjectsJsonSerializer();
+                var serializer   = new ObjectsJsonSerializer();
+                var deserializer = new ObjectsJsonDeserializer();
                 var jsonString = serializer.Serialize( obj , testAssetResolver ).ToString();
                 Debug.Log( jsonString );
-                var copyObjects = serializer.Deserialize( jsonString, testAssetResolver );
+                var copyObjects = deserializer.Deserialize( jsonString, testAssetResolver );
 
                 //Assert
                 var copyComp = copyObjects.GetComponent<UnityAssetReferenceComponent>();

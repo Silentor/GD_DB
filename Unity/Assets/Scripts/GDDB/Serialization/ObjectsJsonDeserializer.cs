@@ -16,14 +16,13 @@ using Object = System.Object;
 namespace GDDB.Serialization
 {
     //Reader part of GDJson
-    public partial class ObjectsJsonSerializer
+    public class ObjectsJsonDeserializer : ObjectsJsonCommon
     {
+        private          IGdAssetResolver                        _assetResolver;
         private readonly List<UnresolvedGDObjectReference> _unresolvedReferences = new ();
         private readonly List<GDObject>                    _loadedObjects        = new ();     //To resolve loaded references in place
         private readonly CustomSampler _deserObjectSampler     = CustomSampler.Create( "ObjectsJsonSerializer.Deserialize" );
         private readonly CustomSampler _resolveObjectSampler   = CustomSampler.Create( "ObjectsJsonSerializer.ResolveGDObjectReferences" );
-
-#region JSON-LINQ reader
 
         public IReadOnlyList<GDObject> LoadedObjects => _loadedObjects;
 
@@ -81,7 +80,7 @@ namespace GDDB.Serialization
                             }
                             else
                             {
-                                Debug.LogError( $"[{nameof(ObjectsJsonSerializer)}]-[{nameof(ResolveGDObjectReferences)}] cannot resolve GDObject reference {guid}. Target object {unresolvedReference.TargetObject.GetType().Name}, field {unresolvedReference.Field}" );
+                                Debug.LogError( $"[{nameof(ObjectsJsonDeserializer)}]-[{nameof(ResolveGDObjectReferences)}] cannot resolve GDObject reference {guid}. Target object {unresolvedReference.TargetObject.GetType().Name}, field {unresolvedReference.Field}" );
                             }
                         }
                         unresolvedReference.Field.SetValue( unresolvedReference.TargetObject, result );
@@ -99,7 +98,7 @@ namespace GDDB.Serialization
                             }
                             else
                             {
-                                Debug.LogError( $"[{nameof(ObjectsJsonSerializer)}]-[{nameof(ResolveGDObjectReferences)}] cannot resolve GDObject reference {guid}. Target object {unresolvedReference.TargetObject.GetType().Name}, field {unresolvedReference.Field}" );
+                                Debug.LogError( $"[{nameof(ObjectsJsonDeserializer)}]-[{nameof(ResolveGDObjectReferences)}] cannot resolve GDObject reference {guid}. Target object {unresolvedReference.TargetObject.GetType().Name}, field {unresolvedReference.Field}" );
                             }
                         }
                         unresolvedReference.Field.SetValue( unresolvedReference.TargetObject, result );
@@ -112,7 +111,7 @@ namespace GDDB.Serialization
                         unresolvedReference.Field.SetValue( unresolvedReference.TargetObject, resolvedObject );
                     else
                     {
-                        Debug.LogError( $"[{nameof(ObjectsJsonSerializer)}]-[{nameof(ResolveGDObjectReferences)}] cannot resolve GDObject reference {unresolvedReference.Guid}. Target object {unresolvedReference.TargetObject.GetType().Name}, field {unresolvedReference.Field}" );
+                        Debug.LogError( $"[{nameof(ObjectsJsonDeserializer)}]-[{nameof(ResolveGDObjectReferences)}] cannot resolve GDObject reference {unresolvedReference.Guid}. Target object {unresolvedReference.TargetObject.GetType().Name}, field {unresolvedReference.Field}" );
                     }
                 }
             }
@@ -202,7 +201,7 @@ namespace GDDB.Serialization
                 objectType = Type.GetType( typeStr );
                 json.Read();                                //Step on object next property name (or end object if no properties present)
                 if( objectType == null )
-                    throw new InvalidOperationException( $"[{nameof(ObjectsJsonSerializer)}]-[{nameof(ReadObjectFromJson)}] Cannot create Type from type string '{typeStr}'" );
+                    throw new InvalidOperationException( $"[{nameof(ObjectsJsonDeserializer)}]-[{nameof(ReadObjectFromJson)}] Cannot create Type from type string '{typeStr}'" );
             }
 
             var defaultConstructor =
@@ -316,10 +315,7 @@ namespace GDDB.Serialization
             }
             else if ( propertyType.IsEnum )
             {
-                if( Enum.TryParse( propertyType, (String)json.Value, out var enumValue ) )
-                    return enumValue;
-                else
-                    return null;                                //do not change default value
+                return Enum.Parse( propertyType, (String)json.Value );
             }
             else if ( propertyType.IsArray || (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() ==  typeof(List<>) ) )
             {
@@ -433,8 +429,6 @@ namespace GDDB.Serialization
             return result;
         }
 
-#endregion
-
         private struct UnresolvedGDObjectReference
         {
             
@@ -445,104 +439,6 @@ namespace GDDB.Serialization
             public Object  TargetObject;
             public FieldInfo Field;
         }
-
-#region Fast forward reader
-
-        // public List<GDObject> JsonToGD( String json )
-        // {
-        //     var result = new List<GDObject>();
-        //
-        //     using (JsonReader reader = new JsonTextReader( new StringReader( json ) ))
-        //     {
-        //         EnsureNextToken( reader, JsonToken.StartArray );
-        //
-        //         while ( reader.Read() )
-        //         {
-        //             if ( reader.TokenType == JsonToken.StartObject )
-        //             {
-        //                 var gdObject = ReadGDObjectFromJson( reader );
-        //                 result.Add( gdObject );
-        //             }
-        //             else if ( reader.TokenType == JsonToken.EndArray )
-        //             {
-        //                 break;
-        //             }
-        //         }
-        //
-        //         return result;
-        //     }
-        // }
-        //
-        // private GDObject ReadGDObjectFromJson( JsonReader reader )
-        // {
-        //     EnsureToken( reader, JsonToken.StartObject );
-        //     var objectName = ReadPropertyString( reader, "_Name", false );
-        //     var objectType = ReadPropertyString( reader, "_Type", false );
-        //
-        //     var result = (GDObject)ScriptableObject.CreateInstance( objectType );
-        //     result.name = objectName;
-        //
-        //     Debug.Log( $"Start reading object {result.name}" );
-        //
-        //
-        //     while ( reader.Read() )
-        //     {
-        //         if( reader.TokenType == JsonToken.PropertyName && reader.Depth == 2 )
-        //         {
-        //             var fieldInfo = result.GetType().GetField( (String)reader.Value, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance );
-        //             var value = ReadPropertyFromJson( reader, fieldInfo );
-        //
-        //             Debug.Log( $"Read {result.name}.{fieldInfo.Name} = {value}" );
-        //         }    
-        //         else if( reader.TokenType == JsonToken.EndObject && reader.Depth == 1 )
-        //             break;
-        //     }
-        //
-        //     //DEBUG skip content
-        //     // var objectDepth = reader.Depth - 1;
-        //     // while ( reader.Read() )
-        //     // {
-        //     //     if( reader.Depth == objectDepth && reader.TokenType == JsonToken.EndObject )
-        //     //         break;
-        //     // }
-        //     //DEBUG
-        //
-        //     EnsureToken( reader, JsonToken.EndObject );
-        //     Debug.Log( $"End reading object {result.name}" );
-        //
-        //     
-        //     
-        //     return result;
-        // }
-        //
-        // private Object ReadPropertyFromJson( JsonReader reader, FieldInfo fieldInfo )
-        // {
-        //     if ( reader.Read() )
-        //     {
-        //         switch ( reader.TokenType )
-        //         {
-        //             case JsonToken.Null:
-        //                 return null;
-        //             case JsonToken.Boolean:
-        //             case JsonToken.String:
-        //             case JsonToken.Integer:
-        //             case JsonToken.Float:
-        //                 return reader.Value;
-        //                 
-        //             default:
-        //             {
-        //
-        //                 return null;            //DEBUG read complex objects
-        //             }
-        //         }
-        //     }
-        //
-        //     return null;
-        // }
-        //
-        
-
-#endregion
 
     }
 }

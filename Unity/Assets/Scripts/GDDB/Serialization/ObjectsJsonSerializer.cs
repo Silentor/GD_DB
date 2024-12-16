@@ -6,15 +6,11 @@ using System.Linq;
 using System.Reflection;
 using Newtonsoft.Json.Linq;
 using Object = System.Object;
-
-#if UNITY_2021_2_OR_NEWER
-using UnityEditor;
 using UnityEngine;
-#endif
 
 namespace GDDB.Serialization
 {
-    public partial class ObjectsJsonSerializer
+    public class ObjectsJsonSerializer : ObjectsJsonCommon
     {
         public ObjectsJsonSerializer( )
         {
@@ -62,7 +58,7 @@ namespace GDDB.Serialization
         
 #endif
 
-        private readonly Dictionary<Type, TypeCustomSerializer> _serializers = new();
+        
         private          IGdAssetResolver                        _assetResolver;
 
 #if UNITY_EDITOR
@@ -220,7 +216,7 @@ namespace GDDB.Serialization
             {
                 return serializer.Serialize( value );
             }
-            else if ( value is UnityEngine.Object unityObj && AssetDatabase.Contains( unityObj ) )      //Write Unity asset reference
+            else if ( value is UnityEngine.Object unityObj && UnityEditor.AssetDatabase.Contains( unityObj ) )      //Write Unity asset reference
             {
                 return WriteUnityObjectToJson( unityObj );
             }
@@ -263,7 +259,7 @@ namespace GDDB.Serialization
         private JObject WriteUnityObjectToJson( UnityEngine.Object unityAsset )
         {
             JObject result = null;
-            if ( AssetDatabase.TryGetGUIDAndLocalFileIdentifier( unityAsset, out var guid, out long localId ))
+            if ( UnityEditor.AssetDatabase.TryGetGUIDAndLocalFileIdentifier( unityAsset, out var guid, out long localId ))
             {
                 result = new JObject();
                 result.Add( ".Ref", guid );
@@ -300,67 +296,5 @@ namespace GDDB.Serialization
         }
 
 #endif
-        private Boolean IsFieldSerializable( FieldInfo field )
-        {
-            if( field.IsInitOnly || field.IsLiteral || field.IsStatic || field.IsNotSerialized )
-                return false;
-
-            if ( field.IsPrivate && !field.IsDefined( typeof(SerializeField), false ) )
-                return false;
-
-            if ( field.IsPublic && field.IsDefined( typeof(NonSerializedAttribute), false ) )
-                return false;
-
-            //Reserved fields for some types
-            var declaredType = field.DeclaringType;
-            if ( declaredType == typeof(GDObject) 
-                 && (field.Name == nameof(GDObject.EnabledObject) || field.Name == nameof(GDObject.Components)) )
-                return false;
-
-            var fieldType = field.FieldType;
-            if ( !IsTypeSerializable( fieldType ) && !field.IsDefined( typeof(SerializeReference) ))
-                return false;
-
-            return true;
-        }
-
-        private Boolean IsTypeSerializable( Type type )
-        {
-            //Fast pass
-            if( type == typeof(String) || type.IsEnum || _serializers.ContainsKey( type ) )
-                return true;
-
-            //Unity serializer do not support all primitives
-            if ( type.IsPrimitive )
-                return !( type == typeof(Decimal) || type == typeof(IntPtr) || type == typeof(UIntPtr) );
-
-            //Discard structures without Serializable attribute
-            if ( !type.IsPrimitive && !type.IsEnum && type.IsValueType && !type.IsDefined( typeof(SerializableAttribute ) ) )
-                return false;
-
-            if ( type.IsAbstract || type.IsInterface )
-                return false;
-
-            //Discard classes without Serializable attribute or not derived from Unity Object (we try to serialize Unity Assets )
-            var isUnityAssetType = typeof(UnityEngine.Object).IsAssignableFrom( type );
-            if( type.IsClass && !(type.IsDefined( typeof(SerializableAttribute )) || isUnityAssetType )) 
-                return false;
-
-            if( type.IsArray )
-                return IsTypeSerializable( type.GetElementType() );
-
-            if( type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>) )
-                return IsTypeSerializable( type.GetGenericArguments()[0] );
-
-            if ( !isUnityAssetType )
-            {
-                //Check serializable fields for serialization support
-                var fields = type.GetFields( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance );
-                if( !fields.Any( IsFieldSerializable ) )
-                    return false;
-            }
-
-            return true;
-        }
     }
 }

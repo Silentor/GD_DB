@@ -7,20 +7,20 @@ using Newtonsoft.Json.Linq;
 
 var file     = new System.IO.FileInfo("GDDBTreeStructure.json");
 var str     = System.IO.File.ReadAllText(file.FullName);
-using var strReader = new System.IO.StringReader( str );
-using var jsonReader = new Newtonsoft.Json.JsonTextReader( strReader );
+//using var strReader = new System.IO.StringReader( str );
+//using var jsonReader = new Newtonsoft.Json.JsonTextReader( strReader );
 
-var parser     = new FoldersJsonSerializer();
-var rootFolder = parser.Deserialize( jsonReader, null, out _ );
+//var parser     = new FoldersJsonSerializer();
+//var rootFolder = parser.Deserialize( jsonReader, null, out _ );
 
-var emitter  = new CodeEmitter();
-var allFolders = rootFolder.EnumerateFoldersDFS(  ).ToArray();
+//var emitter  = new CodeEmitter();
+//var allFolders = rootFolder.EnumerateFoldersDFS(  ).ToArray();
 
 //var enums    = emitter.GenerateEnums( "test.json", category, categories );
 //Console.WriteLine(enums);
 
-var filters = emitter.GenerateFolders( file.FullName, 0, DateTime.Now, allFolders );
-Console.WriteLine(filters);
+//var filters = emitter.GenerateFolders( file.FullName, 0, DateTime.Now, allFolders );
+//Console.WriteLine(filters);
 
 //var gddbGetters = emitter.GenerateGdDbExtensions( "test.json", category, categories );
 //Console.WriteLine(gddbGetters);
@@ -28,7 +28,9 @@ Console.WriteLine(filters);
 //var gdTypeExt = emitter.GenerateGdTypeExtensions( "test.json", category, categories );
 //Console.WriteLine(gdTypeExt);
 
-var db     = new GdDb();
+var loader = new GdJsonLoader( str );
+var db = loader.GetGameDataBase();
+Console.WriteLine( db.RootFolder.Name );
 //db.Root.Folder2.
 //var humans = db.Root.Mobs.Humans.ParentFolder;
 //var elves  = db.GetGDInfo().GetMobs().GetElves().ToArray();

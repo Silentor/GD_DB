@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using GDDB;
 using GDDB.Serialization;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.Profiling;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
@@ -41,6 +43,9 @@ namespace GDDB_User
 
         private void Awake( )
         {
+            var test = TestObject.CreateInstance<Test2>();
+            Assert.IsTrue( test.Id == 42 );
+
             if ( FolderJson )
             {
                 var       json       = FolderJson.text;
@@ -61,7 +66,7 @@ namespace GDDB_User
 
             //Load GDDB from asset
             DBScriptableObject db;
-            db = DB ? DB : Resources.Load<DBScriptableObject>( "Default.folders" );
+            db = DB ? DB : Resources.Load<DBScriptableObject>( "DefaultGDDB" );
             var     aloader   = new GdScriptableObjectLoader( db );
             _soGDDB   = aloader.GetGameDataBase();
 
@@ -194,5 +199,29 @@ namespace GDDB_User
     {
         public Int32 TestValue = 42;
     }     
+
+    public class TestObject : Object
+    {
+        public static T CreateInstance<T>( ) where T : TestObject
+        {
+            var  type     = typeof(T);
+             var constrs  = type.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy, null, Array.Empty<Type>(), null);
+            var  instance = (T)constrs.Invoke(null);
+            return instance;
+        }
+
+        public static TestObject CreateInstance( Type type )
+        {
+            var constr   = type.TypeInitializer;
+            var instance = (TestObject)constr.Invoke(null);
+            return instance;
+        }
+
+    }
+
+    public class Test2 : TestObject
+    {
+        public Int32 Id = 42;
+    }
 
 }

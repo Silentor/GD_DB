@@ -2,9 +2,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GdDbSourceGen", "Generator\GdDbSourceGen.csproj", "{A881C893-A1C6-4D0D-9021-FD9AE7CAB459}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GDDB", "GDDB\GDDB.csproj", "{5985604F-2853-4026-8978-6CFB284E9F45}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GDDB.Editor", "GDDB.Editor\GDDB.Editor.csproj", "{E40CD6F3-03A7-4CBE-9ADF-08F1BED7AB86}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestProj", "TestProj\TestProj.csproj", "{9A013ABC-38C4-4634-8DA6-D930BD65EEB8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -16,13 +14,9 @@ Global
 		{A881C893-A1C6-4D0D-9021-FD9AE7CAB459}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A881C893-A1C6-4D0D-9021-FD9AE7CAB459}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A881C893-A1C6-4D0D-9021-FD9AE7CAB459}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5985604F-2853-4026-8978-6CFB284E9F45}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5985604F-2853-4026-8978-6CFB284E9F45}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5985604F-2853-4026-8978-6CFB284E9F45}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5985604F-2853-4026-8978-6CFB284E9F45}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E40CD6F3-03A7-4CBE-9ADF-08F1BED7AB86}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E40CD6F3-03A7-4CBE-9ADF-08F1BED7AB86}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E40CD6F3-03A7-4CBE-9ADF-08F1BED7AB86}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E40CD6F3-03A7-4CBE-9ADF-08F1BED7AB86}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9A013ABC-38C4-4634-8DA6-D930BD65EEB8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9A013ABC-38C4-4634-8DA6-D930BD65EEB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9A013ABC-38C4-4634-8DA6-D930BD65EEB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9A013ABC-38C4-4634-8DA6-D930BD65EEB8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

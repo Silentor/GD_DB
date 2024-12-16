@@ -1,11 +1,5 @@
 ﻿using System;
-
-#if !UNITY_2021_2_OR_NEWER
-using Object = GDDB.Shims.UnityEngine.Object;
-#else
 using Object = UnityEngine.Object;
-#endif
-
 
 namespace GDDB.Serialization
 {
@@ -25,7 +19,7 @@ namespace GDDB.Serialization
         /// <param name="asset"></param>
         /// <param name="guid"></param>
         /// <param name="localId"></param>
-        void AddAsset( Object asset, String guid, long localId );
+        void AddAsset(  Object asset, String guid, long localId );
 
         /// <summary>
         /// Get asset during GDDB deserialization todo consider string name support for Addressables
