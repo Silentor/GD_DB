@@ -26,7 +26,7 @@ namespace GDDB.Serialization
 
         public IReadOnlyList<GDObject> LoadedObjects => _loadedObjects;
 
-        public GDObject Deserialize( String json, IGdAssetResolver assetResolver = null )
+        public GDObject Deserialize( String json, IGdAssetResolver? assetResolver = null )
         {
             using var strReader = new StringReader( json );
             using var jsonReader = new JsonTextReader( strReader );
@@ -40,7 +40,7 @@ namespace GDDB.Serialization
         /// <param name="json"></param>
         /// <param name="assetResolver"></param>
         /// <returns></returns>
-        public GDObject Deserialize( JsonReader json, IGdAssetResolver assetResolver = null )
+        public GDObject Deserialize( JsonReader json, IGdAssetResolver? assetResolver = null )
         {
             _assetResolver    = assetResolver ?? NullGdAssetResolver.Instance;
 

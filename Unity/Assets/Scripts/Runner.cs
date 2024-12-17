@@ -5,6 +5,7 @@ using System.Reflection;
 using GDDB;
 using GDDB.Serialization;
 using TMPro;
+using UnityEditor.Search;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.Profiling;
@@ -179,7 +180,7 @@ namespace GDDB_User
         {
             var prop = db.GetType().GetProperty( "Root" );
             if( prop != null )
-                return prop.PropertyType.Name;
+                return $"{prop.PropertyType.FullName}";
 
             return "???";
         }

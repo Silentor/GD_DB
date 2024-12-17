@@ -5,7 +5,7 @@ using GDDB;
 namespace UnityEngine
 {
 #if !UNITY_2021_2_OR_NEWER
-    public class Object : ISerializationCallbackReceiver 
+    public class Object 
     {
         public String name;
 
@@ -20,16 +20,6 @@ namespace UnityEngine
         {
             return obj != null;
         } 
-
-        public virtual void OnBeforeSerialize( )
-        {
-            
-        }
-
-        public virtual void OnAfterDeserialize( )
-        {
-            
-        }
     }
 
     [Flags]
