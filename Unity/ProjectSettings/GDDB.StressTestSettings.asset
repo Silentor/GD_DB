@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   OutputFolderComponents: Assets/GeneratedGDDB/Components
   RootNamespace: GeneratedGDDB
+  GDObjectScriptsCount: 50
   ComponentScriptsCount: 1000
   ComponentNamespacesCount: 50
   OutputFolderDB: Assets/GeneratedGDDB/DB
@@ -21,4 +22,4 @@ MonoBehaviour:
   MaxComponentsPerObject: 5
   SubfoldersCount: {x: 1, y: 10}
   SubfoldersMaxDepth: 5
-  ObjectsPerFolders: {x: -64, y: 50}
+  ObjectsPerFolders: {x: 1, y: 50}

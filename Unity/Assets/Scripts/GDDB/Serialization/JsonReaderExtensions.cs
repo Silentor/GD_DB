@@ -110,8 +110,8 @@ namespace GDDB.Serialization
                     var bi = (BigInteger)reader.Value;
                     return (UInt64)bi;
                 }
-                return (UInt64)reader.Value;
-            }
+                return Convert.ToUInt64( reader.Value, CultureInfo.InvariantCulture );
+            }                                                                                         
             else
                 throw new Exception( $"Expected property {propertyName} but got {reader.Value}" );
         }

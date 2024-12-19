@@ -11,13 +11,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <AdditionalFiles Include="..\Unity\Library\GDDBTreeStructure.json">
-            <Link>GDDBTreeStructure.json</Link>
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </AdditionalFiles>
-    </ItemGroup>
-
-    <ItemGroup>
         <Compile Include="..\Unity\Assets\Scripts\GDDB\Crossplatform\UnityAttributes.cs">
             <Link>Crossplatform\UnityAttributes.cs</Link>
         </Compile>

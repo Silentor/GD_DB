@@ -11,6 +11,8 @@ namespace GDDB.Editor
         public String OutputFolderComponents         = "Assets/GeneratedGDDB/Components";
         public String RootNamespace                  = "GeneratedGDDB";
         [Min(1)]
+        public Int32 GDObjectScriptsCount           = 50;
+        [Min(1)]
         public Int32 ComponentScriptsCount          = 500;
         [Min(1)]
         public Int32 ComponentNamespacesCount       = 50;

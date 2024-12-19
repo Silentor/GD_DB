@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Numerics;
 using GDDB.Serialization;
@@ -100,8 +101,13 @@ namespace GDDB.Editor
 
             var json    = File.ReadAllText( GDDBStructureFilePath );
             var jObject = (JObject)JToken.Parse( json );
-            if( jObject.ContainsKey( "hash") )
-                return (UInt64)jObject["hash"].Value<BigInteger>();
+            if ( jObject.TryGetValue( "hash", out var value ) )
+            {
+                var jValue = (JValue)value;
+                if( jValue.Value is BigInteger bi )
+                    return (UInt64)bi;
+                return Convert.ToUInt64( jValue.Value, CultureInfo.InvariantCulture );
+            }
 
             return 0;
         }
