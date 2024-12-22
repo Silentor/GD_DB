@@ -83,7 +83,7 @@ namespace GDDB
         public new static T CreateInstance<T>( ) where T : GDObject
         {
             var result = ScriptableObject.CreateInstance<T>();
-            result.name = typeof(T).Name + result.GetInstanceID().ToString();
+            //result.name = typeof(T).Name + result.GetInstanceID().ToString();
             result._guid = Guid.NewGuid();
             return result;
         }
@@ -95,7 +95,7 @@ namespace GDDB
                 throw new ArgumentException( $"Type {type.Name} must be derived from GDObject" );
 
             var result = (GDObject)ScriptableObject.CreateInstance( type );
-            result.name  = type.Name + result.GetInstanceID().ToString();
+            //result.name  = type.Name + result.GetInstanceID().ToString();
             result._guid = Guid.NewGuid();
             return result;
         }

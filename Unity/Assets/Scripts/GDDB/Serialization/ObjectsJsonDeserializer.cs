@@ -18,11 +18,13 @@ namespace GDDB.Serialization
     //Reader part of GDJson
     public class ObjectsJsonDeserializer : ObjectsJsonCommon
     {
-        private          IGdAssetResolver                        _assetResolver;
+        private          IGdAssetResolver                  _assetResolver;
         private readonly List<UnresolvedGDObjectReference> _unresolvedReferences = new ();
         private readonly List<GDObject>                    _loadedObjects        = new ();     //To resolve loaded references in place
-        private readonly CustomSampler _deserObjectSampler     = CustomSampler.Create( "ObjectsJsonSerializer.Deserialize" );
-        private readonly CustomSampler _resolveObjectSampler   = CustomSampler.Create( "ObjectsJsonSerializer.ResolveGDObjectReferences" );
+        private readonly CustomSampler                     _deserObjectSampler   = CustomSampler.Create( "ObjectsJsonSerializer.Deserialize" );
+        private readonly CustomSampler                     _resolveObjectSampler = CustomSampler.Create( "ObjectsJsonSerializer.ResolveGDObjectReferences" );
+        private readonly Dictionary<Type, IReadOnlyList<FieldInfo>> _fieldsCache          = new();
+        private readonly Dictionary<Type, ConstructorInfo> _constructorCache          = new();
 
         public IReadOnlyList<GDObject> LoadedObjects => _loadedObjects;
 
@@ -123,16 +125,21 @@ namespace GDDB.Serialization
             json.EnsureToken( JsonToken.StartObject );
             var name = json.ReadPropertyString( ".Name", false );
 
-            var type = typeof(GDObject);
-            var guid = default(Guid);
-            var  propName = json.ReadPropertyName();
+            var    type     = typeof(GDObject);
+            var    guid     = Guid.Empty;
+            var    propName = json.ReadPropertyName();
+            String typeName = null;
             if ( propName == ".Type" )
             {
-                type = Type.GetType( json.ReadAsString()! );
+                typeName = json.ReadAsString()!;
+                type = Type.GetType( typeName );
                 guid = Guid.ParseExact( json.ReadPropertyString( ".Ref", false ), "D" );
             }
             else
                 guid = Guid.ParseExact( json.ReadPropertyString( ".Ref", true ), "D" );
+
+            if ( type == null )
+                throw new JsonObjectException( name, null, json, $"Cannot find the type {typeName}, object name {name}" );
 
             var obj     = GDObject.CreateInstance( type ).SetGuid( guid );
             obj.hideFlags     = HideFlags.HideAndDontSave;
@@ -204,8 +211,7 @@ namespace GDDB.Serialization
                     throw new InvalidOperationException( $"[{nameof(ObjectsJsonDeserializer)}]-[{nameof(ReadObjectFromJson)}] Cannot create Type from type string '{typeStr}'" );
             }
 
-            var defaultConstructor =
-                    objectType.GetConstructor( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, Array.Empty<Type>(), null );
+            var defaultConstructor = GetTypeConstructor( objectType );
             if ( defaultConstructor == null )
             {
                 Debug.LogError( $"Default constructor not found for type {objectType} read null object" );
@@ -219,6 +225,7 @@ namespace GDDB.Serialization
 
             return obj;
         }
+
 
         /// <summary>
         /// Reader stands on PropertyName token or EndObject token
@@ -423,11 +430,28 @@ namespace GDDB.Serialization
             }
         }
 
-        private IReadOnlyList<FieldInfo> GetTypeFields( Type type )           //Make it cached
+        private IReadOnlyList<FieldInfo> GetTypeFields( Type type )           
         {
-            var result = type.GetFields( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance );
-            return result;
+            if ( !_fieldsCache.TryGetValue( type, out var fields ) )
+            {
+                fields = type.GetFields( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance );
+                _fieldsCache.Add( type, fields );
+            }
+
+            return fields;
         }
+
+        private ConstructorInfo GetTypeConstructor(Type type )
+        {
+            if ( !_constructorCache.TryGetValue( type, out var con ) )
+            {
+                con = type.GetConstructor( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, Array.Empty<Type>(), null );
+                _constructorCache.Add( type, con );
+            }
+
+            return con;
+        }
+
 
         private struct UnresolvedGDObjectReference
         {

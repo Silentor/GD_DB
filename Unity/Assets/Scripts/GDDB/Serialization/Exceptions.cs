@@ -60,6 +60,34 @@ namespace GDDB.Serialization
         }
     }
 
+    public class JsonTokenException : Exception
+    {
+        public String     TokenName     { get; }
+        public JsonReader Json         { get; }
+        public String     Path         { get; }
+
+        public JsonTokenException( )
+        {
+        }
+
+        public JsonTokenException( String tokenName, JsonReader json, string message )
+                : base( message )
+        {
+            TokenName = tokenName;
+            Json         = json;
+            Path         = json.Path;
+        }
+
+        public JsonTokenException(String tokenName, JsonReader json, string message, Exception inner )
+                : base( message, inner )
+        {
+            TokenName = tokenName;
+            Json         = json;
+            Path         = json.Path;
+        }
+    }
+
+
     public class JsonPropertyException : Exception
     {
         public String     PropertyName { get; }

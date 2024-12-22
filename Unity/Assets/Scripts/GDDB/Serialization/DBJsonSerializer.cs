@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.Profiling;
@@ -27,18 +29,27 @@ namespace GDDB.Serialization
         }
 #endif
 
-        public (Folder rootFolder, IReadOnlyList<GDObject> objects) Deserialize( String json, IGdAssetResolver assetsResolver )
+        public (Folder rootFolder, IReadOnlyList<GDObject> objects) Deserialize( String jsonString, IGdAssetResolver assetsResolver )
         {
-            var timer             = System.Diagnostics.Stopwatch.StartNew();
-            using var stringReader      = new System.IO.StringReader( json );
-            using var jsonReader        = new Newtonsoft.Json.JsonTextReader( stringReader );
+            return Deserialize( new StringReader( jsonString ), assetsResolver );
+        }
+
+        public (Folder rootFolder, IReadOnlyList<GDObject> objects) Deserialize( Stream jsonFile, IGdAssetResolver assetsResolver )
+        {
+            return Deserialize( new StreamReader( jsonFile, Encoding.UTF8, false, 1024, true ), assetsResolver );
+        }
+
+        public (Folder rootFolder, IReadOnlyList<GDObject> objects) Deserialize( TextReader json, IGdAssetResolver assetsResolver )
+        {
+            var       timer             = System.Diagnostics.Stopwatch.StartNew();
+            using var jsonReader        = new Newtonsoft.Json.JsonTextReader( json );
             var       objectsSerializer = new ObjectsJsonDeserializer();
             var       foldersSerializer = new FoldersJsonSerializer();
             var       rootFolder        = foldersSerializer.Deserialize( jsonReader, objectsSerializer, out _ );
             objectsSerializer.ResolveGDObjectReferences();
 
             timer.Stop();
-            Debug.Log( $"[{nameof(DBJsonSerializer)}]-[{nameof(Deserialize)}] deserialized db from json string, objects {objectsSerializer.LoadedObjects.Count}, referenced {assetsResolver.Count} assets, time {timer.ElapsedMilliseconds} ms" );
+            Debug.Log( $"[{nameof(DBJsonSerializer)}]-[{nameof(Deserialize)}] deserialized db from json, objects {objectsSerializer.LoadedObjects.Count}, referenced {assetsResolver.Count} assets, time {timer.ElapsedMilliseconds} ms" );
 
             return (rootFolder, objectsSerializer.LoadedObjects);
         }

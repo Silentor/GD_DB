@@ -8,7 +8,8 @@ namespace GDDB.Serialization
 {
     public class ObjectsJsonCommon
     {
-        protected readonly Dictionary<Type, TypeCustomSerializer> _serializers = new();
+        protected readonly Dictionary<Type, TypeCustomSerializer> _serializers       = new();
+        private readonly   Dictionary<Type, Boolean>              _isTypeSerializableCache = new();
 
         protected Boolean IsFieldSerializable( FieldInfo field )
         {
@@ -36,6 +37,19 @@ namespace GDDB.Serialization
 
         protected Boolean IsTypeSerializable( Type type )
         {
+            if ( !_isTypeSerializableCache.TryGetValue( type, out var result ) )
+            {
+                result = IsTypeSerializableInternal( type );
+                _isTypeSerializableCache.Add( type, result );
+                return result;
+            }
+
+            return result;
+        }
+
+        protected Boolean IsTypeSerializableInternal( Type type )
+        {
+
             //Fast pass
             if ( type == typeof(String) || type.IsEnum || _serializers.ContainsKey( type ) )
                 return true;
