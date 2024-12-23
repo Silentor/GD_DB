@@ -14,7 +14,7 @@ namespace GDDB.Tests
     public class LowLevelSerializerTests
     {
         [TestCaseSource(nameof(GetWriterAndReader))]
-        public void TestSerializer( Type writerType, Type readerType, Object abstractBuffer )
+        public void TestBasicSerializer( Type writerType, Type readerType, Object abstractBuffer )
         {
             // Write
             var serializer   = GetWriter( writerType, abstractBuffer );
@@ -52,39 +52,39 @@ namespace GDDB.Tests
             Assert.AreEqual( deserializer.CurrentToken, EToken.BoF );
 
             deserializer.ReadStartObject();
-            Assert.AreEqual( deserializer.ReadPropertyName( false ),    "testName" );
-            Assert.AreEqual( deserializer.ReadStringValue( false ),     "testValue" );
-            Assert.AreEqual( deserializer.ReadInt32Property( "testInt", false ), 42 );
+            Assert.AreEqual( deserializer.ReadPropertyName(  ),           "testName" );
+            Assert.AreEqual( deserializer.ReadStringValue(  ),            "testValue" );
+            Assert.AreEqual( deserializer.ReadInt32Property( "testInt" ), 42 );
 
-            Assert.AreEqual( deserializer.ReadPropertyName( false ),             "testIntArray" );
+            Assert.AreEqual( deserializer.ReadPropertyName(  ),             "testIntArray" );
 
             deserializer.ReadStartArray();
             var counter = 0;
             while( deserializer.ReadNextToken() != EToken.EndArray )
             {
-                var value = deserializer.ReadInt32Value( true );
+                var value = deserializer.ReadInt32Value(  );
                 Assert.AreEqual( value, ++counter );
             }
             deserializer.EnsureEndArray();
 
-            Assert.AreEqual( deserializer.ReadPropertyName( false ), "testMiscArray" );
+            Assert.AreEqual( deserializer.ReadPropertyName(  ), "testMiscArray" );
             deserializer.ReadStartArray();
             while( deserializer.ReadNextToken() != EToken.EndArray )
             {
                 switch ( deserializer.CurrentToken )
                 {
                     case EToken.Integer:
-                        var intValue = deserializer.ReadInt32Value( true );
+                        var intValue = deserializer.ReadInt32Value(  );
                         Assert.AreEqual( intValue, 42 );
                         break;                    
                     case EToken.String:
-                        var stringValue = deserializer.ReadStringValue( true );
+                        var stringValue = deserializer.ReadStringValue(  );
                         Assert.AreEqual( stringValue, "testValue" );
                         break;
                     case EToken.StartObject:
                         deserializer.EnsureStartObject();
-                        Assert.AreEqual( deserializer.ReadPropertyName( false ), "embeddedObject" );
-                        Assert.AreEqual( deserializer.ReadStringValue( false ), "embeddedValue" );
+                        Assert.AreEqual( deserializer.ReadPropertyName(  ), "embeddedObject" );
+                        Assert.AreEqual( deserializer.ReadStringValue(  ),  "embeddedValue" );
                         deserializer.ReadEndObject();
                         break;
                 }
@@ -94,6 +94,135 @@ namespace GDDB.Tests
             deserializer.ReadEndObject();
 
             Assert.AreEqual( deserializer.ReadNextToken(), EToken.EoF );
+        }
+
+        [TestCaseSource(nameof(GetWriterAndReader))]
+        public void TestEnumerateTokens( Type writerType, Type readerType, Object abstractBuffer )
+        {
+            // Write
+            var serializer   = GetWriter( writerType, abstractBuffer );
+            serializer.WriteStartObject();
+            serializer.WritePropertyName( "testName" );
+            serializer.WriteValue( "testValue" );
+            serializer.WritePropertyName( "testInt" );
+            serializer.WriteValue( 42 );
+            serializer.WritePropertyName( "testIntArray" );
+            serializer.WriteStartArray();
+                serializer.WriteValue( 1 );
+                serializer.WriteValue( 2 );
+                serializer.WriteValue( 3 );
+            serializer.WriteEndArray();
+            serializer.WritePropertyName( "testMiscArray" );
+            serializer.WriteStartArray();
+                serializer.WriteValue( 42 );
+                serializer.WriteValue( "testValue" );
+                serializer.WriteStartObject();
+                    serializer.WritePropertyName( "embeddedObject" );
+                    serializer.WriteValue( "embeddedValue" );
+                serializer.WriteEndObject();
+            serializer.WriteEndArray();
+
+            serializer.WriteEndObject();
+
+            // Save to file
+            SaveToFile( "test", abstractBuffer );
+
+            // Log
+            LogBuffer( abstractBuffer );
+
+            // Read and assert
+            var resultTokens = new[]
+            {
+                EToken.StartObject,
+                EToken.PropertyName,
+                EToken.String,
+                EToken.PropertyName,
+                EToken.Int32,
+                EToken.PropertyName,
+                EToken.StartArray,
+                EToken.Int32,
+                EToken.Int32,
+                EToken.Int32,
+                EToken.EndArray,
+                EToken.PropertyName,
+                EToken.StartArray,
+                EToken.Int32,
+                EToken.String,
+                EToken.StartObject,
+                EToken.PropertyName,
+                EToken.String,
+                EToken.EndObject,
+                EToken.EndArray,
+                EToken.EndObject,
+                //EToken.EoF
+            };
+
+            var deserializer = GetReader( readerType, abstractBuffer );
+            var i = 0;
+            while ( deserializer.ReadNextToken() != EToken.EoF )
+            {
+                var expectedToken = resultTokens[ i++ ];
+                Assert.AreEqual( deserializer.CurrentToken, expectedToken );
+            }
+        }
+
+        [TestCaseSource(nameof(GetWriterAndReader))]
+        public void TestSkipProperties( Type writerType, Type readerType, Object abstractBuffer )
+        {
+            // Write
+            var serializer   = GetWriter( writerType, abstractBuffer );
+            serializer.WriteStartObject();
+            serializer.WritePropertyName( "testName" );
+            serializer.WriteValue( "testValue" );
+            serializer.WritePropertyName( "testInt" );
+            serializer.WriteValue( 42 );
+            serializer.WritePropertyName( "testIntArray" );
+            serializer.WriteStartArray();
+                serializer.WriteValue( 1 );
+                serializer.WriteValue( 2 );
+                serializer.WriteValue( 3 );
+            serializer.WriteEndArray();
+            serializer.WritePropertyName( "testMiscArray" );
+            serializer.WriteStartArray();
+                serializer.WriteValue( 42 );
+                serializer.WriteValue( "testValue" );
+                serializer.WriteStartObject();
+                    serializer.WritePropertyName( "embeddedObject" );
+                    serializer.WriteValue( "embeddedValue" );
+                serializer.WriteEndObject();
+            serializer.WriteEndArray();
+
+            serializer.WriteEndObject();
+
+            // Save to file
+            SaveToFile( "test", abstractBuffer );
+
+            // Log
+            LogBuffer( abstractBuffer );
+
+            var deserializer = GetReader( readerType, abstractBuffer );
+            Assert.AreEqual( EToken.BoF, deserializer.CurrentToken );
+            Assert.AreEqual( EToken.StartObject, deserializer.ReadNextToken() );
+            Assert.AreEqual( EToken.PropertyName, deserializer.ReadNextToken() );
+            deserializer.Skip();                                                                //Skip "testName" primitive property staying on property name token
+            Assert.AreEqual( EToken.String, deserializer.CurrentToken );                        //After skip we should stay on last token of skipped property
+            Assert.AreEqual( "testInt", deserializer.ReadPropertyName() );
+            deserializer.Skip();                                                                //Skip "testInt" primitive property staying on property name value
+            Assert.AreEqual( EToken.Integer,  deserializer.CurrentToken );                        //After skip we should stay on last token of skipped property
+            Assert.AreEqual( "testIntArray", deserializer.ReadPropertyName() );
+            deserializer.Skip();                                                                //Skip "testIntArray" array property
+            Assert.AreEqual( EToken.EndArray, deserializer.CurrentToken );                        //After skip we should stay on last token of skipped property
+            Assert.AreEqual( "testMiscArray",     deserializer.ReadPropertyName() );
+            Assert.AreEqual( EToken.StartArray,   deserializer.ReadNextToken() );
+            Assert.AreEqual( EToken.Integer,      deserializer.ReadNextToken() );
+            Assert.AreEqual( EToken.String,       deserializer.ReadNextToken() );
+            Assert.AreEqual( EToken.StartObject,  deserializer.ReadNextToken() );
+            Assert.AreEqual( EToken.PropertyName, deserializer.ReadNextToken() );
+            deserializer.Skip();                                                                //Skip "embeddedObject" property
+            Assert.AreEqual( EToken.String,    deserializer.CurrentToken );                     //After skip we should stay on last token of skipped property
+            Assert.AreEqual( EToken.EndObject, deserializer.ReadNextToken() );
+            Assert.AreEqual( EToken.EndArray,  deserializer.ReadNextToken() );
+            Assert.AreEqual( EToken.EndObject, deserializer.ReadNextToken() );
         }
 
         [TestCaseSource(nameof(GetWriterAndReaderAndBooleans))]
@@ -127,14 +256,14 @@ namespace GDDB.Tests
             deserializer.ReadStartObject();
             while( deserializer.ReadNextToken() == EToken.PropertyName )
             {
-                var propName = deserializer.ReadPropertyName( true  );
+                var propName = deserializer.ReadPropertyName(   );
                 if( propName == "optionalProp1" )
                 {
-                    Assert.AreEqual( deserializer.ReadStringValue( false ), "testValue" );
+                    Assert.AreEqual( deserializer.ReadStringValue(  ), "testValue" );
                 }
                 else if( propName == "optionalProp2" )
                 {
-                    Assert.AreEqual( deserializer.ReadInt32Value( false ), 42 );
+                    Assert.AreEqual( deserializer.ReadInt32Value(  ), 42 );
                 }
             }
 
@@ -184,7 +313,7 @@ namespace GDDB.Tests
             throw new NotImplementedException();
         }
 
-        private Reader GetReader( Type storageType, Object buffer )
+        private ReaderBase GetReader( Type storageType, Object buffer )
         {
             if ( storageType == typeof( JsonNetReader ) )
             {

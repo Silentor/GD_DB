@@ -1,4 +1,6 @@
-﻿namespace GDDB.Serialization
+﻿using System;
+
+namespace GDDB.Serialization
 {
     public enum EToken : byte
     {
@@ -14,7 +16,8 @@
         Single = Float,
         Double = Float + 1,
 
-        String              = 1 << 4,
+        String       = 1 << 4,
+        PropertyName = String + 1,
 
         Container    = 1 << 5,
         StartObject  = Container,
@@ -23,7 +26,6 @@
         EndArray     = Container + 3,
         StartBuffer  = Container + 4,
         EndBuffer    = Container + 5,
-        PropertyName = Container + 6,
 
         Integer = 1 << 6,
         Int32   = Integer,
@@ -34,7 +36,21 @@
         SByte   = Integer + 5,
         Int16   = Integer + 6,
         UInt16  = Integer + 7,
+        VarInt  = Integer + 8,
 
         Alias               = 1 << 7,
+    }
+
+    public static class TokenExtensions
+    {
+        public static Boolean IsStartContainer( this EToken token )
+        {
+            return token == EToken.StartObject || token == EToken.StartArray || token == EToken.StartBuffer;
+        }
+
+        public static Boolean IsEndContainer( this EToken token )
+        {
+            return token == EToken.EndObject || token == EToken.EndArray || token == EToken.EndBuffer;
+        }
     }
 }
