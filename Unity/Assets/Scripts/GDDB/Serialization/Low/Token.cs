@@ -2,15 +2,16 @@
 
 namespace GDDB.Serialization
 {
-    public enum EToken : byte
+    public enum EToken : Byte
     {
         //Control
         BoF = 0,
         EoF = 1,
 
-        Boolean = 1 << 2,
-        False   = Boolean,
-        True    = Boolean + 1,
+        DataToken = 1 << 2,
+        Null      = DataToken,
+        False     = DataToken + 1,
+        True      = DataToken + 2, 
 
         Float  = 1 << 3,
         Single = Float,
@@ -28,15 +29,16 @@ namespace GDDB.Serialization
         EndBuffer    = Container + 5,
 
         Integer = 1 << 6,
-        Int32   = Integer,
-        Int64   = Integer + 1,
-        UInt32  = Integer + 2,
-        UInt64  = Integer + 3,
-        Byte    = Integer + 4,
-        SByte   = Integer + 5,
-        Int16   = Integer + 6,
-        UInt16  = Integer + 7,
+        Int8    = Integer,
+        UInt8   = Integer + 1,
+        Int16   = Integer + 2,
+        UInt16  = Integer + 3,
+        Int32   = Integer + 4,
+        UInt32  = Integer + 5,
+        Int64   = Integer + 6,
+        UInt64  = Integer + 7,
         VarInt  = Integer + 8,
+        Guid    = Integer + 9,
 
         Alias               = 1 << 7,
     }
@@ -52,5 +54,41 @@ namespace GDDB.Serialization
         {
             return token == EToken.EndObject || token == EToken.EndArray || token == EToken.EndBuffer;
         }
+
+        public static Boolean IsDataToken( this EToken token )
+        {
+            return ((Byte)token & 0b1111_1100) == (Byte)EToken.DataToken;
+        }
+
+        public static Boolean IsFloatToken( this EToken token )
+        {
+            return ((Byte)token & 0b1111_1000) == (Byte)EToken.Float;
+        }
+
+        public static Boolean IsStringToken( this EToken token )
+        {
+            return ((Byte)token & 0b1111_0000) == (Byte)EToken.String;
+        }
+
+        public static Boolean IsContainerToken( this EToken token )
+        {
+            return ((Byte)token & 0b1110_0000) == (Byte)EToken.Container;
+        }
+
+        public static Boolean IsIntegerToken( this EToken token )
+        {
+            return ((Byte)token & 0b1100_0000) == (Byte)EToken.Integer;
+        }
+
+        public static Boolean IsBooleanToken( this EToken token )
+        {
+            return token == EToken.True || token == EToken.False;
+        }
+
+        public static Boolean HasPayload( this EToken token )
+        {
+            return token.IsFloatToken() || token.IsStringToken() || token.IsIntegerToken();
+        }
+
     }
 }
