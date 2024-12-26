@@ -96,7 +96,7 @@ namespace GDDB.Editor
             if ( settings.UpdateJsonDB && !String.IsNullOrEmpty( settings.JsonDBPath ) 
                 && (_isDBDirty || force || !File.Exists( settings.JsonDBPath ) || (!string.IsNullOrEmpty(settings.JsonAssetsReferencePath) && !File.Exists( settings.JsonAssetsReferencePath ))) )
             {
-                var serializer      = new DBJsonSerializer();
+                var serializer      = new DBDataSerializer();
                 var rootFolder      = editorDB.RootFolder;
                 var assetReferencer = ScriptableObject.CreateInstance<DirectAssetReferences>();
                 var json            = serializer.Serialize( rootFolder, editorDB.AllObjects, assetReferencer );

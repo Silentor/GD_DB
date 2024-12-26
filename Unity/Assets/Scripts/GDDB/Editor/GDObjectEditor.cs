@@ -454,7 +454,7 @@ namespace GDDB.Editor
             {
                 var editorDB        = GDBEditor.GDB;
                 var assetsReference = CreateInstance<DirectAssetReferences>();
-                var serializer      = new DBJsonSerializer();
+                var serializer      = new DBDataSerializer();
                 var jsonStr         = serializer.Serialize( editorDB.RootFolder, editorDB.AllObjects, assetsReference );
 
                 //Save hierarchy to json
@@ -497,7 +497,7 @@ namespace GDDB.Editor
                 if ( !String.IsNullOrEmpty( path ) )
                 {
                     var textFromFile = File.ReadAllText( path );
-                    var gdJson = new GdJsonLoader( textFromFile ).GetGameDataBase();
+                    var gdJson = new GdFileLoader( textFromFile ).GetGameDataBase();
                     Debug.Log( $"Loaded gd DB {gdJson.Name}, total objects {gdJson.AllObjects.Count}" );
                     gdJson.Print();
                 }
@@ -520,7 +520,7 @@ namespace GDDB.Editor
 
             //Print object json to console
             var printObjBtn = new Button( ( ) => {
-                var json = new ObjectsJsonSerializer().Serialize( _target  );
+                var json = new ObjectsDataSerializer().Serialize( _target  );
                 Debug.Log( json );
             } );
             printObjBtn.text         = "Print obj";

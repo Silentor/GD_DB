@@ -53,11 +53,11 @@ namespace GDDB.Serialization
                     return;
 
                 if( reader.TokenType == JsonToken.EndObject )
-                    throw new JsonPropertyException( propertyName, reader, $"Property {propertyName} not found" );
+                    throw new ReaderPropertyException( propertyName, reader, $"Property {propertyName} not found" );
             }
             while ( reader.Read() ) ;
 
-            throw new JsonPropertyException( propertyName, reader, $"Property {propertyName} not found" );
+            throw new ReaderPropertyException( propertyName, reader, $"Property {propertyName} not found" );
         }
 
         
@@ -139,11 +139,11 @@ namespace GDDB.Serialization
                 }
 
                 if( reader.TokenType == JsonToken.EndObject )
-                    throw new JsonPropertyException( propertyName, reader, $"Property {propertyName} not found" );
+                    throw new ReaderPropertyException( propertyName, reader, $"Property {propertyName} not found" );
             }
             while ( reader.Read() ) ;
 
-            throw new JsonPropertyException( propertyName, reader, $"Property {propertyName} not found" );
+            throw new ReaderPropertyException( propertyName, reader, $"Property {propertyName} not found" );
         }
     }
 }

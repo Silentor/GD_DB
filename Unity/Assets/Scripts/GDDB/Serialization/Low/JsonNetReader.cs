@@ -6,12 +6,15 @@ namespace GDDB.Serialization
 {
     public class JsonNetReader : ReaderBase
     {
+
         private readonly JsonReader _reader;
 
         public JsonNetReader( JsonReader reader )
         {
             _reader = reader;
         }
+
+        public override String Path => _reader.Path;
 
         public override EToken ReadNextToken( )
         {
@@ -53,21 +56,6 @@ namespace GDDB.Serialization
             EnsureToken( JsonToken.EndArray );
         }
 
-        public override void EnsureStartObject( )
-        {
-            EnsureToken( JsonToken.StartObject );
-        }
-
-        public override void EnsureEndObject( )
-        {
-            EnsureToken( JsonToken.EndObject );
-        }
-
-        public override void EnsureEndArray( )
-        {
-            EnsureToken( JsonToken.EndArray );
-        }
-
         public override String GetPropertyName( )
         {
             EnsureToken( JsonToken.PropertyName );
@@ -82,6 +70,11 @@ namespace GDDB.Serialization
         public override Int64 GetIntegerValue( )
         {
             return Convert.ToInt64( _reader.Value );
+        }
+
+        public override Byte GetUInt8Value( )
+        {
+            return Convert.ToByte( _reader.Value );
         }
 
         public override Int32 GetInt32Value( )
@@ -130,7 +123,7 @@ namespace GDDB.Serialization
                 //It's ok
             }
             else
-                throw new JsonTokenException( token.ToString(), _reader, $"Expected token {token} but got {_reader.TokenType} = {_reader.Value}" );
+                throw new ReaderTokenException( token.ToString(), this, $"Expected token {token} but got {_reader.TokenType} = {_reader.Value}" );
         }
 
         private static EToken ConvertToken( JsonToken token )

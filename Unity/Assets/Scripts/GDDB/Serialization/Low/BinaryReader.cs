@@ -12,10 +12,17 @@ namespace GDDB.Serialization
         private Double _doubleBuffer;
         private String _stringBuffer;
 
+        public BinaryReader( System.IO.Stream binaryStream )
+        {
+            _reader = new System.IO.BinaryReader( binaryStream );
+        }
+
         public BinaryReader( System.IO.BinaryReader reader )
         {
             _reader = reader;
         }
+
+        public override String Path { get; }
 
         public override EToken ReadNextToken( )
         {
@@ -73,21 +80,6 @@ namespace GDDB.Serialization
             EnsureToken( EToken.EndArray );
         }
 
-        public override void EnsureStartObject( )
-        {
-            EnsureToken( EToken.StartObject );
-        }
-
-        public override void EnsureEndObject( )
-        {
-            EnsureToken( EToken.EndObject );
-        }
-
-        public override void EnsureEndArray( )
-        {
-            EnsureToken( EToken.EndArray );
-        }
-
         public override String GetPropertyName( )
         {
             EnsureToken( EToken.PropertyName );
@@ -112,6 +104,16 @@ namespace GDDB.Serialization
                 return 0;
             else
                 throw new Exception( $"Expected tokens from {EToken.Int8} to {EToken.Int64} or {EToken.Null} but got {CurrentToken}" );
+        }
+
+        public override Byte GetUInt8Value( )
+        {
+            if( CurrentToken == EToken.UInt8 )
+                return (Byte)_intBuffer;
+            else if( CurrentToken == EToken.Null )
+                return 0;
+            else
+                throw new Exception( $"Expected token {EToken.UInt8} or {EToken.Null} but got {CurrentToken}" );
         }
 
         public override Int32 GetInt32Value( )

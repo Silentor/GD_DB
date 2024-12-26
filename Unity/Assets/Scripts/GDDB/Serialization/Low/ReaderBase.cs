@@ -7,6 +7,8 @@ namespace GDDB.Serialization
     {
         public EToken CurrentToken { get; protected set; }
 
+        public abstract String Path { get; }
+
         public abstract EToken ReadNextToken( );
 
         public abstract void ReadStartObject( );
@@ -14,11 +16,7 @@ namespace GDDB.Serialization
 
         public abstract void ReadStartArray( );
         public abstract void ReadEndArray( );
-
-        public abstract void EnsureStartObject( );
-        public abstract void EnsureEndObject( );
-        public abstract void EnsureEndArray( );
-
+        
         public abstract String GetPropertyName( );
         public abstract String GetStringValue( );
 
@@ -28,6 +26,7 @@ namespace GDDB.Serialization
         /// </summary>
         /// <returns></returns>
         public abstract Int64 GetIntegerValue( );
+        public abstract Byte GetUInt8Value( );
         public abstract Int32 GetInt32Value( );
         public abstract UInt64 GetUInt64Value( );
 
@@ -45,6 +44,40 @@ namespace GDDB.Serialization
 
         public abstract void SkipProperty( );
 
+        public void EnsureToken( EToken token )
+        {
+            if ( CurrentToken == token )
+            {
+                //It's ok
+            }
+            else
+                throw new Exception( $"Expected token {token} but got {CurrentToken} at {Path}" );
+        }
+
+        public void EnsureStartObject( )
+        {
+            EnsureToken( EToken.StartObject );
+        }
+        public void EnsureEndObject( )
+        {
+            EnsureToken( EToken.EndObject );
+        }
+        public void EnsureStartArray( )
+        {
+            EnsureToken( EToken.StartArray );
+        }
+        public  void EnsureEndArray( )
+        {
+            EnsureToken( EToken.EndArray );
+        }
+
+        public void EnsurePropertyName( String propertyName )
+        {
+            EnsureToken( EToken.PropertyName );
+            if( GetPropertyName() != propertyName )
+                throw new Exception( $"Expected property {propertyName} but got {GetPropertyName()} at {Path}" );
+        }
+
         public String ReadPropertyName( )
         {
             var propertyToken = ReadNextToken();
@@ -52,6 +85,25 @@ namespace GDDB.Serialization
                 return GetPropertyName();
             else
                 throw new Exception( $"Expected property name but got {propertyToken}" );
+        }
+
+        public void ReadPropertyName( String propertyName )
+        {
+            var actualPropertyName = ReadPropertyName();
+            if ( actualPropertyName != propertyName )
+                throw new Exception( $"Expected property {propertyName} but got {actualPropertyName}" );
+        }
+
+        public EToken SeekPropertyName( String propertyName )
+        {
+            while( CurrentToken != EToken.PropertyName && GetPropertyName() != propertyName )
+            {
+                ReadNextToken();
+                if ( CurrentToken == EToken.EoF )
+                    return EToken.EoF;
+            }
+
+            return EToken.PropertyName;
         }
 
         public Boolean TryReadPropertyName( out String propertyName )
@@ -69,11 +121,30 @@ namespace GDDB.Serialization
             }
         }
 
+        public Byte  ReadUInt8Value( )
+        {
+            ReadNextToken();
+            return GetUInt8Value();
+        }
+
         public Int32  ReadInt32Value( )
         {
             ReadNextToken();
             return GetInt32Value();
         }
+
+        public UInt64  ReadUInt64Value( )
+        {
+            ReadNextToken();
+            return GetUInt64Value();
+        }
+
+        public Int64  ReadIntegerValue( )
+        {
+            ReadNextToken();
+            return GetIntegerValue();
+        }
+
 
         public Single  ReadSingleValue( )
         {
@@ -106,6 +177,14 @@ namespace GDDB.Serialization
             if ( actualPropertyName == propertyName ) return ReadInt32Value(  );
             throw new Exception( $"Expected property {propertyName} but got {actualPropertyName}" );
         }
+
+        public Int64 ReadPropertyInteger(  String propertyName )
+        {
+            var actualPropertyName = ReadPropertyName(  );
+            if ( actualPropertyName == propertyName ) return ReadIntegerValue(  );
+            throw new Exception( $"Expected property {propertyName} but got {actualPropertyName}" );
+        }
+
 
         public Single ReadPropertySingle(  String propertyName )
         {

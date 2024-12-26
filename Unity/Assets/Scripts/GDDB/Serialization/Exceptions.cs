@@ -3,148 +3,148 @@ using Newtonsoft.Json;
 
 namespace GDDB.Serialization
 {
-    public class JsonComponentException : Exception
+    public class ReaderComponentException : Exception
     {
         public Int32      ComponentIndex { get; }
-        public JsonReader Json           { get; }
+        public ReaderBase Reader           { get; }
         public String     Path           { get; }
 
-        public JsonComponentException()
+        public ReaderComponentException()
         {
         }
 
-        public JsonComponentException( Int32 index, JsonReader json, string message)
+        public ReaderComponentException( Int32 index, ReaderBase reader, string message)
                 : base(message)
         {
             ComponentIndex = index;
-            Json           = json;
-            Path           = json.Path;
+            Reader           = reader;
+            Path           = reader.Path;
         }
 
-        public JsonComponentException( Int32 index, JsonReader json, string message, Exception inner)
+        public ReaderComponentException( Int32 index, ReaderBase reader, string message, Exception inner)
                 : base(message, inner)
         {
             ComponentIndex = index;
-            Json           = json;
-            Path           = json.Path;
+            Reader           = reader;
+            Path           = reader.Path;
         }
     }
 
-    public class JsonObjectException : Exception
+    public class ReaderObjectException : Exception
     {
         public String     ObjectName { get; }
         public Type       ObjectType { get; }
-        public JsonReader Json       { get; }
+        public ReaderBase Reader       { get; }
         public String     Path       { get; }
 
-        public JsonObjectException( )
+        public ReaderObjectException( )
         {
         }
 
-        public JsonObjectException( String objectName, Type objectType, JsonReader json, string message)
+        public ReaderObjectException( String objectName, Type objectType, ReaderBase reader, string message)
                 : base( message )
         {
-            Json       = json;
+            Reader       = reader;
             ObjectName = objectName;
             ObjectType = objectType;
-            Path       = json.Path;
+            Path       = reader.Path;
         }
 
-        public JsonObjectException( String objectName, Type objectType, JsonReader json, string message, Exception inner)
+        public ReaderObjectException( String objectName, Type objectType, ReaderBase reader, string message, Exception inner)
                 : base( message, inner )
         {
             ObjectName = objectName;
             ObjectType = objectType;
-            Json       = json;
-            Path       = json.Path;
+            Reader       = reader;
+            Path       = reader.Path;
         }
     }
 
-    public class JsonTokenException : Exception
+    public class ReaderTokenException : Exception
     {
         public String     TokenName     { get; }
-        public JsonReader Json         { get; }
+        public ReaderBase Reader         { get; }
         public String     Path         { get; }
 
-        public JsonTokenException( )
+        public ReaderTokenException( )
         {
         }
 
-        public JsonTokenException( String tokenName, JsonReader json, string message )
+        public ReaderTokenException( String tokenName, ReaderBase reader, string message )
                 : base( message )
         {
             TokenName = tokenName;
-            Json         = json;
-            Path         = json.Path;
+            Reader         = reader;
+            Path         = reader.Path;
         }
 
-        public JsonTokenException(String tokenName, JsonReader json, string message, Exception inner )
+        public ReaderTokenException(String tokenName, ReaderBase reader, string message, Exception inner )
                 : base( message, inner )
         {
             TokenName = tokenName;
-            Json         = json;
-            Path         = json.Path;
+            Reader         = reader;
+            Path         = reader.Path;
         }
     }
 
 
-    public class JsonPropertyException : Exception
+    public class ReaderPropertyException : Exception
     {
         public String     PropertyName { get; }
-        public JsonReader Json         { get; }
+        public ReaderBase Reader         { get; }
         public String     Path         { get; }
 
-        public JsonPropertyException( )
+        public ReaderPropertyException( )
         {
         }
 
-        public JsonPropertyException( String propertyName, JsonReader json, string message )
+        public ReaderPropertyException( String propertyName, ReaderBase reader, string message )
                 : base( message )
         {
             PropertyName = propertyName;
-            Json         = json;
-            Path         = json.Path;
+            Reader         = reader;
+            Path         = reader.Path;
         }
 
-        public JsonPropertyException(String propertyName, JsonReader json, string message, Exception inner )
+        public ReaderPropertyException(String propertyName, ReaderBase reader, string message, Exception inner )
                 : base( message, inner )
         {
             PropertyName = propertyName;
-            Json         = json;
-            Path         = json.Path;
+            Reader         = reader;
+            Path         = reader.Path;
         }
     }
 
 
-    public class JsonFolderException : Exception
+    public class ReaderFolderException : Exception
     {
         public String     FolderName { get; }
         public Guid       Guid { get; }
-        public JsonReader Json       { get; }
-        public String     JsonPath       { get; }
+        public ReaderBase Reader       { get; }
+        public String     ReaderPath       { get; }
         public String     FolderPath       { get; }
 
-        public JsonFolderException( )
+        public ReaderFolderException( )
         {
         }
 
-        public JsonFolderException( Folder folder, JsonReader json, string message)
+        public ReaderFolderException( Folder folder, ReaderBase reader, string message)
                 : base( message )
         {
-            Json       = json;
+            Reader       = reader;
             FolderName = folder.Name;
             Guid       = folder.FolderGuid;
-            JsonPath   = json.Path;
+            ReaderPath   = reader.Path;
             FolderPath = folder.GetPath();
         }
 
-        public JsonFolderException( Folder folder, JsonReader json, string message, Exception inner)
+        public ReaderFolderException( Folder folder, ReaderBase reader, string message, Exception inner)
                 : base( message, inner )
         {
-            Json       = json;
+            Reader       = reader;
             FolderName = folder.Name;
             Guid       = folder.FolderGuid;
-            JsonPath   = json.Path;
+            ReaderPath   = reader.Path;
             FolderPath = folder.GetPath();
         }
     }

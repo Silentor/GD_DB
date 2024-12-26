@@ -10,10 +10,14 @@ using UnityEngine;
 
 namespace GDDB.Serialization
 {
-    public class ObjectsJsonSerializer : ObjectsJsonCommon
+    public class ObjectsDataSerializer : ObjectsJsonCommon
     {
-        public ObjectsJsonSerializer( )
+        private readonly WriterBase _writer;
+
+        public ObjectsDataSerializer( WriterBase writer )
         {
+            _writer = writer;
+
 #if UNITY_2021_2_OR_NEWER
             AddSerializer( new Vector3Serializer() );
             AddSerializer( new Vector3IntSerializer() );
@@ -28,17 +32,17 @@ namespace GDDB.Serialization
 #endif
         }
 
-        public void AddSerializer( TypeCustomSerializer serializer )
+        public void AddSerializer<T>( TypeCustomSerializer<T> serializer )
         {
             _serializers.Add( serializer.SerializedType, serializer );
         }
 
 #if UNITY_EDITOR
 
-        public JObject Serialize( GDObject @object, IGdAssetResolver assetResolver = null )
+        public void Serialize( GDObject @object,IGdAssetResolver assetResolver = null )
         {
             if ( !@object.EnabledObject )
-                return null;
+                return;
 
             _assetResolver = assetResolver ?? NullGdAssetResolver.Instance;
             
@@ -49,11 +53,9 @@ namespace GDDB.Serialization
                 if( gdComponent is ISerializationCallbackReceiver componentSerializationCallbackReceiver )
                     componentSerializationCallbackReceiver.OnBeforeSerialize();
 
-            var result =  WriteGDObjectToJson( @object );                    
+            WriteGDObjectToJson( @object, _writer );                    
 
-            Debug.Log( $"[{nameof(ObjectsJsonSerializer)}] Serialized gd object {@object.Name} to json, referenced {_assetResolver.Count} assets, used asset resolver {_assetResolver.GetType().Name}" );
-
-            return result;
+            Debug.Log( $"[{nameof(ObjectsDataSerializer)}] Serialized gd object {@object.Name} to json, referenced {_assetResolver.Count} assets, used asset resolver {_assetResolver.GetType().Name}" );
         }
         
 #endif
@@ -63,64 +65,61 @@ namespace GDDB.Serialization
 
 #if UNITY_EDITOR
 
-        private JObject  WriteGDObjectToJson( GDObject obj )
+        private void  WriteGDObjectToJson( GDObject obj, WriterBase writer )
         {
             try
             {
-                var result = new JObject();
-                result.Add( ".Name", obj.name );
+                writer.WriteStartObject();
+                writer.WritePropertyName( ".Name" );
+                writer.WriteValue( obj.name );
                 var type = obj.GetType();
-                if( obj.GetType() != typeof(GDObject) )
-                    result.Add( ".Type", type.Assembly == typeof(GDObject).Assembly ? type.FullName : type.AssemblyQualifiedName );
-                result.Add( ".Ref",  obj.Guid.ToString("D") );
-                if( !obj.EnabledObject )
-                    result.Add( ".Enabled", false );
+                if ( obj.GetType() != typeof(GDObject) )
+                {
+                    writer.WritePropertyName( ".Type" );
+                    writer.WriteValue( type.Assembly == typeof(GDObject).Assembly ? type.FullName : type.AssemblyQualifiedName );
+                }
+                writer.WritePropertyName( ".Ref" );
+                writer.WriteValue( obj.Guid.ToString("D") );
+                if ( !obj.EnabledObject )
+                {
+                    writer.WritePropertyName( ".Enabled" );
+                    writer.WriteValue( false );
+                }
 
-                var componentsArray = new JArray();
-                result.Add( ".Components", componentsArray );
+                writer.WritePropertyName( ".Components" );
+                writer.WriteStartArray();
                 foreach ( var gdComponent in obj.Components )
                 {
                     if( gdComponent == null || gdComponent.GetType().IsAbstract )       //Seems like missed class component
                         continue;
-                    componentsArray.Add( WriteObjectToJson( typeof(GDComponent), gdComponent ) );
+
+                    WriteObjectToJson( typeof(GDComponent), gdComponent, writer ) ;
                 }
+                writer.WriteEndArray();
 
-                WriteObjectContent( type, obj, result );
+                WriteObjectContent( type, obj, writer );
 
-                return result;
+                writer.WriteEndObject();
             }
             catch ( Exception e )
             {
-                throw new JsonObjectException( obj.name, obj.GetType(), null, $"Error writing object {obj.name} of type {obj.GetType()}", e );
+                throw new ReaderObjectException( obj.name, obj.GetType(), null, $"Error writing object {obj.name} of type {obj.GetType()}", e );
             }
         }
 
-        private JObject WriteObjectToJson( Type propertyType, Object obj )
+        private void WriteObjectToJson( Type propertyType, Object obj, WriterBase writer )
         {
-            var result = new JObject();
-            var value  = result;
-
+            writer.WriteStartObject();
             var actualType = obj.GetType();
 
             //Check for polymorphic object
             if ( propertyType != actualType )
             {
-                result.Add( ".Type", actualType.Assembly == GetType().Assembly ? actualType.FullName : actualType.AssemblyQualifiedName );
-                //value = new JObject();
-                //result.Add( ".Value", value );
+                writer.WritePropertyName( ".Type" );
+                writer.WriteValue( actualType.Assembly == GetType().Assembly ? actualType.FullName : actualType.AssemblyQualifiedName );
             }
 
-            // if( _serializers.TryGetValue( obj.GetType(), out var serializer ) )
-            // {
-            //     serializer.Serialize( obj, writer ) ;
-            //     return;
-            // }
-            // else
-            {
-                WriteObjectContent( actualType, obj, value );
-            }
-
-            return result;
+            WriteObjectContent( actualType, obj, writer );
         }
 
         // private JSONObject WriteReferenceToJson( Type propertyType, Guid guid )
@@ -131,7 +130,7 @@ namespace GDDB.Serialization
         // }
 
 
-        private void WriteObjectContent( Type actualType, Object obj, JObject writer )
+        private void WriteObjectContent( Type actualType, Object obj, WriterBase writer )
         {
             foreach (var field in actualType.GetFields( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance ))
             {
@@ -140,139 +139,148 @@ namespace GDDB.Serialization
                     var value = field.GetValue(obj);
                     if ( value != null )
                     {
-                        var property = WritePropertyToJson( field.Name, field.FieldType, value, value.GetType() );
-                        writer.Add( field.Name, property );
+                        WritePropertyToJson( field.Name, field.FieldType, value, value.GetType(), writer );
                     }
                     else
                     {
-                        var property = WriteNullPropertyToJson( field.Name, field.FieldType );
-                        writer.Add( field.Name, property );
+                        WriteNullPropertyToJson( field.Name, field.FieldType, writer );
                     }
                 }
             }
         }
 
        
-        private JToken WritePropertyToJson( String propertyName, Type propertyType, Object value, Type valueType )
+        private void WritePropertyToJson( String propertyName, Type propertyType, Object value, Type valueType, WriterBase writer )
         {
             try
             {
-                return WriteSomethingToJson( propertyType, value, valueType );
+                writer.WritePropertyName( propertyName );
+                WriteSomethingToJson( propertyType, value, valueType, writer );
             }
             catch ( Exception e )
             {
-                throw new JsonPropertyException( propertyName, null, $"Error writing property {propertyName} of type {propertyType} value {value} ", e );
+                throw new ReaderPropertyException( propertyName, null, $"Error writing property {propertyName} of type {propertyType} value {value} ", e );
             }
             
         }
 
-        private JToken WriteNullPropertyToJson( String propertyName, Type propertyType )
+        private void WriteNullPropertyToJson( String propertyName, Type propertyType, WriterBase writer )
         {
-            return WriteSomethingNullToJson( propertyType );
+            writer.WritePropertyName( propertyName );
+            WriteSomethingNullToJson( propertyType, writer );
         }
 
-        private JToken WriteSomethingToJson(Type propertyType, Object value, Type valueType )
+        private void WriteSomethingToJson(Type propertyType, Object value, Type valueType, WriterBase writer )
         {
             if ( valueType == typeof(Char) )
             {
-                return new JValue( Convert.ToChar( value, CultureInfo.InvariantCulture ) );
+                writer.WriteValue( Convert.ToString( value, CultureInfo.InvariantCulture ) );
             }
             else if ( valueType == typeof(String) )
             {
-                return new JValue( (String)value );
+                writer.WriteValue( (String)value );
             }
             else if ( valueType.IsPrimitive)
             {
                 if ( valueType == typeof(Boolean) )
-                    return new JValue( (Boolean)value );
-                if ( valueType == typeof(Single) || valueType == typeof(Double) )
-                    return new JValue( Convert.ToDouble(value) );
+                    writer.WriteValue( (Boolean)value );
+                if ( valueType == typeof(Single) )
+                    writer.WriteValue( Convert.ToSingle(value) );
+                if ( valueType == typeof(Double) )
+                    writer.WriteValue( Convert.ToDouble(value) );
                 else if ( valueType == typeof(UInt64) )
-                    return new JValue( (UInt64)value );
+                    writer.WriteValue( (UInt64)value );
                 else
-                    return new JValue( Convert.ToInt64(value) );
+                    writer.WriteValue( Convert.ToInt64(value) );
             }
             else if ( valueType.IsEnum )
             {
-                return new JValue( Convert.ToString( value, CultureInfo.InvariantCulture ) );
+                writer.WriteValue( Convert.ToString( value, CultureInfo.InvariantCulture ) );       //TODO make WriterBase.WriteEnum()
             }
             else if( valueType.IsArray)
             {
                 var elementType = valueType.GetElementType();
-                return WriteCollectionToJson( elementType, (IList)value );
+                WriteCollectionToJson( elementType, (IList)value, writer );
             }
             else if( valueType.IsGenericType && valueType.GetGenericTypeDefinition() ==  typeof(List<>))
             {
                 var elementType = valueType.GetGenericArguments()[0];
-                return WriteCollectionToJson( elementType, (IList)value );
+                WriteCollectionToJson( elementType, (IList)value, writer );
             }
             else if( typeof(GDObject).IsAssignableFrom( valueType) )
             {
-                var gdObject = (GDObject)value;
-                return new JValue( gdObject.Guid.ToString("D") );
-                //return WriteReferenceToJson( propertyType, gdObject.Guid );
+                writer.WriteValue( ((GDObject)value).Guid.ToString("D") );                  //TODO make WriterBase.WriteGuidValue()
             }
             else if ( _serializers.TryGetValue( propertyType, out var serializer ) )
             {
-                return serializer.Serialize( value );
+                serializer.Serialize( writer, value );
             }
             else if ( value is UnityEngine.Object unityObj && UnityEditor.AssetDatabase.Contains( unityObj ) )      //Write Unity asset reference
             {
-                return WriteUnityObjectToJson( unityObj );
+                WriteUnityObjectToJson( unityObj, writer );
             }
             else
             {
-                return WriteObjectToJson( propertyType, value );
+                WriteObjectToJson( propertyType, value, writer );
             }
         }
 
-        private JToken WriteSomethingNullToJson(Type propertyType )
+        private void WriteSomethingNullToJson(Type propertyType, WriterBase writer )
         {
             if( propertyType == typeof(String) )
-                return new JValue( String.Empty );
-            else if( propertyType.IsArray || (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() ==  typeof(List<>)))
-                return new JArray();
+                writer.WriteValue( String.Empty );                  //todo consider write null, save some bytes for binary mode
+            else if ( propertyType.IsArray || (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() ==  typeof(List<>)) )
+            {
+                writer.WriteStartArray();                           //todo consider write null, save some bytes for binary mode
+                writer.WriteEndArray();
+            }
             else
             {
                 //Create and serialize empty object (Unity-way compatibility)       //todo consider write JSON null, restore object at loading
                 var emptyObject  = CreateEmptyObject( propertyType );
-                var jEmptyObject = emptyObject != null ? WriteObjectToJson( propertyType, emptyObject ) : new JObject();
-                return jEmptyObject;
+                if ( emptyObject != null )
+                    WriteObjectToJson( propertyType, emptyObject, writer );
+                else 
+                    writer.WriteNullValue();
             }
         }
 
-        private JArray WriteCollectionToJson( Type elementType, IList collection )
+        private void WriteCollectionToJson( Type elementType, IList collection, WriterBase writer )
         {
-            var result = new JArray();
+            writer.WriteStartArray();
+
             for ( int i = 0; i < collection.Count; i++ )
             {
                 var obj = collection[i];
                 if( obj != null )
-                    result.Add( WriteSomethingToJson( elementType, obj, obj.GetType() ) );
+                    WriteSomethingToJson( elementType, obj, obj.GetType(), writer );
                 else
-                    result.Add( WriteSomethingNullToJson( elementType ) );
+                    WriteSomethingNullToJson( elementType, writer );
             }
 
-            return result;
+            writer.WriteEndArray();
         }
 
-        private JObject WriteUnityObjectToJson( UnityEngine.Object unityAsset )
-        {
-            JObject result = null;
+        private void WriteUnityObjectToJson( UnityEngine.Object unityAsset, WriterBase writer )
+        {                              
+            writer.WriteStartObject();
+
             if ( UnityEditor.AssetDatabase.TryGetGUIDAndLocalFileIdentifier( unityAsset, out var guid, out long localId ))
             {
-                result = new JObject();
-                result.Add( ".Ref", guid );
-                result.Add( ".Id", localId );
+                writer.WritePropertyName( ".Ref" );
+                writer.WriteValue( guid );
+                writer.WritePropertyName( ".Id" );
+                writer.WriteValue( localId );
                 _assetResolver.AddAsset( unityAsset, guid, localId );
             }
             else
             {
-                result.Add( ".Error", $"Error serializing {unityAsset.name} ({unityAsset.GetType()}), can not find asset guid" );
+                writer.WritePropertyName( ".Error" );
+                writer.WriteValue( $"Error serializing {unityAsset.name} ({unityAsset.GetType()}), can not find asset guid" );
                 Debug.LogError( $"Error serializing {unityAsset.name} ({unityAsset.GetType()}), can not find asset guid" );
             }
 
-            return result;
+            writer.WriteEndObject();
         }                                
 
         private Object CreateEmptyObject( Type type )

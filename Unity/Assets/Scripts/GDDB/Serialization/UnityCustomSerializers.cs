@@ -1,314 +1,297 @@
 ﻿using System;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using UnityEngine;
-using Object = System.Object;
 
 namespace GDDB.Serialization
 {
-    public class Vector3Serializer : TypeCustomSerializer
+    public class Vector3Serializer : TypeCustomSerializer<Vector3>
     {
-        public override Type SerializedType => typeof( Vector3 );
-
-        public override JToken Serialize(  Object obj )
+        public override void Serialize(  WriterBase writer, Vector3 obj )
         {
-            var vector3 = (UnityEngine.Vector3) obj;
-            var result = new JArray { vector3.x, vector3.y, vector3.z };
-            return result;
+            writer.WriteStartArray( );
+            writer.WriteValue( obj.x );
+            writer.WriteValue( obj.y );
+            writer.WriteValue( obj.z );
+            writer.WriteEndArray( );
         }
 
-        public override Object Deserialize( JsonReader json )
+        public override Vector3 Deserialize( ReaderBase reader )
         {
-            json.EnsureToken( JsonToken.StartArray );
-            var result = new Vector3( 
-                    (Single)json.ReadAsDouble().Value,
-                    (Single)json.ReadAsDouble().Value,
-                    (Single)json.ReadAsDouble().Value );
-            json.EnsureNextToken( JsonToken.EndArray );
+            reader.EnsureStartArray( );
+            var result = new Vector3(
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue() );
+            reader.ReadEndArray( );
             return result;
         }
     }
 
-    public class Vector3IntSerializer : TypeCustomSerializer
+    public class Vector3IntSerializer : TypeCustomSerializer<Vector3Int>
     {
-        public override Type SerializedType => typeof( Vector3Int );
-
-        public override JToken Serialize(  Object obj )
+        public override void Serialize(  WriterBase writer, Vector3Int obj )
         {
-            var vector3 = (UnityEngine.Vector3Int) obj;
-            var result  = new JArray { vector3.x, vector3.y, vector3.z };
-            return result;
+            writer.WriteStartArray( );
+            writer.WriteValue( obj.x );
+            writer.WriteValue( obj.y );
+            writer.WriteValue( obj.z );
+            writer.WriteEndArray( );
         }
 
-        public override Object Deserialize( JsonReader json )
+        public override Vector3Int Deserialize( ReaderBase reader )
         {
-            json.EnsureToken( JsonToken.StartArray );
-            var result = new Vector3Int( 
-                    json.ReadAsInt32().Value,
-                    json.ReadAsInt32().Value,
-                    json.ReadAsInt32().Value );
-            json.EnsureNextToken( JsonToken.EndArray );
+            reader.EnsureStartArray( );
+            var result = new Vector3Int(
+                    reader.ReadInt32Value(),
+                    reader.ReadInt32Value(),
+                    reader.ReadInt32Value() );
+            reader.ReadEndArray( );
             return result;
         }
     }
 
 
-    public class Vector2Serializer : TypeCustomSerializer
+    public class Vector2Serializer : TypeCustomSerializer<Vector2>
     {
-        public override Type SerializedType => typeof( UnityEngine.Vector2 );
-
-        public override JToken Serialize(  Object obj )
+        public override void Serialize(  WriterBase writer, Vector2 obj )
         {
-            var vector3 = (UnityEngine.Vector2) obj;
-            var result  = new JArray { vector3.x, vector3.y };
-            return result;
+            writer.WriteStartArray( );
+            writer.WriteValue( obj.x );
+            writer.WriteValue( obj.y );
+            writer.WriteEndArray( );
         }
 
-        public override Object Deserialize( JsonReader json )
+        public override Vector2 Deserialize( ReaderBase reader )
         {
-            json.EnsureToken( JsonToken.StartArray );
-            var result = new Vector2( 
-                    (Single)json.ReadAsDouble().Value,
-                    (Single)json.ReadAsDouble().Value );
-            json.EnsureNextToken( JsonToken.EndArray );
+            reader.EnsureStartArray( );
+            var result = new Vector2(
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue() );
+            reader.ReadEndArray( );
             return result;
         }
     }
 
-    public class Vector2IntSerializer : TypeCustomSerializer
+    public class Vector2IntSerializer : TypeCustomSerializer<Vector2Int>
     {
-        public override Type SerializedType => typeof( UnityEngine.Vector2Int );
-
-        public override JToken Serialize(  Object obj )
+        public override void Serialize(  WriterBase writer, Vector2Int obj )
         {
-            var vector3 = (UnityEngine.Vector2Int) obj;
-            var result  = new JArray { vector3.x, vector3.y };
-            return result;
+            writer.WriteStartArray( );
+            writer.WriteValue( obj.x );
+            writer.WriteValue( obj.y );
+            writer.WriteEndArray( );
         }
 
-        public override Object Deserialize( JsonReader json )
+        public override Vector2Int Deserialize( ReaderBase reader )
         {
-            json.EnsureToken( JsonToken.StartArray );
-            var result = new Vector2Int( 
-                    json.ReadAsInt32().Value,
-                    json.ReadAsInt32().Value );
-            json.EnsureNextToken( JsonToken.EndArray );
+            reader.EnsureStartArray( );
+            var result = new Vector2Int(
+                    reader.ReadInt32Value(),
+                    reader.ReadInt32Value() );
+            reader.ReadEndArray( );
             return result;
         }
     }
 
-    public class QuaternionSerializer : TypeCustomSerializer
+    public class QuaternionSerializer : TypeCustomSerializer<Quaternion>
     {
-        public override Type SerializedType => typeof( UnityEngine.Quaternion );
-
-        public override JToken Serialize(  Object obj )
+        public override void Serialize(WriterBase writer, Quaternion obj )
         {
-            var value = (UnityEngine.Quaternion) obj;
-            var result  = new JArray { value.x, value.y, value.z, value.w };
-            return result;
+            writer.WriteStartArray( );
+            writer.WriteValue( obj.x );
+            writer.WriteValue( obj.y );
+            writer.WriteValue( obj.z );
+            writer.WriteValue( obj.w );
+            writer.WriteEndArray( );
         }
 
-        public override Object Deserialize( JsonReader json )
+        public override Quaternion Deserialize( ReaderBase reader )
         {
-            json.EnsureToken( JsonToken.StartArray );
-            var result = new Quaternion( 
-                    (Single)json.ReadAsDouble().Value,
-                    (Single)json.ReadAsDouble().Value,
-                    (Single)json.ReadAsDouble().Value,
-                    (Single)json.ReadAsDouble().Value );
-            json.EnsureNextToken( JsonToken.EndArray );
+            reader.EnsureStartArray( );
+            var result = new Quaternion(
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue() );
+            reader.ReadEndArray( );
             return result;
         }
     }
 
-    public class BoundsSerializer : TypeCustomSerializer
+    public class BoundsSerializer : TypeCustomSerializer<Bounds>
     {
-        public override Type SerializedType => typeof( UnityEngine.Bounds );
-
-        public override JToken Serialize(  Object obj )
+        public override void Serialize( WriterBase writer,  Bounds obj )
         {
-            var value  = (UnityEngine.Bounds) obj;
-            var result = new JArray(value.center.x,
-                                 value.center.y,
-                                 value.center.z,
-                                 value.size.x,
-                                 value.size.y,
-                                 value.size.z);
-            return result;
+            writer.WriteStartArray( );
+            writer.WriteValue( obj.center.x );
+            writer.WriteValue( obj.center.y );
+            writer.WriteValue( obj.center.z );
+            writer.WriteValue( obj.size.x );
+            writer.WriteValue( obj.size.y );
+            writer.WriteValue( obj.size.z );
+            writer.WriteEndArray( );
         }
 
-        public override Object Deserialize( JsonReader json )
+        public override Bounds Deserialize( ReaderBase reader )
         {
-            json.EnsureToken( JsonToken.StartArray );
+            reader.EnsureStartArray( );
             var center = new UnityEngine.Vector3(
-                    (Single)json.ReadAsDouble().Value,
-                    (Single)json.ReadAsDouble().Value,
-                    (Single)json.ReadAsDouble().Value
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue()
                     );
             var size = new UnityEngine.Vector3(
-                    (Single)json.ReadAsDouble().Value,
-                    (Single)json.ReadAsDouble().Value,
-                    (Single)json.ReadAsDouble().Value
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue()
                     );
-            json.EnsureNextToken( JsonToken.EndArray );
+            reader.ReadEndArray(  );
 
             return new Bounds( center, size );
         }
     }
 
-    public class RectSerializer : TypeCustomSerializer
+    public class RectSerializer : TypeCustomSerializer<Rect>
     {
-        public override Type SerializedType => typeof( UnityEngine.Rect );
-
-        public override JToken Serialize(  Object obj )
+        public override void Serialize( WriterBase writer,  Rect obj )
         {
-            var value  = (UnityEngine.Rect) obj;
-            var result = new JArray(value.position.x,
-                                 value.position.y,
-                                 value.size.x,
-                                 value.size.y);
-            return result;
+            writer.WriteStartArray( );
+            writer.WriteValue( obj.x );
+            writer.WriteValue( obj.y );
+            writer.WriteValue( obj.width );
+            writer.WriteValue( obj.height );
+            writer.WriteEndArray( );
         }
 
-        public override Object Deserialize( JsonReader json )
+        public override Rect Deserialize( ReaderBase reader )
         {
-            json.EnsureToken( JsonToken.StartArray );
-            var center = new UnityEngine.Vector2(
-                    (Single)json.ReadAsDouble().Value,
-                    (Single)json.ReadAsDouble().Value
-            );
-            var size = new UnityEngine.Vector2(
-                    (Single)json.ReadAsDouble().Value,
-                    (Single)json.ReadAsDouble().Value
-            );
-            json.EnsureNextToken( JsonToken.EndArray );
+            reader.EnsureStartArray( );
+            var result = new Rect(
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue() );
+            reader.ReadEndArray(  );
 
-            return new Rect( center, size );
+            return result;
         }
     }
 
-    public class ColorSerializer : TypeCustomSerializer
+    public class ColorSerializer : TypeCustomSerializer<Color>
     {
-        public override Type SerializedType => typeof( UnityEngine.Color );
-
-        public override JToken Serialize(  Object obj )
+        public override void Serialize( WriterBase writer,  Color obj )
         {
-            var value  = (UnityEngine.Color) obj;
-            var result = new JArray(value.r,
-                                 value.g,
-                                 value.b,
-                                 value.a);
-            return result;
+            writer.WriteStartArray( );
+            writer.WriteValue( obj.r );
+            writer.WriteValue( obj.g );
+            writer.WriteValue( obj.b );
+            writer.WriteValue( obj.a );
+            writer.WriteEndArray( );
         }
 
-        public override Object Deserialize( JsonReader json )
+        public override Color Deserialize( ReaderBase reader )
         {
-            json.EnsureToken( JsonToken.StartArray );
-            var value = new Color( 
-                    (Single)json.ReadAsDouble().Value,
-                    (Single)json.ReadAsDouble().Value,
-                    (Single)json.ReadAsDouble().Value,
-                    (Single)json.ReadAsDouble().Value
+            reader.EnsureStartArray( );
+            var result = new Color(
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue() );
+            reader.ReadEndArray(  );
+
+            return result;
+        }
+    }
+
+    public class Color32Serializer : TypeCustomSerializer<Color32>
+    {
+        public override void Serialize( WriterBase writer,  Color32 obj )
+        {
+            writer.WriteStartArray( );
+            writer.WriteValue( obj.r );
+            writer.WriteValue( obj.g );
+            writer.WriteValue( obj.b );
+            writer.WriteValue( obj.a );
+            writer.WriteEndArray( );
+        }
+
+        public override Color32 Deserialize( ReaderBase reader )
+        {
+            reader.EnsureStartArray( );
+            var result = new Color32(
+                    reader.ReadUInt8Value(),
+                    reader.ReadUInt8Value(),
+                    reader.ReadUInt8Value(),
+                    reader.ReadUInt8Value()
                     );
-            json.EnsureNextToken( JsonToken.EndArray );
+            reader.ReadEndArray(  );
 
-            return value;
-        }
-    }
-
-    public class Color32Serializer : TypeCustomSerializer
-    {
-        public override Type SerializedType => typeof( UnityEngine.Color32 );
-
-        public override JToken Serialize(  Object obj )
-        {
-            var value  = (UnityEngine.Color32) obj;
-            var result = new JArray(value.r,
-                                 value.g,
-                                 value.b,
-                                 value.a);
             return result;
         }
-
-        public override Object Deserialize( JsonReader json )
-        {
-            json.EnsureToken( JsonToken.StartArray );
-            var value = new Color32( 
-                    (Byte)json.ReadAsInt32().Value,
-                    (Byte)json.ReadAsInt32().Value,
-                    (Byte)json.ReadAsInt32().Value,
-                    (Byte)json.ReadAsInt32().Value
-            );
-            json.EnsureNextToken( JsonToken.EndArray );
-
-            return value;
-        }
     }
 
-    public class AnimationCurveSerializer : TypeCustomSerializer
+    public class AnimationCurveSerializer : TypeCustomSerializer<AnimationCurve>
     {
-        public override Type SerializedType => typeof( UnityEngine.AnimationCurve );
-
-        public override JToken Serialize(  Object obj )
+        public override void Serialize(  WriterBase writer, AnimationCurve obj )
         {
-            var result = new JArray();
-                                    
-            var ac     = (UnityEngine.AnimationCurve) obj;
-            result.Add( ac.keys.Length );
-            result.Add( (Int32)ac.preWrapMode );
-            result.Add( (Int32)ac.postWrapMode );
-            foreach ( var key in ac.keys )
+            writer.WriteStartArray();
+            writer.WriteValue( obj.keys.Length );
+            writer.WriteValue( (Byte)obj.preWrapMode );
+            writer.WriteValue( (Byte)obj.postWrapMode );
+            foreach ( var key in obj.keys )
             {
-                result.Add( SerializeKey( key ) );
+                SerializeKey( writer, key );
             }
-
-            return result;
+            writer.WriteEndArray();
         }
 
-        public override Object Deserialize( JsonReader json )
+        public override AnimationCurve Deserialize( ReaderBase reader )
         {
-            json.EnsureToken( JsonToken.StartArray );
-            var count = json.ReadAsInt32().Value;
-            var preWrapMode  = (WrapMode)json.ReadAsInt32().Value;
-            var postWrapMode = (WrapMode)json.ReadAsInt32().Value;
+            reader.EnsureStartArray();
+
+            var count = reader.ReadIntegerValue();
+            var preWrapMode  = (WrapMode)reader.ReadIntegerValue();
+            var postWrapMode = (WrapMode)reader.ReadIntegerValue();
             var keys = new Keyframe[ count ];
             for ( int i = 0; i < count; i++ )
             {
-                 keys.SetValue( DeserializeKey( json ), i );
+                 keys.SetValue( DeserializeKey( reader ), i );
             }
             var result = new AnimationCurve( keys );
             result.preWrapMode  = preWrapMode;
             result.postWrapMode = postWrapMode;
-            json.EnsureNextToken( JsonToken.EndArray );
+
+            reader.ReadEndArray( );
 
             return result;
         }
 
-        private JArray SerializeKey( Keyframe key )
+        private void SerializeKey( WriterBase writer, Keyframe key )
         {
-            var result = new JArray(key.time,
-                                 key.value,
-                                 key.inTangent,
-                                 key.outTangent,
-                                 key.inWeight,
-                                 key.outWeight,
-                                 (Int32)key.weightedMode );
-            return result;
+            writer.WriteStartArray();
+            writer.WriteValue( key.time );
+            writer.WriteValue( key.value );
+            writer.WriteValue( key.inTangent );
+            writer.WriteValue( key.outTangent );
+            writer.WriteValue( key.inWeight );
+            writer.WriteValue( key.outWeight );
+            writer.WriteValue( (Byte)key.weightedMode );
+            writer.WriteEndArray();
         }
 
-        private Keyframe DeserializeKey( JsonReader json )
+        private Keyframe DeserializeKey( ReaderBase reader )
         {
-            json.EnsureNextToken( JsonToken.StartArray );
-            var time = (Single)json.ReadAsDouble().Value;
-            var value = (Single)json.ReadAsDouble().Value;
-            var inTangent = (Single)json.ReadAsDouble().Value;
-            var outTangent = (Single)json.ReadAsDouble().Value;
-            var inWeight = (Single)json.ReadAsDouble().Value;
-            var outWeight = (Single)json.ReadAsDouble().Value;
-            var weightedMode = (WeightedMode)json.ReadAsInt32().Value;
+            reader.ReadStartArray();
+            var time = reader.ReadSingleValue();
+            var value = reader.ReadSingleValue();
+            var inTangent = reader.ReadSingleValue();
+            var outTangent = reader.ReadSingleValue();
+            var inWeight = reader.ReadSingleValue();
+            var outWeight = reader.ReadSingleValue();
+            var weightedMode = (WeightedMode)reader.ReadIntegerValue();
             var result = new Keyframe( time, value, inTangent, outTangent, inWeight, outWeight );
             result.weightedMode = weightedMode;
-            json.EnsureNextToken( JsonToken.EndArray );
+            reader.ReadEndArray();
+
             return result;
         }
     }

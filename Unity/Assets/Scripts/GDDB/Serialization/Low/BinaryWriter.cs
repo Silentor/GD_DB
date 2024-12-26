@@ -36,10 +36,11 @@ namespace GDDB.Serialization
             _writer.Write( (byte)EToken.EndArray );
         }
 
-        public override void WritePropertyName(String propertyName )
+        public override WriterBase WritePropertyName(String propertyName )
         {
             _writer.Write( (byte)EToken.PropertyName );
             _writer.Write( propertyName );
+            return this;
         }
 
         public override void WriteNullValue( )
@@ -75,6 +76,12 @@ namespace GDDB.Serialization
         public override void WriteValue(Int32 value )
         {
             _writer.Write( (byte)EToken.Int32 );
+            _writer.Write( value );
+        }
+
+        public override void WriteValue(Int64 value )
+        {
+            _writer.Write( (byte)EToken.Int64 );
             _writer.Write( value );
         }
 

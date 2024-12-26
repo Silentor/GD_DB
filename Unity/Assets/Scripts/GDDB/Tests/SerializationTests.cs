@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using FluentAssertions;
@@ -11,55 +12,35 @@ using UnityEngine;
 
 namespace GDDB.Tests
 {
-    public class SerializationTests
+    public class SerializationTests : BaseSerializationTests
     {
         [Test]
-        public void NotSerializableComponentTest( )
+        public void NotSerializableComponentTest( [Values]EBackend backend )
         {
+            var buffer = GetBuffer( backend );
+            var writer = GetWriter( backend, buffer );
+
             //Arrange
             var nonSerComp = new NotSerializableContentComponent();
-            var testObj    = ScriptableObject.CreateInstance<GDRoot>();
+            var testObj    = ScriptableObject.CreateInstance<GDObject>();
             testObj.Components.Add( nonSerComp );
 
             //Act
-            var serializer = new ObjectsJsonSerializer();
-            var jsonString = serializer.Serialize( testObj ).ToString();
-
-            Debug.Log( jsonString );
+            var serializer = new ObjectsDataSerializer( writer );
+            serializer.Serialize( testObj );
+            LogBuffer( buffer );
 
             //Assert
-            var jObject     = (JObject)JToken.Parse( jsonString );
-            var jComponents = (JArray)jObject[ ".Components" ];
-            var jsonNotSerializableFieldsComponent = (JObject)jComponents[ 0 ];
-
-            var properties = jsonNotSerializableFieldsComponent.Children<JProperty>();
-            Assert.That( properties.Count(), Is.EqualTo( 1 ) );
-            Assert.That( properties.First().Name, Is.EqualTo( ".Type" ) );
+            var reader = GetReader( backend, buffer );
+            reader.SeekPropertyName( ".Components" );           //Make sure there are no serialized properties in NotSerializableContentComponent
+            Assert.Fail();                      //implement
         }
 
-        [TestCase( false, 0D, 0F,  0, 0, 0L, 0UL, "", 'a',
-                PrimitivesComponent.EByteFlagEnum.Zero, PrimitivesComponent.EIntEnum.Zero )]
-        [TestCase( true,  Double.MinValue, Single.MinValue, SByte.MinValue, Int32.MinValue, Int64.MinValue, UInt64.MinValue, 
-                        "", 
-                'Я',
-                PrimitivesComponent.EByteFlagEnum.One,
-                PrimitivesComponent.EIntEnum.One )]
-        [TestCase(                true,     Double.MaxValue, Single.MaxValue, SByte.MaxValue, Int32.MaxValue, Int64.MaxValue, UInt64.MaxValue,
-                "some ansi text", '\uD846', PrimitivesComponent.EByteFlagEnum.Last,
-                PrimitivesComponent.EIntEnum.Last )]
-        [TestCase( true, Double.NegativeInfinity, Single.NegativeInfinity, 0, 0, 0, UInt64.MaxValue - 1, "кирилиця", Char.MinValue,
-                PrimitivesComponent.EByteFlagEnum.Last,
-                PrimitivesComponent.EIntEnum.Last )]
-        [TestCase( true, Double.PositiveInfinity, Single.PositiveInfinity, 0, 0, Int64.MinValue + 1, 0UL,
-                "some chinese \uD846",
-                Char.MaxValue, PrimitivesComponent.EByteFlagEnum.Zero | PrimitivesComponent.EByteFlagEnum.One,
-                PrimitivesComponent.EIntEnum.Last )]
-        [TestCase( true, Double.NaN, Single.NaN, 0, 0, 0, UInt64.MaxValue - 2, "some smile \uD83D", '!',
-                PrimitivesComponent.EByteFlagEnum.Last,
-                PrimitivesComponent.EIntEnum.Last )]
-        public void PrimitivesComponentTest( Boolean                       boolParam,  Double doubleParam, Single floatParam,
-                                             SByte                         sbyteParam, Int32  intParam,    Int64  bigIntParam, UInt64 bigUIntParam,
-                                             String                        strParam,   Char   charParam,
+        [TestCaseSource(nameof(DataSourceForPrimitiveComponentTest))]
+        public void PrimitivesComponentTest( EBackend backend, 
+                                             Boolean   boolParam,  Double doubleParam, Single floatParam,
+                                             SByte   sbyteParam, Int32  intParam,    Int64  bigIntParam, UInt64 bigUIntParam,
+                                             String   strParam,   Char   charParam,
                                              PrimitivesComponent.EByteFlagEnum byteEnumParam,
                                              PrimitivesComponent.EIntEnum  intEnumParam  )
         {
@@ -77,23 +58,27 @@ namespace GDDB.Tests
                                IntEnumField  = intEnumParam,
                                CharField     = charParam
                        };
-            var testObj = ScriptableObject.CreateInstance<GDRoot>();
+            var testObj = ScriptableObject.CreateInstance<GDObject>();
             testObj.Components.Add( comp );
 
             //Act
-            var serializer = new ObjectsJsonSerializer();
-            var deserializer = new ObjectsJsonDeserializer();
-            var jsonString = serializer.Serialize( testObj ).ToString( );
+            var buffer     = GetBuffer( backend );
+            var writer     = GetWriter( backend, buffer );
+            var reader     = GetReader( backend, buffer );
+            var serializer = new ObjectsDataSerializer(writer);
+            var deserializer = new ObjectsJsonDeserializer( reader );
+            serializer.Serialize( testObj );
 
-            Debug.Log( jsonString );
+            LogBuffer( buffer );
+            SaveToFile( backend, "test", buffer );
 
             //Assert
-            var comp_copy = deserializer.Deserialize( jsonString ).Components.First() as PrimitivesComponent;
+            var comp_copy = deserializer.Deserialize( ).Components.First() as PrimitivesComponent;
             comp_copy.Should().BeEquivalentTo( comp );
         }
 
         [Test]
-        public void NullIsEmptyTest( )
+        public void NullIsEmptyTest( [Values]EBackend backend )
         {
             //Arrange
             var nullComp = new NullReferencesAsEmptyComponent()
@@ -105,14 +90,17 @@ namespace GDDB.Tests
             testObj.Components.Add( nullComp );
 
             //Act
-            var serializer = new ObjectsJsonSerializer();
-            var jsonString = serializer.Serialize( testObj ).ToString();
-
-            Debug.Log( jsonString );
+            var buffer     = GetBuffer( backend );
+            var writer     = GetWriter( backend, buffer );
+            var reader     = GetReader( backend, buffer );
+            var serializer = new ObjectsDataSerializer( writer );
+            serializer.Serialize( testObj );
+            LogBuffer( buffer );
+            SaveToFile( backend, "test", buffer );
 
             //Assert
-            var deserializer = new ObjectsJsonDeserializer();
-            var copy       = deserializer.Deserialize( jsonString ).Components.First() as NullReferencesAsEmptyComponent;
+            var deserializer = new ObjectsJsonDeserializer( reader );
+            var copy       = deserializer.Deserialize( ).Components.First() as NullReferencesAsEmptyComponent;
             copy.StringMustBeEmpty.Should().BeEmpty(  );
             copy.NestedClassMustBeEmpty.StringMustBeEmpty.Should().BeEmpty(  );
             copy.NestedClassMustBeEmpty.IntParam.Should()
@@ -126,7 +114,7 @@ namespace GDDB.Tests
         }
 
         [Test]
-        public void CollectionsTest( )
+        public void CollectionsTest( [Values]EBackend backend )
         {
             //Arrange
             var collComp = new CollectionTestComponent()
@@ -144,11 +132,13 @@ namespace GDDB.Tests
             testObj.Components.Add( collComp );
 
             //Act
-            var serializer = new ObjectsJsonSerializer();
-            var json = serializer.Serialize( testObj );
-            var jsonString = json.ToString();
-
-            Debug.Log( jsonString );
+            var buffer     = GetBuffer( backend );
+            var writer     = GetWriter( backend, buffer );
+            var reader     = GetReader( backend, buffer );
+            var serializer = new ObjectsDataSerializer( writer );
+            serializer.Serialize( testObj );
+            LogBuffer( buffer );
+            SaveToFile( backend, "test", buffer );
 
             //Assert json
             var jObject     = (JObject)JToken.Parse( jsonString );
@@ -160,8 +150,8 @@ namespace GDDB.Tests
             jsonSerComp.ContainsKey( nameof(CollectionTestComponent.ClassListNonSerializable) ).Should().BeFalse(  );
 
             //Asset deserialized data
-            var deserializer = new ObjectsJsonDeserializer();
-            var copy       = deserializer.Deserialize( jsonString ).Components.First() as CollectionTestComponent;
+            var deserializer = new ObjectsJsonDeserializer( reader );
+            var copy       = deserializer.Deserialize(  ).Components.First() as CollectionTestComponent;
             copy.OldIntArray.Should().BeEquivalentTo( new CollectionTestComponent().OldIntArray );
             copy.IntArray.Should().BeEquivalentTo( collComp.IntArray );
             copy.StrArray.Should().BeEquivalentTo( new String[] { String.Empty, String.Empty, "3" } );
@@ -191,7 +181,7 @@ namespace GDDB.Tests
              var obj = GDObject.CreateInstance<GDObject>();
 
              //Act
-             var serializer = new ObjectsJsonSerializer();
+             var serializer = new ObjectsDataSerializer();
              var deserializer = new ObjectsJsonDeserializer();
              var jsonString = serializer.Serialize( obj ).ToString();
              Debug.Log( jsonString );
@@ -216,7 +206,7 @@ namespace GDDB.Tests
                 obj2.ObjReference = obj3;
 
                 //Act
-                var serializer  = new ObjectsJsonSerializer();
+                var serializer  = new ObjectsDataSerializer();
                 var deserializer  = new ObjectsJsonDeserializer();
                 var jsonString1 = serializer.Serialize( obj1 ).ToString();
                 var jsonString2 = serializer.Serialize( obj2 ).ToString();
@@ -249,7 +239,7 @@ namespace GDDB.Tests
                 obj1.Components.Add( comp );
 
                 //Act
-                var serializer = new ObjectsJsonSerializer();
+                var serializer = new ObjectsDataSerializer();
                 var deserializer = new ObjectsJsonDeserializer();
                 var jsonString = serializer.Serialize( obj1 ).ToString();
                 Debug.Log( jsonString );
@@ -282,7 +272,7 @@ namespace GDDB.Tests
                 obj1.Components.Add( comp );
 
                 //Act
-                var serializer = new ObjectsJsonSerializer();
+                var serializer = new ObjectsDataSerializer();
                 var deserializer = new ObjectsJsonDeserializer();
                 var jsonString = serializer.Serialize( obj1 ).ToString( );
                 Debug.Log( jsonString );
@@ -301,7 +291,7 @@ namespace GDDB.Tests
                 disabledObj.EnabledObject = false;
 
                 //Act
-                var serializer = new ObjectsJsonSerializer();
+                var serializer = new ObjectsDataSerializer();
                 var jsonString = serializer.Serialize( disabledObj );
 
                 //Assert
@@ -315,7 +305,7 @@ namespace GDDB.Tests
                 var obj = GDObject.CreateInstance<TestObjectAwakeEnable>();
 
                 //Act
-                var serializer   = new ObjectsJsonSerializer();
+                var serializer   = new ObjectsDataSerializer();
                 var deserializer = new ObjectsJsonDeserializer();
                 var jsonString = serializer.Serialize( obj ).ToString();
                 Debug.Log( jsonString );
@@ -349,7 +339,7 @@ namespace GDDB.Tests
                 var testAssetResolver = ScriptableObject.CreateInstance<DirectAssetReferences>();
 
                 //Act
-                var serializer   = new ObjectsJsonSerializer();
+                var serializer   = new ObjectsDataSerializer();
                 var deserializer = new ObjectsJsonDeserializer();
                 var jsonString = serializer.Serialize( obj , testAssetResolver ).ToString();
                 Debug.Log( jsonString );
@@ -379,10 +369,10 @@ namespace GDDB.Tests
             var forestLocation = CreateGDObject( "Forest" ); locations.Objects.Add( forestLocation );
 
             //Act
-            var serializer = new DBJsonSerializer();
+            var serializer = new DBDataSerializer();
             var gddbJson = serializer.Serialize( root, root.EnumerateFoldersDFS(  ).SelectMany( f => f.Objects ).ToArray() , NullGdAssetResolver.Instance ).ToString();
             Debug.Log( gddbJson );
-            var db       = new GdJsonLoader( gddbJson ).GetGameDataBase();
+            var db       = new GdFileLoader( gddbJson ).GetGameDataBase();
 
             //Assert
             db.RootFolder.SubFolders.Count.Should().Be( 2 );
@@ -415,7 +405,7 @@ namespace GDDB.Tests
                 var forestLocation = CreateGDObject( "Forest" ); locations.Objects.Add( forestLocation );
 
                 //Act
-                var serializer = new DBJsonSerializer();
+                var serializer = new DBDataSerializer();
                 var gddbJson = serializer.Serialize( root, root.EnumerateFoldersDFS(  ).SelectMany( f => f.Objects ).ToArray() , NullGdAssetResolver.Instance ).ToString();
                 Debug.Log( gddbJson );
                 var folderSerializer = new FoldersJsonSerializer();
@@ -468,6 +458,43 @@ namespace GDDB.Tests
                 while( jsonReader.Read(  ) )
                 {
                         Debug.Log( $"{jsonReader.TokenType} = {jsonReader.Value}" );
+                }
+        }
+
+        private static IEnumerable<System.Object[]> DataSourceForPrimitiveComponentTest( )
+        {
+                var data = new System.Object[]
+                {
+                        new System.Object[] { false, 0D, 0F,  0, 0, 0L, 0UL, "", 'a',
+                                PrimitivesComponent.EByteFlagEnum.Zero, PrimitivesComponent.EIntEnum.Zero },
+                        new System.Object[] { true,  Double.MinValue, Single.MinValue, SByte.MinValue, Int32.MinValue, Int64.MinValue, UInt64.MinValue, 
+                                "", 
+                                'Я',
+                                PrimitivesComponent.EByteFlagEnum.One,
+                                PrimitivesComponent.EIntEnum.One },
+                        new System.Object[] { true,     Double.MaxValue, Single.MaxValue, SByte.MaxValue, Int32.MaxValue, Int64.MaxValue, UInt64.MaxValue,
+                                "some ansi text", '\uD846', PrimitivesComponent.EByteFlagEnum.Last,
+                                PrimitivesComponent.EIntEnum.Last },
+                        new System.Object[] { true, Double.NegativeInfinity, Single.NegativeInfinity, 0, 0, 0, UInt64.MaxValue - 1, "кирилиця", Char.MinValue,
+                                PrimitivesComponent.EByteFlagEnum.Last,
+                                PrimitivesComponent.EIntEnum.Last },
+                        new System.Object[] { true, Double.PositiveInfinity, Single.PositiveInfinity, 0, 0, Int64.MinValue + 1, 0UL,
+                                "some chinese \uD846",
+                                Char.MaxValue, PrimitivesComponent.EByteFlagEnum.Zero | PrimitivesComponent.EByteFlagEnum.One,
+                                PrimitivesComponent.EIntEnum.Last },
+                        new System.Object[] { true, Double.NaN, Single.NaN, 0, 0, 0, UInt64.MaxValue - 2, "some smile \uD83D", '!',
+                                PrimitivesComponent.EByteFlagEnum.Last,
+                                PrimitivesComponent.EIntEnum.Last }
+                };
+
+                var backends = Enum.GetValues( typeof(EBackend) );
+
+                foreach ( System.Object[] d in data )
+                {
+                        foreach ( var b in backends )
+                        {
+                                yield return  d.Prepend( b ).ToArray();
+                        }
                 }
         }
     }

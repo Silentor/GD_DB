@@ -74,7 +74,7 @@ namespace GDDB_User
             //Load GDDB from JSON with Unity assets resolver
             var assetsResolver = Resources.Load<DirectAssetReferences>( "DefaultGDDBAssetsRef" );
             using var dbInJson       =  File.OpenRead( Application.streamingAssetsPath + "/DefaultGDDB.json" );
-            var jloader        = new GdJsonLoader( dbInJson, assetsResolver );
+            var jloader        = new GdFileLoader( dbInJson, assetsResolver );
             _jsonGDDB         = jloader.GetGameDataBase();
 
 #if UNITY_EDITOR
@@ -191,7 +191,7 @@ namespace GDDB_User
             var assetsResolver = Resources.Load<DirectAssetReferences>( "DefaultGDDBAssetsRef" );
             var jsonFileName   = Application.streamingAssetsPath + "/DefaultGDDB.json";
             using var jsonStream       =  File.OpenRead( jsonFileName );
-            var jloader        = new GdJsonLoader( jsonStream, assetsResolver );
+            var jloader        = new GdFileLoader( jsonStream, assetsResolver );
             _jsonGDDB         = jloader.GetGameDataBase();
         }
     }
