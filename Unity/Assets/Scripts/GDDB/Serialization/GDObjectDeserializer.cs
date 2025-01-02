@@ -16,7 +16,7 @@ using Object = System.Object;
 namespace GDDB.Serialization
 {
     //Reader part of GDJson
-    public class ObjectsJsonDeserializer : ObjectsJsonCommon
+    public class GDObjectDeserializer : GDObjectSerializationCommon
     {
         private readonly ReaderBase                                 _reader;
 
@@ -30,9 +30,22 @@ namespace GDDB.Serialization
 
         public IReadOnlyList<GDObject> LoadedObjects => _loadedObjects;
 
-        public ObjectsJsonDeserializer( ReaderBase reader )
+        public GDObjectDeserializer( ReaderBase reader )
         {
             _reader = reader;
+
+#if UNITY_2021_2_OR_NEWER
+            AddSerializer( new Vector3Serializer() );
+            AddSerializer( new Vector3IntSerializer() );
+            AddSerializer( new Vector2Serializer() );
+            AddSerializer( new Vector2IntSerializer() );
+            AddSerializer( new QuaternionSerializer() );
+            AddSerializer( new RectSerializer() );
+            AddSerializer( new BoundsSerializer() );
+            AddSerializer( new Color32Serializer() );
+            AddSerializer( new ColorSerializer() );
+            AddSerializer( new AnimationCurveSerializer() );
+#endif
         }
 
         // public GDObject Deserialize( String json, IGdAssetResolver? assetResolver = null )
@@ -53,8 +66,10 @@ namespace GDDB.Serialization
             _assetResolver    = assetResolver ?? NullGdAssetResolver.Instance;
 
             _deserObjectSampler.Begin();
-            _reader.EnsureStartObject(  );
+
+            _reader.SeekStartObject(  );
             var result = ReadGDObject( _reader );
+
             _deserObjectSampler.End();
 
             if( result is ISerializationCallbackReceiver serializationCallbackReceiver)
@@ -88,7 +103,7 @@ namespace GDDB.Serialization
                             }
                             else
                             {
-                                Debug.LogError( $"[{nameof(ObjectsJsonDeserializer)}]-[{nameof(ResolveGDObjectReferences)}] cannot resolve GDObject reference {guid}. Target object {unresolvedReference.TargetObject.GetType().Name}, field {unresolvedReference.Field}" );
+                                Debug.LogError( $"[{nameof(GDObjectDeserializer)}]-[{nameof(ResolveGDObjectReferences)}] cannot resolve GDObject reference {guid}. Target object {unresolvedReference.TargetObject.GetType().Name}, field {unresolvedReference.Field}" );
                             }
                         }
                         unresolvedReference.Field.SetValue( unresolvedReference.TargetObject, result );
@@ -106,7 +121,7 @@ namespace GDDB.Serialization
                             }
                             else
                             {
-                                Debug.LogError( $"[{nameof(ObjectsJsonDeserializer)}]-[{nameof(ResolveGDObjectReferences)}] cannot resolve GDObject reference {guid}. Target object {unresolvedReference.TargetObject.GetType().Name}, field {unresolvedReference.Field}" );
+                                Debug.LogError( $"[{nameof(GDObjectDeserializer)}]-[{nameof(ResolveGDObjectReferences)}] cannot resolve GDObject reference {guid}. Target object {unresolvedReference.TargetObject.GetType().Name}, field {unresolvedReference.Field}" );
                             }
                         }
                         unresolvedReference.Field.SetValue( unresolvedReference.TargetObject, result );
@@ -119,7 +134,7 @@ namespace GDDB.Serialization
                         unresolvedReference.Field.SetValue( unresolvedReference.TargetObject, resolvedObject );
                     else
                     {
-                        Debug.LogError( $"[{nameof(ObjectsJsonDeserializer)}]-[{nameof(ResolveGDObjectReferences)}] cannot resolve GDObject reference {unresolvedReference.Guid}. Target object {unresolvedReference.TargetObject.GetType().Name}, field {unresolvedReference.Field}" );
+                        Debug.LogError( $"[{nameof(GDObjectDeserializer)}]-[{nameof(ResolveGDObjectReferences)}] cannot resolve GDObject reference {unresolvedReference.Guid}. Target object {unresolvedReference.TargetObject.GetType().Name}, field {unresolvedReference.Field}" );
                     }
                 }
             }
@@ -145,7 +160,7 @@ namespace GDDB.Serialization
             {
                 guid = Guid.ParseExact( reader.ReadStringValue( ), "D" );
             }
-            else throw new Exception($"[{nameof(ObjectsJsonDeserializer)}]-[{nameof(ReadGDObject)}] unknown property {propName}");
+            else throw new Exception($"[{nameof(GDObjectDeserializer)}]-[{nameof(ReadGDObject)}] unknown property {propName}");
 
             if ( type == null )
                 throw new ReaderObjectException( name, null, reader, $"Cannot find the type {typeName}, object name {name}" );
@@ -177,6 +192,7 @@ namespace GDDB.Serialization
                 }
                 reader.EnsureEndArray(  );
 
+                reader.ReadNextToken();
                 if ( type != typeof(GDObject) )         //There can be properties of descendants of GDObject type
                 {
                     ReadObjectPropertiesFromJson( reader, obj );
@@ -208,7 +224,7 @@ namespace GDDB.Serialization
                 reader.ReadNextToken();
                 objectType = Type.GetType( typeStr );
                 if( objectType == null )
-                    throw new InvalidOperationException( $"[{nameof(ObjectsJsonDeserializer)}]-[{nameof(ReadObject)}] Cannot create Type from type string '{typeStr}'" );
+                    throw new InvalidOperationException( $"[{nameof(GDObjectDeserializer)}]-[{nameof(ReadObject)}] Cannot create Type from type string '{typeStr}'" );
             }
 
             var defaultConstructor = GetTypeConstructor( objectType );

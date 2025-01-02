@@ -50,10 +50,9 @@ namespace GDDB_User
             if ( FolderJson )
             {
                 var       json       = FolderJson.text;
-                using var strReader  = new StringReader( json );
-                using var jsonReader = new Newtonsoft.Json.JsonTextReader( strReader );
                 var       deser      = new FoldersJsonSerializer();
-                var       folder     = deser.Deserialize( jsonReader, null, out var hash );
+                var       reader     = new JsonNetReader( json,  false );
+                var       folder     = deser.Deserialize( reader, null, out var hash );
             }
 
 

@@ -17,12 +17,11 @@ namespace GDDB.Serialization
             _reader = new System.IO.BinaryReader( binaryStream );
         }
 
-        public BinaryReader( System.IO.BinaryReader reader )
+        public BinaryReader( Byte[] buffer ) : this( new System.IO.MemoryStream( buffer ) )
         {
-            _reader = reader;
         }
 
-        public override String Path { get; }
+        public override String Path => "Not Implemented";
 
         public override EToken ReadNextToken( )
         {
@@ -246,54 +245,6 @@ namespace GDDB.Serialization
                         break;
                 }
             }
-        }
-
-        // private void SkipValue( )
-        // {
-        //     switch ( CurrentToken )
-        //     {
-        //         case EToken.Single:
-        //         case EToken.Int32:
-        //         case EToken.UInt32:
-        //             _reader.ReadInt32();
-        //             break;
-        //
-        //         case EToken.Double:
-        //         case EToken.Int64:
-        //         case EToken.UInt64:
-        //             _reader.ReadInt64();
-        //             break;
-        //
-        //         case EToken.PropertyName:
-        //         case EToken.String:
-        //             _reader.ReadString();         //todo not optimal, unnecessary allocation
-        //             break;
-        //         
-        //         case EToken.Byte:
-        //         case EToken.SByte:
-        //             _reader.ReadByte();
-        //             break;
-        //
-        //         case EToken.Int16:
-        //         case EToken.UInt16:
-        //             _reader.ReadInt16();
-        //             break;
-        //
-        //         default:
-        //             return;
-        //     }
-        //
-        //     _tokenWasRead = false;
-        // }
-
-        private void EnsureToken( EToken token )
-        {
-            if ( CurrentToken == token )
-            {
-                //It's ok
-            }
-            else
-                throw new Exception( $"Expected token {token} but got {CurrentToken}" );
         }
     }
 }

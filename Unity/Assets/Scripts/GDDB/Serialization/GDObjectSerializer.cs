@@ -10,11 +10,11 @@ using UnityEngine;
 
 namespace GDDB.Serialization
 {
-    public class ObjectsDataSerializer : ObjectsJsonCommon
+    public class GDObjectSerializer : GDObjectSerializationCommon
     {
         private readonly WriterBase _writer;
 
-        public ObjectsDataSerializer( WriterBase writer )
+        public GDObjectSerializer( WriterBase writer )
         {
             _writer = writer;
 
@@ -30,11 +30,6 @@ namespace GDDB.Serialization
             AddSerializer( new ColorSerializer() );
             AddSerializer( new AnimationCurveSerializer() );
 #endif
-        }
-
-        public void AddSerializer<T>( TypeCustomSerializer<T> serializer )
-        {
-            _serializers.Add( serializer.SerializedType, serializer );
         }
 
 #if UNITY_EDITOR
@@ -53,9 +48,9 @@ namespace GDDB.Serialization
                 if( gdComponent is ISerializationCallbackReceiver componentSerializationCallbackReceiver )
                     componentSerializationCallbackReceiver.OnBeforeSerialize();
 
-            WriteGDObjectToJson( @object, _writer );                    
+            WriteGDObject( @object, _writer );                    
 
-            Debug.Log( $"[{nameof(ObjectsDataSerializer)}] Serialized gd object {@object.Name} to json, referenced {_assetResolver.Count} assets, used asset resolver {_assetResolver.GetType().Name}" );
+            Debug.Log( $"[{nameof(GDObjectSerializer)}] Serialized gd object {@object.Name} to {_writer.GetType().Name}, referenced {_assetResolver.Count} assets, used asset resolver {_assetResolver.GetType().Name}" );
         }
         
 #endif
@@ -65,7 +60,7 @@ namespace GDDB.Serialization
 
 #if UNITY_EDITOR
 
-        private void  WriteGDObjectToJson( GDObject obj, WriterBase writer )
+        private void  WriteGDObject( GDObject obj, WriterBase writer )
         {
             try
             {
@@ -93,7 +88,7 @@ namespace GDDB.Serialization
                     if( gdComponent == null || gdComponent.GetType().IsAbstract )       //Seems like missed class component
                         continue;
 
-                    WriteObjectToJson( typeof(GDComponent), gdComponent, writer ) ;
+                    WriteObject( typeof(GDComponent), gdComponent, writer ) ;
                 }
                 writer.WriteEndArray();
 
@@ -103,11 +98,11 @@ namespace GDDB.Serialization
             }
             catch ( Exception e )
             {
-                throw new ReaderObjectException( obj.name, obj.GetType(), null, $"Error writing object {obj.name} of type {obj.GetType()}", e );
+                throw new WriterObjectException( obj.name, obj.GetType(), _writer, $"Error writing object {obj.name} ({obj.Guid}) of type {obj.GetType()}", e );
             }
         }
 
-        private void WriteObjectToJson( Type propertyType, Object obj, WriterBase writer )
+        private void WriteObject( Type propertyType, Object obj, WriterBase writer )
         {
             writer.WriteStartObject();
             var actualType = obj.GetType();
@@ -120,6 +115,8 @@ namespace GDDB.Serialization
             }
 
             WriteObjectContent( actualType, obj, writer );
+
+            writer.WriteEndObject();
         }
 
         // private JSONObject WriteReferenceToJson( Type propertyType, Guid guid )
@@ -139,38 +136,38 @@ namespace GDDB.Serialization
                     var value = field.GetValue(obj);
                     if ( value != null )
                     {
-                        WritePropertyToJson( field.Name, field.FieldType, value, value.GetType(), writer );
+                        WriteProperty( field.Name, field.FieldType, value, value.GetType(), writer );
                     }
                     else
                     {
-                        WriteNullPropertyToJson( field.Name, field.FieldType, writer );
+                        WriteNullProperty( field.Name, field.FieldType, writer );
                     }
                 }
             }
         }
 
        
-        private void WritePropertyToJson( String propertyName, Type propertyType, Object value, Type valueType, WriterBase writer )
+        private void WriteProperty( String propertyName, Type propertyType, Object value, Type valueType, WriterBase writer )
         {
             try
             {
                 writer.WritePropertyName( propertyName );
-                WriteSomethingToJson( propertyType, value, valueType, writer );
+                WriteSomething( propertyType, value, valueType, writer );
             }
             catch ( Exception e )
             {
-                throw new ReaderPropertyException( propertyName, null, $"Error writing property {propertyName} of type {propertyType} value {value} ", e );
+                throw new WriterPropertyException( propertyName, _writer, $"Error writing property {propertyName} of type {propertyType} value {value} ", e );
             }
             
         }
 
-        private void WriteNullPropertyToJson( String propertyName, Type propertyType, WriterBase writer )
+        private void WriteNullProperty( String propertyName, Type propertyType, WriterBase writer )
         {
             writer.WritePropertyName( propertyName );
-            WriteSomethingNullToJson( propertyType, writer );
+            WriteSomethingNull( propertyType, writer );
         }
 
-        private void WriteSomethingToJson(Type propertyType, Object value, Type valueType, WriterBase writer )
+        private void WriteSomething(Type propertyType, Object value, Type valueType, WriterBase writer )
         {
             if ( valueType == typeof(Char) )
             {
@@ -184,10 +181,10 @@ namespace GDDB.Serialization
             {
                 if ( valueType == typeof(Boolean) )
                     writer.WriteValue( (Boolean)value );
-                if ( valueType == typeof(Single) )
-                    writer.WriteValue( Convert.ToSingle(value) );
-                if ( valueType == typeof(Double) )
-                    writer.WriteValue( Convert.ToDouble(value) );
+                else if ( valueType == typeof(Single) )
+                    writer.WriteValue( (Single)value );
+                else if ( valueType == typeof(Double) )
+                    writer.WriteValue( (Double)value );
                 else if ( valueType == typeof(UInt64) )
                     writer.WriteValue( (UInt64)value );
                 else
@@ -200,12 +197,12 @@ namespace GDDB.Serialization
             else if( valueType.IsArray)
             {
                 var elementType = valueType.GetElementType();
-                WriteCollectionToJson( elementType, (IList)value, writer );
+                WriteCollection( elementType, (IList)value, writer );
             }
             else if( valueType.IsGenericType && valueType.GetGenericTypeDefinition() ==  typeof(List<>))
             {
                 var elementType = valueType.GetGenericArguments()[0];
-                WriteCollectionToJson( elementType, (IList)value, writer );
+                WriteCollection( elementType, (IList)value, writer );
             }
             else if( typeof(GDObject).IsAssignableFrom( valueType) )
             {
@@ -217,15 +214,15 @@ namespace GDDB.Serialization
             }
             else if ( value is UnityEngine.Object unityObj && UnityEditor.AssetDatabase.Contains( unityObj ) )      //Write Unity asset reference
             {
-                WriteUnityObjectToJson( unityObj, writer );
+                WriteUnityObject( unityObj, writer );
             }
             else
             {
-                WriteObjectToJson( propertyType, value, writer );
+                WriteObject( propertyType, value, writer );
             }
         }
 
-        private void WriteSomethingNullToJson(Type propertyType, WriterBase writer )
+        private void WriteSomethingNull(Type propertyType, WriterBase writer )
         {
             if( propertyType == typeof(String) )
                 writer.WriteValue( String.Empty );                  //todo consider write null, save some bytes for binary mode
@@ -239,13 +236,13 @@ namespace GDDB.Serialization
                 //Create and serialize empty object (Unity-way compatibility)       //todo consider write JSON null, restore object at loading
                 var emptyObject  = CreateEmptyObject( propertyType );
                 if ( emptyObject != null )
-                    WriteObjectToJson( propertyType, emptyObject, writer );
+                    WriteObject( propertyType, emptyObject, writer );
                 else 
                     writer.WriteNullValue();
             }
         }
 
-        private void WriteCollectionToJson( Type elementType, IList collection, WriterBase writer )
+        private void WriteCollection( Type elementType, IList collection, WriterBase writer )
         {
             writer.WriteStartArray();
 
@@ -253,15 +250,15 @@ namespace GDDB.Serialization
             {
                 var obj = collection[i];
                 if( obj != null )
-                    WriteSomethingToJson( elementType, obj, obj.GetType(), writer );
+                    WriteSomething( elementType, obj, obj.GetType(), writer );
                 else
-                    WriteSomethingNullToJson( elementType, writer );
+                    WriteSomethingNull( elementType, writer );
             }
 
             writer.WriteEndArray();
         }
 
-        private void WriteUnityObjectToJson( UnityEngine.Object unityAsset, WriterBase writer )
+        private void WriteUnityObject( UnityEngine.Object unityAsset, WriterBase writer )
         {                              
             writer.WriteStartObject();
 

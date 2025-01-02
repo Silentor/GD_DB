@@ -72,7 +72,7 @@ namespace TestGdDb
     {
         public void Main( )
         {
-            var db = new GdDb( null, new List<GDObject>() );
+            var db = new GdDb( null, new List<GDObject>(), 0 );
             var orcs = db.GetMobs().GetOrcs();
             foreach ( var orcObj in orcs )
             {

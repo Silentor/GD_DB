@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using GDDB.Serialization;
 using JetBrains.Annotations;
 using NUnit.Framework;
@@ -10,6 +11,7 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UIElements;
+using BinaryWriter = GDDB.Serialization.BinaryWriter;
 using Object = System.Object;
 using PopupWindow = UnityEditor.PopupWindow;
 using Random = UnityEngine.Random;
@@ -454,16 +456,14 @@ namespace GDDB.Editor
             {
                 var editorDB        = GDBEditor.GDB;
                 var assetsReference = CreateInstance<DirectAssetReferences>();
+                var buffer          = new StringBuilder();
+                var writer          = new JsonNetWriter( buffer, true );
                 var serializer      = new DBDataSerializer();
-                var jsonStr         = serializer.Serialize( editorDB.RootFolder, editorDB.AllObjects, assetsReference );
+                serializer.Serialize( writer, editorDB.RootFolder, editorDB.AllObjects, assetsReference );
 
                 //Save hierarchy to json
                 var dbOutputPath   = Application.streamingAssetsPath + $"/{editorDB.Name}.gddb.json";
-                using var dbFile = File.Create( dbOutputPath );
-                using var writer = new StreamWriter( dbFile );
-                writer.Write( jsonStr.ToString() );
-                writer.Flush();
-                dbFile.Flush();
+                File.WriteAllText( dbOutputPath, buffer.ToString() );
 
                 //Save referenced assets to scriptable object list
                 var assetsPath = $"Assets/Resources/{editorDB.Name}.assets.asset";
@@ -471,6 +471,35 @@ namespace GDDB.Editor
 
                 AssetDatabase.Refresh();
 
+                var dbFile = new FileInfo( dbOutputPath );
+                Debug.Log( $"[{nameof(GDObjectEditor)}] Saved gddb to {dbOutputPath}, size {EditorUtility.FormatBytes( dbFile.Length)}, asset resolver to {assetsPath}"  );
+            } );
+            toJsonBtn.text         = $"DB to Json ({GDBEditor.GDB.Name}.gddb.json)";
+            toJsonBtn.style.width  = 100;
+            toJsonBtn.style.height = 20;
+            toolbar.Add( toJsonBtn );
+
+            //Save db to binary
+            var toBinaryBtn = new Button( ( ) => 
+            {
+                var editorDB        = GDBEditor.GDB;
+                var assetsReference = CreateInstance<DirectAssetReferences>();
+                var buffer          = new MemoryStream();
+                var writer          = new BinaryWriter( buffer );
+                var serializer      = new DBDataSerializer();
+                serializer.Serialize( writer, editorDB.RootFolder, editorDB.AllObjects, assetsReference );
+
+                //Save hierarchy to json
+                var dbOutputPath   = Application.streamingAssetsPath + $"/{editorDB.Name}.gddb.json";
+                File.WriteAllText( dbOutputPath, buffer.ToString() );
+
+                //Save referenced assets to scriptable object list
+                var assetsPath = $"Assets/Resources/{editorDB.Name}.assets.asset";
+                AssetDatabase.CreateAsset( assetsReference, assetsPath );
+
+                AssetDatabase.Refresh();
+
+                var dbFile = new FileInfo( dbOutputPath );
                 Debug.Log( $"[{nameof(GDObjectEditor)}] Saved gddb to {dbOutputPath}, size {EditorUtility.FormatBytes( dbFile.Length)}, asset resolver to {assetsPath}"  );
             } );
             toJsonBtn.text         = $"DB to Json ({GDBEditor.GDB.Name}.gddb.json)";
@@ -520,8 +549,10 @@ namespace GDDB.Editor
 
             //Print object json to console
             var printObjBtn = new Button( ( ) => {
-                var json = new ObjectsDataSerializer().Serialize( _target  );
-                Debug.Log( json );
+                var buffer = new StringBuilder();
+                var writer = new JsonNetWriter( buffer, true );
+                new GDObjectSerializer( writer ).Serialize( _target  );
+                Debug.Log( buffer.ToString() );
             } );
             printObjBtn.text         = "Print obj";
             printObjBtn.style.width  = 100;

@@ -142,10 +142,10 @@ namespace GDDB.Tests
 
     public class UnitySimpleTypesComponent : GDComponent
     {
-        public Vector3        Vector3    = Vector3.one;
-        public Vector2        Vector2    = Vector2.one;
-        public Vector3Int     Vector3Int = Vector3Int.one;
-        public Vector2Int     Vector2Int = Vector2Int.one;
+        public Vector3        Vector3    = Vector3.one * 666;
+        public Vector2        Vector2    = Vector2.one * 66;
+        public Vector3Int     Vector3Int = Vector3Int.one * 66;
+        public Vector2Int     Vector2Int = Vector2Int.one * 666;
         public Bounds         Bounds     = new Bounds( UnityEngine.Vector3.forward, Vector3.one );
         public Rect           Rect       = new Rect( UnityEngine.Vector2.up, Vector2.one );
         public Quaternion     Quaternion = Quaternion.Euler( 1, 2, 3 );

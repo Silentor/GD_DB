@@ -1,14 +1,17 @@
 ﻿using System;
+using System.IO;
 
 namespace GDDB.Serialization
 {
     public class BinaryWriter : WriterBase
     {
+        public override String Path => "Not implemented";
+
         private readonly System.IO.BinaryWriter _writer;
 
-        public BinaryWriter( System.IO.BinaryWriter writer )
+        public BinaryWriter( Stream writer )
         {
-            _writer = writer;
+            _writer = new System.IO.BinaryWriter( writer );
         }
 
         public override void WriteStartObject( )

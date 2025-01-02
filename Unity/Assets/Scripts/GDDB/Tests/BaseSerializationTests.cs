@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using GDDB.Serialization;
@@ -14,13 +15,50 @@ namespace GDDB.Tests
     {
         private readonly Encoding _utf8WithoutBom = new UTF8Encoding( false );
 
+        protected IEnumerable<(EToken token, Object value)> EnumerateTokens( ReaderBase reader )
+        {
+            while ( reader.ReadNextToken() != EToken.EoF )
+            {
+                if( reader.CurrentToken == EToken.PropertyName )
+                {
+                    yield return (reader.CurrentToken, reader.GetPropertyName());
+                }
+                else if( reader.CurrentToken == EToken.String )
+                {
+                    yield return (reader.CurrentToken, reader.GetStringValue());
+                }
+                else if( reader.CurrentToken == EToken.UInt64 )
+                {
+                    yield return (reader.CurrentToken, reader.GetUInt64Value());
+                }
+                else if( reader.CurrentToken.IsIntegerToken() )
+                {
+                    yield return (reader.CurrentToken, reader.GetIntegerValue());
+                }
+                else if( reader.CurrentToken == EToken.False || reader.CurrentToken == EToken.True )
+                {
+                    yield return (reader.CurrentToken, reader.GetBoolValue());
+                }
+                else if( reader.CurrentToken == EToken.Single || reader.CurrentToken == EToken.Double )
+                {
+                    yield return (reader.CurrentToken, reader.GetFloatValue());
+                }
+                else if( reader.CurrentToken == EToken.Null )
+                {
+                    yield return (reader.CurrentToken, null);
+                }
+                else 
+                {
+                    yield return (reader.CurrentToken, null);
+                }
+            }
+        }
+
         protected Object GetBuffer( EBackend storageType )
         {
-            if ( storageType == EBackend.JsonNet 
-                //|| storageType == EBackend.SimpleText 
-               )
+            if ( storageType == EBackend.JsonNet  )
             {
-                return new StringWriter();
+                return new StringBuilder();
             }
             else if ( storageType == EBackend.Binary )
             {
@@ -34,7 +72,7 @@ namespace GDDB.Tests
         {
             if ( storageType == EBackend.JsonNet )
             {
-                return GetJsonNetWriter( (StringWriter)buffer );
+                return GetJsonNetWriter( (StringBuilder)buffer );
             }
             else if ( storageType == EBackend.Binary )
             {
@@ -48,16 +86,17 @@ namespace GDDB.Tests
             throw new NotImplementedException();
         }
 
-        protected ReaderBase GetReader( EBackend storageType, Object buffer )
+        protected ReaderBase GetReader( EBackend storageType, Object buffer, Boolean supportMultipleContent  = false )
         {
             if ( storageType == EBackend.JsonNet )
             {
-                var bufferStr = ((StringWriter)buffer).ToString();
-                return GetJsonNetReader( bufferStr );
+                var bufferStr = ((StringBuilder)buffer).ToString();
+                return GetJsonNetReader( bufferStr, supportMultipleContent );
             }
             else if ( storageType == EBackend.Binary )
             {
-                var bufferBytes = ((MemoryStream)buffer).ToArray();
+                var ms = (MemoryStream)buffer;
+                var bufferBytes = ms.ToArray();
                 return GetBinaryReader( bufferBytes );
             }
             // if ( storageType == EBackend.SimpleText )
@@ -69,38 +108,31 @@ namespace GDDB.Tests
             throw new NotImplementedException();
         }
 
-        private WriterBase GetJsonNetWriter( StringWriter buffer )
+        private WriterBase GetJsonNetWriter( StringBuilder buffer )
         {
-            var  jsonWriter     = new JsonTextWriter( buffer );
-            jsonWriter.Formatting = Formatting.Indented;
-            return new JsonNetWriter( jsonWriter );
+            return new JsonNetWriter( buffer, true );
         }
 
         private WriterBase GetBinaryWriter( MemoryStream buffer )
         {
-            var writer = new System.IO.BinaryWriter( buffer );
-            return new BinaryWriter( writer );
+            return new BinaryWriter( buffer );
         }
 
-        private ReaderBase GetJsonNetReader( String buffer )
+        private ReaderBase GetJsonNetReader( String buffer, Boolean supportMultipleContent )
         {
-            var reader       = new StringReader( buffer );
-            var deserializer = new JsonTextReader( reader );
-            return new JsonNetReader( deserializer );
+            return new JsonNetReader( buffer, supportMultipleContent );
         }
 
         private ReaderBase GetBinaryReader( Byte[] buffer )
         {
-            var reader       = new MemoryStream( buffer );
-            var deserializer = new System.IO.BinaryReader( reader );
-            return new BinaryReader( deserializer );
+            return new BinaryReader( buffer );
         }
 
         protected void SaveToFile( EBackend backend, String fileName, Object buffer )
         {
             if( backend == EBackend.JsonNet )
             {
-                var sw = (StringWriter)buffer;
+                var sw = (StringBuilder)buffer;
                 File.WriteAllText( Path.ChangeExtension( fileName, "json" ), sw.ToString() );
             }
             else if( backend == EBackend.Binary )
@@ -121,15 +153,32 @@ namespace GDDB.Tests
 
         protected void LogBuffer( Object buffer )
         {
-            if ( buffer is StringWriter sw )
+            if ( buffer is StringBuilder sb )
             {
-                var json    = sw.ToString();
+                var json    = sb.ToString();
                 var toBytes = _utf8WithoutBom.GetBytes( json ); 
                 Debug.Log( $"Length {toBytes.Length}, value\n\r{json}" );
             }
             else if ( buffer is MemoryStream ms )
             {
                 Debug.Log( $"Length {ms.Length}, value '{BytesToString( ms.ToArray() )}'" );
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        protected long GetBufferLength( Object buffer )
+        {
+            if ( buffer is StringBuilder sb )
+            {
+                var json    = sb.ToString();
+                return json.Length;
+            }
+            else if ( buffer is MemoryStream ms )
+            {
+                return ms.Length;
             }
             else
             {

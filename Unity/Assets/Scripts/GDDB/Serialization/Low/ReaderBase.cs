@@ -51,12 +51,21 @@ namespace GDDB.Serialization
                 //It's ok
             }
             else
-                throw new Exception( $"Expected token {token} but got {CurrentToken} at {Path}" );
+                throw new ReaderTokenException( token.ToString(), this, $"[{nameof(ReaderBase)}]-[{nameof(EnsureToken)}] Expected token {token} but got {CurrentToken} at {Path}" );
         }
 
         public void EnsureStartObject( )
         {
             EnsureToken( EToken.StartObject );
+        }
+        public void SeekStartObject( )
+        {
+            while( CurrentToken != EToken.StartObject )
+            {
+                ReadNextToken();
+                if ( CurrentToken == EToken.EoF )
+                    return;
+            }
         }
         public void EnsureEndObject( )
         {
@@ -96,7 +105,7 @@ namespace GDDB.Serialization
 
         public EToken SeekPropertyName( String propertyName )
         {
-            while( CurrentToken != EToken.PropertyName && GetPropertyName() != propertyName )
+            while( CurrentToken != EToken.PropertyName || GetPropertyName() != propertyName )
             {
                 ReadNextToken();
                 if ( CurrentToken == EToken.EoF )

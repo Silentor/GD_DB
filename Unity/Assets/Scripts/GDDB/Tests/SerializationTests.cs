@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using FluentAssertions;
 using GDDB.Serialization;
 using Newtonsoft.Json;
@@ -26,14 +27,20 @@ namespace GDDB.Tests
             testObj.Components.Add( nonSerComp );
 
             //Act
-            var serializer = new ObjectsDataSerializer( writer );
+            var serializer = new GDObjectSerializer( writer );
             serializer.Serialize( testObj );
             LogBuffer( buffer );
 
             //Assert
             var reader = GetReader( backend, buffer );
-            reader.SeekPropertyName( ".Components" );           //Make sure there are no serialized properties in NotSerializableContentComponent
-            Assert.Fail();                      //implement
+            reader.SeekPropertyName( ".Components" );                   //Seek to components array           
+            reader.SeekPropertyName( ".Type" );                         //Seek to component type                                 
+
+            //Make sure there are no serialized properties in NotSerializableContentComponent
+            while ( reader.ReadNextToken() != EToken.EndObject )
+            {
+                 reader.CurrentToken.Should().NotBe( EToken.PropertyName, "No properties should be serialized" );   
+            }
         }
 
         [TestCaseSource(nameof(DataSourceForPrimitiveComponentTest))]
@@ -47,6 +54,7 @@ namespace GDDB.Tests
             //Arrange
             var comp = new PrimitivesComponent()
                        {
+                               SByteField = sbyteParam,
                                BoolField     = boolParam,
                                DoubleField   = doubleParam,
                                FloatField    = floatParam,
@@ -64,16 +72,16 @@ namespace GDDB.Tests
             //Act
             var buffer     = GetBuffer( backend );
             var writer     = GetWriter( backend, buffer );
-            var reader     = GetReader( backend, buffer );
-            var serializer = new ObjectsDataSerializer(writer);
-            var deserializer = new ObjectsJsonDeserializer( reader );
+            var serializer = new GDObjectSerializer(writer);
             serializer.Serialize( testObj );
 
             LogBuffer( buffer );
             SaveToFile( backend, "test", buffer );
 
             //Assert
-            var comp_copy = deserializer.Deserialize( ).Components.First() as PrimitivesComponent;
+            var reader       = GetReader( backend, buffer );
+            var deserializer = new GDObjectDeserializer( reader );
+            var comp_copy    = deserializer.Deserialize( ).Components.First() as PrimitivesComponent;
             comp_copy.Should().BeEquivalentTo( comp );
         }
 
@@ -92,15 +100,17 @@ namespace GDDB.Tests
             //Act
             var buffer     = GetBuffer( backend );
             var writer     = GetWriter( backend, buffer );
-            var reader     = GetReader( backend, buffer );
-            var serializer = new ObjectsDataSerializer( writer );
+
+            var serializer = new GDObjectSerializer( writer );
             serializer.Serialize( testObj );
+
             LogBuffer( buffer );
             SaveToFile( backend, "test", buffer );
 
             //Assert
-            var deserializer = new ObjectsJsonDeserializer( reader );
-            var copy       = deserializer.Deserialize( ).Components.First() as NullReferencesAsEmptyComponent;
+            var reader       = GetReader( backend, buffer );
+            var deserializer = new GDObjectDeserializer( reader );
+            var copy         = deserializer.Deserialize( ).Components.First() as NullReferencesAsEmptyComponent;
             copy.StringMustBeEmpty.Should().BeEmpty(  );
             copy.NestedClassMustBeEmpty.StringMustBeEmpty.Should().BeEmpty(  );
             copy.NestedClassMustBeEmpty.IntParam.Should()
@@ -128,30 +138,30 @@ namespace GDDB.Tests
                             IntField  = 1,
                             IntField2 = 2
                     };
-            var testObj = ScriptableObject.CreateInstance<GDRoot>();
+            var testObj = ScriptableObject.CreateInstance<GDObject>();
             testObj.Components.Add( collComp );
 
             //Act
             var buffer     = GetBuffer( backend );
             var writer     = GetWriter( backend, buffer );
-            var reader     = GetReader( backend, buffer );
-            var serializer = new ObjectsDataSerializer( writer );
+            
+            var serializer = new GDObjectSerializer( writer );
             serializer.Serialize( testObj );
             LogBuffer( buffer );
             SaveToFile( backend, "test", buffer );
 
-            //Assert json
-            var jObject     = (JObject)JToken.Parse( jsonString );
-            var jComponents = (JArray)jObject[ ".Components" ];
-            var jsonSerComp = (JObject)jComponents[ 0 ];
+            //Assert
 
-            //Should not be serialized
-            jsonSerComp.ContainsKey( nameof(CollectionTestComponent.OldIntArray) ).Should().BeFalse(  );
-            jsonSerComp.ContainsKey( nameof(CollectionTestComponent.ClassListNonSerializable) ).Should().BeFalse(  );
+            //Some properties should not be serialized
+            var reader1 = GetReader( backend, buffer );         //Because reader is forward-only we should create new instances
+            EnumerateTokens( reader1 ).Should().NotContainEquivalentOf( (EToken.PropertyName, nameof(CollectionTestComponent.OldIntArray) ) );
+            var reader2 = GetReader( backend, buffer );
+            EnumerateTokens( reader2 ).Should().NotContainEquivalentOf( (EToken.PropertyName, nameof(CollectionTestComponent.ClassListNonSerializable) ) );
 
             //Asset deserialized data
-            var deserializer = new ObjectsJsonDeserializer( reader );
-            var copy       = deserializer.Deserialize(  ).Components.First() as CollectionTestComponent;
+            var reader       = GetReader( backend, buffer );
+            var deserializer = new GDObjectDeserializer( reader );
+            var copy         = deserializer.Deserialize(  ).Components.First() as CollectionTestComponent;
             copy.OldIntArray.Should().BeEquivalentTo( new CollectionTestComponent().OldIntArray );
             copy.IntArray.Should().BeEquivalentTo( collComp.IntArray );
             copy.StrArray.Should().BeEquivalentTo( new String[] { String.Empty, String.Empty, "3" } );
@@ -175,25 +185,30 @@ namespace GDDB.Tests
         }
 
         [Test]
-        public void RuntimeGDO( )
+        public void RuntimeGDOCreationAndSerialization( [Values]EBackend backend )
         {
              //Arrange
              var obj = GDObject.CreateInstance<GDObject>();
 
              //Act
-             var serializer = new ObjectsDataSerializer();
-             var deserializer = new ObjectsJsonDeserializer();
-             var jsonString = serializer.Serialize( obj ).ToString();
-             Debug.Log( jsonString );
-             var copyObj = deserializer.Deserialize( jsonString );
+             var buffer = GetBuffer( backend );
+             var writer = GetWriter( backend, buffer );
+             var serializer = new GDObjectSerializer( writer );
+             serializer.Serialize( obj );
+
+             LogBuffer( buffer );
+             SaveToFile( backend, "test", buffer );
 
              //Assert
-             obj.Guid.Should().NotBe( default(Guid) );
+             var reader       = GetReader( backend, buffer );
+             var deserializer = new GDObjectDeserializer( reader );
+             var copyObj      = deserializer.Deserialize(  );
+             obj.Guid.Should().NotBe( Guid.Empty );
              copyObj.Guid.Should().Be( obj.Guid );
         }
 
         [Test]
-        public void GDObjectReferenceTest( )
+        public void GDObjectReferenceTest( [Values]EBackend backend )
         {
                 //Arrange
                 var obj1 = GDObject.CreateInstance<TestObjectWithReference>();
@@ -205,18 +220,21 @@ namespace GDDB.Tests
                 obj1.Components.Add( refComp );
                 obj2.ObjReference = obj3;
 
-                //Act
-                var serializer  = new ObjectsDataSerializer();
-                var deserializer  = new ObjectsJsonDeserializer();
-                var jsonString1 = serializer.Serialize( obj1 ).ToString();
-                var jsonString2 = serializer.Serialize( obj2 ).ToString();
-                var jsonString3 = serializer.Serialize( obj3 ).ToString();
-                Debug.Log( jsonString1 );
-                Debug.Log( jsonString2 );
-                Debug.Log( jsonString3 );
-                var copyObject1 = deserializer.Deserialize( jsonString1 );
-                var copyObject2 = deserializer.Deserialize( jsonString2 );
-                var copyObject3 = deserializer.Deserialize( jsonString3 );
+                //Act       
+                var buffer = GetBuffer( backend );
+                var writer = GetWriter( backend, buffer );
+                var serializer  = new GDObjectSerializer( writer );
+                serializer.Serialize( obj1 );
+                serializer.Serialize( obj2 );
+                serializer.Serialize( obj3 );
+
+                LogBuffer( buffer );
+
+                var reader       = GetReader( backend, buffer, true );
+                var deserializer = new GDObjectDeserializer( reader );
+                var copyObject1 = deserializer.Deserialize(  );
+                var copyObject2 = deserializer.Deserialize(  );
+                var copyObject3 = deserializer.Deserialize(  );
                 deserializer.ResolveGDObjectReferences();
 
                 //Assert
@@ -230,7 +248,7 @@ namespace GDDB.Tests
         }
 
         [Test]
-        public void ISerializationCallbackReceiverTest( )
+        public void ISerializationCallbackReceiverTest( [Values]EBackend backend )
         {
                 //Arrange
                 var obj1 = GDObject.CreateInstance<TestObjectSerializationCallback>();
@@ -239,11 +257,16 @@ namespace GDDB.Tests
                 obj1.Components.Add( comp );
 
                 //Act
-                var serializer = new ObjectsDataSerializer();
-                var deserializer = new ObjectsJsonDeserializer();
-                var jsonString = serializer.Serialize( obj1 ).ToString();
-                Debug.Log( jsonString );
-                var copyObjects = deserializer.Deserialize( jsonString );
+                var buffer = GetBuffer( backend );
+                var writer = GetWriter( backend, buffer );
+                var serializer = new GDObjectSerializer( writer );
+                serializer.Serialize( obj1 );
+
+                LogBuffer( buffer );
+
+                var reader       = GetReader( backend, buffer );
+                var deserializer = new GDObjectDeserializer( reader );
+                var copyObjects = deserializer.Deserialize( );
 
                 //Assert
                 var obj1_copy = (TestObjectSerializationCallback)copyObjects;
@@ -252,7 +275,7 @@ namespace GDDB.Tests
         }
 
         [Test]
-        public void UnityTypesSupportTest( )
+        public void UnityCustomTypesSupportTest( [Values]EBackend backend )
         {
                 //Arrange
                 var obj1 = GDObject.CreateInstance<GDObject>();
@@ -272,46 +295,56 @@ namespace GDDB.Tests
                 obj1.Components.Add( comp );
 
                 //Act
-                var serializer = new ObjectsDataSerializer();
-                var deserializer = new ObjectsJsonDeserializer();
-                var jsonString = serializer.Serialize( obj1 ).ToString( );
-                Debug.Log( jsonString );
-                var copyObjects = deserializer.Deserialize( jsonString );
+                var buffer = GetBuffer( backend );
+                var writer = GetWriter( backend, buffer );
+                var serializer = new GDObjectSerializer( writer );
+                serializer.Serialize( obj1 );
+
+                LogBuffer( buffer );
 
                 //Assert
-                var obj1_copy = (GDObject)copyObjects;
-                obj1_copy.GetComponent<UnitySimpleTypesComponent>().Should().BeEquivalentTo( comp );
+                var reader       = GetReader( backend, buffer );
+                var deserializer = new GDObjectDeserializer( reader );
+                var copyObjects  = deserializer.Deserialize( );
+                copyObjects.GetComponent<UnitySimpleTypesComponent>().Should().BeEquivalentTo( comp );
         }
 
         [Test]
-        public void DisabledGDObjectTest( )
+        public void DisabledGDObjectTest( [Values]EBackend backend )
         {
                 //Arrange
                 var disabledObj = GDObject.CreateInstance<GDObject>();
                 disabledObj.EnabledObject = false;
 
                 //Act
-                var serializer = new ObjectsDataSerializer();
-                var jsonString = serializer.Serialize( disabledObj );
+                var buffer = GetBuffer( backend );
+                var writer = GetWriter( backend, buffer );
+                var serializer = new GDObjectSerializer( writer );
+                serializer.Serialize( disabledObj );
+                LogBuffer( buffer );
 
                 //Assert
-                jsonString.Should().BeNull(  );
+                GetBufferLength( buffer ).Should().Be( 0 );
         }
 
         [Test]
-        public void AwakeEnableAfterJsonTest( )
+        public void AwakeEnableShouldBeCalledAfterDeserializeTest( [Values]EBackend backend  )
         {
                 //Arrange
                 var obj = GDObject.CreateInstance<TestObjectAwakeEnable>();
 
                 //Act
-                var serializer   = new ObjectsDataSerializer();
-                var deserializer = new ObjectsJsonDeserializer();
-                var jsonString = serializer.Serialize( obj ).ToString();
-                Debug.Log( jsonString );
-                DumpJsonTokens( jsonString );
-                var copyObjects = deserializer.Deserialize( jsonString );
-                var copy = (TestObjectAwakeEnable)copyObjects;
+                var buffer = GetBuffer( backend );
+                var writer = GetWriter( backend, buffer );
+                var serializer   = new GDObjectSerializer( writer );
+                serializer.Serialize( obj );
+
+                LogBuffer( buffer );
+
+                var reader       = GetReader( backend, buffer );
+                var deserializer = new GDObjectDeserializer( reader );
+                var copyObjects  = deserializer.Deserialize( );
+                var copy         = (TestObjectAwakeEnable)copyObjects;
 
                 //Assert
                 copy.IsAwaked.Should().BeTrue();
@@ -319,7 +352,7 @@ namespace GDDB.Tests
         }
 
         [Test]
-        public void UnityAssetsSerializationTest_SOAssetResolver( )
+        public void UnityAssetsSerializationTest_SOAssetResolver( [Values]EBackend backend  )
         {
                 //Arrange
                 var obj           = GDObject.CreateInstance<GDObject>();
@@ -338,15 +371,19 @@ namespace GDDB.Tests
                 obj.Components.Add( goComp );
                 var testAssetResolver = ScriptableObject.CreateInstance<DirectAssetReferences>();
 
-                //Act
-                var serializer   = new ObjectsDataSerializer();
-                var deserializer = new ObjectsJsonDeserializer();
-                var jsonString = serializer.Serialize( obj , testAssetResolver ).ToString();
-                Debug.Log( jsonString );
-                var copyObjects = deserializer.Deserialize( jsonString, testAssetResolver );
+                //Act       
+                var buffer = GetBuffer( backend );
+                var writer = GetWriter( backend, buffer );
+                var serializer   = new GDObjectSerializer( writer );
+                serializer.Serialize( obj , testAssetResolver );
+
+                LogBuffer( buffer );
 
                 //Assert
-                var copyComp = copyObjects.GetComponent<UnityAssetReferenceComponent>();
+                var reader       = GetReader( backend, buffer );
+                var deserializer = new GDObjectDeserializer( reader );
+                var copyObjects  = deserializer.Deserialize( testAssetResolver );
+                var copyComp     = copyObjects.GetComponent<UnityAssetReferenceComponent>();
                 copyComp.Texture2D.Should().BeSameAs( testTexture );
                 copyComp.Material.Should().BeSameAs( testMat );
                 copyComp.GameObject.Should().BeSameAs( testGO );
@@ -354,7 +391,7 @@ namespace GDDB.Tests
         }
 
         [Test]
-        public void FoldersSerializationTest( )
+        public void FoldersSerializationTest( [Values]EBackend backend )
         {
             //Arrange
             var root      = GetFolder( "Root", null  ) ;
@@ -369,15 +406,21 @@ namespace GDDB.Tests
             var forestLocation = CreateGDObject( "Forest" ); locations.Objects.Add( forestLocation );
 
             //Act
+            var buffer = GetBuffer( backend );
+            var writer = GetWriter( backend, buffer );
             var serializer = new DBDataSerializer();
-            var gddbJson = serializer.Serialize( root, root.EnumerateFoldersDFS(  ).SelectMany( f => f.Objects ).ToArray() , NullGdAssetResolver.Instance ).ToString();
-            Debug.Log( gddbJson );
-            var db       = new GdFileLoader( gddbJson ).GetGameDataBase();
+            serializer.Serialize( writer, root, root.EnumerateFoldersDFS(  ).SelectMany( f => f.Objects ).ToArray() , NullGdAssetResolver.Instance );
+
+            LogBuffer( buffer );
+
+            var reader       = GetReader( backend, buffer );
+            var deserializer = new DBDataSerializer();
+            var rootFolder = deserializer.Deserialize( reader, NullGdAssetResolver.Instance, out _ ).rootFolder;
 
             //Assert
-            db.RootFolder.SubFolders.Count.Should().Be( 2 );
-            db.RootFolder.Name.Should().Be( "Root" );
-            var mobsFolder = db.RootFolder.SubFolders.Single( f => f.Name == "Mobs" );
+            rootFolder.SubFolders.Count.Should().Be( 2 );
+            rootFolder.Name.Should().Be( "Root" );
+            var mobsFolder = rootFolder.SubFolders.Single( f => f.Name == "Mobs" );
             mobsFolder.Objects.Count.Should().Be( 1 );
             var elvesFolder = mobsFolder.SubFolders.Single( f => f.Name == "Elves" );
             elvesFolder.Objects.Count.Should().Be( 2 );
@@ -385,12 +428,10 @@ namespace GDDB.Tests
             elvesFolder.SubFolders.Should().BeEmpty();
             elvesFolder.Objects.Select( gdo => gdo.Guid ).Should().BeEquivalentTo( new[] { elf1.Guid, elf2.Guid } );
             elvesFolder.Objects.Select( gdo => gdo.Name ).Should().BeEquivalentTo( new[] { "Elf1", "Elf2" } );
-
-            
         }
 
         [Test]
-        public void FoldersWithoutObjectsSerializationTest( )
+        public void FoldersWithoutObjectsSerializationTest( [Values]EBackend backend )
         {
                 //Arrange
                 var root      = GetFolder( "Root",      null  ) ;
@@ -405,13 +446,16 @@ namespace GDDB.Tests
                 var forestLocation = CreateGDObject( "Forest" ); locations.Objects.Add( forestLocation );
 
                 //Act
+                var buffer = GetBuffer( backend );
+                var writer = GetWriter( backend, buffer );
                 var serializer = new DBDataSerializer();
-                var gddbJson = serializer.Serialize( root, root.EnumerateFoldersDFS(  ).SelectMany( f => f.Objects ).ToArray() , NullGdAssetResolver.Instance ).ToString();
-                Debug.Log( gddbJson );
+                serializer.Serialize( writer, root, root.EnumerateFoldersDFS(  ).SelectMany( f => f.Objects ).ToArray() , NullGdAssetResolver.Instance );
+
+                LogBuffer( buffer );
+
+                var reader = GetReader( backend, buffer );
                 var folderSerializer = new FoldersJsonSerializer();
-                using var stringReader = new StringReader( gddbJson );
-                using var jsonReader = new JsonTextReader( stringReader );
-                var rootFolder       = folderSerializer.Deserialize( jsonReader, null, out _ );
+                var rootFolder       = folderSerializer.Deserialize( reader, null, out _ ); //Because objectSerializer is null, we don't get objects
 
                 //Assert
                 rootFolder.SubFolders.Count.Should().Be( 2 );
@@ -422,6 +466,13 @@ namespace GDDB.Tests
                 elvesFolder.Objects.Count.Should().Be( 0 );
                 elvesFolder.SubFolders.Should().BeEmpty();
         }
+
+
+        [Test]
+        public void ReaderPathTests( [Values]EBackend backend )
+        {
+                Assert.Fail();
+        }                                                                                                
 
         GDObject CreateGDObject( String name )
         {
@@ -450,22 +501,11 @@ namespace GDDB.Tests
                 }
         }
 
-        private void DumpJsonTokens( String json )
-        {
-                using var stringReader = new StringReader( json );
-                using var jsonReader = new JsonTextReader( stringReader );
-
-                while( jsonReader.Read(  ) )
-                {
-                        Debug.Log( $"{jsonReader.TokenType} = {jsonReader.Value}" );
-                }
-        }
-
         private static IEnumerable<System.Object[]> DataSourceForPrimitiveComponentTest( )
         {
                 var data = new System.Object[]
                 {
-                        new System.Object[] { false, 0D, 0F,  0, 0, 0L, 0UL, "", 'a',
+                        new System.Object[] { false, 0D, 0F,  (SByte)0, 0, 0L, 0UL, "", 'a',
                                 PrimitivesComponent.EByteFlagEnum.Zero, PrimitivesComponent.EIntEnum.Zero },
                         new System.Object[] { true,  Double.MinValue, Single.MinValue, SByte.MinValue, Int32.MinValue, Int64.MinValue, UInt64.MinValue, 
                                 "", 
@@ -473,16 +513,16 @@ namespace GDDB.Tests
                                 PrimitivesComponent.EByteFlagEnum.One,
                                 PrimitivesComponent.EIntEnum.One },
                         new System.Object[] { true,     Double.MaxValue, Single.MaxValue, SByte.MaxValue, Int32.MaxValue, Int64.MaxValue, UInt64.MaxValue,
-                                "some ansi text", '\uD846', PrimitivesComponent.EByteFlagEnum.Last,
+                                "some ansi text", '\u005E', PrimitivesComponent.EByteFlagEnum.Last,
                                 PrimitivesComponent.EIntEnum.Last },
-                        new System.Object[] { true, Double.NegativeInfinity, Single.NegativeInfinity, 0, 0, 0, UInt64.MaxValue - 1, "кирилиця", Char.MinValue,
+                        new System.Object[] { true, Double.NegativeInfinity, Single.NegativeInfinity, (SByte)0, 0, 0, UInt64.MaxValue - 1, "кирилиця", Char.MinValue,
                                 PrimitivesComponent.EByteFlagEnum.Last,
                                 PrimitivesComponent.EIntEnum.Last },
-                        new System.Object[] { true, Double.PositiveInfinity, Single.PositiveInfinity, 0, 0, Int64.MinValue + 1, 0UL,
-                                "some chinese \uD846",
+                        new System.Object[] { true, Double.PositiveInfinity, Single.PositiveInfinity, (SByte)0, 0, Int64.MinValue + 1, 0UL,
+                                "some chinese \u4E2D",
                                 Char.MaxValue, PrimitivesComponent.EByteFlagEnum.Zero | PrimitivesComponent.EByteFlagEnum.One,
                                 PrimitivesComponent.EIntEnum.Last },
-                        new System.Object[] { true, Double.NaN, Single.NaN, 0, 0, 0, UInt64.MaxValue - 2, "some smile \uD83D", '!',
+                        new System.Object[] { true, Double.NaN, Single.NaN, (SByte)0, 0, 0, UInt64.MaxValue - 2, "some smile \u263A", '!',
                                 PrimitivesComponent.EByteFlagEnum.Last,
                                 PrimitivesComponent.EIntEnum.Last }
                 };

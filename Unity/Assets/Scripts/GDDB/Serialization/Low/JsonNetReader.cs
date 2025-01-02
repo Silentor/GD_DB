@@ -6,12 +6,17 @@ namespace GDDB.Serialization
 {
     public class JsonNetReader : ReaderBase
     {
-
         private readonly JsonReader _reader;
 
-        public JsonNetReader( JsonReader reader )
+        public JsonNetReader( String buffer, Boolean supportMultipleContent )
         {
-            _reader = reader;
+            _reader = new JsonTextReader( new System.IO.StringReader( buffer ) );
+            _reader.SupportMultipleContent = supportMultipleContent;
+        }
+
+        public JsonNetReader( System.IO.TextReader stream )
+        {
+            _reader = new JsonTextReader( stream );
         }
 
         public override String Path => _reader.Path;
@@ -123,7 +128,7 @@ namespace GDDB.Serialization
                 //It's ok
             }
             else
-                throw new ReaderTokenException( token.ToString(), this, $"Expected token {token} but got {_reader.TokenType} = {_reader.Value}" );
+                throw new ReaderTokenException( token.ToString(), this, $"Expected token {token} but got {_reader.TokenType} = {_reader.Value}, path {_reader.Path}" );
         }
 
         private static EToken ConvertToken( JsonToken token )

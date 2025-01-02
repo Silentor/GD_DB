@@ -11,16 +11,19 @@ namespace GDDB
     {
         public String Name { get; } = "Default";
 
+        public UInt64 Hash { get; } = 0;
+
         //public         GDRoot                  Root       { get; }
         public         Folder                  RootFolder { get; }
 
         public virtual IReadOnlyList<GDObject> AllObjects { get; }
 
-        public GdDb( Folder dbStructure, IReadOnlyList<GDObject> allObjects )
+        public GdDb( Folder dbStructure, IReadOnlyList<GDObject> allObjects, UInt64 hash = 0 )
         {
             RootFolder = dbStructure;
             //Root       = allObjects.OfType<GDRoot>().Single( );
             AllObjects = allObjects;
+            Hash       = hash;
         }
 
         public IEnumerable<T> GetComponents<T>() where T : GDComponent

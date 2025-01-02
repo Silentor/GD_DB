@@ -4,6 +4,8 @@ namespace GDDB.Serialization
 {
        public abstract class WriterBase
     {
+        public abstract String Path { get; }
+
         public abstract void WriteStartObject( );
 
         public abstract void WriteEndObject( );

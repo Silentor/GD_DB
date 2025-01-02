@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.NetworkInformation;
 using GDDB.Serialization;
 using UnityEditor;
 using UnityEngine;
@@ -46,18 +47,34 @@ namespace GDDB.Editor
             var oldFolderKey       = $"{nameof(MainMenuIntegration)}.{nameof(LoadPrintHierarchyToConsole)}.OldFolder";
 
             var oldFolder = PlayerPrefs.GetString( oldFolderKey, "Assets" );
-            var jsonPath = EditorUtility.OpenFilePanel( "Open GDDB json", oldFolder, "json" );
-            if ( String.IsNullOrEmpty( jsonPath ) )
+            var filePath = EditorUtility.OpenFilePanel( "Open GDDB json", oldFolder, "json,bin" );
+            if ( String.IsNullOrEmpty( filePath ) )
                 return;
-            PlayerPrefs.SetString( oldFolderKey, System.IO.Path.GetDirectoryName( jsonPath ) );
+            PlayerPrefs.SetString( oldFolderKey, System.IO.Path.GetDirectoryName( filePath ) );
 
-            using var strReader    = new System.IO.StreamReader( jsonPath );
-            using var jsonReader   = new Newtonsoft.Json.JsonTextReader( strReader );
-            var       folderReader = new FoldersJsonSerializer();
-            var       rootFolder   = folderReader.Deserialize( jsonReader, null, out var hash );
+            GdDb gddb;
+            if( filePath.EndsWith( ".bin" ) )
+            {
+                using var fileStream = new System.IO.FileStream( filePath, System.IO.FileMode.Open );
+                var gdLoader = new GdFileLoader( fileStream );
+                gddb = gdLoader.GetGameDataBase();
+            }
+            else if( filePath.EndsWith( ".json" ) )
+            {
+                using var fileReader = new System.IO.StreamReader( filePath );
+                var       gdLoader   = new GdFileLoader( fileReader );
+                gddb = gdLoader.GetGameDataBase();
+            }
+            else
+            {
+                Debug.LogError( $"Unknown file extension {filePath}" );
+                return;
+            }
+
+            var rootFolder = gddb.RootFolder;
             var       hierarchyStr = rootFolder.ToHierarchyString();
             using var stringReader = new System.IO.StringReader( hierarchyStr );
-            Debug.Log( $"GDDB read from {jsonPath}, hash {hash}" );
+            Debug.Log( $"GDDB read from {filePath}, loaded hash {gddb.Hash}" );
             while ( stringReader.ReadLine() is { } line )
             {
                 Debug.Log( line );

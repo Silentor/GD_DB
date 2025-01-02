@@ -60,6 +60,36 @@ namespace GDDB.Serialization
         }
     }
 
+    public class WriterObjectException : Exception
+    {
+        public String     ObjectName { get; }
+        public Type       ObjectType { get; }
+        public WriterBase Writer       { get; }
+        public String     Path       { get; }
+
+        public WriterObjectException( )
+        {
+        }
+
+        public WriterObjectException( String objectName, Type objectType, WriterBase writer, string message)
+                : base( message )
+        {
+            Writer       = writer;
+            ObjectName = objectName;
+            ObjectType = objectType;
+            Path       = writer.Path;
+        }
+
+        public WriterObjectException( String objectName, Type objectType, WriterBase writer, string message, Exception inner)
+                : base( message, inner )
+        {
+            ObjectName = objectName;
+            ObjectType = objectType;
+            Writer       = writer;
+            Path       = writer.Path;
+        }
+    }
+
     public class ReaderTokenException : Exception
     {
         public String     TokenName     { get; }
@@ -115,6 +145,32 @@ namespace GDDB.Serialization
         }
     }
 
+    public class WriterPropertyException : Exception
+    {
+        public String     PropertyName { get; }
+        public WriterBase Writer         { get; }
+        public String     Path         { get; }
+
+        public WriterPropertyException( )
+        {
+        }
+
+        public WriterPropertyException( String propertyName, WriterBase writer, string message )
+                : base( message )
+        {
+            PropertyName = propertyName;
+            Writer         = writer;
+            Path         = writer.Path;
+        }
+
+        public WriterPropertyException(String propertyName, WriterBase writer, string message, Exception inner )
+                : base( message, inner )
+        {
+            PropertyName = propertyName;
+            Writer         = writer;
+            Path         = writer.Path;
+        }
+    }
 
     public class ReaderFolderException : Exception
     {

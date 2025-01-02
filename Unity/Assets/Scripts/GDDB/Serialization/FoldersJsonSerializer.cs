@@ -14,7 +14,7 @@ namespace GDDB.Serialization
 
 #if UNITY_EDITOR
 
-        public void Serialize( Folder root, ObjectsDataSerializer objectSerializer, WriterBase writer, UInt64? hash = null )
+        public void Serialize( Folder root, GDObjectSerializer objectSerializer, WriterBase writer, UInt64? hash = null )
         {
             _serFolderSampler.Begin();
             SerializeFolder( writer, root, objectSerializer, hash );
@@ -23,12 +23,8 @@ namespace GDDB.Serialization
 
 #endif
 
-        public Folder Deserialize( ReaderBase reader, ObjectsJsonDeserializer? objectSerializer, out UInt64? checksum )
+        public Folder Deserialize( ReaderBase reader, GDObjectDeserializer? objectSerializer, out UInt64? checksum )
         {
-            // if( json.HasKey( "hash" ))
-            //     checksum = json["hash"].AsULong;
-            // else
-            //     checksum = null;
             checksum = 0;
             reader.ReadStartObject();
             return DeserializeFolder( reader, null, objectSerializer, out checksum );
@@ -36,7 +32,7 @@ namespace GDDB.Serialization
 
 #if UNITY_EDITOR
 
-        private void SerializeFolder( WriterBase writer, Folder folder, ObjectsDataSerializer objectSerializer, UInt64? hash = null )
+        private void SerializeFolder( WriterBase writer, Folder folder, GDObjectSerializer objectSerializer, UInt64? hash = null )
         {
             writer.WriteStartObject();
 
@@ -72,7 +68,7 @@ namespace GDDB.Serialization
                     //Full embed object write
                     if ( obj.EnabledObject )
                     {
-                        objectSerializer.Serialize( obj, writer );
+                        objectSerializer.Serialize( obj );
                     }
                 }
             }
@@ -90,7 +86,7 @@ namespace GDDB.Serialization
         /// <param name="parent"></param>
         /// <param name="objectSerializer"></param>
         /// <returns></returns>
-        private Folder DeserializeFolder( ReaderBase reader, Folder? parent, ObjectsJsonDeserializer? objectSerializer, out UInt64? hash )
+        private Folder DeserializeFolder( ReaderBase reader, Folder? parent, GDObjectDeserializer? objectSerializer, out UInt64? hash )
         {
             _deserFolderSampler.Begin();
             reader.EnsureStartObject();
@@ -145,7 +141,7 @@ namespace GDDB.Serialization
                     reader.ReadStartArray();
                     while ( reader.ReadNextToken() != EToken.EndArray )
                     {
-                        var gdo     = objectSerializer.Deserialize( reader );
+                        var gdo     = objectSerializer.Deserialize( );
                         folder.Objects.Add( gdo );
                     }
                 }

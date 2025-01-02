@@ -20,10 +20,25 @@ namespace GDDB.Serialization
             var serializer     = new DBDataSerializer();
             var assetsResolver = referencedAssets ?? NullGdAssetResolver.Instance;
             var reader         = new BinaryReader( binaryStream );
-            var data           = serializer.Deserialize( reader, assetsResolver );
-            _db = new GdDb( data.rootFolder, data.objects );
+            var data           = serializer.Deserialize( reader, assetsResolver, out var hash );
+            _db = new GdDb( data.rootFolder, data.objects, hash ?? 0 );
 
             Debug.Log( $"[{nameof(GdFileLoader)}]-[{nameof(GdFileLoader)}] Loaded GDDB ({_db.AllObjects.Count} objects) from binary stream length {binaryStream.Length}, Unity assets referenced {assetsResolver.Count}" );
+        }
+
+        public GdFileLoader( Byte[] binary, IGdAssetResolver referencedAssets = null ) : this( new MemoryStream( binary ), referencedAssets )
+        {
+        }
+
+        public GdFileLoader( TextReader textStream, IGdAssetResolver referencedAssets = null )
+        {
+            var serializer     = new DBDataSerializer();
+            var assetsResolver = referencedAssets ?? NullGdAssetResolver.Instance;
+            var reader         = new JsonNetReader( textStream );
+            var data           = serializer.Deserialize( reader, assetsResolver, out var hash );
+            _db = new GdDb( data.rootFolder, data.objects, hash ?? 0 );
+
+            Debug.Log( $"[{nameof(GdFileLoader)}]-[{nameof(GdFileLoader)}] Loaded GDDB ({_db.AllObjects.Count} objects) from text reader stream, Unity assets referenced {assetsResolver.Count}" );
         }
 
         /// <summary>
@@ -31,17 +46,8 @@ namespace GDDB.Serialization
         /// </summary>
         /// <param name="jsonStr"></param>
         /// <param name="referencedAssets"></param>
-        public GdFileLoader( String jsonStr, IGdAssetResolver referencedAssets = null )
+        public GdFileLoader( String jsonStr, IGdAssetResolver referencedAssets = null ) : this( new StringReader( jsonStr ), referencedAssets )
         {
-            var       serializer     = new DBDataSerializer();
-            var       assetsResolver = referencedAssets ?? NullGdAssetResolver.Instance;
-            using var strReader      = new StringReader( jsonStr );
-            using var jsonTextReader = new JsonTextReader( strReader );
-            var       reader         = new JsonNetReader( jsonTextReader );
-            var       data           = serializer.Deserialize( reader, assetsResolver );
-            _db = new GdDb( data.rootFolder, data.objects );
-
-            Debug.Log( $"[{nameof(GdFileLoader)}]-[{nameof(GdFileLoader)}] Loaded GDDB ({_db.AllObjects.Count} objects) from json string length {jsonStr.Length}, Unity assets referenced {assetsResolver.Count}" );
         }
     }
 }

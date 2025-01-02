@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Numerics;
+using System.Text;
 using GDDB.Serialization;
 using Newtonsoft.Json.Linq;
 using UnityEditor;
@@ -71,8 +72,10 @@ namespace GDDB.Editor
 
                 //Update source generator data file
                 var serializer = new FoldersJsonSerializer();
-                var json = serializer.Serialize( GDBEditor.GDB.RootFolder, null, databaseHash ).ToString();
-                File.WriteAllText( GDDBStructureFilePath, json );
+                var buffer = new StringBuilder();
+                var writer = new JsonNetWriter( buffer, true );
+                serializer.Serialize( GDBEditor.GDB.RootFolder, null, writer, databaseHash );
+                File.WriteAllText( GDDBStructureFilePath, buffer.ToString() );
 
                 SourceUpdated?.Invoke();
 

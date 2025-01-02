@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Globalization;
+using System.Text;
 using Newtonsoft.Json;
 
 namespace GDDB.Serialization
@@ -7,9 +9,37 @@ namespace GDDB.Serialization
     {
         private readonly JsonWriter _writer;
 
-        public JsonNetWriter( JsonWriter writer )
+        public override String Path => _writer.Path;
+
+        public JsonNetWriter( StringBuilder stringBuilder, Boolean indent )
         {
-            _writer = writer;
+            var jsonTextWriter = new JsonTextWriter( new System.IO.StringWriter( stringBuilder, CultureInfo.InvariantCulture ) );
+            if( indent )
+            {
+                jsonTextWriter.Formatting = Formatting.Indented;
+                jsonTextWriter.Indentation = 4;
+            }
+            else
+            {
+                jsonTextWriter.Formatting = Formatting.None;
+            }
+
+            _writer                    = jsonTextWriter;
+        }
+
+        public JsonNetWriter( System.IO.Stream stream, Boolean indent )
+        {
+            var jsonTextWriter = new JsonTextWriter( new System.IO.StreamWriter( stream ) );
+            if( indent )
+            {
+                jsonTextWriter.Formatting  = Formatting.Indented;
+                jsonTextWriter.Indentation = 4;
+            }
+            else
+            {
+                jsonTextWriter.Formatting = Formatting.None;
+            }
+            _writer                    = jsonTextWriter;
         }
 
         public override void WriteStartObject( )
