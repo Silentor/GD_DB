@@ -72,7 +72,7 @@ namespace GDDB.Serialization
                 if ( obj.GetType() != typeof(GDObject) )
                 {
                     writer.WritePropertyName( ".Type" );
-                    writer.WriteValue( type.Assembly == typeof(GDObject).Assembly ? type.FullName : type.AssemblyQualifiedName );
+                    writer.WriteValue( type.Assembly == typeof(GDObject).Assembly ? type.FullName : $"{type.FullName}, {type.Assembly.GetName().Name}" );
                 }
                 writer.WritePropertyName( ".Ref" );
                 writer.WriteValue( obj.Guid );
@@ -112,7 +112,8 @@ namespace GDDB.Serialization
             if ( propertyType != actualType )
             {
                 writer.WritePropertyName( ".Type" );
-                writer.WriteValue( actualType.Assembly == GetType().Assembly ? actualType.FullName : actualType.AssemblyQualifiedName );
+                var typeStr = propertyType.Assembly == actualType.Assembly ? actualType.FullName : $"{actualType.FullName}, {actualType.Assembly.GetName().Name}";
+                writer.WriteValue( typeStr );
             }
 
             WriteObjectContent( actualType, obj, writer );

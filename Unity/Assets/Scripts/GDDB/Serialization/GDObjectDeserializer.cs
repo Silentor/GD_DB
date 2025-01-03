@@ -23,8 +23,9 @@ namespace GDDB.Serialization
         private          IGdAssetResolver                           _assetResolver;
         private readonly List<UnresolvedGDObjectReference>          _unresolvedReferences = new ();
         private readonly List<GDObject>                             _loadedObjects        = new ();     //To resolve loaded references in place
-        private readonly CustomSampler                              _deserObjectSampler   = CustomSampler.Create( "ObjectsJsonSerializer.Deserialize" );
-        private readonly CustomSampler                              _resolveObjectSampler = CustomSampler.Create( "ObjectsJsonSerializer.ResolveGDObjectReferences" );
+        private readonly CustomSampler                              _deserObjectSampler   = CustomSampler.Create( "GDObjectDeserializer.Deserialize" );
+        private readonly CustomSampler                              _resolveObjectSampler = CustomSampler.Create( "GDObjectDeserializer.ResolveGDObjectReferences" );
+        private readonly CustomSampler                              _getTypeSampler = CustomSampler.Create( "GDObjectDeserializer.GetType" );
         private readonly Dictionary<Type, IReadOnlyList<FieldInfo>> _fieldsCache          = new();
         private readonly Dictionary<Type, ConstructorInfo>          _constructorCache     = new();
 
@@ -223,7 +224,7 @@ namespace GDDB.Serialization
             {
                 var typeStr = reader.ReadStringValue();
                 reader.ReadNextToken();
-                objectType = Type.GetType( typeStr );
+                objectType = GetType( typeStr, propertyType.Assembly );
                 if( objectType == null )
                     throw new InvalidOperationException( $"[{nameof(GDObjectDeserializer)}]-[{nameof(ReadObject)}] Cannot create Type from type string '{typeStr}'" );
             }
@@ -459,6 +460,16 @@ namespace GDDB.Serialization
             }
 
             return con;
+        }
+
+        private Type GetType( String typeStr, Assembly defaultAssembly )
+        {
+            _getTypeSampler.Begin();
+            var result = Type.GetType( typeStr );
+            if( result == null )
+                result = defaultAssembly.GetType( typeStr );
+            _getTypeSampler.End();
+            return result;
         }
 
 

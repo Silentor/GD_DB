@@ -1,11 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using GDDB;
 using GDDB.Serialization;
 using TMPro;
-using UnityEditor.Search;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.Profiling;
@@ -45,6 +43,12 @@ namespace GDDB_User
 
         private void Awake( )
         {
+            //var typeStr = "GDDB.TestGDObject, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null";
+            //var typeStr = "GDDB.TestGDObject, Assembly-CSharp";
+            var typeStr = "GDDB.TestGDObject";
+            var type    = Type.GetType( typeStr );
+            Assert.IsTrue( type != null );
+
             var test = TestObject.CreateInstance<Test2>();
             Assert.IsTrue( test.Id == 42 );
 
@@ -203,14 +207,25 @@ namespace GDDB_User
             return "???";
         }
 
-        public void LoadJSONViaJsonNet( )
+        public void LoadDBViaJsonNet( )
         {
             //Load GDDB from JSON with Unity assets resolver
-            var assetsResolver = Resources.Load<DirectAssetReferences>( "DefaultGDDBAssetsRef" );
-            var jsonFileName   = Application.streamingAssetsPath + "/DefaultGDDB.json";
-            using var jsonStream       =  File.OpenRead( jsonFileName );
-            var jloader        = new GdFileLoader( jsonStream, assetsResolver );
+            var       assetsResolver = Resources.Load<DirectAssetReferences>( "Default.assets" );
+            var       jsonFileName   = Application.streamingAssetsPath + "/DefaultGDDB.json";
+            using var jsonStream     =  File.OpenRead( jsonFileName );
+            using var streamReader   = new StreamReader( jsonStream );
+            var       jloader        = new GdFileLoader( streamReader, assetsResolver );
             _jsonGDDB         = jloader.GetGameDataBase();
+        }
+
+        public void LoadDBViaBinary( )
+        {
+            //Load GDDB from JSON with Unity assets resolver
+            var       assetsResolver = Resources.Load<DirectAssetReferences>( "Default.assets" );
+            var       binFileName    = Application.streamingAssetsPath + "/DefaultGDDB.bin";
+            using var binStream      =  File.OpenRead( binFileName );
+            var       bloader        = new GdFileLoader( binStream, assetsResolver );
+            _binaryGDDB         = bloader.GetGameDataBase();
         }
     }
 

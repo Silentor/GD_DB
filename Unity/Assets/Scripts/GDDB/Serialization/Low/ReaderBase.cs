@@ -1,5 +1,4 @@
 ﻿using System;
-using UnityEditor.Profiling;
 
 namespace GDDB.Serialization
 {
