@@ -471,7 +471,41 @@ namespace GDDB.Tests
         [Test]
         public void ReaderPathTests( [Values]EBackend backend )
         {
-                Assert.Fail();
+                //Arrange
+                var buffer = GetBuffer( backend );
+                var writer = GetWriter( backend, buffer );
+                var serializer = new GDObjectSerializer( writer );
+
+                var gdo = GDObject.CreateInstance<GDObject>();
+                var comp = new CollectionTestComponent();
+                gdo.Components.Add( comp );
+                serializer.Serialize( gdo );
+
+                LogBuffer( buffer );
+
+                //Act and Assert
+                var reader = GetReader( backend, buffer );
+                reader.SeekPropertyName( ".Name" );
+                reader.Path.Should().Contain( ".Name" );
+
+                reader.SeekPropertyName( ".Components" );
+                reader.Path.Should().Contain( ".Components" );
+
+                reader.SeekPropertyName( ".Type" );
+                reader.Path.Should().Contain( ".Components" );          //Property of GDObject
+                reader.Path.Should().Contain( "[0]" );                  //Index of GDComponent
+                reader.Path.Should().Contain( ".Type" );                //Property of GDComponent
+
+                reader.SeekPropertyName( "IntArray" );
+                reader.ReadStartArray();
+                reader.ReadNextToken();                                         //Read first element
+                reader.ReadNextToken();                                         //Read second element
+                reader.Path.Should().Contain( ".Components" );          
+                reader.Path.Should().Contain( "[0]" );                  
+                reader.Path.Should().Contain( "IntArray" );                  
+                reader.Path.Should().Contain( "[1]" );            
+                
+                Debug.Log( reader.Path );
         }                                                                                                
 
         GDObject CreateGDObject( String name )

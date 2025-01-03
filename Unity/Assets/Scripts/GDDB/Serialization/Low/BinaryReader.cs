@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine.Assertions;
 
 namespace GDDB.Serialization
 {
@@ -6,6 +9,8 @@ namespace GDDB.Serialization
     {
         private readonly System.IO.BinaryReader _reader;
         private          Int32                  _depth;
+
+        private readonly Stack<Container> _path = new ();
 
         private Int64  _intBuffer;
         private Single _floatBuffer;
@@ -21,7 +26,35 @@ namespace GDDB.Serialization
         {
         }
 
-        public override String Path => "Not Implemented";
+        public override String Path
+        {
+            get
+            {
+                if( _path.Count == 0 )
+                    return String.Empty;
+                else
+                {
+                    var sb = new System.Text.StringBuilder();
+                    foreach ( var container in _path.Reverse() )
+                    {
+                        if( container.Token == EToken.StartObject )
+                        {
+                            sb.Append( "." );
+                            if ( container.PropertyName != null )                                
+                                sb.Append( container.PropertyName );
+                        }
+                        else if( container.Token == EToken.StartArray )
+                        {
+                            sb.Append( "[" );
+                            if( container.ElementIndex >= 0 )
+                                sb.Append( container.ElementIndex );
+                            sb.Append( "]" );
+                        }
+                    }
+                    return sb.ToString();
+                }
+            }
+        }
 
         public override EToken ReadNextToken( )
         {
@@ -35,12 +68,47 @@ namespace GDDB.Serialization
                 CurrentToken  = (EToken)_reader.ReadByte();
                 StoreValue();
 
-                if( CurrentToken.IsStartContainer() )
+                //Count array elements for path
+                if ( _path.TryPeek( out var arr ) && arr.Token == EToken.StartArray )
+                {
+                    var lastObject = _path.Pop();
+                    lastObject.ElementIndex += 1;
+                    _path.Push( lastObject );
+                }
+
+                if ( CurrentToken == EToken.StartObject )
+                {
+                    _path.Push( new Container { Token = EToken.StartObject } );
                     _depth++;
-                else if( CurrentToken.IsEndContainer() )
+                }
+                else if ( CurrentToken == EToken.StartArray )
+                {
+                    _path.Push( new Container { Token = EToken.StartArray, ElementIndex = -1} );
+                    _depth++;
+                }
+                else if ( CurrentToken == EToken.EndObject )
+                {
                     _depth--;
+                    var lastObject = _path.Pop();
+                    Assert.IsTrue( lastObject.Token == EToken.StartObject );
+                }
+                else if( CurrentToken == EToken.EndArray )
+                {
+                    _depth--;
+                    var lastArray = _path.Pop();
+                    Assert.IsTrue( lastArray.Token == EToken.StartArray );
+                }
+                else if( CurrentToken == EToken.PropertyName )
+                {
+                    var lastObject = _path.Pop();
+                    Assert.IsTrue( lastObject.Token == EToken.StartObject );
+                    lastObject.PropertyName = _stringBuffer;
+                    _path.Push( lastObject );
+                }
+                
                 if( _depth < 0 )
                     throw new Exception( $"Unexpected end of container" );
+
                 return CurrentToken;
             }
             else
@@ -245,6 +313,17 @@ namespace GDDB.Serialization
                         break;
                 }
             }
+        }
+
+        private struct Container
+        {
+            public EToken Token;
+
+            //For objects
+            public String PropertyName;
+
+            //For arrays
+            public Int32 ElementIndex;
         }
     }
 }
