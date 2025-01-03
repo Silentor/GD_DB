@@ -124,6 +124,44 @@ namespace GDDB.Tests
         }
 
         [Test]
+        public void GuidsTest( [Values]EBackend backend )
+        {
+                //Arrange
+                var nullComp = new NullReferencesAsEmptyComponent()
+                               {
+                                               StringMustBeEmpty      = null,
+                                               NestedClassMustBeEmpty = null
+                               };
+                var testObj = ScriptableObject.CreateInstance<GDRoot>();
+                testObj.Components.Add( nullComp );
+
+                //Act
+                var buffer = GetBuffer( backend );
+                var writer = GetWriter( backend, buffer );
+
+                var serializer = new GDObjectSerializer( writer );
+                serializer.Serialize( testObj );
+
+                LogBuffer( buffer );
+                SaveToFile( backend, "test", buffer );
+
+                //Assert
+                var reader       = GetReader( backend, buffer );
+                var deserializer = new GDObjectDeserializer( reader );
+                var copy         = deserializer.Deserialize( ).Components.First() as NullReferencesAsEmptyComponent;
+                copy.StringMustBeEmpty.Should().BeEmpty(  );
+                copy.NestedClassMustBeEmpty.StringMustBeEmpty.Should().BeEmpty(  );
+                copy.NestedClassMustBeEmpty.IntParam.Should()
+                    .Be( 42, "default value from field init" );
+                copy.NestedClassMustBeEmptyWithoutConstructor.StringMustBeEmpty.Should().BeEmpty(  );
+                copy.NestedClassMustBeEmptyWithoutConstructor.IntParam.Should()
+                    .Be( 99, "value from private constructor" );
+                copy.NestedClassMustBeEmptyWithoutConstructor.NestedClassMustBeEmpty.Should()
+                    .BeEquivalentTo( copy.NestedClassMustBeEmpty );
+                copy.NonSerializableClassMustStillBeNull.Should().BeNull();
+        }
+
+        [Test]
         public void CollectionsTest( [Values]EBackend backend )
         {
             //Arrange
@@ -455,7 +493,7 @@ namespace GDDB.Tests
                 LogBuffer( buffer );
 
                 var reader = GetReader( backend, buffer );
-                var folderSerializer = new FoldersJsonSerializer();
+                var folderSerializer = new FolderSerializer();
                 var rootFolder       = folderSerializer.Deserialize( reader, null, out _ ); //Because objectSerializer is null, we don't get objects
 
                 //Assert

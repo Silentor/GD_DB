@@ -7,10 +7,10 @@ using UnityEngine.Profiling;
 
 namespace GDDB.Serialization
 {
-    public class FoldersJsonSerializer
+    public class FolderSerializer
     {
-        private readonly CustomSampler _serFolderSampler   = CustomSampler.Create( "FoldersJsonSerializer.Serialize" );
-        private readonly CustomSampler _deserFolderSampler = CustomSampler.Create( "FoldersJsonSerializer.Deserialize" );
+        private readonly CustomSampler _serFolderSampler   = CustomSampler.Create( "FolderSerializer.Serialize" );
+        private readonly CustomSampler _deserFolderSampler = CustomSampler.Create( "FolderSerializer.Deserialize" );
 
 #if UNITY_EDITOR
 
@@ -41,7 +41,7 @@ namespace GDDB.Serialization
                 writer.WritePropertyName( "hash" ).WriteValue( hash.Value );
             }
             writer.WritePropertyName( "name" ).WriteValue( folder.Name );
-            writer.WritePropertyName( "guid" ).WriteValue( folder.FolderGuid.ToString("D") );
+            writer.WritePropertyName( "guid" ).WriteValue( folder.FolderGuid );
 
             writer.WritePropertyName( "subfolders" );
             writer.WriteStartArray();
@@ -108,8 +108,7 @@ namespace GDDB.Serialization
 
             reader.SeekPropertyName( "name" );
             var name    = reader.ReadStringValue();
-            var guidStr = reader.ReadPropertyString( "guid" );
-            var guid    = Guid.ParseExact( guidStr, "D" );
+            var guid = reader.ReadPropertyGuid( "guid" );
 
             var folder = new Folder( name, guid )
             {

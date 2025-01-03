@@ -51,7 +51,7 @@ namespace GDDB_User
             if ( FolderJson )
             {
                 var       json       = FolderJson.text;
-                var       deser      = new FoldersJsonSerializer();
+                var       deser      = new FolderSerializer();
                 var       reader     = new JsonNetReader( json,  false );
                 var       folder     = deser.Deserialize( reader, null, out var hash );
             }
@@ -135,7 +135,7 @@ namespace GDDB_User
             Debug.Log( $"bin hash {binGdbLoadedHash}" );
             Debug.Log( $"Asset loaded root folder name {_soGDDB.RootFolder.Name}" );
             Debug.Log( $"Json loaded root folder name {_jsonGDDB.RootFolder.Name}" );
-            Debug.Log( $"Json loaded root folder name {_jsonGDDB.RootFolder.Name}" );
+            Debug.Log( $"Binary loaded root folder name {_binaryGDDB.RootFolder.Name}" );
 
 #if UNITY_EDITOR
             if( editorGDDBHash != soGdbLoadedHash )

@@ -71,7 +71,7 @@ namespace GDDB.Editor
                 Debug.Log( $"[{nameof(GDBSourceGenerator)}]-[{nameof(GenerateGDBSource)}] db hash {databaseHash}, generated code hash {generatedHash}, force mode {forceRegenerate}" );
 
                 //Update source generator data file
-                var serializer = new FoldersJsonSerializer();
+                var serializer = new FolderSerializer();
                 var buffer = new StringBuilder();
                 var writer = new JsonNetWriter( buffer, true );
                 serializer.Serialize( GDBEditor.GDB.RootFolder, null, writer, databaseHash );

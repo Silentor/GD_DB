@@ -155,11 +155,11 @@ namespace GDDB.Serialization
             {
                 typeName = reader.ReadStringValue();
                 type     = Type.GetType( typeName );
-                guid     = Guid.ParseExact( reader.ReadPropertyString( ".Ref" ), "D" );
+                guid     = reader.ReadPropertyGuid( ".Ref" );
             }
             else if( propName == ".Ref" )
             {
-                guid = Guid.ParseExact( reader.ReadStringValue( ), "D" );
+                guid = reader.ReadGuidValue();
             }
             else throw new Exception($"[{nameof(GDObjectDeserializer)}]-[{nameof(ReadGDObject)}] unknown property {propName}");
 

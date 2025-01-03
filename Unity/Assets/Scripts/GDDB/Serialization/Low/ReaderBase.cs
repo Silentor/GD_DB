@@ -29,6 +29,7 @@ namespace GDDB.Serialization
         public abstract Byte GetUInt8Value( );
         public abstract Int32 GetInt32Value( );
         public abstract UInt64 GetUInt64Value( );
+        public abstract Guid GetGuidValue( );
 
         /// <summary>
         /// Get any float value (single or double)
@@ -154,6 +155,12 @@ namespace GDDB.Serialization
             return GetIntegerValue();
         }
 
+        public Guid  ReadGuidValue( )
+        {
+            ReadNextToken();
+            return GetGuidValue();
+        }
+
 
         public Single  ReadSingleValue( )
         {
@@ -226,5 +233,14 @@ namespace GDDB.Serialization
                 throw new Exception( $"Expected property {propertyName} but got {actualPropertyName}" );
             return ReadBoolValue();
         }
+
+        public Guid ReadPropertyGuid(  String propertyName )
+        {
+            var actualPropertyName = ReadPropertyName(  );
+            if ( actualPropertyName != propertyName )
+                throw new Exception( $"Expected property {propertyName} but got {actualPropertyName}" );
+            return ReadGuidValue(  );
+        }
+
     }
 }

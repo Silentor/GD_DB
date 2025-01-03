@@ -316,6 +316,8 @@ namespace GDDB.Editor
                     return new Rect( GenerateVector3Value(), GenerateVector3Value() );
                 else if ( valueType == typeof( AnimationCurve ) )
                     return GenerateAnimationCurveValue();
+                else if ( valueType == typeof( Guid ) )
+                    return rnd.NextDouble() < 0.1 ? Guid.Empty : Guid.NewGuid();
                 else if ( valueType.IsArray )
                 {
                     var count = rnd.Next( 0, 5 + 1 );

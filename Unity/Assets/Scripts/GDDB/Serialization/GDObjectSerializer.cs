@@ -75,7 +75,7 @@ namespace GDDB.Serialization
                     writer.WriteValue( type.Assembly == typeof(GDObject).Assembly ? type.FullName : type.AssemblyQualifiedName );
                 }
                 writer.WritePropertyName( ".Ref" );
-                writer.WriteValue( obj.Guid.ToString("D") );
+                writer.WriteValue( obj.Guid );
                 if ( !obj.EnabledObject )
                 {
                     writer.WritePropertyName( ".Enabled" );

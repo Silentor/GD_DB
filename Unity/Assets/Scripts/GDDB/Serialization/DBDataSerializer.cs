@@ -13,7 +13,7 @@ namespace GDDB.Serialization
             var timer             = System.Diagnostics.Stopwatch.StartNew();
 
             var objectsSerializer = new GDObjectSerializer( writer );
-            var folderSerializer  = new FoldersJsonSerializer( );
+            var folderSerializer  = new FolderSerializer( );
             folderSerializer.Serialize( rootFolder, objectsSerializer, writer );
 
             timer.Stop();
@@ -36,7 +36,7 @@ namespace GDDB.Serialization
         {
             var       timer             = System.Diagnostics.Stopwatch.StartNew();
             var       objectsSerializer = new GDObjectDeserializer( reader );
-            var       foldersSerializer = new FoldersJsonSerializer();
+            var       foldersSerializer = new FolderSerializer();
             var       rootFolder        = foldersSerializer.Deserialize( reader, objectsSerializer, out hash );
             objectsSerializer.ResolveGDObjectReferences();
 

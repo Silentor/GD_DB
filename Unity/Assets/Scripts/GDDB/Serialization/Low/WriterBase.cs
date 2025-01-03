@@ -25,5 +25,6 @@ namespace GDDB.Serialization
         public abstract void WriteValue( Single value );
         public abstract void WriteValue( Double value );
         public abstract void WriteValue( Boolean value );
+        public abstract void WriteValue( Guid value );
     }
 }

@@ -9,6 +9,9 @@ System.Single
 System.Single[]
 System.Double
 System.Boolean
+System.Guid
+System.Guid[]
+System.Collections.Generic.List<System.Guid>
 UnityEngine.Vector3
 UnityEngine.Vector3[]
 UnityEngine.Vector2

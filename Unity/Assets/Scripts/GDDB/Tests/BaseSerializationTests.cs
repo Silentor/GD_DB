@@ -27,9 +27,13 @@ namespace GDDB.Tests
                 {
                     yield return (reader.CurrentToken, reader.GetStringValue());
                 }
-                else if( reader.CurrentToken == EToken.UInt64 )
+                else if ( reader.CurrentToken == EToken.UInt64 )
                 {
                     yield return (reader.CurrentToken, reader.GetUInt64Value());
+                }
+                else if ( reader.CurrentToken == EToken.Guid )
+                {
+                    yield return (reader.CurrentToken, reader.GetGuidValue());
                 }
                 else if( reader.CurrentToken.IsIntegerToken() )
                 {

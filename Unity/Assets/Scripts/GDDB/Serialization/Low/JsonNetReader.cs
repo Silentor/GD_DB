@@ -95,6 +95,16 @@ namespace GDDB.Serialization
             return Convert.ToUInt64( _reader.Value );
         }
 
+        public override Guid GetGuidValue( )
+        {
+            if( _reader.TokenType == JsonToken.String )
+                return Guid.ParseExact( _reader.Value.ToString(), "D" );
+            else if( _reader.TokenType == JsonToken.Null )
+                return Guid.Empty;
+            else
+                throw new Exception( $"Unexpected token {_reader.TokenType}" );
+        }
+
         public override Double GetFloatValue( )
         {
             return Convert.ToDouble( _reader.Value );

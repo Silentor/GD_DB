@@ -122,5 +122,10 @@ namespace GDDB.Serialization
         {
             _writer.WriteValue( value );
         }
+
+        public override void WriteValue(Guid value )
+        {
+            _writer.WriteValue( value.ToString("D", CultureInfo.InvariantCulture) );
+        }
     }
 }

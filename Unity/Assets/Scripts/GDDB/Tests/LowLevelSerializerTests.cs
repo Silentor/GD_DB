@@ -465,6 +465,39 @@ namespace GDDB.Tests
         }
 
         [Test]
+        public void TestGuids( [Values]EBackend backend )
+        {
+            // Write
+            var buffer     = GetBuffer( backend );
+            var serializer = GetWriter( backend, buffer );
+            serializer.WriteStartObject();
+            serializer.WritePropertyName( "TestGuids" );
+            serializer.WriteStartArray();
+            serializer.WriteValue( Guid.Empty );
+            serializer.WriteValue( Guid.Parse( "6CBA8F3D-BF44-44B0-9B76-0A85E836C29A" ) );
+            serializer.WriteNullValue();
+            serializer.WriteEndArray();
+            serializer.WriteEndObject();
+
+            // Save to file
+            SaveToFile( backend, "test", buffer );
+
+            // Log
+            LogBuffer( buffer );
+
+            // Read and assert
+            var deserializer = GetReader( backend, buffer );
+            deserializer.ReadStartObject();
+            Assert.AreEqual( deserializer.ReadPropertyName(  ), "TestGuids" );
+            deserializer.ReadStartArray();
+            Assert.AreEqual( Guid.Empty,                                           deserializer.ReadGuidValue() );
+            Assert.AreEqual( Guid.Parse( "6CBA8F3D-BF44-44B0-9B76-0A85E836C29A" ), deserializer.ReadGuidValue() );
+            Assert.AreEqual( Guid.Empty,                                           deserializer.ReadGuidValue() );
+            deserializer.ReadEndArray();
+            deserializer.ReadEndObject();
+        }
+
+        [Test]
         public void TestStrings( [Values]EBackend backend, [Values("ASCII test", "\r\n\t", @"\", "\"", "", " ", "кірилиця", "知道", "Europäische", null )]String value )
         {
             // Write

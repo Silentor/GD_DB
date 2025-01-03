@@ -13,6 +13,7 @@ namespace GDDB.Serialization
         private readonly Stack<Container> _path = new ();
 
         private Int64  _intBuffer;
+        private Guid  _guidBuffer;
         private Single _floatBuffer;
         private Double _doubleBuffer;
         private String _stringBuffer;
@@ -203,6 +204,16 @@ namespace GDDB.Serialization
                 throw new Exception( $"Expected token {EToken.UInt64} or {EToken.Null} but got {CurrentToken}" );
         }
 
+        public override Guid GetGuidValue( )
+        {
+            if( CurrentToken == EToken.Guid )
+                return _guidBuffer;
+            else if( CurrentToken == EToken.Null )
+                return Guid.Empty;
+            else
+                throw new Exception( $"Expected token {EToken.Guid} or {EToken.Null} but got {CurrentToken}" );
+        }
+
         public override Double GetFloatValue( )
         {
             if( CurrentToken == EToken.Single )
@@ -297,6 +308,12 @@ namespace GDDB.Serialization
 
                     case EToken.UInt64:
                         _intBuffer = unchecked((Int64)_reader.ReadUInt64());
+                        break;
+
+                    case EToken.Guid:
+                        Span<Byte> buffer = stackalloc Byte[16];
+                        Assert.IsTrue( _reader.Read( buffer ) == 16 );
+                        _guidBuffer = new Guid( buffer );
                         break;
 
                     case EToken.Single:

@@ -114,5 +114,20 @@ namespace GDDB.Serialization
             else
                 _writer.Write( (byte)EToken.False );
         }
+
+        public override void WriteValue(Guid value )
+        {
+            if ( value != Guid.Empty )
+            {
+                _writer.Write( (byte)EToken.Guid );
+                Span<Byte> bytes = stackalloc Byte[16];
+                if( value.TryWriteBytes( bytes ) )
+                    _writer.Write( bytes );
+            }
+            else
+            {
+                _writer.Write( (byte)EToken.Null );
+            }
+        }
     }
 }
