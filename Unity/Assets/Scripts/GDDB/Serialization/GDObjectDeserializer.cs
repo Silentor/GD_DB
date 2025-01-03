@@ -40,6 +40,7 @@ namespace GDDB.Serialization
             AddSerializer( new Vector2Serializer() );
             AddSerializer( new Vector2IntSerializer() );
             AddSerializer( new QuaternionSerializer() );
+            AddSerializer( new Matrix4x4Serializer() );
             AddSerializer( new RectSerializer() );
             AddSerializer( new BoundsSerializer() );
             AddSerializer( new Color32Serializer() );
@@ -193,7 +194,7 @@ namespace GDDB.Serialization
                 reader.EnsureEndArray(  );
 
                 reader.ReadNextToken();
-                if ( type != typeof(GDObject) )         //There can be properties of descendants of GDObject type
+                if ( type != typeof(GDObject) && reader.CurrentToken != EToken.EndObject )         //There can be properties of descendants of GDObject type
                 {
                     ReadObjectPropertiesFromJson( reader, obj );
                 }
@@ -236,7 +237,8 @@ namespace GDDB.Serialization
 
             var obj = defaultConstructor.Invoke( Array.Empty<Object>() );
 
-            ReadObjectPropertiesFromJson( reader, obj );
+            if( reader.CurrentToken != EToken.EndObject )
+                ReadObjectPropertiesFromJson( reader, obj );
 
             reader.EnsureEndObject();
 
@@ -272,6 +274,7 @@ namespace GDDB.Serialization
                     {
                         try
                         {
+                            reader.ReadNextToken();
                             var value = ReadSomethingFromJson( reader, field.FieldType );
                             if ( value is UnresolvedGDObjectReference gdRef )                        //Should be resolved after all objects deserialization
                             {
@@ -302,9 +305,8 @@ namespace GDDB.Serialization
 
         private Object ReadSomethingFromJson( ReaderBase reader, Type propertyType )
         {
-            reader.ReadNextToken();
-            if( reader.CurrentToken == EToken.EndArray || reader.CurrentToken == EToken.EndObject )
-                return null;
+            //if( reader.CurrentToken == EToken.EndArray || reader.CurrentToken == EToken.EndObject )
+                //return null;
 
             //UnityEngine.Debug.Log( $"Reading value {json.Path} of type {propertyType}" );
 
@@ -349,7 +351,9 @@ namespace GDDB.Serialization
             }
             else if ( _serializers.TryGetValue( propertyType, out var deserializer ) )
             {
-                return deserializer.DeserializeBase( reader );
+                var result = deserializer.DeserializeBase( reader );
+                //reader.ReadNextToken();
+                return result;
             }
             else if ( typeof(UnityEngine.Object).IsAssignableFrom( propertyType ) )      //Read Unity asset by reference
             {
@@ -387,11 +391,9 @@ namespace GDDB.Serialization
                 var bufferType = typeof(List<>).MakeGenericType( elementType );
                 var buffer       = (IList)Activator.CreateInstance( bufferType );
 
-                while( true )
+                while( reader.ReadNextToken() != EToken.EndArray )
                 {
                     var collectionValue = ReadSomethingFromJson( reader, elementType );
-                    if( reader.CurrentToken == EToken.EndArray )
-                        break;
                     buffer.Add( collectionValue );
                 }
                 
@@ -409,11 +411,9 @@ namespace GDDB.Serialization
                     return GetUnresolvedGDORefCollection( reader );
 
                 var list        = (IList)Activator.CreateInstance( type );
-                while ( true )
+                while ( reader.ReadNextToken() != EToken.EndArray )
                 {
                     var collectionValue = ReadSomethingFromJson( reader, elementType );
-                    if( reader.CurrentToken == EToken.EndArray )
-                        break;
                     list.Add( collectionValue );
                 }
 

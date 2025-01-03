@@ -96,6 +96,7 @@ namespace GDDB.Tests
         public Array                            OldIntArray = new Int32[] { 1, 2, 3 };
         public Int32[]                          IntArray    = new Int32[] { 1, 2, 3 };
         public String[]                          StrArray    = new String[] { null, "", "3" };
+        public Int32[][]                        IntArray2D  = new Int32[][] { new Int32[] { 1, 2, 3 }, new Int32[] { 4, 5, 6 } };
         public List<NestedSerializableClass>    ClassList1  = new()  { new (){IntField  = 66}, new (){IntField = 99}, null };
         public List<NestedSerializableClass>    ClassListPolymorf2  = new()  { new (){IntField  = 66}, new (){IntField = 99}, new NestedSerializableChildClass(){IntField2 = 100} };
         public List<NestedNonSerializableClass> ClassListNonSerializable  = new() { new (){IntField = 66}, new (){IntField = 99}, null };
@@ -142,16 +143,17 @@ namespace GDDB.Tests
 
     public class UnitySimpleTypesComponent : GDComponent
     {
-        public Vector3        Vector3    = Vector3.one * 666;
-        public Vector2        Vector2    = Vector2.one * 66;
-        public Vector3Int     Vector3Int = Vector3Int.one * 66;
-        public Vector2Int     Vector2Int = Vector2Int.one * 666;
-        public Bounds         Bounds     = new Bounds( UnityEngine.Vector3.forward, Vector3.one );
-        public Rect           Rect       = new Rect( UnityEngine.Vector2.up, Vector2.one );
-        public Quaternion     Quaternion = Quaternion.Euler( 1, 2, 3 );
-        public Color          Color      = Color.red;
-        public Color32        Color32    = new ( 100, 100, 100, 100 );
-        public AnimationCurve AnimCurve  = new (new Keyframe( 0, 0 ), new Keyframe( 0.5f, 1 ), new Keyframe( 1, 0 ));
+        public Vector3        Vector3     = Vector3.one    * 666;
+        public Vector2        Vector2     = Vector2.one    * 66;
+        public Vector3Int     Vector3Int  = Vector3Int.one * 66;
+        public Vector2Int     Vector2Int  = Vector2Int.one * 666;
+        public Bounds         Bounds      = new Bounds( UnityEngine.Vector3.forward, Vector3.one );
+        public Rect           Rect        = new Rect( UnityEngine.Vector2.up, Vector2.one );
+        public Quaternion     Quaternion  = Quaternion.Euler( 1, 2, 3 );
+        public Quaternion[]   Quaternions = new []{ Quaternion.Euler( 1, 2, 3 ), UnityEngine.Quaternion.Euler( 4, 5, 6 ), };
+        public Color          Color       = Color.red;
+        public Color32        Color32     = new ( 100, 100, 100, 100 );
+        public AnimationCurve AnimCurve   = new (new Keyframe( 0, 0 ), new Keyframe( 0.5f, 1 ), new Keyframe( 1, 0 ));
     }
 
     public class UnityAssetReferenceComponent : GDComponent

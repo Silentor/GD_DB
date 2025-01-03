@@ -78,6 +78,8 @@ namespace GDDB.Editor
             soUpdateBtn.clicked += () => SaveGDDBToSO( updateSettings );
             var jsonUpdateBtn = updateDBSettingsBox.Q<Button>( "JsonDBUpdate" );
             jsonUpdateBtn.clicked += () => SaveGDDBToJson ( updateSettings );
+            var binUpdateBtn = updateDBSettingsBox.Q<Button>( "BinDBUpdate" );
+            binUpdateBtn.clicked += () => SaveGDDBToBinary ( updateSettings );
 
             UpdateGDBInfo();
             UpdateSourceGenInfo();
@@ -109,6 +111,16 @@ namespace GDDB.Editor
 
             GDDBUpdater.UpdateJsonDB( updateSettings, GDBEditor.GDB, true );
             EditorUtility.RevealInFinder( updateSettings.JsonDBPath );
+
+            if ( Validator.Reports.Count > 0 ) Debug.LogError( $"[{nameof(ControlWindow)}] GDDB validation errors detected, count {Validator.Reports.Count}" );
+        }
+        
+        private void SaveGDDBToBinary( UpdateDBSettings updateSettings )
+        {
+            if ( String.IsNullOrEmpty( updateSettings.BinaryDBPath ) ) throw new InvalidOperationException( "Output path is empty" );
+
+            GDDBUpdater.UpdateBinaryDB( updateSettings, GDBEditor.GDB, true );
+            EditorUtility.RevealInFinder( updateSettings.BinaryDBPath );
 
             if ( Validator.Reports.Count > 0 ) Debug.LogError( $"[{nameof(ControlWindow)}] GDDB validation errors detected, count {Validator.Reports.Count}" );
         }

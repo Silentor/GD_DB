@@ -23,8 +23,9 @@
             <ui:VisualElement name="Content" style="flex-grow: 1;">
                 <ui:VisualElement name="SerializedSettings" style="flex-grow: 1;" />
                 <ui:VisualElement name="Buttons" style="flex-grow: 1; flex-direction: row;">
-                    <ui:Button text="Update SO database" parse-escape-sequences="true" display-tooltip-when-elided="true" name="SoDBUpdate" style="width: 150px;" />
-                    <ui:Button text="Update JSON database" parse-escape-sequences="true" display-tooltip-when-elided="true" name="JsonDBUpdate" style="width: 150px;" />
+                    <ui:Button text="Update SO db" parse-escape-sequences="true" display-tooltip-when-elided="true" name="SoDBUpdate" style="width: 100px;" />
+                    <ui:Button text="Update JSON db" parse-escape-sequences="true" display-tooltip-when-elided="true" name="JsonDBUpdate" style="width: 100px;" />
+                    <ui:Button text="Update binary db" parse-escape-sequences="true" display-tooltip-when-elided="true" name="BinDBUpdate" style="width: 100px;" />
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>

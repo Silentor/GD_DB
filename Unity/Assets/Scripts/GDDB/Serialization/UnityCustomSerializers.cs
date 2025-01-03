@@ -92,6 +92,31 @@ namespace GDDB.Serialization
         }
     }
 
+    public class Vector4Serializer : TypeCustomSerializer<Vector4>
+    {
+        public override void Serialize(  WriterBase writer, Vector4 obj )
+        {
+            writer.WriteStartArray( );
+            writer.WriteValue( obj.x );
+            writer.WriteValue( obj.y );
+            writer.WriteValue( obj.z );
+            writer.WriteValue( obj.w );
+            writer.WriteEndArray( );
+        }
+
+        public override Vector4 Deserialize( ReaderBase reader )
+        {
+            reader.EnsureStartArray( );
+            var result = new Vector4(
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue() );
+            reader.ReadEndArray( );
+            return result;
+        }
+    }
+
     public class QuaternionSerializer : TypeCustomSerializer<Quaternion>
     {
         public override void Serialize(WriterBase writer, Quaternion obj )
@@ -112,6 +137,62 @@ namespace GDDB.Serialization
                     reader.ReadSingleValue(),
                     reader.ReadSingleValue(),
                     reader.ReadSingleValue() );
+            reader.ReadEndArray( );
+            return result;
+        }
+    }
+    public class Matrix4x4Serializer : TypeCustomSerializer<Matrix4x4>
+    {
+        public override void Serialize(WriterBase writer, Matrix4x4 obj )
+        {
+            writer.WriteStartArray( );
+            var col0 = obj.GetColumn( 0 );
+            writer.WriteValue( col0.x );
+            writer.WriteValue( col0.y );
+            writer.WriteValue( col0.z );
+            writer.WriteValue( col0.w );
+            var col1 = obj.GetColumn( 1 );
+            writer.WriteValue( col1.x );
+            writer.WriteValue( col1.y );
+            writer.WriteValue( col1.z );
+            writer.WriteValue( col1.w );
+            var col2 = obj.GetColumn( 2 );
+            writer.WriteValue( col2.x );
+            writer.WriteValue( col2.y );
+            writer.WriteValue( col2.z );
+            writer.WriteValue( col2.w );
+            var col3 = obj.GetColumn( 3 );
+            writer.WriteValue( col3.x );
+            writer.WriteValue( col3.y );
+            writer.WriteValue( col3.z );
+            writer.WriteValue( col3.w );
+            writer.WriteEndArray( );
+        }
+
+        public override Matrix4x4 Deserialize( ReaderBase reader )
+        {
+            reader.EnsureStartArray( );
+            var col0 = new Vector4(
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue() );
+            var col1 = new Vector4(
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue() );
+            var col2 = new Vector4(
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue() );
+            var col3 = new Vector4(
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue(),
+                    reader.ReadSingleValue() );
+            var result = new Matrix4x4(   col0, col1, col2, col3 );
             reader.ReadEndArray( );
             return result;
         }

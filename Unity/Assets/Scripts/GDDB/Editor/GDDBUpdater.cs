@@ -8,6 +8,7 @@ using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
+using BinaryWriter = GDDB.Serialization.BinaryWriter;
 
 namespace GDDB.Editor
 {
@@ -41,6 +42,7 @@ namespace GDDB.Editor
                     var editorDB = GDBEditor.GDB;
                     UpdateScriptableObjectDB( settings, editorDB );
                     UpdateJsonDB( settings, editorDB );
+                    UpdateBinaryDB( settings, editorDB );
                     _isDBDirty = false;
                 }
             }
@@ -77,6 +79,7 @@ namespace GDDB.Editor
                     {
                         UpdateScriptableObjectDB( settings, editorDB, force: true );
                         UpdateJsonDB( settings, editorDB, force: true );
+                        UpdateBinaryDB( settings, editorDB, force: true );
                     }
                     catch ( Exception e )
                     {
@@ -95,7 +98,7 @@ namespace GDDB.Editor
         public static Boolean UpdateJsonDB(UpdateDBSettings settings, GdDb editorDB, Boolean force = false )
         {
             if ( settings.UpdateJsonDB && !String.IsNullOrEmpty( settings.JsonDBPath ) 
-                && (_isDBDirty || force || !File.Exists( settings.JsonDBPath ) || (!string.IsNullOrEmpty(settings.JsonAssetsReferencePath) && !File.Exists( settings.JsonAssetsReferencePath ))) )
+                && (_isDBDirty || force || !File.Exists( settings.JsonDBPath ) || (!string.IsNullOrEmpty(settings.AssetsReferencePath) && !File.Exists( settings.AssetsReferencePath ))) )
             {
                 var serializer      = new DBDataSerializer();
                 var rootFolder      = editorDB.RootFolder;
@@ -106,14 +109,42 @@ namespace GDDB.Editor
                 serializer.Serialize( writer, rootFolder, editorDB.AllObjects, assetReferencer );
                 File.WriteAllText( settings.JsonDBPath, buffer.ToString() );
                 var jsonLog = $"Saved GDDB to json format to {settings.JsonDBPath}";
-                if ( !String.IsNullOrEmpty( settings.JsonAssetsReferencePath ) )
+                if ( !String.IsNullOrEmpty( settings.AssetsReferencePath ) )
                 {
-                    AssetDatabase.CreateAsset( assetReferencer, settings.JsonAssetsReferencePath );
+                    AssetDatabase.CreateAsset( assetReferencer, settings.AssetsReferencePath );
                     AssetDatabase.Refresh( ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport );
-                    jsonLog += $", and assets reference to {settings.JsonAssetsReferencePath}";
+                    jsonLog += $", and assets reference to {settings.AssetsReferencePath}";
                 }
                     
-                Debug.Log( $"[{nameof(GDDBUpdater)}]-[{nameof(OnPreprocessBuild)}] " + jsonLog );
+                Debug.Log( $"[{nameof(GDDBUpdater)}]-[{nameof(UpdateJsonDB)}] " + jsonLog );
+
+                return true;
+            }
+
+            return false;
+        }
+        
+        public static Boolean UpdateBinaryDB(UpdateDBSettings settings, GdDb editorDB, Boolean force = false )
+        {
+            if ( settings.UpdateBinaryDB && !String.IsNullOrEmpty( settings.BinaryDBPath ) 
+                && (_isDBDirty || force || !File.Exists( settings.BinaryDBPath ) || (!string.IsNullOrEmpty(settings.AssetsReferencePath) && !File.Exists( settings.AssetsReferencePath ))) )
+            {
+                var serializer      = new DBDataSerializer();
+                var rootFolder      = editorDB.RootFolder;
+                var assetReferencer = ScriptableObject.CreateInstance<DirectAssetReferences>();
+                var buffer          = new MemoryStream();
+                var writer          = new BinaryWriter( buffer );
+                serializer.Serialize( writer, rootFolder, editorDB.AllObjects, assetReferencer );
+                File.WriteAllBytes( settings.BinaryDBPath, buffer.ToArray() );
+                var log = $"Saved GDDB to binary format to {settings.BinaryDBPath}, file size {buffer.Length} bytes";
+                if ( !String.IsNullOrEmpty( settings.AssetsReferencePath ) )
+                {
+                    AssetDatabase.CreateAsset( assetReferencer, settings.AssetsReferencePath );
+                    AssetDatabase.Refresh( ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport );
+                    log += $", and assets reference to {settings.AssetsReferencePath}";
+                }
+                    
+                Debug.Log( $"[{nameof(GDDBUpdater)}]-[{nameof(UpdateBinaryDB)}] " + log );
 
                 return true;
             }

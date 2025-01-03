@@ -24,6 +24,7 @@ namespace GDDB.Serialization
             AddSerializer( new Vector2Serializer() );
             AddSerializer( new Vector2IntSerializer() );
             AddSerializer( new QuaternionSerializer() );
+            AddSerializer( new Matrix4x4Serializer() );
             AddSerializer( new RectSerializer() );
             AddSerializer( new BoundsSerializer() );
             AddSerializer( new Color32Serializer() );
@@ -50,7 +51,7 @@ namespace GDDB.Serialization
 
             WriteGDObject( @object, _writer );                    
 
-            Debug.Log( $"[{nameof(GDObjectSerializer)}] Serialized gd object {@object.Name} to {_writer.GetType().Name}, referenced {_assetResolver.Count} assets, used asset resolver {_assetResolver.GetType().Name}" );
+            //Debug.Log( $"[{nameof(GDObjectSerializer)}] Serialized gd object {@object.Name} to {_writer.GetType().Name}, referenced {_assetResolver.Count} assets, used asset resolver {_assetResolver.GetType().Name}" );
         }
         
 #endif

@@ -34,6 +34,7 @@ namespace GDDB_User
 
         private GdDb _soGDDB;
         private GdDb _jsonGDDB;
+        private GdDb _binaryGDDB;
         private GdDb _editorGDDB;
 
         private CustomSampler _sjsonSampler = CustomSampler.Create( "SimpleJson.Parse" );
@@ -69,15 +70,25 @@ namespace GDDB_User
             db = DB ? DB : Resources.Load<DBScriptableObject>( "DefaultGDDB" );
             var     aloader   = new GdScriptableObjectLoader( db );
             _soGDDB   = aloader.GetGameDataBase();
+            Debug.Log( $"Loaded db from SO, loaded hash {_soGDDB.Hash}" );
 
             //Load GDDB from JSON with Unity assets resolver
             var assetsResolver = Resources.Load<DirectAssetReferences>( "DefaultGDDBAssetsRef" );
             using var dbInJson       =  File.OpenRead( Application.streamingAssetsPath + "/DefaultGDDB.json" );
-            var jloader        = new GdFileLoader( dbInJson, assetsResolver );
-            _jsonGDDB         = jloader.GetGameDataBase();
+            using var stringReader   = new StreamReader( dbInJson );
+            var jsonloader        = new GdFileLoader( stringReader, assetsResolver );
+            _jsonGDDB         = jsonloader.GetGameDataBase();
+            Debug.Log( $"Loaded db from json, loaded hash {_jsonGDDB.Hash}" );
+
+            //Load GDDB from binary with Unity assets resolver
+            using var fileStraem = File.OpenRead( Application.streamingAssetsPath + "/DefaultGDDB.bin" );
+            var binLoader = new GdFileLoader( fileStraem, assetsResolver );
+            _binaryGDDB = binLoader.GetGameDataBase();
+            Debug.Log( $"Loaded db from binary, loaded hash {_binaryGDDB.Hash}" );
 
 #if UNITY_EDITOR
             _editorGDDB           = new GdEditorLoader().GetGameDataBase();
+            Debug.Log( $"Loaded db from editor assets, loaded hash {_editorGDDB.Hash}" );
 #endif
             UpdateDebugLabel();
 
@@ -108,18 +119,20 @@ namespace GDDB_User
         {
             var    soGdbLoadedHash   = _soGDDB.RootFolder.GetFoldersChecksum();
             var    jsonGdbLoadedHash = _jsonGDDB.RootFolder.GetFoldersChecksum();
+            var    binGdbLoadedHash = _binaryGDDB.RootFolder.GetFoldersChecksum();
             var    generatedRootType = GetRootFolderTypeReflection( _soGDDB );
             UInt64 editorGDDBHash;
 #if UNITY_EDITOR
             editorGDDBHash = _editorGDDB.RootFolder.GetFoldersChecksum();
-            DebugOutput.text = $"Editor hash: {editorGDDBHash}\nSO GDB hash: {soGdbLoadedHash}\nJSON GDB hash: {jsonGdbLoadedHash}\nRoot sourcegen: {generatedRootType}\nRoot SO folder: {_soGDDB.RootFolder.Name}\nRoot json folder: {_jsonGDDB.RootFolder.Name}";
+            DebugOutput.text = $"Editor hash: {editorGDDBHash}\nSO GDB hash: {soGdbLoadedHash}\nJSON GDB hash: {jsonGdbLoadedHash}\nbin GDB hash: {binGdbLoadedHash}\nRoot sourcegen: {generatedRootType}\nRoot SO folder: {_soGDDB.RootFolder.Name}\nRoot json folder: {_jsonGDDB.RootFolder.Name}";
 
             Debug.Log( $"editor hash {editorGDDBHash}" );
 #else
-            DebugOutput.text = $"AGDB hash: {soGdbLoadedHash}\nJGDB hash: {jsonGdbLoadedHash}\nRoot sourcegen: {generatedRootType}\nRoot SO folder: {_soGDDB.RootFolder.Name}\nRoot json folder: {_jsonGDDB.RootFolder.Name}";
+            DebugOutput.text = $"AGDB hash: {soGdbLoadedHash}\nJGDB hash: {jsonGdbLoadedHash}\nbin GDB hash: {binGdbLoadedHash}\nRoot sourcegen: {generatedRootType}\nRoot SO folder: {_soGDDB.RootFolder.Name}\nRoot json folder: {_jsonGDDB.RootFolder.Name}";
 #endif
             Debug.Log( $"so hash {soGdbLoadedHash}" );
             Debug.Log( $"json hash {jsonGdbLoadedHash}" );
+            Debug.Log( $"bin hash {binGdbLoadedHash}" );
             Debug.Log( $"Asset loaded root folder name {_soGDDB.RootFolder.Name}" );
             Debug.Log( $"Json loaded root folder name {_jsonGDDB.RootFolder.Name}" );
             Debug.Log( $"Json loaded root folder name {_jsonGDDB.RootFolder.Name}" );
@@ -142,6 +155,12 @@ namespace GDDB_User
             {
                 Debug.LogError( "SO and json hashes are different" );
                 CompareFolders( _soGDDB.RootFolder, _jsonGDDB.RootFolder );
+            }
+            
+            if ( binGdbLoadedHash != jsonGdbLoadedHash )
+            {
+                Debug.LogError( "bin and json hashes are different" );
+                CompareFolders( _binaryGDDB.RootFolder, _jsonGDDB.RootFolder );
             }
 
         }

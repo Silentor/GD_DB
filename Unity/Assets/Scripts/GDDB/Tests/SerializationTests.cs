@@ -283,6 +283,7 @@ namespace GDDB.Tests
                            {
                                            Vector3    = -Vector3.one * 0.5f,
                                            Quaternion = Quaternion.Euler( 100, 200, 300 ),
+                                           Quaternions = new []{ Quaternion.Euler( 3,2,1 ), Quaternion.Euler( 7,6,5 ),  },
                                            Color      = Color.green,
                                            Color32    = new Color32( 200, 200, 200, 200 ),
                                            AnimCurve  = new (new Keyframe( 0, 1 ), new Keyframe( 0.5f, 0 ), new Keyframe( 1, 1 )),
