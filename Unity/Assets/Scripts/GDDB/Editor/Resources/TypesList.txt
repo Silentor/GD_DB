@@ -9,9 +9,6 @@ System.Single
 System.Single[]
 System.Double
 System.Boolean
-System.Guid
-System.Guid[]
-System.Collections.Generic.List<System.Guid>
 UnityEngine.Vector3
 UnityEngine.Vector3[]
 UnityEngine.Vector2
@@ -25,4 +22,10 @@ UnityEngine.Color[]
 UnityEngine.Rect
 UnityEngine.Bounds
 UnityEngine.AnimationCurve
+UnityEngine.AnimationCurve[]
 UnityEngine.Matrix4x4
+UnityEngine.DeviceOrientation
+UnityEngine.KeyCode
+UnityEngine.MeshColliderCookingOptions
+
+

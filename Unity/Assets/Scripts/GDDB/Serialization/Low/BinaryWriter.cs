@@ -129,5 +129,53 @@ namespace GDDB.Serialization
                 _writer.Write( (byte)EToken.Null );
             }
         }
+
+        public override void WriteValue(Enum value )
+        {
+            var underlyingType = Enum.GetUnderlyingType( value.GetType() );
+            if ( underlyingType == typeof(Byte) )
+            {
+                _writer.Write( (byte)EToken.Enum1 );
+                _writer.Write( Convert.ToByte( value ) );
+            }
+            else if( underlyingType == typeof(SByte) )
+            {
+                _writer.Write( (byte)EToken.Enum1 );
+                _writer.Write( Convert.ToSByte( value ) );
+            }
+            else if( underlyingType == typeof(Int16) )
+            {
+                _writer.Write( (byte)EToken.Enum2 );
+                _writer.Write( Convert.ToInt16( value ) );
+            }
+            else if( underlyingType == typeof(UInt16) )
+            {
+                _writer.Write( (byte)EToken.Enum2 );
+                _writer.Write( Convert.ToUInt16( value ) );
+            }
+            else if( underlyingType == typeof(Int32) )
+            {
+                _writer.Write( (byte)EToken.Enum4 );
+                _writer.Write( Convert.ToInt32( value ) );
+            }
+            else if( underlyingType == typeof(UInt32) )
+            {
+                _writer.Write( (byte)EToken.Enum4 );
+                _writer.Write( Convert.ToUInt32( value ) );
+            }
+            else if( underlyingType == typeof(Int64) )
+            {
+                _writer.Write( (byte)EToken.Enum8 );
+                _writer.Write( Convert.ToInt64( value ) );
+            }
+            else if( underlyingType == typeof(UInt64) )
+            {
+                _writer.Write( (byte)EToken.Enum8 );
+                _writer.Write( Convert.ToUInt64( value ) );
+            }
+            else
+                throw new Exception( $"Unsupported enum type {underlyingType}" );
+
+        }
     }
 }

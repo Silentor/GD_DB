@@ -43,9 +43,9 @@ namespace GDDB.Editor
             var generateObjectsBtn = new Button( ( ) => GenerateGDDatabase( settings ) ) { text = "Generate GDObjects" };
             rootVisualElement.Add( generateObjectsBtn );
 
-            _nouns = (Resources.Load( "NounsList" ) as TextAsset).text.Split( "\n" ).Select( word => word.Trim() ).ToArray();
-            _verbs = (Resources.Load( "VerbsList" ) as TextAsset).text.Split( "\n" ).Select( word => word.Trim() ).ToArray();
-            _types = (Resources.Load( "TypesList" ) as TextAsset).text.Split( "\n" ).Select( word => word.Trim() ).ToArray();
+            _nouns = (Resources.Load( "NounsList" ) as TextAsset).text.Split( "\n" ).Select( word => word.Trim() ).Where( w => !String.IsNullOrEmpty( w ) ).ToArray();
+            _verbs = (Resources.Load( "VerbsList" ) as TextAsset).text.Split( "\n" ).Select( word => word.Trim() ).Where( w => !String.IsNullOrEmpty( w ) ).ToArray();
+            _types = (Resources.Load( "TypesList" ) as TextAsset).text.Split( "\n" ).Select( word => word.Trim() ).Where( w => !String.IsNullOrEmpty( w ) ).ToArray();
 
             if ( _nouns.Length < 10 || _verbs.Length < 10 )
                 Debug.LogError( "Nouns or Verbs list is too small" );
@@ -316,8 +316,10 @@ namespace GDDB.Editor
                     return new Rect( GenerateVector3Value(), GenerateVector3Value() );
                 else if ( valueType == typeof( AnimationCurve ) )
                     return GenerateAnimationCurveValue();
-                else if ( valueType == typeof( Guid ) )
-                    return rnd.NextDouble() < 0.1 ? Guid.Empty : Guid.NewGuid();
+                else if( valueType.IsEnum )
+                {
+                    return GenerateEnumValue( valueType, rnd );
+                }
                 else if ( valueType.IsArray )
                 {
                     var count = rnd.Next( 0, 5 + 1 );
@@ -396,6 +398,40 @@ namespace GDDB.Editor
                             : new Keyframe( (Single)rnd.NextDouble(), (Single)rnd.NextDouble(), (Single)rnd.NextDouble(), (Single)rnd.NextDouble() );
                 }
                 return new AnimationCurve( keys );
+            }
+
+            Object GenerateEnumValue(Type enumType, Random rnd )
+            {
+                var values = (int[])Enum.GetValues( enumType );
+
+                if ( enumType.IsDefined( typeof(FlagsAttribute) ) )
+                {
+                    var valueCase = rnd.Next( 10 );
+                    if ( valueCase == 0 )                                   //All disabled
+                        return Enum.ToObject( enumType, 0 );          
+                    else if ( valueCase == 1 )                              //All enabled
+                    {
+                        var result = 0;
+                        foreach ( var val in values )
+                        {
+                            result |= val;
+                        }
+                        return Enum.ToObject(enumType, result);
+                    }
+                    else                                                      //Random flags enabled
+                    {
+                        var result = 0;
+                        var count  = rnd.Next(1, values.Length + 1);
+                        for (int i = 0; i < count; i++)
+                        {
+                            result |= values[rnd.Next(values.Length)];
+                        }
+                        return Enum.ToObject(enumType, result);
+                    }
+
+                }
+                else
+                    return values.GetValue( rnd.Next( values.Length ) );
             }
         }
 

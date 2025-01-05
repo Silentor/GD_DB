@@ -1,12 +1,22 @@
 ﻿using System;
 using System.Numerics;
 using Newtonsoft.Json;
+using UnityEngine.Profiling;
 
 namespace GDDB.Serialization
 {
     public class JsonNetReader : ReaderBase
     {
-        private readonly JsonReader _reader;
+        private readonly JsonReader    _reader;
+
+        private readonly CustomSampler _readNextTokenSampler   = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(ReadNextToken)}" );
+        private readonly CustomSampler _getGuidValueSampler    = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(GetGuidValue)}" );
+        private readonly CustomSampler _getStringValueSampler  = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(GetStringValue)}" );
+        private readonly CustomSampler _getIntegerValueSampler = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(GetIntegerValue)}" );
+        private readonly CustomSampler _getSingleValueSampler = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(GetSingleValue)}" );
+        private readonly CustomSampler _getBoolValueSampler = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(GetBoolValue)}" );
+        private readonly CustomSampler _getEnumValueSampler = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(GetEnumValue)}" );
+
 
         public JsonNetReader( String buffer, Boolean supportMultipleContent )
         {
@@ -28,12 +38,14 @@ namespace GDDB.Serialization
                 return EToken.EoF;
             }
 
+            _readNextTokenSampler.Begin();
             var result = _reader.Read();
             if ( !result )
                 CurrentToken = EToken.EoF;
             else
                 CurrentToken = ConvertToken( _reader.TokenType );
 
+            _readNextTokenSampler.End();
             return CurrentToken;
         }
 
@@ -69,12 +81,18 @@ namespace GDDB.Serialization
 
         public override String GetStringValue( )
         {
-            return (String)_reader.Value;
+            _getStringValueSampler.Begin();
+            var value = (String)_reader.Value;
+            _getStringValueSampler.End();
+            return value;
         }
 
         public override Int64 GetIntegerValue( )
         {
-            return Convert.ToInt64( _reader.Value );
+            _getIntegerValueSampler.Begin();
+            var value = Convert.ToInt64( _reader.Value );
+            _getIntegerValueSampler.End();
+            return value;
         }
 
         public override Byte GetUInt8Value( )
@@ -97,12 +115,47 @@ namespace GDDB.Serialization
 
         public override Guid GetGuidValue( )
         {
-            if( _reader.TokenType == JsonToken.String )
+            _getGuidValueSampler.Begin();
+            if ( _reader.TokenType == JsonToken.String )
+            {
+                _getGuidValueSampler.End();
                 return Guid.ParseExact( _reader.Value.ToString(), "D" );
-            else if( _reader.TokenType == JsonToken.Null )
+            }
+            else if ( _reader.TokenType == JsonToken.Null )
+            {
+                _getGuidValueSampler.End();
                 return Guid.Empty;
+            }
             else
+            {
+                _getGuidValueSampler.End();
                 throw new Exception( $"Unexpected token {_reader.TokenType}" );
+            }
+        }
+
+        public override Object GetEnumValue(Type enumType )
+        {
+            _getEnumValueSampler.Begin();
+            if ( _reader.Value is String str )
+            {
+                _getEnumValueSampler.End();
+                return Enum.Parse( enumType, str );
+            }
+            else if ( _reader.Value is Int64 i64 )
+            {
+                _getEnumValueSampler.End();
+                return Enum.ToObject( enumType, i64 );
+            }
+            else if( CurrentToken == EToken.Null )
+            {
+                _getEnumValueSampler.End();
+                return Enum.ToObject( enumType, 0 );
+            }
+            else
+            {
+                _getEnumValueSampler.End();
+                throw new Exception( $"Unexpected token {_reader.TokenType}" );
+            }
         }
 
         public override Double GetFloatValue( )
@@ -112,7 +165,10 @@ namespace GDDB.Serialization
 
         public override Single GetSingleValue( )
         {
-            return Convert.ToSingle( _reader.Value );
+            _getSingleValueSampler.Begin();
+            var value = Convert.ToSingle( _reader.Value );
+            _getSingleValueSampler.End();
+            return value;
         }
 
         public override Double GetDoubleValue( )
@@ -122,7 +178,10 @@ namespace GDDB.Serialization
 
         public override Boolean GetBoolValue( )
         {
-            return Convert.ToBoolean( _reader.Value );
+            _getBoolValueSampler.Begin();
+            var value = Convert.ToBoolean( _reader.Value );
+            _getBoolValueSampler.End();
+            return value;
         }
 
         public override void SkipProperty( )

@@ -498,6 +498,90 @@ namespace GDDB.Tests
         }
 
         [Test]
+        public void TestEnums( [Values]EBackend backend )
+        {
+            // Write
+            var buffer     = GetBuffer( backend );
+            var serializer = GetWriter( backend, buffer );
+            serializer.WriteStartObject();
+            serializer.WritePropertyName( "DefaultEnum" );
+            serializer.WriteStartArray();
+            serializer.WriteValue( DefaultEnum.Zero );
+            serializer.WriteValue( DefaultEnum.First );
+            serializer.WriteValue( DefaultEnum.Third );
+            serializer.WriteEndArray();
+            serializer.WritePropertyName( "UInt64Enum" );
+            serializer.WriteStartArray();
+            serializer.WriteValue( UInt64Enum.Zero );
+            serializer.WriteValue( UInt64Enum.Second );
+            serializer.WriteValue( UInt64Enum.Third );
+            serializer.WriteValue( UInt64Enum.Last );
+            serializer.WriteEndArray();
+            serializer.WritePropertyName( "SignedEnum" );
+            serializer.WriteStartArray();
+            serializer.WriteValue( SignedEnum.Zero );
+            serializer.WriteValue( SignedEnum.First );
+            serializer.WriteValue( SignedEnum.Last );
+            serializer.WriteEndArray();
+            serializer.WritePropertyName( "Flags" );
+            serializer.WriteStartArray();
+            serializer.WriteValue( Flags.None );
+            serializer.WriteValue( Flags.First );
+            serializer.WriteValue( Flags.First | Flags.Third );
+            serializer.WriteValue( Flags.All );
+            serializer.WriteEndArray();
+            serializer.WritePropertyName( "NullEnum" );
+            serializer.WriteNullValue();
+            serializer.WriteEndObject();
+
+            // Save to file
+            SaveToFile( backend, "test", buffer );
+
+            // Log
+            LogBuffer( buffer );
+
+            // Read and assert
+            var deserializer = GetReader( backend, buffer );
+            deserializer.ReadStartObject();
+            Assert.AreEqual( deserializer.ReadPropertyName(  ), "DefaultEnum" );
+            deserializer.ReadStartArray();
+            Assert.AreEqual( DefaultEnum.Zero,  deserializer.ReadEnumValue( typeof(DefaultEnum) ) );
+            Assert.AreEqual( DefaultEnum.First, deserializer.ReadEnumValue( typeof(DefaultEnum) ) );
+            Assert.AreEqual( DefaultEnum.Third, deserializer.ReadEnumValue( typeof(DefaultEnum) ) );
+            deserializer.ReadEndArray();
+
+            Assert.AreEqual(deserializer.ReadPropertyName(), "UInt64Enum");
+            deserializer.ReadStartArray();
+            Assert.AreEqual(UInt64Enum.Zero,   deserializer.ReadEnumValue(typeof(UInt64Enum)));
+            Assert.AreEqual(UInt64Enum.Second, deserializer.ReadEnumValue(typeof(UInt64Enum)));
+            Assert.AreEqual(UInt64Enum.Third,  deserializer.ReadEnumValue(typeof(UInt64Enum)));
+            Assert.AreEqual(UInt64Enum.Last,   deserializer.ReadEnumValue(typeof(UInt64Enum)));
+            deserializer.ReadEndArray();
+
+            Assert.AreEqual(deserializer.ReadPropertyName(), "SignedEnum");
+            deserializer.ReadStartArray();
+            Assert.AreEqual(SignedEnum.Zero,  deserializer.ReadEnumValue(typeof(SignedEnum)));
+            Assert.AreEqual(SignedEnum.First, deserializer.ReadEnumValue(typeof(SignedEnum)));
+            Assert.AreEqual(SignedEnum.Last,  deserializer.ReadEnumValue(typeof(SignedEnum)));
+            deserializer.ReadEndArray();
+
+            Assert.AreEqual(deserializer.ReadPropertyName(), "Flags");
+            deserializer.ReadStartArray();
+            Assert.AreEqual(Flags.None,                deserializer.ReadEnumValue(typeof(Flags)));
+            Assert.AreEqual(Flags.First,               deserializer.ReadEnumValue(typeof(Flags)));
+            Assert.AreEqual(Flags.First | Flags.Third, deserializer.ReadEnumValue(typeof(Flags)));
+            Assert.AreEqual(Flags.All,                 deserializer.ReadEnumValue(typeof(Flags)));
+            deserializer.ReadEndArray();
+
+            Assert.AreEqual(deserializer.ReadPropertyName(), "NullEnum");
+            Assert.AreEqual(DefaultEnum.Zero, deserializer.ReadEnumValue(typeof(DefaultEnum)));
+
+            deserializer.ReadEndObject();
+        }
+
+        
+
+        [Test]
         public void TestStrings( [Values]EBackend backend, [Values("ASCII test", "\r\n\t", @"\", "\"", "", " ", "кірилиця", "知道", "Europäische", null )]String value )
         {
             // Write

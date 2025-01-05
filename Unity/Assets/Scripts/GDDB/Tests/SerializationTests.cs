@@ -124,6 +124,43 @@ namespace GDDB.Tests
         }
 
         [Test]
+        public void EnumsTest( [Values]EBackend backend )
+        {
+                //Arrange
+                var enumComp = new EnumsComponent()
+                               {
+                                               DefaultEnum  = DefaultEnum.Third,
+                                               BigEnum      = UInt64Enum.Last,
+                                               SignedEnum   = SignedEnum.Second,
+                                               Flags                 = Flags.All,
+                                               FlagsArray        = new[]{ Flags.First, Flags.Second | Flags.Fourth },
+                                              
+                               };
+                var testObj = ScriptableObject.CreateInstance<GDObject>();
+                testObj.Components.Add( enumComp );
+
+                //Act
+                var buffer = GetBuffer( backend );
+                var writer = GetWriter( backend, buffer );
+
+                var serializer = new GDObjectSerializer( writer );
+                serializer.Serialize( testObj );
+
+                LogBuffer( buffer );
+                SaveToFile( backend, "test", buffer );
+
+                //Assert
+                var reader       = GetReader( backend, buffer );
+                var deserializer = new GDObjectDeserializer( reader );
+                var copy         = deserializer.Deserialize( ).Components.First() as EnumsComponent;
+                copy.DefaultEnum.Should().Be( enumComp.DefaultEnum );
+                copy.BigEnum.Should().Be( enumComp.BigEnum );
+                copy.SignedEnum.Should().Be( enumComp.SignedEnum );
+                copy.Flags.Should().Be( enumComp.Flags );
+                copy.FlagsArray.Should().BeEquivalentTo( enumComp.FlagsArray );
+        }
+
+        [Test]
         public void GuidsTest( [Values]EBackend backend )
         {
                 //Arrange

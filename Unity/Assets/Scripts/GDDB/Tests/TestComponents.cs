@@ -163,6 +163,53 @@ namespace GDDB.Tests
         public GameObject GameObject;
         public Component  Component;
     }
+
+    public class EnumsComponent : GDComponent
+    {
+        public DefaultEnum  DefaultEnum;
+        public UInt64Enum   BigEnum    ;
+        public SignedEnum   SignedEnum ;
+        public Flags        Flags      ;
+        public Flags[]      FlagsArray ;
+    }
+
+    public enum DefaultEnum
+    {
+        Zero,
+        First,
+        Second,
+        Third
+    }
+
+    public enum UInt64Enum : UInt64
+    {
+        Zero,
+        First,
+        Second,
+        Third = UInt64.MaxValue / 2, 
+        Last  = UInt64.MaxValue
+    }
+
+    public enum SignedEnum : SByte
+    {
+        Zero,
+        First  = SByte.MinValue, 
+        Second = -1,
+        Third  = SByte.MaxValue / 2, 
+        Last   = SByte.MaxValue
+    }
+
+    [Flags]
+    public enum Flags : UInt16
+    {
+        None   = 0,
+        First  = 1,
+        Second = 2,
+        Third  = 4,
+        Fourth = 8,
+        All    = First | Second | Third | Fourth
+    }
+
 }
 
 public class ComponentWithoutNamespace : GDComponent

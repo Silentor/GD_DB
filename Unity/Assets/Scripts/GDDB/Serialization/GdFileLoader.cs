@@ -26,10 +26,20 @@ namespace GDDB.Serialization
             Debug.Log( $"[{nameof(GdFileLoader)}]-[{nameof(GdFileLoader)}] Loaded GDDB ({_db.AllObjects.Count} objects) from binary stream length {binaryStream.Length}, Unity assets referenced {assetsResolver.Count}" );
         }
 
+        /// <summary>
+        /// Load binary GDDB from buffer
+        /// </summary>
+        /// <param name="binary"></param>
+        /// <param name="referencedAssets"></param>
         public GdFileLoader( Byte[] binary, IGdAssetResolver referencedAssets = null ) : this( new MemoryStream( binary ), referencedAssets )
         {
         }
 
+        /// <summary>
+        /// Load JSON from text stream
+        /// </summary>
+        /// <param name="textStream"></param>
+        /// <param name="referencedAssets"></param>
         public GdFileLoader( TextReader textStream, IGdAssetResolver referencedAssets = null )
         {
             var serializer     = new DBDataSerializer();

@@ -25,11 +25,12 @@ namespace GDDB.Serialization
         /// </summary>
         /// <returns></returns>
         public abstract Int64 GetIntegerValue( );
-        public abstract Byte GetUInt8Value( );
-        public abstract Int32 GetInt32Value( );
+        public abstract Byte   GetUInt8Value( );
+        public abstract Int32  GetInt32Value( );
         public abstract UInt64 GetUInt64Value( );
-        public abstract Guid GetGuidValue( );
-
+        public abstract Guid   GetGuidValue( );
+        public abstract Object GetEnumValue( Type enumType );
+          
         /// <summary>
         /// Get any float value (single or double)
         /// </summary>
@@ -160,6 +161,11 @@ namespace GDDB.Serialization
             return GetGuidValue();
         }
 
+        public Object  ReadEnumValue( Type enumType )
+        {
+            ReadNextToken();
+            return GetEnumValue( enumType );
+        }
 
         public Single  ReadSingleValue( )
         {

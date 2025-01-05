@@ -127,5 +127,10 @@ namespace GDDB.Serialization
         {
             _writer.WriteValue( value.ToString("D", CultureInfo.InvariantCulture) );
         }
+
+        public override void WriteValue(Enum value )
+        {
+            _writer.WriteValue( value.ToString( "G" ) );
+        }
     }
 }

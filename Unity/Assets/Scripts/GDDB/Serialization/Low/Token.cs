@@ -40,6 +40,11 @@ namespace GDDB.Serialization
         VarInt  = Integer + 8,
         Guid    = Integer + 9,
 
+        Enum1   = Integer + (1 << 4),
+        Enum2   = Enum1 + 1,
+        Enum4   = Enum1 + 2,
+        Enum8   = Enum1 + 3,
+
         Alias               = 1 << 7,
     }
 
@@ -83,6 +88,11 @@ namespace GDDB.Serialization
         public static Boolean IsBooleanToken( this EToken token )
         {
             return token == EToken.True || token == EToken.False;
+        }
+
+        public static Boolean IsEnumToken( this EToken token )
+        {
+            return ((Byte)token & 0b1101_0000) == (Byte)EToken.Enum1;
         }
 
         public static Boolean HasPayload( this EToken token )

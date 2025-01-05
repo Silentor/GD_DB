@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.Assertions;
+using UnityEngine.Profiling;
 
 namespace GDDB.Serialization
 {
@@ -17,6 +18,16 @@ namespace GDDB.Serialization
         private Single _floatBuffer;
         private Double _doubleBuffer;
         private String _stringBuffer;
+
+        private readonly CustomSampler _readNextTokenSampler   = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(ReadNextToken)}" );
+        private readonly CustomSampler _getGuidValueSampler    = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(GetGuidValue)}" );
+        private readonly CustomSampler _getStringValueSampler  = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(GetStringValue)}" );
+        private readonly CustomSampler _getIntegerValueSampler = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(GetIntegerValue)}" );
+        private readonly CustomSampler _getSingleValueSampler  = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(GetSingleValue)}" );
+        private readonly CustomSampler _getBoolValueSampler    = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(GetBoolValue)}" );
+        private readonly CustomSampler _getEnumValueSampler    = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(GetEnumValue)}" );
+
+        private readonly CustomSampler _storeValueSampler    = CustomSampler.Create( $"{nameof(BinaryReader)}.{nameof(StoreValue)}" );
 
         public BinaryReader( System.IO.Stream binaryStream )
         {
@@ -64,6 +75,8 @@ namespace GDDB.Serialization
                 return EToken.EoF;
             }
 
+            _readNextTokenSampler.Begin();
+
             if ( _reader.BaseStream.Position < _reader.BaseStream.Length )
             {
                 CurrentToken  = (EToken)_reader.ReadByte();
@@ -110,11 +123,13 @@ namespace GDDB.Serialization
                 if( _depth < 0 )
                     throw new Exception( $"Unexpected end of container" );
 
+                _readNextTokenSampler.End();
                 return CurrentToken;
             }
             else
             {
                 CurrentToken = EToken.EoF;
+                _readNextTokenSampler.End();
                 return EToken.EoF;
             }
         }
@@ -156,22 +171,42 @@ namespace GDDB.Serialization
 
         public override String GetStringValue( )
         {
-            if( CurrentToken == EToken.String )
+            _getStringValueSampler.Begin();
+            if ( CurrentToken == EToken.String )
+            {
+                _getStringValueSampler.End();
                 return _stringBuffer;
-            else if( CurrentToken == EToken.Null )
+            }
+            else if ( CurrentToken == EToken.Null )
+            {
+                _getStringValueSampler.End();
                 return null;
+            }
             else
+            {
+                _getStringValueSampler.End();
                 throw new Exception( $"Expected token {EToken.String} or {EToken.Null} but got {CurrentToken}" );
+            }
         }
 
         public override Int64 GetIntegerValue( )
         {
-            if( CurrentToken >= EToken.Int8 && CurrentToken <= EToken.Int64 )
+            _getIntegerValueSampler.Begin();
+            if ( CurrentToken >= EToken.Int8 && CurrentToken <= EToken.Int64 )
+            {
+                _getIntegerValueSampler.End();
                 return _intBuffer;
-            else if( CurrentToken == EToken.Null )
+            }
+            else if ( CurrentToken == EToken.Null )
+            {
+                _getIntegerValueSampler.End();
                 return 0;
+            }
             else
+            {
+                _getIntegerValueSampler.End();
                 throw new Exception( $"Expected tokens from {EToken.Int8} to {EToken.Int64} or {EToken.Null} but got {CurrentToken}" );
+            }
         }
 
         public override Byte GetUInt8Value( )
@@ -206,12 +241,50 @@ namespace GDDB.Serialization
 
         public override Guid GetGuidValue( )
         {
-            if( CurrentToken == EToken.Guid )
+            _getGuidValueSampler.Begin();
+            if ( CurrentToken == EToken.Guid )
+            {
+                _getGuidValueSampler.End();
                 return _guidBuffer;
-            else if( CurrentToken == EToken.Null )
+            }
+            else if ( CurrentToken == EToken.Null )
+            {
+                _getGuidValueSampler.End();
                 return Guid.Empty;
+            }
             else
+            {
+                _getGuidValueSampler.End();
                 throw new Exception( $"Expected token {EToken.Guid} or {EToken.Null} but got {CurrentToken}" );
+            }
+        }
+
+        public override Object GetEnumValue(Type enumType )
+        {
+            _getEnumValueSampler.Begin();
+            if ( CurrentToken.IsEnumToken() )
+            {
+                var underlyingType = Enum.GetUnderlyingType( enumType );
+                if ( underlyingType == typeof(UInt64) )
+                {
+                    _getEnumValueSampler.End();
+                    return Enum.ToObject( enumType, unchecked((UInt64)_intBuffer) );
+                }
+                else
+                {
+                    _getEnumValueSampler.End();
+                    return  Enum.ToObject( enumType, _intBuffer);
+                }
+            }
+            else if ( CurrentToken == EToken.Null )
+            {
+                _getEnumValueSampler.End();
+                return Enum.ToObject( enumType, 0 );
+            }
+            else
+            {   _getEnumValueSampler.End();
+                throw new Exception( $"Expected Enum tokens or Null but got {CurrentToken}" );
+            }
         }
 
         public override Double GetFloatValue( )
@@ -228,12 +301,22 @@ namespace GDDB.Serialization
 
         public override Single GetSingleValue( )
         {
-            if( CurrentToken == EToken.Single )
+            _getSingleValueSampler.Begin();
+            if ( CurrentToken == EToken.Single )
+            {
+                _getSingleValueSampler.End();
                 return _floatBuffer;
-            else if( CurrentToken == EToken.Null )
+            }
+            else if ( CurrentToken == EToken.Null )
+            {
+                _getSingleValueSampler.End();
                 return 0;
+            }
             else
+            {
+                _getSingleValueSampler.End();
                 throw new Exception( $"Expected token {EToken.Single} or {EToken.Null} but got {CurrentToken}" );
+            }
         }
 
         public override Double GetDoubleValue( )
@@ -250,12 +333,22 @@ namespace GDDB.Serialization
 
         public override Boolean GetBoolValue( )
         {
-            if( CurrentToken == EToken.True )
+            _getBoolValueSampler.Begin();
+            if ( CurrentToken == EToken.True )
+            {
+                _getBoolValueSampler.End();
                 return true;
-            else if( CurrentToken == EToken.False || CurrentToken == EToken.Null )
+            }
+            else if ( CurrentToken == EToken.False || CurrentToken == EToken.Null )
+            {
+                _getBoolValueSampler.End();
                 return false;
+            }
             else
+            {
+                _getBoolValueSampler.End();
                 throw new Exception( $"Expected token {EToken.True} or {EToken.False} or {EToken.Null} but got {CurrentToken}" );
+            }
         }
 
         public override void SkipProperty( )
@@ -274,7 +367,9 @@ namespace GDDB.Serialization
 
         private void StoreValue( )
         {
-            if ( CurrentToken.HasPayload() )
+            _storeValueSampler.Begin();
+
+            //if ( CurrentToken.HasPayload() )
             {
                 switch ( CurrentToken )
                 {
@@ -316,6 +411,19 @@ namespace GDDB.Serialization
                         _guidBuffer = new Guid( buffer );
                         break;
 
+                    case EToken.Enum1:
+                        _intBuffer = _reader.ReadByte();
+                        break;
+                    case EToken.Enum2:
+                        _intBuffer = _reader.ReadUInt16();
+                        break;
+                    case EToken.Enum4:
+                        _intBuffer = _reader.ReadUInt32();
+                        break;
+                    case EToken.Enum8:
+                        _intBuffer = _reader.ReadInt64();
+                        break;
+
                     case EToken.Single:
                         _floatBuffer = _reader.ReadSingle();
                         break;
@@ -330,6 +438,8 @@ namespace GDDB.Serialization
                         break;
                 }
             }
+
+            _storeValueSampler.End();
         }
 
         private struct Container

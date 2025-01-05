@@ -194,7 +194,7 @@ namespace GDDB.Serialization
             }
             else if ( valueType.IsEnum )
             {
-                writer.WriteValue( Convert.ToString( value, CultureInfo.InvariantCulture ) );       //TODO make WriterBase.WriteEnum()
+                writer.WriteValue( (Enum)value );
             }
             else if( valueType.IsArray)
             {

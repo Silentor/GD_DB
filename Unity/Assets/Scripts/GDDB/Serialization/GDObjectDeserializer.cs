@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
+using System.Security.Cryptography;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
@@ -23,9 +24,10 @@ namespace GDDB.Serialization
         private          IGdAssetResolver                           _assetResolver;
         private readonly List<UnresolvedGDObjectReference>          _unresolvedReferences = new ();
         private readonly List<GDObject>                             _loadedObjects        = new ();     //To resolve loaded references in place
-        private readonly CustomSampler                              _deserObjectSampler   = CustomSampler.Create( "GDObjectDeserializer.Deserialize" );
-        private readonly CustomSampler                              _resolveObjectSampler = CustomSampler.Create( "GDObjectDeserializer.ResolveGDObjectReferences" );
-        private readonly CustomSampler                              _getTypeSampler = CustomSampler.Create( "GDObjectDeserializer.GetType" );
+        private readonly CustomSampler                              _deserObjectSampler   = CustomSampler.Create( $"{nameof(GDObjectDeserializer)}.{nameof(Deserialize)}" );
+        private readonly CustomSampler                              _resolveObjectSampler = CustomSampler.Create( $"{nameof(GDObjectDeserializer)}.{nameof(ResolveGDObjectReferences)}" );
+        private readonly CustomSampler                              _getTypeSampler = CustomSampler.Create( $"{nameof(GDObjectDeserializer)}.{nameof(GetType)}" );
+        private readonly CustomSampler                              _getTypeConstructorSampler = CustomSampler.Create( $"{nameof(GDObjectDeserializer)}.{nameof(GetTypeConstructor)}" );
         private readonly Dictionary<Type, IReadOnlyList<FieldInfo>> _fieldsCache          = new();
         private readonly Dictionary<Type, ConstructorInfo>          _constructorCache     = new();
 
@@ -197,7 +199,7 @@ namespace GDDB.Serialization
                 reader.ReadNextToken();
                 if ( type != typeof(GDObject) && reader.CurrentToken != EToken.EndObject )         //There can be properties of descendants of GDObject type
                 {
-                    ReadObjectPropertiesFromJson( reader, obj );
+                    ReadObjectProperties( reader, obj );
                 }
 
                 reader.EnsureEndObject();
@@ -239,7 +241,7 @@ namespace GDDB.Serialization
             var obj = defaultConstructor.Invoke( Array.Empty<Object>() );
 
             if( reader.CurrentToken != EToken.EndObject )
-                ReadObjectPropertiesFromJson( reader, obj );
+                ReadObjectProperties( reader, obj );
 
             reader.EnsureEndObject();
 
@@ -253,7 +255,7 @@ namespace GDDB.Serialization
         /// <param name="reader"></param>
         /// <param name="obj"></param>
         /// <exception cref="ReaderPropertyException"></exception>
-        private void ReadObjectPropertiesFromJson( ReaderBase reader, Object obj )
+        private void ReadObjectProperties( ReaderBase reader, Object obj )
         {
             var propNameOrEndObject = reader.CurrentToken;
             if( propNameOrEndObject == EToken.EndObject )
@@ -276,7 +278,7 @@ namespace GDDB.Serialization
                         try
                         {
                             reader.ReadNextToken();
-                            var value = ReadSomethingFromJson( reader, field.FieldType );
+                            var value = ReadSomething( reader, field.FieldType );
                             if ( value is UnresolvedGDObjectReference gdRef )                        //Should be resolved after all objects deserialization
                             {
                                 gdRef.TargetObject = obj;
@@ -304,7 +306,7 @@ namespace GDDB.Serialization
             reader.EnsureToken( EToken.EndObject );
         }
 
-        private Object ReadSomethingFromJson( ReaderBase reader, Type propertyType )
+        private Object ReadSomething( ReaderBase reader, Type propertyType )
         {
             //if( reader.CurrentToken == EToken.EndArray || reader.CurrentToken == EToken.EndObject )
                 //return null;
@@ -334,7 +336,7 @@ namespace GDDB.Serialization
             }
             else if ( propertyType.IsEnum )
             {
-                return Enum.Parse( propertyType, reader.GetStringValue() );
+                return reader.GetEnumValue( propertyType );
             }
             else if ( propertyType.IsArray || (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() ==  typeof(List<>) ) )
             {
@@ -394,7 +396,7 @@ namespace GDDB.Serialization
 
                 while( reader.ReadNextToken() != EToken.EndArray )
                 {
-                    var collectionValue = ReadSomethingFromJson( reader, elementType );
+                    var collectionValue = ReadSomething( reader, elementType );
                     buffer.Add( collectionValue );
                 }
                 
@@ -414,7 +416,7 @@ namespace GDDB.Serialization
                 var list        = (IList)Activator.CreateInstance( type );
                 while ( reader.ReadNextToken() != EToken.EndArray )
                 {
-                    var collectionValue = ReadSomethingFromJson( reader, elementType );
+                    var collectionValue = ReadSomething( reader, elementType );
                     list.Add( collectionValue );
                 }
 
@@ -453,11 +455,13 @@ namespace GDDB.Serialization
 
         private ConstructorInfo GetTypeConstructor(Type type )
         {
+            _getTypeConstructorSampler.Begin();
             if ( !_constructorCache.TryGetValue( type, out var con ) )
             {
                 con = type.GetConstructor( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, Array.Empty<Type>(), null );
                 _constructorCache.Add( type, con );
             }
+            _getTypeConstructorSampler.End();
 
             return con;
         }
