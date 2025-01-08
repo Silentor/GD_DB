@@ -37,6 +37,15 @@ namespace GDDB.Serialization
         {
             _reader = reader;
 
+            reader.SetPropertyNameAlias( 0, NameTag );            //Common to Folders
+            reader.SetPropertyNameAlias( 1, IdTag );                //Common to Folders
+            //reader.SetPropertyNameAlias( 2, ".folders" );
+            //reader.SetPropertyNameAlias( 3, ".objs" );
+            reader.SetPropertyNameAlias( 4, TypeTag );
+            reader.SetPropertyNameAlias( 5, EnabledTag );
+            reader.SetPropertyNameAlias( 6, ComponentsTag );
+            reader.SetPropertyNameAlias( 7, LocalIdTag );
+
 #if UNITY_2021_2_OR_NEWER
             AddSerializer( new Vector3Serializer() );
             AddSerializer( new Vector3IntSerializer() );
@@ -148,19 +157,19 @@ namespace GDDB.Serialization
         private GDObject ReadGDObject( ReaderBase reader )
         {
             reader.EnsureStartObject();
-            var name = reader.ReadPropertyString( ".Name" );
+            var name = reader.ReadPropertyString( NameTag );
 
             var    type     = typeof(GDObject);
             var    guid     = Guid.Empty;
             var    propName = reader.ReadPropertyName();
             String typeName = null;
-            if ( propName == ".Type" )
+            if ( propName == TypeTag )
             {
                 typeName = reader.ReadStringValue();
                 type     = Type.GetType( typeName );
-                guid     = reader.ReadPropertyGuid( ".Ref" );
+                guid     = reader.ReadPropertyGuid( IdTag );
             }
-            else if( propName == ".Ref" )
+            else if( propName == IdTag )
             {
                 guid = reader.ReadGuidValue();
             }
@@ -176,7 +185,7 @@ namespace GDDB.Serialization
             try
             {
                 //Components should be read from reserved property
-                reader.ReadNextToken();         reader.EnsurePropertyName( ".Components" );
+                reader.ReadNextToken();         reader.EnsurePropertyName( ComponentsTag );
                 reader.ReadStartArray();
 
                 while ( reader.ReadNextToken() != EToken.EndArray )
@@ -222,7 +231,7 @@ namespace GDDB.Serialization
             reader.EnsureToken( EToken.PropertyName );
 
             var objectType = propertyType;
-            if ( reader.GetPropertyName() == ".Type" )
+            if ( reader.GetPropertyName() == TypeTag )
             {
                 var typeStr = reader.ReadStringValue();
                 reader.ReadNextToken();
@@ -366,9 +375,9 @@ namespace GDDB.Serialization
                 if( reader.CurrentToken == EToken.EndObject )
                     return null;
 
-                reader.EnsurePropertyName( ".Ref" );            
+                reader.EnsurePropertyName( IdTag );            
                 var guidStr = reader.ReadStringValue( );
-                var localId = reader.ReadPropertyInteger( ".Id" );
+                var localId = reader.ReadPropertyInteger( LocalIdTag );
 
                 if( !_assetResolver.TryGetAsset( guidStr, localId, out var asset ) )
                     Debug.LogError( $"Error resolving Unity asset reference {guidStr} : {localId}, type {propertyType}" );

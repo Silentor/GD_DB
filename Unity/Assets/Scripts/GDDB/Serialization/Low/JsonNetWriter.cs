@@ -42,6 +42,11 @@ namespace GDDB.Serialization
             _writer                    = jsonTextWriter;
         }
 
+        public override void SetPropertyNameAlias(UInt32 id, String propertyName )
+        {
+            //Not supported
+        }
+
         public override void WriteStartObject( )
         {
             _writer.WriteStartObject();

@@ -31,6 +31,11 @@ namespace GDDB.Serialization
 
         public override String Path => _reader.Path;
 
+        public override void SetPropertyNameAlias(UInt32 id, String propertyName )
+        {
+            //Not supported
+        }
+
         public override EToken ReadNextToken( )
         {
             if ( CurrentToken == EToken.EoF )

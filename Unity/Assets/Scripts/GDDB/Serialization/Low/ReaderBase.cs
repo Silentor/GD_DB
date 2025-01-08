@@ -8,6 +8,8 @@ namespace GDDB.Serialization
 
         public abstract String Path { get; }
 
+        public abstract void SetPropertyNameAlias( UInt32 id, String propertyName );
+
         public abstract EToken ReadNextToken( );
 
         public abstract void ReadStartObject( );

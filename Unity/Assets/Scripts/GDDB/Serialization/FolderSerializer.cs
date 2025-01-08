@@ -9,6 +9,11 @@ namespace GDDB.Serialization
 {
     public class FolderSerializer
     {
+        public const String FoldersTag = ".folders";
+        public const String ObjectsTag = ".objs";
+        public const String NameTag    = GDObjectSerializationCommon.NameTag;
+        public const String IdTag      = GDObjectSerializationCommon.IdTag;
+
         private readonly CustomSampler _serFolderSampler   = CustomSampler.Create( "FolderSerializer.Serialize" );
         private readonly CustomSampler _deserFolderSampler = CustomSampler.Create( "FolderSerializer.Deserialize" );
 
@@ -17,6 +22,10 @@ namespace GDDB.Serialization
         public void Serialize( Folder root, GDObjectSerializer objectSerializer, WriterBase writer, UInt64? hash = null )
         {
             _serFolderSampler.Begin();
+            writer.SetPropertyNameAlias( 0, NameTag );
+            writer.SetPropertyNameAlias( 1, IdTag );
+            writer.SetPropertyNameAlias( 2, FoldersTag );
+            writer.SetPropertyNameAlias( 3, ObjectsTag );
             SerializeFolder( writer, root, objectSerializer, hash );
             _serFolderSampler.End();
         }
@@ -25,6 +34,11 @@ namespace GDDB.Serialization
 
         public Folder Deserialize( ReaderBase reader, GDObjectDeserializer? objectSerializer, out UInt64? checksum )
         {
+            reader.SetPropertyNameAlias( 0, NameTag );
+            reader.SetPropertyNameAlias( 1, IdTag );
+            reader.SetPropertyNameAlias( 2, FoldersTag );
+            reader.SetPropertyNameAlias( 3, ObjectsTag );
+
             checksum = 0;
             reader.ReadStartObject();
             return DeserializeFolder( reader, null, objectSerializer, out checksum );
@@ -38,12 +52,12 @@ namespace GDDB.Serialization
 
             if ( hash.HasValue )
             {
-                writer.WritePropertyName( "hash" ).WriteValue( hash.Value );
+                writer.WritePropertyName( ".hash" ).WriteValue( hash.Value );
             }
-            writer.WritePropertyName( "name" ).WriteValue( folder.Name );
-            writer.WritePropertyName( "guid" ).WriteValue( folder.FolderGuid );
+            writer.WritePropertyName( NameTag ).WriteValue( folder.Name );
+            writer.WritePropertyName( IdTag ).WriteValue( folder.FolderGuid );
 
-            writer.WritePropertyName( "subfolders" );
+            writer.WritePropertyName( FoldersTag );
             writer.WriteStartArray();
             foreach ( var subFolder in folder.SubFolders )
             {
@@ -51,7 +65,7 @@ namespace GDDB.Serialization
             }
             writer.WriteEndArray();
 
-            writer.WritePropertyName( "objects" );
+            writer.WritePropertyName( ObjectsTag );
             writer.WriteStartArray();
             if( objectSerializer != null )
             {
@@ -92,23 +106,23 @@ namespace GDDB.Serialization
             reader.EnsureStartObject();
 
             var propName = reader.ReadPropertyName();
-            if ( propName == "version" )        //Not implemented for now
+            if ( propName == ".version" )        //Not implemented for now
             {
                 reader.SkipProperty(  );
                 propName = reader.ReadPropertyName();
             }
 
             hash = null;
-            if ( propName == "hash" )
+            if ( propName == ".hash" )
             {
                 hash = reader.ReadUInt64Value( );
             }
 
             //Can be another properties in the future...
 
-            reader.SeekPropertyName( "name" );
+            reader.SeekPropertyName( NameTag );
             var name    = reader.ReadStringValue();
-            var guid = reader.ReadPropertyGuid( "guid" );
+            var guid = reader.ReadPropertyGuid( IdTag );
 
             var folder = new Folder( name, guid )
             {
@@ -118,7 +132,7 @@ namespace GDDB.Serialization
 
             try
             {
-                reader.SeekPropertyName( "subfolders" );
+                reader.SeekPropertyName( FoldersTag );
                 reader.ReadStartArray();
                 while ( reader.ReadNextToken() != EToken.EndArray )
                 {
@@ -134,7 +148,7 @@ namespace GDDB.Serialization
 
             try
             {
-                reader.ReadPropertyName( "objects" );
+                reader.ReadPropertyName( ObjectsTag );
                 if ( objectSerializer != null )
                 {
                     reader.ReadStartArray();

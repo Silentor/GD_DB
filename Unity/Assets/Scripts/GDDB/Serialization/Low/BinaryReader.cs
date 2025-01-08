@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.Profiling;
+using Object = System.Object;
 
 namespace GDDB.Serialization
 {
@@ -11,13 +13,15 @@ namespace GDDB.Serialization
         private readonly System.IO.BinaryReader _reader;
         private          Int32                  _depth;
 
-        private readonly Stack<Container> _path = new ();
+        private readonly Stack<Container> _path = new ( 16 );
 
         private Int64  _intBuffer;
         private Guid  _guidBuffer;
         private Single _floatBuffer;
         private Double _doubleBuffer;
         private String _stringBuffer;
+
+        private readonly SortedDictionary<UInt32, String> _aliases = new ();
 
         private readonly CustomSampler _readNextTokenSampler   = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(ReadNextToken)}" );
         private readonly CustomSampler _getGuidValueSampler    = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(GetGuidValue)}" );
@@ -28,6 +32,7 @@ namespace GDDB.Serialization
         private readonly CustomSampler _getEnumValueSampler    = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(GetEnumValue)}" );
 
         private readonly CustomSampler _storeValueSampler    = CustomSampler.Create( $"{nameof(BinaryReader)}.{nameof(StoreValue)}" );
+        private readonly CustomSampler _processPathSampler    = CustomSampler.Create( $"{nameof(BinaryReader)}.ProcessPath" );
 
         public BinaryReader( System.IO.Stream binaryStream )
         {
@@ -68,6 +73,12 @@ namespace GDDB.Serialization
             }
         }
 
+        public override void SetPropertyNameAlias( UInt32 id, String propertyName )
+        {
+            Assert.IsTrue( id <= 127 );
+            _aliases[id] = propertyName;
+        }
+
         public override EToken ReadNextToken( )
         {
             if( CurrentToken == EToken.EoF )
@@ -79,47 +90,49 @@ namespace GDDB.Serialization
 
             if ( _reader.BaseStream.Position < _reader.BaseStream.Length )
             {
-                CurrentToken  = (EToken)_reader.ReadByte();
-                StoreValue();
-
-                //Count array elements for path
+                var currentToken = (EToken)_reader.ReadByte();
+                currentToken = StoreValue( currentToken );
+                CurrentToken = currentToken;
+                
+                _processPathSampler.Begin();
                 if ( _path.TryPeek( out var arr ) && arr.Token == EToken.StartArray )
                 {
                     var lastObject = _path.Pop();
-                    lastObject.ElementIndex += 1;
+                    lastObject.ElementIndex += 1;                   //Count array elements for path
                     _path.Push( lastObject );
                 }
 
-                if ( CurrentToken == EToken.StartObject )
+                if ( currentToken == EToken.StartObject )
                 {
                     _path.Push( new Container { Token = EToken.StartObject } );
                     _depth++;
                 }
-                else if ( CurrentToken == EToken.StartArray )
+                else if ( currentToken == EToken.StartArray )
                 {
                     _path.Push( new Container { Token = EToken.StartArray, ElementIndex = -1} );
                     _depth++;
                 }
-                else if ( CurrentToken == EToken.EndObject )
+                else if ( currentToken == EToken.EndObject )
                 {
                     _depth--;
                     var lastObject = _path.Pop();
                     Assert.IsTrue( lastObject.Token == EToken.StartObject );
                 }
-                else if( CurrentToken == EToken.EndArray )
+                else if( currentToken == EToken.EndArray )
                 {
                     _depth--;
                     var lastArray = _path.Pop();
                     Assert.IsTrue( lastArray.Token == EToken.StartArray );
                 }
-                else if( CurrentToken == EToken.PropertyName )
+                else if( currentToken == EToken.PropertyName )
                 {
                     var lastObject = _path.Pop();
                     Assert.IsTrue( lastObject.Token == EToken.StartObject );
                     lastObject.PropertyName = _stringBuffer;
                     _path.Push( lastObject );
                 }
-                
+                _processPathSampler.End();
+
                 if( _depth < 0 )
                     throw new Exception( $"Unexpected end of container" );
 
@@ -353,7 +366,7 @@ namespace GDDB.Serialization
 
         public override void SkipProperty( )
         {
-            if ( CurrentToken == EToken.PropertyName )
+            if ( CurrentToken == EToken.PropertyName || CurrentToken.IsAliasToken() )
             {
                 if ( ReadNextToken().IsStartContainer() )
                 {
@@ -365,13 +378,28 @@ namespace GDDB.Serialization
             }
         }
 
-        private void StoreValue( )
+        private EToken StoreValue( EToken token )
         {
             _storeValueSampler.Begin();
 
+            if ( token.IsAliasToken() )
+            {
+                var id = (UInt32)token & 0x7F;
+                if( _aliases.TryGetValue( id, out var alias ) )             //Replace alias with property name
+                {
+                    _stringBuffer = alias;
+                    return EToken.PropertyName;
+                }
+                else
+                {
+                    Debug.LogWarning( $"[{nameof(BinaryReader)}]-[{nameof(StoreValue)}] Property name alias id {id} is not defined" );
+                    //SkipProperty();
+                }
+            }
+            else
             //if ( CurrentToken.HasPayload() )
             {
-                switch ( CurrentToken )
+                switch ( token )                           //Read payload
                 {
                     case EToken.Int8:
                         _intBuffer = _reader.ReadSByte();
@@ -440,6 +468,8 @@ namespace GDDB.Serialization
             }
 
             _storeValueSampler.End();
+
+            return token;
         }
 
         private struct Container

@@ -2,6 +2,7 @@
 using System.IO;
 using System.Security;
 using System.Text;
+using FluentAssertions;
 using GDDB.Serialization;
 using Newtonsoft.Json;
 using NUnit.Framework;
@@ -462,6 +463,45 @@ namespace GDDB.Tests
             deserializer.ReadNextToken();
             var actualValue = deserializer.GetDoubleValue(  );
             Assert.AreEqual( value, actualValue );
+        }
+
+        [Test]
+        public void TestPropertyNameAlias( [Values]EBackend backend )
+        {
+            // Write
+            var buffer     = GetBuffer( backend );
+            var serializer = GetWriter( backend, buffer );
+            serializer.SetPropertyNameAlias( 0, "TestAlias" );
+            serializer.WriteStartObject();
+            serializer.WritePropertyName( "TestAlias" );
+            serializer.WriteValue( 0 );
+            serializer.WriteEndObject();
+
+            // Save to file
+            SaveToFile( backend, "test", buffer );
+
+            // Log
+            LogBuffer( buffer );
+
+            if ( backend == EBackend.Binary )
+            {
+                // Read without setting alias, should read alias token
+                var deserializer = GetReader( backend, buffer );
+                deserializer.ReadStartObject();
+                deserializer.ReadNextToken().IsAliasToken().Should().BeTrue(  );
+                deserializer.SkipProperty();
+                deserializer.ReadEndObject();
+            }
+
+            { 
+                //Read with alias processing, should read aliased property name
+                var deserializer = GetReader( backend, buffer );
+                deserializer.SetPropertyNameAlias( 0, "TestAlias" );
+                deserializer.ReadStartObject();
+                deserializer.ReadNextToken().Should().Be( EToken.PropertyName );
+                deserializer.GetPropertyName().Should().Be( "TestAlias" );
+                deserializer.ReadIntegerValue().Should().Be( 0 );
+            }
         }
 
         [Test]

@@ -12,11 +12,21 @@ namespace GDDB.Serialization
 {
     public class GDObjectSerializer : GDObjectSerializationCommon
     {
+        
         private readonly WriterBase _writer;
 
         public GDObjectSerializer( WriterBase writer )
         {
             _writer = writer;
+
+            writer.SetPropertyNameAlias( 0, NameTag );            //Common to Folders
+            writer.SetPropertyNameAlias( 1, IdTag );                //Common to Folders
+            //writer.SetPropertyNameAlias( 2, ".folders" );
+            //writer.SetPropertyNameAlias( 3, ".objs" );
+            writer.SetPropertyNameAlias( 4, TypeTag );
+            writer.SetPropertyNameAlias( 5, EnabledTag );
+            writer.SetPropertyNameAlias( 6, ComponentsTag );
+            writer.SetPropertyNameAlias( 7, LocalIdTag );
 
 #if UNITY_2021_2_OR_NEWER
             AddSerializer( new Vector3Serializer() );
@@ -66,23 +76,23 @@ namespace GDDB.Serialization
             try
             {
                 writer.WriteStartObject();
-                writer.WritePropertyName( ".Name" );
+                writer.WritePropertyName( NameTag );
                 writer.WriteValue( obj.name );
                 var type = obj.GetType();
                 if ( obj.GetType() != typeof(GDObject) )
                 {
-                    writer.WritePropertyName( ".Type" );
+                    writer.WritePropertyName( TypeTag );
                     writer.WriteValue( type.Assembly == typeof(GDObject).Assembly ? type.FullName : $"{type.FullName}, {type.Assembly.GetName().Name}" );
                 }
-                writer.WritePropertyName( ".Ref" );
+                writer.WritePropertyName( IdTag );
                 writer.WriteValue( obj.Guid );
                 if ( !obj.EnabledObject )
                 {
-                    writer.WritePropertyName( ".Enabled" );
+                    writer.WritePropertyName( EnabledTag );
                     writer.WriteValue( false );
                 }
 
-                writer.WritePropertyName( ".Components" );
+                writer.WritePropertyName( ComponentsTag );
                 writer.WriteStartArray();
                 foreach ( var gdComponent in obj.Components )
                 {
@@ -111,7 +121,7 @@ namespace GDDB.Serialization
             //Check for polymorphic object
             if ( propertyType != actualType )
             {
-                writer.WritePropertyName( ".Type" );
+                writer.WritePropertyName( TypeTag );
                 var typeStr = propertyType.Assembly == actualType.Assembly ? actualType.FullName : $"{actualType.FullName}, {actualType.Assembly.GetName().Name}";
                 writer.WriteValue( typeStr );
             }
@@ -266,9 +276,9 @@ namespace GDDB.Serialization
 
             if ( UnityEditor.AssetDatabase.TryGetGUIDAndLocalFileIdentifier( unityAsset, out var guid, out long localId ))
             {
-                writer.WritePropertyName( ".Ref" );
+                writer.WritePropertyName( IdTag );
                 writer.WriteValue( guid );
-                writer.WritePropertyName( ".Id" );
+                writer.WritePropertyName( LocalIdTag );
                 writer.WriteValue( localId );
                 _assetResolver.AddAsset( unityAsset, guid, localId );
             }

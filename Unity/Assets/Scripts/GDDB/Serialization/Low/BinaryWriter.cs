@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using UnityEngine.Assertions;
 
 namespace GDDB.Serialization
 {
@@ -7,11 +9,18 @@ namespace GDDB.Serialization
     {
         public override String Path => "Not implemented";
 
-        private readonly System.IO.BinaryWriter _writer;
+        private readonly System.IO.BinaryWriter          _writer;
+        private readonly SortedDictionary<String, UInt32> _aliases = new ();
 
         public BinaryWriter( Stream writer )
         {
             _writer = new System.IO.BinaryWriter( writer );
+        }
+
+        public override void SetPropertyNameAlias( UInt32 id, String propertyName )
+        {
+            Assert.IsTrue( id <= 127 );
+             _aliases[propertyName] = id;
         }
 
         public override void WriteStartObject( )
@@ -41,6 +50,12 @@ namespace GDDB.Serialization
 
         public override WriterBase WritePropertyName(String propertyName )
         {
+            if( _aliases.TryGetValue( propertyName, out var id ) )
+            {
+                _writer.Write( (byte)((UInt32)EToken.Alias | id) );
+                return this;
+            }
+                 
             _writer.Write( (byte)EToken.PropertyName );
             _writer.Write( propertyName );
             return this;

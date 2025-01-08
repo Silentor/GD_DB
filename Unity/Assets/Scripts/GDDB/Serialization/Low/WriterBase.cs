@@ -6,6 +6,8 @@ namespace GDDB.Serialization
     {
         public abstract String Path { get; }
 
+        public abstract void SetPropertyNameAlias( UInt32 id, String propertyName );
+
         public abstract void WriteStartObject( );
 
         public abstract void WriteEndObject( );

@@ -8,12 +8,23 @@ namespace GDDB.Serialization
 {
     public class GDObjectSerializationCommon
     {
+        public const String TypeTag       = ".type";
+        public const String EnabledTag    = ".enabled";
+        public const String ComponentsTag = ".components";
+        public const String IdTag         = ".id";
+        public const String NameTag       = ".name";
+        public const String LocalIdTag    = ".localId";
+
         protected readonly Dictionary<Type, TypeCustomSerializer> _serializers       = new();
         private readonly   Dictionary<Type, Boolean>              _isTypeSerializableCache = new();
 
 #if UNITY_EDITOR
         private readonly HashSet<Type> _missedCustomTypeSerializersWarnings = new();
 #endif
+
+        public GDObjectSerializationCommon( )
+        {
+        }
 
         protected Boolean IsFieldSerializable( FieldInfo field )
         {

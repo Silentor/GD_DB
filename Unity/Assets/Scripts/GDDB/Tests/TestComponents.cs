@@ -167,7 +167,7 @@ namespace GDDB.Tests
     public class EnumsComponent : GDComponent
     {
         public DefaultEnum  DefaultEnum;
-        public UInt64Enum   BigEnum    ;
+        //public UInt64Enum   BigEnum    ;                  Unity serialization does not support 64-bit enums
         public SignedEnum   SignedEnum ;
         public Flags        Flags      ;
         public Flags[]      FlagsArray ;

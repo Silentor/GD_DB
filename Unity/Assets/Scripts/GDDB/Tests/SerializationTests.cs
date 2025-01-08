@@ -8,12 +8,17 @@ using GDDB.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
+using NUnit.Framework.Interfaces;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.TestRunner;
+
+//[assembly:TestRunCallback(typeof(GDDB.Tests.SerializationTests))]
 
 namespace GDDB.Tests
 {
-    public class SerializationTests : BaseSerializationTests
+
+    public class SerializationTests : BaseSerializationTests, ITestRunCallback                               
     {
         [Test]
         public void NotSerializableComponentTest( [Values]EBackend backend )
@@ -33,11 +38,11 @@ namespace GDDB.Tests
 
             //Assert
             var reader = GetReader( backend, buffer );
-            reader.SeekPropertyName( ".Components" );                   //Seek to components array           
-            reader.SeekPropertyName( ".Type" );                         //Seek to component type                                 
+            reader.SeekPropertyName( ".components" );                   //Seek to components array           
+            reader.SeekPropertyName( ".type" );                         //Seek to component type                                 
 
-            //Make sure there are no serialized properties in NotSerializableContentComponent
-            while ( reader.ReadNextToken() != EToken.EndObject )
+            //Make sure there are no serialized user properties in NotSerializableContentComponent
+            while ( reader.ReadNextToken() != EToken.EoF )
             {
                  reader.CurrentToken.Should().NotBe( EToken.PropertyName, "No properties should be serialized" );   
             }
@@ -123,6 +128,26 @@ namespace GDDB.Tests
             copy.NonSerializableClassMustStillBeNull.Should().BeNull();
         }
 
+        // [Test]                         //Its not exposed to user for now
+        // public void TestPropertyNameAlias( EBackend backend)
+        // {
+        //      //Arrange
+        //      var gdo = GDObject.CreateInstance<GDObject>();
+        //      var comp = new PrimitivesComponent()
+        //                 {
+        //                                 IntField = 66,
+        //                                 FloatField = 42.42f,
+        //                 };
+        //      gdo.Components.Add( comp );
+        //
+        //      //Act
+        //      var buffer = GetBuffer( backend );
+        //      var writer = GetWriter( backend, buffer );
+        //      var serializer = new GDObjectSerializer( writer );
+        //
+        //
+        // }
+
         [Test]
         public void EnumsTest( [Values]EBackend backend )
         {
@@ -130,7 +155,7 @@ namespace GDDB.Tests
                 var enumComp = new EnumsComponent()
                                {
                                                DefaultEnum  = DefaultEnum.Third,
-                                               BigEnum      = UInt64Enum.Last,
+                                               //BigEnum      = UInt64Enum.Last,
                                                SignedEnum   = SignedEnum.Second,
                                                Flags                 = Flags.All,
                                                FlagsArray        = new[]{ Flags.First, Flags.Second | Flags.Fourth },
@@ -154,7 +179,7 @@ namespace GDDB.Tests
                 var deserializer = new GDObjectDeserializer( reader );
                 var copy         = deserializer.Deserialize( ).Components.First() as EnumsComponent;
                 copy.DefaultEnum.Should().Be( enumComp.DefaultEnum );
-                copy.BigEnum.Should().Be( enumComp.BigEnum );
+                //copy.BigEnum.Should().Be( enumComp.BigEnum );
                 copy.SignedEnum.Should().Be( enumComp.SignedEnum );
                 copy.Flags.Should().Be( enumComp.Flags );
                 copy.FlagsArray.Should().BeEquivalentTo( enumComp.FlagsArray );
@@ -241,16 +266,14 @@ namespace GDDB.Tests
             copy.IntArray.Should().BeEquivalentTo( collComp.IntArray );
             copy.StrArray.Should().BeEquivalentTo( new String[] { String.Empty, String.Empty, "3" } );
             copy.ClassList1.Should().BeEquivalentTo(
-                    new System.Collections.Generic.List<
-                            CollectionTestComponent.NestedSerializableClass>()
+                    new List<CollectionTestComponent.NestedSerializableClass>
                     {
                             collComp.ClassList1[ 0 ],
                             collComp.ClassList1[ 1 ],
                             new ()
                     }, "null elements deserialized as empty objects" );
             copy.ClassListPolymorf2.Should().BeEquivalentTo(
-                    new System.Collections.Generic.List<
-                            CollectionTestComponent.NestedSerializableClass>()
+                    new List<CollectionTestComponent.NestedSerializableClass>
                     {
                             collComp.ClassListPolymorf2[ 0 ],
                             collComp.ClassListPolymorf2[ 1 ],
@@ -550,7 +573,7 @@ namespace GDDB.Tests
                 //Arrange
                 var buffer = GetBuffer( backend );
                 var writer = GetWriter( backend, buffer );
-                var serializer = new GDObjectSerializer( writer );
+                var serializer = new GDObjectSerializer( writer );         
 
                 var gdo = GDObject.CreateInstance<GDObject>();
                 var comp = new CollectionTestComponent();
@@ -561,22 +584,23 @@ namespace GDDB.Tests
 
                 //Act and Assert
                 var reader = GetReader( backend, buffer );
-                reader.SeekPropertyName( ".Name" );
-                reader.Path.Should().Contain( ".Name" );
+                var deserializer = new GDObjectDeserializer( reader );                                  //Create unused deserializer to set-up property name aliases
+                reader.SeekPropertyName( GDObjectSerializationCommon.NameTag );
+                reader.Path.Should().Contain( GDObjectSerializationCommon.NameTag );
 
-                reader.SeekPropertyName( ".Components" );
-                reader.Path.Should().Contain( ".Components" );
+                reader.SeekPropertyName( GDObjectSerializationCommon.ComponentsTag );
+                reader.Path.Should().Contain( GDObjectSerializationCommon.ComponentsTag );
 
-                reader.SeekPropertyName( ".Type" );
-                reader.Path.Should().Contain( ".Components" );          //Property of GDObject
+                reader.SeekPropertyName( GDObjectSerializationCommon.TypeTag );
+                reader.Path.Should().Contain( GDObjectSerializationCommon.ComponentsTag );          //Property of GDObject
                 reader.Path.Should().Contain( "[0]" );                  //Index of GDComponent
-                reader.Path.Should().Contain( ".Type" );                //Property of GDComponent
+                reader.Path.Should().Contain( GDObjectSerializationCommon.TypeTag );                //Property of GDComponent
 
                 reader.SeekPropertyName( "IntArray" );
                 reader.ReadStartArray();
                 reader.ReadNextToken();                                         //Read first element
                 reader.ReadNextToken();                                         //Read second element
-                reader.Path.Should().Contain( ".Components" );          
+                reader.Path.Should().Contain( GDObjectSerializationCommon.ComponentsTag );          
                 reader.Path.Should().Contain( "[0]" );                  
                 reader.Path.Should().Contain( "IntArray" );                  
                 reader.Path.Should().Contain( "[1]" );            
@@ -646,6 +670,31 @@ namespace GDDB.Tests
                                 yield return  d.Prepend( b ).ToArray();
                         }
                 }
+        }
+
+        public void RunStarted(ITest testsToRun )
+        {
+                Debug.Log( $"[{nameof(SerializationTests)}]-[{nameof(RunStarted)}] {testsToRun.Name}" );
+        }
+
+        public void RunFinished(ITestResult testResults )
+        {
+                Debug.Log( $"[{nameof(SerializationTests)}]-[{nameof(RunFinished)}] " );
+        }
+
+        public void TestStarted(ITest test )
+        {
+                Debug.Log( $"[{nameof(SerializationTests)}]-[{nameof(TestStarted)}] {test.Name}" );
+                using var logFile = File.AppendText( "UniTest.log" );
+                logFile.WriteLine( $"[{nameof(SerializationTests)}]-[{nameof(TestStarted)}] {test.Name}" );
+        }
+
+        public void TestFinished(ITestResult result )
+        {
+                Debug.Log( $"[{nameof(SerializationTests)}]-[{nameof(TestFinished)}] " );
+                using var logFile = File.AppendText( "UniTest.log" );
+                logFile.WriteLine( $"[{nameof(SerializationTests)}]-[{nameof(TestFinished)}] {result.Name}" );
+
         }
     }
 }
