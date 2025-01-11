@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Numerics;
+using System.Reflection;
 using Newtonsoft.Json;
 using UnityEngine.Profiling;
 
 namespace GDDB.Serialization
 {
-    public class JsonNetReader : ReaderBase
+    public sealed class JsonNetReader : ReaderBase
     {
         private readonly JsonReader    _reader;
 
@@ -31,7 +32,7 @@ namespace GDDB.Serialization
 
         public override String Path => _reader.Path;
 
-        public override void SetPropertyNameAlias(UInt32 id, String propertyName )
+        public override void SetAlias( UInt32 id, EToken token, String stringValue )
         {
             //Not supported
         }
@@ -163,6 +164,19 @@ namespace GDDB.Serialization
             }
         }
 
+        public override Type GetTypeValue(Assembly defaultAssembly )
+        {
+            var typeString = GetStringValue();
+            var result = Type.GetType( typeString );
+            if( result != null )
+                return result;
+
+            if( defaultAssembly != null )
+                return defaultAssembly.GetType( typeString );
+
+            return null;
+        }
+
         public override Double GetFloatValue( )
         {
             return Convert.ToDouble( _reader.Value );
@@ -218,7 +232,7 @@ namespace GDDB.Serialization
                 case JsonToken.String:
                     return EToken.String;
                 case JsonToken.Integer:
-                    return EToken.Integer;
+                    return EToken.Number;
                 case JsonToken.Float:
                     return EToken.Double;
                 case JsonToken.StartArray:

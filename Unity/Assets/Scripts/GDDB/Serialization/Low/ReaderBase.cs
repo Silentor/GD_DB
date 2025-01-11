@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 
 namespace GDDB.Serialization
 {
@@ -8,7 +9,7 @@ namespace GDDB.Serialization
 
         public abstract String Path { get; }
 
-        public abstract void SetPropertyNameAlias( UInt32 id, String propertyName );
+        public abstract void SetAlias( UInt32 id, EToken token, String stringValue );
 
         public abstract EToken ReadNextToken( );
 
@@ -32,6 +33,7 @@ namespace GDDB.Serialization
         public abstract UInt64 GetUInt64Value( );
         public abstract Guid   GetGuidValue( );
         public abstract Object GetEnumValue( Type enumType );
+        public abstract Type GetTypeValue( Assembly defaultAssembly );
           
         /// <summary>
         /// Get any float value (single or double)
@@ -187,12 +189,18 @@ namespace GDDB.Serialization
             return GetBoolValue();
         }
 
-
         public String  ReadStringValue( )
         {
             ReadNextToken();
             return GetStringValue();
         }
+
+        public Type  ReadTypeValue( Assembly defaultAssembly )
+        {
+            ReadNextToken();
+            return GetTypeValue( defaultAssembly );
+        }
+
 
         public Int32 ReadPropertyInt32(  String propertyName )
         {

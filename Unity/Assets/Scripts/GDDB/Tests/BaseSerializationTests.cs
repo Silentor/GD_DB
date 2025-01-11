@@ -39,11 +39,11 @@ namespace GDDB.Tests
                 {
                     yield return (reader.CurrentToken, reader.GetIntegerValue());
                 }
-                else if( reader.CurrentToken == EToken.False || reader.CurrentToken == EToken.True )
+                else if( reader.CurrentToken.IsBooleanToken() )
                 {
                     yield return (reader.CurrentToken, reader.GetBoolValue());
                 }
-                else if( reader.CurrentToken == EToken.Single || reader.CurrentToken == EToken.Double )
+                else if( reader.CurrentToken.IsFloatToken() )
                 {
                     yield return (reader.CurrentToken, reader.GetFloatValue());
                 }
@@ -209,7 +209,7 @@ namespace GDDB.Tests
         protected EToken ReduceIntegerToken( EToken token )
         {
             if ( token.IsIntegerToken() )
-                return EToken.Integer;
+                return EToken.Number;
             return token;
         }
 

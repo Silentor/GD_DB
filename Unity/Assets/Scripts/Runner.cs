@@ -63,7 +63,7 @@ namespace GDDB_User
                 var       json       = FolderJson.text;
                 var       deser      = new FolderSerializer();
                 var       reader     = new JsonNetReader( json,  false );
-                var       folder     = deser.Deserialize( reader, null, out var hash );
+                var       folder     = deser.Deserialize( reader, null );
             }
 
 

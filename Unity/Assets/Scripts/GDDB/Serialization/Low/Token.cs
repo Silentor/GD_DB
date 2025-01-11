@@ -8,14 +8,13 @@ namespace GDDB.Serialization
         BoF = 0,
         EoF = 1,
 
-        DataToken = 1 << 2,
+        DataToken = 1 << 2,                            //Value stored in token itself
         Null      = DataToken,
         False     = DataToken + 1,
         True      = DataToken + 2, 
 
-        Float  = 1 << 3,
-        Single = Float,
-        Double = Float + 1,
+        Extensions  = 1 << 3,
+        Type        = Extensions,
 
         String       = 1 << 4,
         PropertyName = String + 1,
@@ -28,19 +27,25 @@ namespace GDDB.Serialization
         StartBuffer  = Container + 4,
         EndBuffer    = Container + 5,
 
-        Integer = 1 << 6,
-        Int8    = Integer,
-        UInt8   = Integer + 1,
-        Int16   = Integer + 2,
-        UInt16  = Integer + 3,
-        Int32   = Integer + 4,
-        UInt32  = Integer + 5,
-        Int64   = Integer + 6,
-        UInt64  = Integer + 7,
-        VarInt  = Integer + 8,
-        Guid    = Integer + 9,
+        Number  = 1 << 6,
+        Int8     = Number,
+        UInt8    = Number + 1,
+        Int16    = Number + 2,
+        UInt16   = Number + 3,
+        Int32    = Number + 4,
+        UInt32   = Number + 5,
+        Int64    = Number + 6,
+        UInt64   = Number + 7,
+        //Int128   = Integer + 8,
+        //UInt128  = Integer + 9,
+        VarInt   = Number + 10,
+        Guid     = Number + 11,
+        Single   = Number + 12,
+        Double   = Number + 13,
+        //Decimal  = Number + 14,
+        //DateTime  = Number + 15,
 
-        Enum    = Integer + (1 << 4),
+        Enum    = Number + (1 << 4),
         Enum1   = Enum,
         Enum2   = Enum + 1,
         Enum4   = Enum + 2,
@@ -68,7 +73,7 @@ namespace GDDB.Serialization
 
         public static Boolean IsFloatToken( this EToken token )
         {
-            return ((Byte)token & 0b1111_1000) == (Byte)EToken.Float;
+            return token >= EToken.Single && token <= EToken.Double;
         }
 
         public static Boolean IsStringToken( this EToken token )
@@ -81,9 +86,14 @@ namespace GDDB.Serialization
             return ((Byte)token & 0b1110_0000) == (Byte)EToken.Container;
         }
 
+        public static Boolean IsNumberToken( this EToken token )
+        {
+            return ((Byte)token & 0b1100_0000) == (Byte)EToken.Number;
+        }
+
         public static Boolean IsIntegerToken( this EToken token )
         {
-            return ((Byte)token & 0b1100_0000) == (Byte)EToken.Integer;
+            return token >= EToken.Int8 && token <= EToken.UInt64;
         }
 
         public static Boolean IsBooleanToken( this EToken token )
@@ -103,7 +113,7 @@ namespace GDDB.Serialization
 
         public static Boolean HasPayload( this EToken token )
         {
-            return token.IsFloatToken() || token.IsStringToken() || token.IsIntegerToken();
+            return token.IsStringToken() || token.IsNumberToken();
         }
 
     }

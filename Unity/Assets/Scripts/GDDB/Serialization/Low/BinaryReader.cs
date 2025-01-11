@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.Profiling;
@@ -8,7 +9,7 @@ using Object = System.Object;
 
 namespace GDDB.Serialization
 {
-    public class BinaryReader : ReaderBase
+    public sealed class BinaryReader : ReaderBase
     {
         private readonly System.IO.BinaryReader _reader;
         private          Int32                  _depth;
@@ -20,8 +21,9 @@ namespace GDDB.Serialization
         private Single _floatBuffer;
         private Double _doubleBuffer;
         private String _stringBuffer;
+        private String  _assemblyNameBuffer;   //for Type token
 
-        private readonly SortedDictionary<UInt32, String> _aliases = new ();
+        private readonly SortedDictionary<UInt32, (EToken token, String value)> _aliases = new ();
 
         private readonly CustomSampler _readNextTokenSampler   = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(ReadNextToken)}" );
         private readonly CustomSampler _getGuidValueSampler    = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(GetGuidValue)}" );
@@ -30,9 +32,11 @@ namespace GDDB.Serialization
         private readonly CustomSampler _getSingleValueSampler  = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(GetSingleValue)}" );
         private readonly CustomSampler _getBoolValueSampler    = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(GetBoolValue)}" );
         private readonly CustomSampler _getEnumValueSampler    = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(GetEnumValue)}" );
+        private readonly CustomSampler _getTypeValueSampler    = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(GetTypeValue)}" );
 
         private readonly CustomSampler _storeValueSampler    = CustomSampler.Create( $"{nameof(BinaryReader)}.{nameof(StoreValue)}" );
-        private readonly CustomSampler _processPathSampler    = CustomSampler.Create( $"{nameof(BinaryReader)}.ProcessPath" );
+        private readonly CustomSampler _readTypeValueSampler = CustomSampler.Create( $"{nameof(BinaryReader)}.StoreTypePayload" );
+        private readonly CustomSampler _processPathSampler   = CustomSampler.Create( $"{nameof(BinaryReader)}.ProcessPath" );
 
         public BinaryReader( System.IO.Stream binaryStream )
         {
@@ -73,10 +77,10 @@ namespace GDDB.Serialization
             }
         }
 
-        public override void SetPropertyNameAlias( UInt32 id, String propertyName )
+        public override void SetAlias( UInt32 id, EToken token, String stringValue )
         {
             Assert.IsTrue( id <= 127 );
-            _aliases[id] = propertyName;
+            _aliases[id] = (token, stringValue);
         }
 
         public override EToken ReadNextToken( )
@@ -300,6 +304,47 @@ namespace GDDB.Serialization
             }
         }
 
+        public override Type GetTypeValue(Assembly defaultAssembly )
+        {
+            _getTypeValueSampler.Begin();
+
+            if ( CurrentToken == EToken.Type )
+            {
+                if ( _assemblyNameBuffer != null )
+                    defaultAssembly = Assembly.Load( _assemblyNameBuffer );
+
+                if ( defaultAssembly != null )
+                {
+                    var result = defaultAssembly.GetType( _stringBuffer );
+                    _getTypeValueSampler.End();
+                    return result;
+                }
+                else
+                {
+                    var result = Type.GetType( _stringBuffer );
+                    _getTypeValueSampler.End();
+                    return result;
+                }
+            }
+            else if( CurrentToken == EToken.String )
+            {
+                var result = Type.GetType( _stringBuffer );
+                _getTypeValueSampler.End();
+                return result;
+            }
+            else if( CurrentToken == EToken.Null )
+            {
+                _getTypeValueSampler.End();
+                return null;
+            }
+            else
+            {
+                _getTypeValueSampler.End();
+                throw new Exception( $"Expected token {EToken.Type}, {EToken.String} or {EToken.Null} but got {CurrentToken}" );
+            }
+
+        }
+
         public override Double GetFloatValue( )
         {
             if( CurrentToken == EToken.Single )
@@ -387,89 +432,111 @@ namespace GDDB.Serialization
                 var id = (UInt32)token & 0x7F;
                 if( _aliases.TryGetValue( id, out var alias ) )             //Replace alias with property name
                 {
-                    _stringBuffer = alias;
-                    return EToken.PropertyName;
+                    token = alias.token;
+                    _stringBuffer = alias.value;
                 }
                 else
                 {
                     Debug.LogWarning( $"[{nameof(BinaryReader)}]-[{nameof(StoreValue)}] Property name alias id {id} is not defined" );
                     //SkipProperty();
                 }
+
+                _storeValueSampler.End();
+                return token;
             }
-            else
-            //if ( CurrentToken.HasPayload() )
+
+            switch ( token )                           //Read payload
             {
-                switch ( token )                           //Read payload
-                {
-                    case EToken.Int8:
-                        _intBuffer = _reader.ReadSByte();
-                        break;
+                case EToken.Int8:
+                    _intBuffer = _reader.ReadSByte();
+                    break;
 
-                    case EToken.UInt8:
-                        _intBuffer = _reader.ReadByte();
-                        break;
+                case EToken.UInt8:
+                    _intBuffer = _reader.ReadByte();
+                    break;
 
-                    case EToken.Int16:
-                        _intBuffer = _reader.ReadInt16();
-                        break;
+                case EToken.Int16:
+                    _intBuffer = _reader.ReadInt16();
+                    break;
 
-                    case EToken.UInt16:
-                        _intBuffer = _reader.ReadUInt16();
-                        break;
+                case EToken.UInt16:
+                    _intBuffer = _reader.ReadUInt16();
+                    break;
 
-                    case EToken.Int32:
-                        _intBuffer = _reader.ReadInt32();
-                        break;
+                case EToken.Int32:
+                    _intBuffer = _reader.ReadInt32();
+                    break;
 
-                    case EToken.UInt32:
-                        _intBuffer = _reader.ReadUInt32();
-                        break;
+                case EToken.UInt32:
+                    _intBuffer = _reader.ReadUInt32();
+                    break;
 
-                    case EToken.Int64:
-                        _intBuffer = _reader.ReadInt64();
-                        break;
+                case EToken.Int64:
+                    _intBuffer = _reader.ReadInt64();
+                    break;
 
-                    case EToken.UInt64:
-                        _intBuffer = unchecked((Int64)_reader.ReadUInt64());
-                        break;
+                case EToken.UInt64:
+                    _intBuffer = unchecked((Int64)_reader.ReadUInt64());
+                    break;
 
-                    case EToken.Guid:
-                        Span<Byte> buffer = stackalloc Byte[16];
-                        Assert.IsTrue( _reader.Read( buffer ) == 16 );
-                        _guidBuffer = new Guid( buffer );
-                        break;
+                case EToken.Guid:
+                    Span<Byte> buffer = stackalloc Byte[16];
+                    Assert.IsTrue( _reader.Read( buffer ) == 16 );
+                    _guidBuffer = new Guid( buffer );
+                    break;
 
-                    case EToken.Enum1:
-                        _intBuffer = _reader.ReadByte();
-                        break;
-                    case EToken.Enum2:
-                        _intBuffer = _reader.ReadUInt16();
-                        break;
-                    case EToken.Enum4:
-                        _intBuffer = _reader.ReadUInt32();
-                        break;
-                    case EToken.Enum8:
-                        _intBuffer = _reader.ReadInt64();
-                        break;
+                case EToken.Enum1:
+                    _intBuffer = _reader.ReadByte();
+                    break;
+                case EToken.Enum2:
+                    _intBuffer = _reader.ReadUInt16();
+                    break;
+                case EToken.Enum4:
+                    _intBuffer = _reader.ReadUInt32();
+                    break;
+                case EToken.Enum8:
+                    _intBuffer = _reader.ReadInt64();
+                    break;
 
-                    case EToken.Single:
-                        _floatBuffer = _reader.ReadSingle();
-                        break;
+                case EToken.Single:
+                    _floatBuffer = _reader.ReadSingle();
+                    break;
 
-                    case EToken.Double:
-                        _doubleBuffer = _reader.ReadDouble();
-                        break;
+                case EToken.Double:
+                    _doubleBuffer = _reader.ReadDouble();
+                    break;
 
-                    case EToken.String:
-                    case EToken.PropertyName:
-                        _stringBuffer = _reader.ReadString();
-                        break;
-                }
+                case EToken.String:
+                case EToken.PropertyName:
+                    _stringBuffer = _reader.ReadString();
+                    break;    
+
+                case EToken.Type:
+                    ReadTypePayload();
+                    break;
             }
 
             _storeValueSampler.End();
 
             return token;
+
+            void ReadTypePayload( )
+            {
+                _readTypeValueSampler.Begin();
+
+                ReadStartArray();
+
+                var assemblyName = ReadStringValue();
+                var @namespace   = ReadStringValue();
+                var typeName     = ReadStringValue();
+
+                ReadEndArray();
+
+                _stringBuffer = @namespace != null ? $"{@namespace}.{typeName}" : typeName;
+                _assemblyNameBuffer = assemblyName;
+
+                _readTypeValueSampler.End();
+            }
         }
 
         private struct Container

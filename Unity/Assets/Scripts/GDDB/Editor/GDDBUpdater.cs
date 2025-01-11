@@ -106,7 +106,7 @@ namespace GDDB.Editor
                 var buffer          = new StringBuilder();
                 var indent          = !BuildPipeline.isBuildingPlayer;
                 var writer          = new JsonNetWriter( buffer, indent );
-                serializer.Serialize( writer, rootFolder, editorDB.AllObjects, assetReferencer );
+                serializer.Serialize( writer, rootFolder, assetReferencer );
                 File.WriteAllText( settings.JsonDBPath, buffer.ToString() );
                 var jsonLog = $"Saved GDDB to json format to {settings.JsonDBPath}";
                 if ( !String.IsNullOrEmpty( settings.AssetsReferencePath ) )
@@ -134,7 +134,7 @@ namespace GDDB.Editor
                 var assetReferencer = ScriptableObject.CreateInstance<DirectAssetReferences>();
                 var buffer          = new MemoryStream();
                 var writer          = new BinaryWriter( buffer );
-                serializer.Serialize( writer, rootFolder, editorDB.AllObjects, assetReferencer );
+                serializer.Serialize( writer, rootFolder, assetReferencer );
                 File.WriteAllBytes( settings.BinaryDBPath, buffer.ToArray() );
                 var log = $"Saved GDDB to binary format to {settings.BinaryDBPath}, file size {buffer.Length} bytes";
                 if ( !String.IsNullOrEmpty( settings.AssetsReferencePath ) )

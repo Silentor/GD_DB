@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using UnityEngine.Assertions;
 
 namespace GDDB.Serialization
@@ -10,17 +11,17 @@ namespace GDDB.Serialization
         public override String Path => "Not implemented";
 
         private readonly System.IO.BinaryWriter          _writer;
-        private readonly SortedDictionary<String, UInt32> _aliases = new ();
+        private readonly SortedDictionary<(EToken, String), UInt32> _aliases = new ();
 
         public BinaryWriter( Stream writer )
         {
             _writer = new System.IO.BinaryWriter( writer );
         }
 
-        public override void SetPropertyNameAlias( UInt32 id, String propertyName )
+        public override void SetAlias( UInt32 id, EToken token, String stringValue )
         {
             Assert.IsTrue( id <= 127 );
-             _aliases[propertyName] = id;
+             _aliases[(token, stringValue)] = id;
         }
 
         public override void WriteStartObject( )
@@ -50,7 +51,7 @@ namespace GDDB.Serialization
 
         public override WriterBase WritePropertyName(String propertyName )
         {
-            if( _aliases.TryGetValue( propertyName, out var id ) )
+            if( _aliases.TryGetValue( (EToken.PropertyName, propertyName), out var id ) )
             {
                 _writer.Write( (byte)((UInt32)EToken.Alias | id) );
                 return this;
@@ -70,6 +71,12 @@ namespace GDDB.Serialization
         {
             if( value != null )
             {
+                if( _aliases.TryGetValue( (EToken.String, value), out var id ) )
+                {
+                    _writer.Write( (byte)((UInt32)EToken.Alias | id) );
+                    return;
+                }
+
                 _writer.Write( (byte)EToken.String );
                 _writer.Write( value );
             }
@@ -190,7 +197,41 @@ namespace GDDB.Serialization
             }
             else
                 throw new Exception( $"Unsupported enum type {underlyingType}" );
+        }
 
+        public override void WriteValue(Type value, Boolean includeAssembly )
+        {
+            _writer.Write( (byte)EToken.Type );
+            WriteStartArray();
+            if( includeAssembly )
+                WriteValue( value.Assembly.GetName().Name );
+            else
+                WriteNullValue();
+            if( value.Namespace != null )
+                WriteValue( value.Namespace );
+            else 
+                WriteNullValue();
+            WriteValue( GetTypeName( value) );
+            WriteEndArray();
+        }
+
+        private static String GetTypeName( Type type )
+        {
+            String result = String.Empty;
+            if ( type.FullName != null )
+            {
+                if ( type.Namespace != null )
+                    result = type.FullName.Remove( 0, type.Namespace.Length + 1 );
+                else 
+                    result = type.FullName;
+            }
+            else
+                result = type.Name;
+
+            if( type.IsGenericType )
+                result = result.Replace( ", Version=0.0.0.0, Culture=neutral, PublicKeyToken=null", "" );   //Remove unneded assembly description
+
+            return result;
         }
     }
 }

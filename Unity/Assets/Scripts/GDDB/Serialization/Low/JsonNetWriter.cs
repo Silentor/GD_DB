@@ -42,7 +42,7 @@ namespace GDDB.Serialization
             _writer                    = jsonTextWriter;
         }
 
-        public override void SetPropertyNameAlias(UInt32 id, String propertyName )
+        public override void SetAlias( UInt32 id, EToken token, String stringValue )
         {
             //Not supported
         }
@@ -136,6 +136,12 @@ namespace GDDB.Serialization
         public override void WriteValue(Enum value )
         {
             _writer.WriteValue( value.ToString( "G" ) );
+        }
+
+        public override void WriteValue(Type value, Boolean includeAssembly )
+        {
+            var result = !includeAssembly ? value.FullName : $"{value.FullName}, {value.Assembly.GetName().Name}";
+            _writer.WriteValue( result );
         }
     }
 }

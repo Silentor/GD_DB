@@ -19,7 +19,7 @@ namespace GDDB.Serialization
             if ( asset == null ) throw new ArgumentNullException( nameof(asset) );
 
             var assetItem = Assets.Find( a => a.Asset == asset );
-            if ( assetItem.Guid == default )
+            if ( assetItem.Guid == null )
             {
                 var newItem = new AssetReference()
                               {
@@ -31,11 +31,11 @@ namespace GDDB.Serialization
             }
         }
 
-        public Boolean TryGetAsset(String guid, Int64 localId, out Object asset )
+        public Boolean TryGetAsset(  String id, Int64 localId, out Object asset )
         {
             foreach ( var a in Assets )
             {
-                if( a.Guid == guid && a.LocalId == localId )
+                if( a.Guid == id && a.LocalId == localId )
                 {
                     asset = a.Asset;
                     return true;

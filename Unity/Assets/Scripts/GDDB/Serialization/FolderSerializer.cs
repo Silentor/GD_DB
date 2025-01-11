@@ -1,8 +1,5 @@
 ﻿#nullable enable
 using System;
-using System.Collections.Generic;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using UnityEngine.Profiling;
 
 namespace GDDB.Serialization
@@ -19,41 +16,40 @@ namespace GDDB.Serialization
 
 #if UNITY_EDITOR
 
-        public void Serialize( Folder root, GDObjectSerializer objectSerializer, WriterBase writer, UInt64? hash = null )
+        public void Serialize( Folder root, GDObjectSerializer objectSerializer, WriterBase writer )
         {
             _serFolderSampler.Begin();
-            writer.SetPropertyNameAlias( 0, NameTag );
-            writer.SetPropertyNameAlias( 1, IdTag );
-            writer.SetPropertyNameAlias( 2, FoldersTag );
-            writer.SetPropertyNameAlias( 3, ObjectsTag );
-            SerializeFolder( writer, root, objectSerializer, hash );
+            writer.SetAlias( 0, EToken.PropertyName, NameTag );
+            writer.SetAlias( 1, EToken.PropertyName, IdTag );
+            writer.SetAlias( 2, EToken.PropertyName, FoldersTag );
+            writer.SetAlias( 3, EToken.PropertyName, ObjectsTag );
+            SerializeFolder( writer, root, objectSerializer );
             _serFolderSampler.End();
         }
 
 #endif
 
-        public Folder Deserialize( ReaderBase reader, GDObjectDeserializer? objectSerializer, out UInt64? checksum )
+        public Folder Deserialize( ReaderBase reader, GDObjectDeserializer? objectSerializer )
         {
-            reader.SetPropertyNameAlias( 0, NameTag );
-            reader.SetPropertyNameAlias( 1, IdTag );
-            reader.SetPropertyNameAlias( 2, FoldersTag );
-            reader.SetPropertyNameAlias( 3, ObjectsTag );
+            reader.SetAlias( 0, EToken.PropertyName, NameTag );
+            reader.SetAlias( 1, EToken.PropertyName, IdTag );
+            reader.SetAlias( 2, EToken.PropertyName, FoldersTag );
+            reader.SetAlias( 3, EToken.PropertyName, ObjectsTag );
 
-            checksum = 0;
             reader.ReadStartObject();
-            return DeserializeFolder( reader, null, objectSerializer, out checksum );
+            return DeserializeFolder( reader, null, objectSerializer );
         }
 
 #if UNITY_EDITOR
 
-        private void SerializeFolder( WriterBase writer, Folder folder, GDObjectSerializer objectSerializer, UInt64? hash = null )
+        private void SerializeFolder( WriterBase writer, Folder folder, GDObjectSerializer objectSerializer )
         {
             writer.WriteStartObject();
 
-            if ( hash.HasValue )
-            {
-                writer.WritePropertyName( ".hash" ).WriteValue( hash.Value );
-            }
+            // if ( hash.HasValue )
+            // {
+            //     writer.WritePropertyName( ".hash" ).WriteValue( hash.Value );
+            // }
             writer.WritePropertyName( NameTag ).WriteValue( folder.Name );
             writer.WritePropertyName( IdTag ).WriteValue( folder.FolderGuid );
 
@@ -100,25 +96,10 @@ namespace GDDB.Serialization
         /// <param name="parent"></param>
         /// <param name="objectSerializer"></param>
         /// <returns></returns>
-        private Folder DeserializeFolder( ReaderBase reader, Folder? parent, GDObjectDeserializer? objectSerializer, out UInt64? hash )
+        private Folder DeserializeFolder( ReaderBase reader, Folder? parent, GDObjectDeserializer? objectSerializer )
         {
             _deserFolderSampler.Begin();
             reader.EnsureStartObject();
-
-            var propName = reader.ReadPropertyName();
-            if ( propName == ".version" )        //Not implemented for now
-            {
-                reader.SkipProperty(  );
-                propName = reader.ReadPropertyName();
-            }
-
-            hash = null;
-            if ( propName == ".hash" )
-            {
-                hash = reader.ReadUInt64Value( );
-            }
-
-            //Can be another properties in the future...
 
             reader.SeekPropertyName( NameTag );
             var name    = reader.ReadStringValue();
@@ -136,7 +117,7 @@ namespace GDDB.Serialization
                 reader.ReadStartArray();
                 while ( reader.ReadNextToken() != EToken.EndArray )
                 {
-                    var subFolder = DeserializeFolder( reader, folder, objectSerializer, out _ );
+                    var subFolder = DeserializeFolder( reader, folder, objectSerializer );
                     folder.SubFolders.Add( subFolder );
                 }
                 reader.EnsureEndArray();

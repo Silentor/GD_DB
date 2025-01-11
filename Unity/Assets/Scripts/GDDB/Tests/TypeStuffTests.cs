@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using FluentAssertions;
 using GDDB.Editor;
+using GDDB.Serialization;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -23,6 +24,17 @@ namespace GDDB.Tests
             type2.Should().NotBeNull();
 
         }
+
+        //[Test]
+        // public void BinaryWriterCustomTypeToStringTest( [Values(typeof( Dictionary<Int32, String> ))]Type param )
+        // {
+        //     var actual1 = BinaryWriter.GetTypeName( param );
+        //     Debug.Log( $"actual {actual1}" );
+        //     var expected1 = param.Namespace != null ? param.FullName.Remove( 0, param.Namespace.Length + 1 ) : param.FullName;
+        //     Debug.Log( $"expected {expected1}" );
+        //     actual1.Should().Be( expected1 );
+        //     
+        // }
 
         private Type typeResolver(Assembly arg1, String arg2, Boolean arg3 )
         {

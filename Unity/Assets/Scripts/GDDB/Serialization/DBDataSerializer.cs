@@ -11,16 +11,26 @@ namespace GDDB.Serialization
         private readonly CustomSampler _deserializeSampler = CustomSampler.Create( $"{nameof(DBDataSerializer)}.{nameof(Deserialize)}" );
 
 #if UNITY_EDITOR
-        public void Serialize( WriterBase writer, Folder rootFolder, IReadOnlyList<GDObject> objects, IGdAssetResolver assetsResolver )
+        public void Serialize(    WriterBase writer, Folder rootFolder, IGdAssetResolver assetsResolver )
         {
-            var timer             = System.Diagnostics.Stopwatch.StartNew();
+            var hash  = rootFolder.GetFoldersChecksum();
+
+            var timer = System.Diagnostics.Stopwatch.StartNew();
 
             var objectsSerializer = new GDObjectSerializer( writer );
             var folderSerializer  = new FolderSerializer( );
+
+            writer.WriteStartObject();
+            writer.WritePropertyName( ".hash" );
+            writer.WriteValue( hash );
+            writer.WritePropertyName( ".folders" );
             folderSerializer.Serialize( rootFolder, objectsSerializer, writer );
+            writer.WriteEndObject();
 
             timer.Stop();
-            Debug.Log( $"[{nameof(DBDataSerializer)}]-[{nameof(Serialize)}] serialized db to json, objects {objects.Count}, folders {rootFolder.EnumerateFoldersDFS(  ).Count()} referenced {assetsResolver.Count} assets, time {timer.ElapsedMilliseconds} ms" );
+
+
+            Debug.Log( $"[{nameof(DBDataSerializer)}]-[{nameof(Serialize)}] serialized db to format {writer.GetType().Name}, objects {objectsSerializer.ObjectsWritten}, folders {rootFolder.EnumerateFoldersDFS(  ).Count()} referenced {assetsResolver.Count} assets, time {timer.ElapsedMilliseconds} ms" );
         }
 
 #endif
@@ -41,7 +51,28 @@ namespace GDDB.Serialization
             var       timer             = System.Diagnostics.Stopwatch.StartNew();
             var       objectsSerializer = new GDObjectDeserializer( reader );
             var       foldersSerializer = new FolderSerializer();
-            var       rootFolder        = foldersSerializer.Deserialize( reader, objectsSerializer, out hash );
+
+            reader.ReadStartObject();
+            var propName = reader.ReadPropertyName();
+            if ( propName == ".version" )        //Not implemented for now
+            {
+                reader.SkipProperty(  );
+                propName = reader.ReadPropertyName();
+            }
+
+            hash = null;
+            if ( propName == ".hash" )
+            {
+                hash = reader.ReadUInt64Value( );
+            }
+
+            //Can be another properties in the future...
+
+
+            reader.SeekPropertyName( ".folders" );
+            var       rootFolder        = foldersSerializer.Deserialize( reader, objectsSerializer );
+            reader.ReadEndObject();
+
             objectsSerializer.ResolveGDObjectReferences();
 
             timer.Stop();

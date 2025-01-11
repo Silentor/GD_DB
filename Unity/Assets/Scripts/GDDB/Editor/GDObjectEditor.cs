@@ -459,7 +459,7 @@ namespace GDDB.Editor
                 var buffer          = new StringBuilder();
                 var writer          = new JsonNetWriter( buffer, true );
                 var serializer      = new DBDataSerializer();
-                serializer.Serialize( writer, editorDB.RootFolder, editorDB.AllObjects, assetsReference );
+                serializer.Serialize( writer, editorDB.RootFolder, assetsReference );
 
                 //Save hierarchy to json
                 var dbOutputPath   = Application.streamingAssetsPath + $"/{editorDB.Name}.gddb.json";
@@ -487,7 +487,7 @@ namespace GDDB.Editor
                 var buffer          = new MemoryStream();
                 var writer          = new BinaryWriter( buffer );
                 var serializer      = new DBDataSerializer();
-                serializer.Serialize( writer, editorDB.RootFolder, editorDB.AllObjects, assetsReference );
+                serializer.Serialize( writer, editorDB.RootFolder, assetsReference );
 
                 //Save hierarchy to json
                 var dbOutputPath   = Application.streamingAssetsPath + $"/{editorDB.Name}.gddb.json";

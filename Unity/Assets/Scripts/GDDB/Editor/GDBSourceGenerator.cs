@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
-using System.Numerics;
 using System.Text;
 using GDDB.Serialization;
-using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -74,7 +71,12 @@ namespace GDDB.Editor
                 var serializer = new FolderSerializer();
                 var buffer = new StringBuilder();
                 var writer = new JsonNetWriter( buffer, true );
-                serializer.Serialize( GDBEditor.GDB.RootFolder, null, writer, databaseHash );
+                writer.WriteStartObject();
+                writer.WritePropertyName( "hash" );
+                writer.WriteValue( databaseHash );
+                writer.WritePropertyName( "Root" );
+                serializer.Serialize( GDBEditor.GDB.RootFolder, null, writer);
+                writer.WriteEndObject();
                 File.WriteAllText( GDDBStructureFilePath, buffer.ToString() );
 
                 SourceUpdated?.Invoke();
@@ -102,16 +104,14 @@ namespace GDDB.Editor
             if ( !File.Exists( GDDBStructureFilePath ) )
                 return 0;
 
-            var json    = File.ReadAllText( GDDBStructureFilePath );
-            var jObject = (JObject)JToken.Parse( json );
-            if ( jObject.TryGetValue( "hash", out var value ) )
+            var reader = new JsonNetReader( File.ReadAllText( GDDBStructureFilePath ), false );
+            reader.SeekPropertyName( "hash" );
+            if ( reader.CurrentToken != EToken.EoF )
             {
-                var jValue = (JValue)value;
-                if( jValue.Value is BigInteger bi )
-                    return (UInt64)bi;
-                return Convert.ToUInt64( jValue.Value, CultureInfo.InvariantCulture );
+                var hash = reader.ReadUInt64Value();
+                return hash;
             }
-
+                            
             return 0;
         }
     }

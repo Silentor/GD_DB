@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Security;
 using System.Text;
 using FluentAssertions;
@@ -78,7 +80,7 @@ namespace GDDB.Tests
             {
                 switch ( deserializer.CurrentToken )
                 {
-                    case EToken.Integer:
+                    case EToken.Number:
                         var intValue = deserializer.GetInt32Value(  );
                         Assert.AreEqual( intValue, 42 );
                         break;                    
@@ -466,15 +468,21 @@ namespace GDDB.Tests
         }
 
         [Test]
-        public void TestPropertyNameAlias( [Values]EBackend backend )
+        public void TestAliases( [Values]EBackend backend )
         {
             // Write
             var buffer     = GetBuffer( backend );
             var serializer = GetWriter( backend, buffer );
-            serializer.SetPropertyNameAlias( 0, "TestAlias" );
+            serializer.SetAlias( 0, EToken.PropertyName, "TestAliasPropName" );
+            serializer.SetAlias( 1, EToken.String, "TestAliasValue" );
             serializer.WriteStartObject();
-            serializer.WritePropertyName( "TestAlias" );
+            serializer.WritePropertyName( "TestAliasPropName" );
             serializer.WriteValue( 0 );
+            serializer.WritePropertyName( "NormalPropertyName" );
+            serializer.WriteValue( "TestAliasValue" );
+            serializer.WritePropertyName( "TestAliasPropName" );
+            serializer.WriteValue( "TestAliasValue" );
+
             serializer.WriteEndObject();
 
             // Save to file
@@ -487,20 +495,28 @@ namespace GDDB.Tests
             {
                 // Read without setting alias, should read alias token
                 var deserializer = GetReader( backend, buffer );
-                deserializer.ReadStartObject();
-                deserializer.ReadNextToken().IsAliasToken().Should().BeTrue(  );
-                deserializer.SkipProperty();
-                deserializer.ReadEndObject();
+                var aliasesCount = 0;
+                while(deserializer.ReadNextToken() != EToken.EoF)
+                {
+                    if ( deserializer.CurrentToken.IsAliasToken() )
+                        aliasesCount++;
+                }
+                aliasesCount.Should().Be( 4 );
             }
 
             { 
                 //Read with alias processing, should read aliased property name
                 var deserializer = GetReader( backend, buffer );
-                deserializer.SetPropertyNameAlias( 0, "TestAlias" );
+                deserializer.SetAlias( 0, EToken.PropertyName, "TestAliasPropName" );
+                deserializer.SetAlias( 1, EToken.String,       "TestAliasValue" );
                 deserializer.ReadStartObject();
                 deserializer.ReadNextToken().Should().Be( EToken.PropertyName );
-                deserializer.GetPropertyName().Should().Be( "TestAlias" );
+                deserializer.GetPropertyName().Should().Be( "TestAliasPropName" );
                 deserializer.ReadIntegerValue().Should().Be( 0 );
+                deserializer.ReadPropertyName().Should().Be( "NormalPropertyName" );
+                deserializer.ReadStringValue().Should().Be( "TestAliasValue" );
+                deserializer.ReadPropertyName().Should().Be( "TestAliasPropName" );
+                deserializer.ReadStringValue().Should().Be( "TestAliasValue" );
             }
         }
 
@@ -671,6 +687,40 @@ namespace GDDB.Tests
         }
 
         [Test]
+        public void TestSerializingTypes( [Values] EBackend backend, [Values(
+                                                  typeof(UnityEngine.Animator),                                         //Just some plain usual class
+                                                  typeof(NoNameSpaceTestClass),                                          //No namespace
+                                                  typeof(NestingGenericTestType<Int32>.NestedGenericTestType2<UnityEngine.Animator>), //Closed generic + nested
+                                                  typeof(Dictionary<,>),            //Open generic
+                                                  typeof(Int32[])                   //Array class
+                                                  )]Type testType )
+        {
+            // Write
+            var buffer     = GetBuffer( backend );
+            var serializer = GetWriter( backend, buffer );
+            serializer.WriteStartArray();
+            serializer.WriteValue( testType, true );
+            serializer.WriteValue( testType, false );
+            serializer.WriteValue( testType, true );
+            serializer.WriteValue( testType, false );
+            serializer.WriteEndArray();
+
+            // Save to file
+            SaveToFile( backend, "test", buffer );
+
+            // Log
+            LogBuffer( buffer );
+
+            // Read and assert
+            var deserializer = GetReader( backend, buffer );
+            deserializer.ReadStartArray();
+            deserializer.ReadTypeValue( null ).Should().Be( testType );                 //Assembly included in serialized type name
+            deserializer.ReadTypeValue( testType.Assembly).Should().Be( testType );     //Assembly no included, use given assembly
+            deserializer.ReadTypeValue( Assembly.Load( "GDDB.Tests.AnotherAssembly" )).Should().Be( testType );     //Assembly included, but we give some other assembly
+            deserializer.ReadTypeValue( null ).Should().Be( testType.Assembly.GetName().Name == "mscorlib" ? testType : null );                     //Assembly not included nor given
+        }
+
+        [Test]
         public void TestTokenExtension( )
         {
             Assert.IsTrue( EToken.DataToken.IsDataToken() );
@@ -680,7 +730,7 @@ namespace GDDB.Tests
 
             Assert.IsFalse( EToken.EoF.IsDataToken() );
             Assert.IsFalse( EToken.BoF.IsDataToken() );
-            Assert.IsFalse( EToken.Integer.IsDataToken() );
+            Assert.IsFalse( EToken.Number.IsDataToken() );
             Assert.IsFalse( EToken.StartObject.IsDataToken() );
 
             Assert.IsTrue( EToken.String.IsStringToken() );
@@ -688,7 +738,7 @@ namespace GDDB.Tests
 
             Assert.IsFalse( EToken.EoF.IsStringToken() );
             Assert.IsFalse( EToken.BoF.IsStringToken() );
-            Assert.IsFalse( EToken.Integer.IsStringToken() );
+            Assert.IsFalse( EToken.Number.IsStringToken() );
             Assert.IsFalse( EToken.StartObject.IsStringToken() );
 
             Assert.IsTrue( EToken.StartArray.IsContainerToken() );
@@ -697,7 +747,7 @@ namespace GDDB.Tests
             Assert.IsFalse( EToken.EoF.IsContainerToken() );
             Assert.IsFalse( EToken.BoF.IsContainerToken() );
             Assert.IsFalse( EToken.True.IsContainerToken() );
-            Assert.IsFalse( EToken.Integer.IsContainerToken() );
+            Assert.IsFalse( EToken.Number.IsContainerToken() );
             Assert.IsFalse( EToken.Alias.IsContainerToken() );
 
             Assert.IsTrue( EToken.Int16.IsIntegerToken() );
@@ -761,9 +811,13 @@ namespace GDDB.Tests
             deserializer.ReadEndObject();
         }
 
+        
+
        
     }
+}
 
-
+public class NoNameSpaceTestClass
+{
 
 }

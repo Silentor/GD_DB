@@ -508,7 +508,7 @@ namespace GDDB.Tests
             var buffer = GetBuffer( backend );
             var writer = GetWriter( backend, buffer );
             var serializer = new DBDataSerializer();
-            serializer.Serialize( writer, root, root.EnumerateFoldersDFS(  ).SelectMany( f => f.Objects ).ToArray() , NullGdAssetResolver.Instance );
+            serializer.Serialize( writer, root , NullGdAssetResolver.Instance );
 
             LogBuffer( buffer );
 
@@ -548,13 +548,13 @@ namespace GDDB.Tests
                 var buffer = GetBuffer( backend );
                 var writer = GetWriter( backend, buffer );
                 var serializer = new DBDataSerializer();
-                serializer.Serialize( writer, root, root.EnumerateFoldersDFS(  ).SelectMany( f => f.Objects ).ToArray() , NullGdAssetResolver.Instance );
+                serializer.Serialize( writer, root , NullGdAssetResolver.Instance );
 
                 LogBuffer( buffer );
 
                 var reader = GetReader( backend, buffer );
                 var folderSerializer = new FolderSerializer();
-                var rootFolder       = folderSerializer.Deserialize( reader, null, out _ ); //Because objectSerializer is null, we don't get objects
+                var rootFolder       = folderSerializer.Deserialize( reader, null ); //Because objectSerializer is null, we don't get objects
 
                 //Assert
                 rootFolder.SubFolders.Count.Should().Be( 2 );
@@ -606,7 +606,35 @@ namespace GDDB.Tests
                 reader.Path.Should().Contain( "[1]" );            
                 
                 Debug.Log( reader.Path );
-        }                                                                                                
+        }
+        
+        [Test]
+        public void TestDBSerializer( [Values]EBackend backend )
+        {
+                //Arrange
+                var buffer = GetBuffer( backend );
+                var writer = GetWriter( backend, buffer );
+                var serializer = new DBDataSerializer(  );         
+
+                var rootFolder = GetFolder( "Root", null );
+                var gdo = GDObject.CreateInstance<GDRoot>();
+                var comp = new CollectionTestComponent();
+                gdo.Components.Add( comp );
+                rootFolder.Objects.Add( gdo );
+
+                serializer.Serialize( writer, rootFolder, NullGdAssetResolver.Instance );
+
+                LogBuffer( buffer );
+
+                //Act and Assert
+                var reader = GetReader( backend, buffer );
+                var deserializer = new DBDataSerializer(  );
+                var (readRoot, objects) = deserializer.Deserialize( reader, NullGdAssetResolver.Instance, out var storedHash );
+                readRoot.Objects.Count.Should().Be( rootFolder.Objects.Count );
+                storedHash.Should().Be( rootFolder.GetFoldersChecksum() );
+                storedHash.Should().Be( readRoot.GetFoldersChecksum() );
+                
+        }       
 
         GDObject CreateGDObject( String name )
         {

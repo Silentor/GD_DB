@@ -24,11 +24,11 @@ namespace GDDB.Serialization
         /// <summary>
         /// Get asset during GDDB deserialization todo consider string name support for Addressables
         /// </summary>
-        /// <param name="guid"></param>
+        /// <param name="id"></param>
         /// <param name="localId"></param>
         /// <param name="asset"></param>
         /// <returns></returns>
-        Boolean TryGetAsset( String guid, long localId, out Object asset );
+        Boolean TryGetAsset(   String id, Int64 localId, out Object asset );
     }
 
     public class NullGdAssetResolver : IGdAssetResolver
@@ -39,7 +39,7 @@ namespace GDDB.Serialization
         {
         }
 
-        public Boolean TryGetAsset( String guid, long localId, out Object asset )
+        public Boolean TryGetAsset(   String id, Int64 localId, out Object asset )
         {
             asset = null;
             return true;

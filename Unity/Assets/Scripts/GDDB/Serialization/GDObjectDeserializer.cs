@@ -26,7 +26,6 @@ namespace GDDB.Serialization
         private readonly List<GDObject>                             _loadedObjects        = new ();     //To resolve loaded references in place
         private readonly CustomSampler                              _deserObjectSampler   = CustomSampler.Create( $"{nameof(GDObjectDeserializer)}.{nameof(Deserialize)}" );
         private readonly CustomSampler                              _resolveObjectSampler = CustomSampler.Create( $"{nameof(GDObjectDeserializer)}.{nameof(ResolveGDObjectReferences)}" );
-        private readonly CustomSampler                              _getTypeSampler = CustomSampler.Create( $"{nameof(GDObjectDeserializer)}.{nameof(GetType)}" );
         private readonly CustomSampler                              _getTypeConstructorSampler = CustomSampler.Create( $"{nameof(GDObjectDeserializer)}.{nameof(GetTypeConstructor)}" );
         private readonly Dictionary<Type, IReadOnlyList<FieldInfo>> _fieldsCache          = new();
         private readonly Dictionary<Type, ConstructorInfo>          _constructorCache     = new();
@@ -37,14 +36,14 @@ namespace GDDB.Serialization
         {
             _reader = reader;
 
-            reader.SetPropertyNameAlias( 0, NameTag );            //Common to Folders
-            reader.SetPropertyNameAlias( 1, IdTag );                //Common to Folders
+            reader.SetAlias( 0, EToken.PropertyName, NameTag );            //Common to Folders
+            reader.SetAlias( 1, EToken.PropertyName, IdTag );                //Common to Folders
             //reader.SetPropertyNameAlias( 2, ".folders" );
             //reader.SetPropertyNameAlias( 3, ".objs" );
-            reader.SetPropertyNameAlias( 4, TypeTag );
-            reader.SetPropertyNameAlias( 5, EnabledTag );
-            reader.SetPropertyNameAlias( 6, ComponentsTag );
-            reader.SetPropertyNameAlias( 7, LocalIdTag );
+            reader.SetAlias( 4, EToken.PropertyName, TypeTag );
+            reader.SetAlias( 5, EToken.PropertyName, EnabledTag );
+            reader.SetAlias( 6, EToken.PropertyName, ComponentsTag );
+            reader.SetAlias( 7, EToken.PropertyName, LocalIdTag );
 
 #if UNITY_2021_2_OR_NEWER
             AddSerializer( new Vector3Serializer() );
@@ -233,18 +232,16 @@ namespace GDDB.Serialization
             var objectType = propertyType;
             if ( reader.GetPropertyName() == TypeTag )
             {
-                var typeStr = reader.ReadStringValue();
-                reader.ReadNextToken();
-                objectType = GetType( typeStr, propertyType.Assembly );
+                objectType = reader.ReadTypeValue( propertyType.Assembly );
                 if( objectType == null )
-                    throw new InvalidOperationException( $"[{nameof(GDObjectDeserializer)}]-[{nameof(ReadObject)}] Cannot create Type from type string '{typeStr}'" );
+                    throw new InvalidOperationException( $"[{nameof(GDObjectDeserializer)}]-[{nameof(ReadObject)}] Cannot read the type. Property type for this object (destination type) is {propertyType}" );
+                reader.ReadNextToken();         //Stand on next property name or EndObject
             }
 
             var defaultConstructor = GetTypeConstructor( objectType );
             if ( defaultConstructor == null )
             {
-                Debug.LogError( $"Default constructor not found for type {objectType} read null object" );
-                return null;
+                throw new InvalidOperationException( $"[{nameof(GDObjectDeserializer)}]-[{nameof(ReadObject)}] Default constructor of type {objectType} is not found" );
             }
 
             var obj = defaultConstructor.Invoke( Array.Empty<Object>() );
@@ -353,8 +350,7 @@ namespace GDDB.Serialization
             }
             else if ( typeof(GDObject).IsAssignableFrom( propertyType ) )                 //Read GDObject by reference
             {
-                var guidStr = reader.GetStringValue();
-                var guid    = Guid.ParseExact( guidStr, "D" );
+                var guid = reader.GetGuidValue();
                 var referencedObj = _loadedObjects.FirstOrDefault( gdo => gdo.Guid == guid );
                 if( referencedObj )
                     return referencedObj;
@@ -376,11 +372,11 @@ namespace GDDB.Serialization
                     return null;
 
                 reader.EnsurePropertyName( IdTag );            
-                var guidStr = reader.ReadStringValue( );
+                var id = reader.ReadStringValue( );
                 var localId = reader.ReadPropertyInteger( LocalIdTag );
 
-                if( !_assetResolver.TryGetAsset( guidStr, localId, out var asset ) )
-                    Debug.LogError( $"Error resolving Unity asset reference {guidStr} : {localId}, type {propertyType}" );
+                if( !_assetResolver.TryGetAsset( id, localId, out var asset ) )
+                    Debug.LogError( $"Error resolving Unity asset reference {id} : {localId}, type {propertyType}" );
                 reader.ReadEndObject();
                 return asset;
             }
@@ -475,20 +471,8 @@ namespace GDDB.Serialization
             return con;
         }
 
-        private Type GetType( String typeStr, Assembly defaultAssembly )
-        {
-            _getTypeSampler.Begin();
-            var result = Type.GetType( typeStr );
-            if( result == null )
-                result = defaultAssembly.GetType( typeStr );
-            _getTypeSampler.End();
-            return result;
-        }
-
-
         private struct UnresolvedGDObjectReference
         {
-            
             public Guid       Guid;             //GDObject field
             public List<Guid> Guids;            //or collection of GDObjects field
 

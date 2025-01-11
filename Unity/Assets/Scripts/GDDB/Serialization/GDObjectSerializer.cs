@@ -12,21 +12,22 @@ namespace GDDB.Serialization
 {
     public class GDObjectSerializer : GDObjectSerializationCommon
     {
-        
+        public Int32 ObjectsWritten { get; private set; }
+
         private readonly WriterBase _writer;
 
         public GDObjectSerializer( WriterBase writer )
         {
             _writer = writer;
 
-            writer.SetPropertyNameAlias( 0, NameTag );            //Common to Folders
-            writer.SetPropertyNameAlias( 1, IdTag );                //Common to Folders
+            writer.SetAlias( 0, EToken.PropertyName, NameTag );            //Common to Folders
+            writer.SetAlias( 1, EToken.PropertyName, IdTag );                //Common to Folders
             //writer.SetPropertyNameAlias( 2, ".folders" );
             //writer.SetPropertyNameAlias( 3, ".objs" );
-            writer.SetPropertyNameAlias( 4, TypeTag );
-            writer.SetPropertyNameAlias( 5, EnabledTag );
-            writer.SetPropertyNameAlias( 6, ComponentsTag );
-            writer.SetPropertyNameAlias( 7, LocalIdTag );
+            writer.SetAlias( 4, EToken.PropertyName, TypeTag );
+            writer.SetAlias( 5, EToken.PropertyName, EnabledTag );
+            writer.SetAlias( 6, EToken.PropertyName, ComponentsTag );
+            writer.SetAlias( 7, EToken.PropertyName, LocalIdTag );
 
 #if UNITY_2021_2_OR_NEWER
             AddSerializer( new Vector3Serializer() );
@@ -106,6 +107,8 @@ namespace GDDB.Serialization
                 WriteObjectContent( type, obj, writer );
 
                 writer.WriteEndObject();
+
+                ObjectsWritten++;
             }
             catch ( Exception e )
             {
@@ -122,8 +125,7 @@ namespace GDDB.Serialization
             if ( propertyType != actualType )
             {
                 writer.WritePropertyName( TypeTag );
-                var typeStr = propertyType.Assembly == actualType.Assembly ? actualType.FullName : $"{actualType.FullName}, {actualType.Assembly.GetName().Name}";
-                writer.WriteValue( typeStr );
+                writer.WriteValue( actualType, propertyType.Assembly != actualType.Assembly );
             }
 
             WriteObjectContent( actualType, obj, writer );
@@ -218,7 +220,7 @@ namespace GDDB.Serialization
             }
             else if( typeof(GDObject).IsAssignableFrom( valueType) )
             {
-                writer.WriteValue( ((GDObject)value).Guid.ToString("D") );                  //TODO make WriterBase.WriteGuidValue()
+                writer.WriteValue( ((GDObject)value).Guid );                  
             }
             else if ( _serializers.TryGetValue( propertyType, out var serializer ) )
             {

@@ -117,7 +117,19 @@ namespace GDDB.Tests
         {
             public Int32 IntField = 24;
         }
+    }
 
+    public class NestingGenericTestType<T>
+    {
+        public T Value;
+
+        public class NestedGenericTestType2<T2>
+        {
+            public T2 Convert( T value )
+            {
+                return default;
+            }
+        }
     }
 
     public class GDObjectReferenceComponent : GDComponent

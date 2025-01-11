@@ -6,7 +6,7 @@ namespace GDDB.Serialization
     {
         public abstract String Path { get; }
 
-        public abstract void SetPropertyNameAlias( UInt32 id, String propertyName );
+        public abstract void SetAlias( UInt32 id, EToken token, String stringValue );
 
         public abstract void WriteStartObject( );
 
@@ -29,5 +29,6 @@ namespace GDDB.Serialization
         public abstract void WriteValue( Boolean value );
         public abstract void WriteValue( Guid value );
         public abstract void WriteValue( Enum value );
+        public abstract void WriteValue( Type value, Boolean includeAssembly );
     }
 }
