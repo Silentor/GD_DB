@@ -80,10 +80,10 @@ namespace GDDB.Serialization
                 writer.WritePropertyName( NameTag );
                 writer.WriteValue( obj.name );
                 var type = obj.GetType();
-                if ( obj.GetType() != typeof(GDObject) )
+                if ( type != typeof(GDObject) )
                 {
                     writer.WritePropertyName( TypeTag );
-                    writer.WriteValue( type.Assembly == typeof(GDObject).Assembly ? type.FullName : $"{type.FullName}, {type.Assembly.GetName().Name}" );
+                    writer.WriteValue( type, type.Assembly != typeof(GDObject).Assembly );
                 }
                 writer.WritePropertyName( IdTag );
                 writer.WriteValue( obj.Guid );

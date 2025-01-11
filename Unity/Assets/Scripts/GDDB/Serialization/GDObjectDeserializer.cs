@@ -164,8 +164,7 @@ namespace GDDB.Serialization
             String typeName = null;
             if ( propName == TypeTag )
             {
-                typeName = reader.ReadStringValue();
-                type     = Type.GetType( typeName );
+                type = reader.ReadTypeValue( typeof(GDObject).Assembly );
                 guid     = reader.ReadPropertyGuid( IdTag );
             }
             else if( propName == IdTag )
