@@ -14,7 +14,7 @@ namespace GDDB.Serialization
         True      = DataToken + 2, 
 
         Extensions  = 1 << 3,
-        Type        = Extensions,
+        //Type        = Extensions,
 
         String       = 1 << 4,
         PropertyName = String + 1,

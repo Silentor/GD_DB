@@ -33,7 +33,9 @@ namespace GDDB.Serialization
         public abstract UInt64 GetUInt64Value( );
         public abstract Guid   GetGuidValue( );
         public abstract Object GetEnumValue( Type enumType );
-        public abstract Type GetTypeValue( Assembly defaultAssembly );
+
+        //Its a complex type, so we read it as a whole instead of get from buffer
+        public abstract Type ReadTypeValue( Assembly defaultAssembly );
           
         /// <summary>
         /// Get any float value (single or double)
@@ -194,13 +196,6 @@ namespace GDDB.Serialization
             ReadNextToken();
             return GetStringValue();
         }
-
-        public Type  ReadTypeValue( Assembly defaultAssembly )
-        {
-            ReadNextToken();
-            return GetTypeValue( defaultAssembly );
-        }
-
 
         public Int32 ReadPropertyInt32(  String propertyName )
         {

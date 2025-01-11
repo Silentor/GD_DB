@@ -15,6 +15,8 @@ namespace GDDB.Serialization
         {
             var hash  = rootFolder.GetFoldersChecksum();
 
+            //Implement type compression processing
+
             var timer = System.Diagnostics.Stopwatch.StartNew();
 
             var objectsSerializer = new GDObjectSerializer( writer );

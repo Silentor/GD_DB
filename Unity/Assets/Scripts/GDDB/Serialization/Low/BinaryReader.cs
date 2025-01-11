@@ -32,10 +32,10 @@ namespace GDDB.Serialization
         private readonly CustomSampler _getSingleValueSampler  = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(GetSingleValue)}" );
         private readonly CustomSampler _getBoolValueSampler    = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(GetBoolValue)}" );
         private readonly CustomSampler _getEnumValueSampler    = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(GetEnumValue)}" );
-        private readonly CustomSampler _getTypeValueSampler    = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(GetTypeValue)}" );
+
+        private readonly CustomSampler _readTypeValueSampler    = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(ReadTypeValue)}" );
 
         private readonly CustomSampler _storeValueSampler    = CustomSampler.Create( $"{nameof(BinaryReader)}.{nameof(StoreValue)}" );
-        private readonly CustomSampler _readTypeValueSampler = CustomSampler.Create( $"{nameof(BinaryReader)}.StoreTypePayload" );
         private readonly CustomSampler _processPathSampler   = CustomSampler.Create( $"{nameof(BinaryReader)}.ProcessPath" );
 
         public BinaryReader( System.IO.Stream binaryStream )
@@ -304,45 +304,52 @@ namespace GDDB.Serialization
             }
         }
 
-        public override Type GetTypeValue(Assembly defaultAssembly )
+        public override Type ReadTypeValue(Assembly defaultAssembly )
         {
-            _getTypeValueSampler.Begin();
+            _readTypeValueSampler.Begin();
 
-            if ( CurrentToken == EToken.Type )
+            switch ( ReadNextToken() )
             {
-                if ( _assemblyNameBuffer != null )
-                    defaultAssembly = Assembly.Load( _assemblyNameBuffer );
-
-                if ( defaultAssembly != null )
+                case EToken.StartArray:
                 {
-                    var result = defaultAssembly.GetType( _stringBuffer );
-                    _getTypeValueSampler.End();
-                    return result;
-                }
-                else
-                {
-                    var result = Type.GetType( _stringBuffer );
-                    _getTypeValueSampler.End();
-                    return result;
-                }
-            }
-            else if( CurrentToken == EToken.String )
-            {
-                var result = Type.GetType( _stringBuffer );
-                _getTypeValueSampler.End();
-                return result;
-            }
-            else if( CurrentToken == EToken.Null )
-            {
-                _getTypeValueSampler.End();
-                return null;
-            }
-            else
-            {
-                _getTypeValueSampler.End();
-                throw new Exception( $"Expected token {EToken.Type}, {EToken.String} or {EToken.Null} but got {CurrentToken}" );
-            }
+                    var assemblyName = ReadStringValue();
+                    var @namespace   = ReadStringValue();
+                    var typeName     = ReadStringValue();
+                    ReadEndArray();
+                    
+                    if ( assemblyName != null )
+                        defaultAssembly = Assembly.Load( assemblyName );
 
+                    var typeNameString = @namespace != null ? $"{@namespace}.{typeName}" : typeName;
+                    if ( defaultAssembly != null )
+                    {
+                        var result = defaultAssembly.GetType( typeNameString );
+                        _readTypeValueSampler.End();
+                        return result;
+                    }
+                    else
+                    {
+                        var result = Type.GetType( typeNameString );
+                        _readTypeValueSampler.End();
+                        return result;
+                    }
+                }
+                    break;
+                
+                case EToken.String:
+                    _readTypeValueSampler.End();
+                    return Type.GetType( _stringBuffer );
+
+                case EToken.Null:
+                    _readTypeValueSampler.End();
+                    return null;
+
+                default:
+                {
+                    _readTypeValueSampler.End();
+                    throw new Exception( $"Expected token {EToken.StartArray}, {EToken.String} or {EToken.Null} but got {CurrentToken}" );
+                }
+            }
         }
 
         public override Double GetFloatValue( )
@@ -510,33 +517,11 @@ namespace GDDB.Serialization
                 case EToken.PropertyName:
                     _stringBuffer = _reader.ReadString();
                     break;    
-
-                case EToken.Type:
-                    ReadTypePayload();
-                    break;
             }
 
             _storeValueSampler.End();
 
             return token;
-
-            void ReadTypePayload( )
-            {
-                _readTypeValueSampler.Begin();
-
-                ReadStartArray();
-
-                var assemblyName = ReadStringValue();
-                var @namespace   = ReadStringValue();
-                var typeName     = ReadStringValue();
-
-                ReadEndArray();
-
-                _stringBuffer = @namespace != null ? $"{@namespace}.{typeName}" : typeName;
-                _assemblyNameBuffer = assemblyName;
-
-                _readTypeValueSampler.End();
-            }
         }
 
         private struct Container

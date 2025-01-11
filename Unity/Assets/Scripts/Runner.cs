@@ -19,6 +19,8 @@ namespace GDDB_User
 {
     public class Runner : MonoBehaviour
     {
+        public Vector4 TestVector4;
+        public Vector3 TestVector3;
         public UnityEngine.MeshColliderCookingOptions TestEnum;
         public DBScriptableObject                     DB;
 

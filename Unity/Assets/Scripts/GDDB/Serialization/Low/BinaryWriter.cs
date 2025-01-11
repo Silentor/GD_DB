@@ -201,7 +201,6 @@ namespace GDDB.Serialization
 
         public override void WriteValue(Type value, Boolean includeAssembly )
         {
-            _writer.Write( (byte)EToken.Type );
             WriteStartArray();
             if( includeAssembly )
                 WriteValue( value.Assembly.GetName().Name );

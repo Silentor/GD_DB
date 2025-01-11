@@ -50,6 +50,7 @@ namespace GDDB.Serialization
             AddSerializer( new Vector3IntSerializer() );
             AddSerializer( new Vector2Serializer() );
             AddSerializer( new Vector2IntSerializer() );
+            AddSerializer( new Vector4Serializer() );
             AddSerializer( new QuaternionSerializer() );
             AddSerializer( new Matrix4x4Serializer() );
             AddSerializer( new RectSerializer() );

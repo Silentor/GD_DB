@@ -164,9 +164,9 @@ namespace GDDB.Serialization
             }
         }
 
-        public override Type GetTypeValue(Assembly defaultAssembly )
+        public override Type ReadTypeValue(Assembly defaultAssembly )
         {
-            var typeString = GetStringValue();
+            var typeString = ReadStringValue();
             var result = Type.GetType( typeString );
             if( result != null )
                 return result;
