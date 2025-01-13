@@ -19,10 +19,10 @@ namespace GDDB.Serialization
         public void Serialize( Folder root, GDObjectSerializer objectSerializer, WriterBase writer )
         {
             _serFolderSampler.Begin();
-            writer.SetAlias( 0, EToken.PropertyName, NameTag );
-            writer.SetAlias( 1, EToken.PropertyName, IdTag );
-            writer.SetAlias( 2, EToken.PropertyName, FoldersTag );
-            writer.SetAlias( 3, EToken.PropertyName, ObjectsTag );
+            writer.SetAlias( 101, EToken.PropertyName, NameTag ); 
+            writer.SetAlias( 102, EToken.PropertyName, IdTag );   
+            writer.SetAlias( 103, EToken.PropertyName, ".folders" );
+            writer.SetAlias( 104, EToken.PropertyName, ".objs" );
             SerializeFolder( writer, root, objectSerializer );
             _serFolderSampler.End();
         }
@@ -31,10 +31,10 @@ namespace GDDB.Serialization
 
         public Folder Deserialize( ReaderBase reader, GDObjectDeserializer? objectSerializer )
         {
-            reader.SetAlias( 0, EToken.PropertyName, NameTag );
-            reader.SetAlias( 1, EToken.PropertyName, IdTag );
-            reader.SetAlias( 2, EToken.PropertyName, FoldersTag );
-            reader.SetAlias( 3, EToken.PropertyName, ObjectsTag );
+            reader.SetAlias( 101, EToken.PropertyName, NameTag ); 
+            reader.SetAlias( 102, EToken.PropertyName, IdTag );   
+            reader.SetAlias( 103, EToken.PropertyName, ".folders" );
+            reader.SetAlias( 104, EToken.PropertyName, ".objs" );
 
             reader.ReadStartObject();
             return DeserializeFolder( reader, null, objectSerializer );

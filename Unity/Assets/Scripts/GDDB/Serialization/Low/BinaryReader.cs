@@ -202,7 +202,7 @@ namespace GDDB.Serialization
             else
             {
                 _getStringValueSampler.End();
-                throw new Exception( $"Expected token {EToken.String} or {EToken.Null} but got {CurrentToken}" );
+                throw new Exception( $"Expected token String or Data but got {CurrentToken}" );
             }
         }
 
@@ -228,7 +228,7 @@ namespace GDDB.Serialization
 
         public override Byte GetUInt8Value( )
         {
-            if( CurrentToken == EToken.UInt8 )
+            if( CurrentToken.IsIntegerToken() )
                 return (Byte)_intBuffer;
             else if( CurrentToken == EToken.Null )
                 return 0;
@@ -236,20 +236,72 @@ namespace GDDB.Serialization
                 throw new Exception( $"Expected token {EToken.UInt8} or {EToken.Null} but got {CurrentToken}" );
         }
 
+        public override SByte GetInt8Value( )
+        {
+            if( CurrentToken.IsIntegerToken() )
+                return (SByte)_intBuffer;
+            else if( CurrentToken == EToken.Null )
+                return 0;
+            else
+                throw new Exception( $"Expected token {EToken.Int8} or {EToken.Null} but got {CurrentToken}" );
+        }
+
+        public override UInt16 GetUInt16Value( )
+        {
+            if( CurrentToken.IsIntegerToken() )
+                return (UInt16)_intBuffer;
+            else if( CurrentToken == EToken.Null )
+                return 0;
+            else
+                throw new Exception( $"Expected token {EToken.UInt16} or {EToken.Null} but got {CurrentToken}" );
+        }
+
+        public override Int16 GetInt16Value( )
+        {
+            if( CurrentToken.IsIntegerToken() )
+                return (Int16)_intBuffer;
+            else if( CurrentToken == EToken.Null )
+                return 0;
+            else
+                throw new Exception( $"Expected token {EToken.Int16} or {EToken.Null} but got {CurrentToken}" );
+        }
+
         public override Int32 GetInt32Value( )
         {
-            if( CurrentToken == EToken.Int32 || CurrentToken == EToken.Int16 || CurrentToken == EToken.UInt16 || CurrentToken == EToken.Int8 || CurrentToken == EToken.UInt8 )
+            if( CurrentToken.IsIntegerToken() )
                 return (Int32)_intBuffer;
             else if( CurrentToken == EToken.Null )
                 return 0;
             else
-                throw new Exception( $"Expected tokens {EToken.Int32}, {EToken.Int16}, {EToken.UInt16}, {EToken.Int8}, {EToken.UInt8} or {EToken.Null} but got {CurrentToken}" );
+                throw new Exception( $"Expected integer tokens or {EToken.Null} but got {CurrentToken}" );
+        }
+
+        public override UInt32 GetUInt32Value( )
+        {
+            if( CurrentToken.IsIntegerToken() )
+                return (UInt32)_intBuffer;
+            else if( CurrentToken == EToken.Null )
+                return 0;
+            else
+                throw new Exception( $"Expected token {EToken.UInt32} or {EToken.Null} but got {CurrentToken}" );
+        }
+
+        public override Int64 GetInt64Value( )
+        {
+            if( CurrentToken.IsIntegerToken() )
+                return _intBuffer;
+            else if( CurrentToken == EToken.Null )
+                return 0;
+            else
+                throw new Exception( $"Expected token {EToken.Int64} or {EToken.Null} but got {CurrentToken}" );
         }
 
         public override UInt64 GetUInt64Value( )
         {
-            if( CurrentToken == EToken.UInt64 || CurrentToken == EToken.UInt32 || CurrentToken == EToken.UInt16 || CurrentToken == EToken.UInt8 )
+            if( CurrentToken == EToken.UInt64 )
                 return unchecked((UInt64)_intBuffer);
+            else if( CurrentToken.IsIntegerToken() )
+                return (UInt64)_intBuffer;
             else if( CurrentToken == EToken.Null )
                 return 0;
             else
@@ -279,7 +331,7 @@ namespace GDDB.Serialization
         public override Object GetEnumValue(Type enumType )
         {
             _getEnumValueSampler.Begin();
-            if ( CurrentToken.IsEnumToken() )
+            if ( CurrentToken.IsIntegerToken() )
             {
                 var underlyingType = Enum.GetUnderlyingType( enumType );
                 if ( underlyingType == typeof(UInt64) )
@@ -300,7 +352,7 @@ namespace GDDB.Serialization
             }
             else
             {   _getEnumValueSampler.End();
-                throw new Exception( $"Expected Enum tokens or Null but got {CurrentToken}" );
+                throw new Exception( $"Expected Integer or Null token  but got {CurrentToken}" );
             }
         }
 
@@ -444,7 +496,7 @@ namespace GDDB.Serialization
                 }
                 else
                 {
-                    Debug.LogWarning( $"[{nameof(BinaryReader)}]-[{nameof(StoreValue)}] Property name alias id {id} is not defined" );
+                    //Debug.LogWarning( $"[{nameof(BinaryReader)}]-[{nameof(StoreValue)}] Property name alias id {id} is not defined" );
                     //SkipProperty();
                 }
 
@@ -490,19 +542,6 @@ namespace GDDB.Serialization
                     Span<Byte> buffer = stackalloc Byte[16];
                     Assert.IsTrue( _reader.Read( buffer ) == 16 );
                     _guidBuffer = new Guid( buffer );
-                    break;
-
-                case EToken.Enum1:
-                    _intBuffer = _reader.ReadByte();
-                    break;
-                case EToken.Enum2:
-                    _intBuffer = _reader.ReadUInt16();
-                    break;
-                case EToken.Enum4:
-                    _intBuffer = _reader.ReadUInt32();
-                    break;
-                case EToken.Enum8:
-                    _intBuffer = _reader.ReadInt64();
                     break;
 
                 case EToken.Single:

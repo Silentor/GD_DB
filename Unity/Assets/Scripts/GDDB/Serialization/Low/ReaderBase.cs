@@ -29,7 +29,12 @@ namespace GDDB.Serialization
         /// <returns></returns>
         public abstract Int64 GetIntegerValue( );
         public abstract Byte   GetUInt8Value( );
+        public abstract SByte   GetInt8Value( );
+        public abstract UInt16 GetUInt16Value( );
+        public abstract Int16 GetInt16Value( );
         public abstract Int32  GetInt32Value( );
+        public abstract UInt32  GetUInt32Value( );
+        public abstract Int64  GetInt64Value( );
         public abstract UInt64 GetUInt64Value( );
         public abstract Guid   GetGuidValue( );
         public abstract Object GetEnumValue( Type enumType );
@@ -44,12 +49,11 @@ namespace GDDB.Serialization
         public abstract Double GetFloatValue( );
         public abstract Single GetSingleValue( );
         public abstract Double GetDoubleValue( );
-        
 
         public abstract Boolean GetBoolValue( );
 
+        public abstract void SkipProperty( );           
 
-        public abstract void SkipProperty( );
 
         public void EnsureToken( EToken token )
         {
@@ -251,6 +255,5 @@ namespace GDDB.Serialization
                 throw new Exception( $"Expected property {propertyName} but got {actualPropertyName}" );
             return ReadGuidValue(  );
         }
-
     }
 }

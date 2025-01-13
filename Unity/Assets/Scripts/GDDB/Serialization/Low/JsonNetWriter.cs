@@ -143,5 +143,10 @@ namespace GDDB.Serialization
             var result = !includeAssembly ? value.FullName : $"{value.FullName}, {value.Assembly.GetName().Name}";
             _writer.WriteValue( result );
         }
+
+        protected override void WriteRaw(Byte value )
+        {
+            //Its a binary stuff
+        }
     }
 }

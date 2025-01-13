@@ -634,7 +634,68 @@ namespace GDDB.Tests
                 storedHash.Should().Be( rootFolder.GetFoldersChecksum() );
                 storedHash.Should().Be( readRoot.GetFoldersChecksum() );
                 
-        }       
+        }
+        
+        [Test]
+        public void TestBinaryReaderWriterCopy(  )
+        {
+                var backend = EBackend.Binary;
+
+                //Arrange
+                var buffer     = GetBuffer( backend );
+                var writer     = GetWriter( backend, buffer );
+                var serializer = new DBDataSerializer(  );         
+
+                var rootFolder = GetFolder( "Root", null );
+                var gdo        = GDObject.CreateInstance<GDRoot>();
+                var comp       = new CollectionTestComponent();
+                gdo.Components.Add( comp );
+                rootFolder.Objects.Add( gdo );
+
+                serializer.Serialize( writer, rootFolder, NullGdAssetResolver.Instance );
+
+                LogBuffer( buffer );
+
+                //Act and Assert
+                var buffer2 = GetBuffer( backend );
+                var writer2 = GetWriter( backend, buffer2 );
+                var reader       = GetReader( backend, buffer );
+
+                writer2.Copy( reader );
+
+                var memory1 = ((MemoryStream)buffer).ToArray();
+                var memory2 = ((MemoryStream)buffer2).ToArray();
+                memory2.Should().BeEquivalentTo( memory1 );
+        }
+        
+        [Test]
+        public void TestBinaryCompression(  )
+        {
+                var backend = EBackend.Binary;
+
+                //Arrange
+                var buffer     = GetBuffer( backend );
+                var writer     = GetWriter( backend, buffer );
+                var serializer = new DBDataSerializer(  );         
+
+                var rootFolder = GetFolder( "Root", null );
+                var gdo        = GDObject.CreateInstance<GDRoot>();
+                var comp       = new CollectionTestComponent();
+                gdo.Components.Add( comp );
+                gdo.Components.Add( comp );
+                gdo.Components.Add( comp );
+                rootFolder.Objects.Add( gdo );
+
+                serializer.Serialize( writer, rootFolder, NullGdAssetResolver.Instance );
+
+                LogBuffer( buffer );
+
+                //Act and Assert
+                var reader     = GetReader( backend, buffer );
+                var compressor = new CompressAnalyzer();
+                var compressStats = compressor.GetCommonDataTokens( reader );
+
+        }      
 
         GDObject CreateGDObject( String name )
         {

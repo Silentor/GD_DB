@@ -88,45 +88,53 @@ namespace GDDB.Serialization
 
         public override void WriteValue(Byte value )
         {
-            _writer.Write( (byte)EToken.UInt8 );
-            _writer.Write( value );
+            WriteMinimalInteger( value );
         }
 
         public override void WriteValue(SByte value )
         {
-            _writer.Write( (byte)EToken.Int8 );
-            _writer.Write( value );
+            WriteMinimalInteger( value );
         }
 
         public override void WriteValue(Int32 value )
         {
-            _writer.Write( (byte)EToken.Int32 );
-            _writer.Write( value );
+            WriteMinimalInteger( value );
         }
 
         public override void WriteValue(Int64 value )
         {
-            _writer.Write( (byte)EToken.Int64 );
-            _writer.Write( value );
+            WriteMinimalInteger( value );
         }
 
         public override void WriteValue(UInt64 value )
         {
-            _writer.Write( (byte)EToken.UInt64 );
-            _writer.Write( value );
+            WriteMinimalInteger( value );
         }
 
         public override void WriteValue(Single value )
         {
-            _writer.Write( (byte)EToken.Single );
-            _writer.Write( value );
+            if( value != 0f )
+            {
+                _writer.Write( (byte)EToken.Single );
+                _writer.Write( value );
+            }
+            else
+            {
+                _writer.Write( (byte)EToken.Null );
+            }
         }
 
         public override void WriteValue(Double value )
         {
-            _writer.Write( (byte)EToken.Double );
-            _writer.Write( value );
-
+            if( value != 0d )
+            {
+                _writer.Write( (byte)EToken.Double );
+                _writer.Write( value );
+            }
+            else
+            {
+                _writer.Write( (byte)EToken.Null );
+            }
         }
 
         public override void WriteValue(Boolean value )
@@ -157,43 +165,35 @@ namespace GDDB.Serialization
             var underlyingType = Enum.GetUnderlyingType( value.GetType() );
             if ( underlyingType == typeof(Byte) )
             {
-                _writer.Write( (byte)EToken.Enum1 );
-                _writer.Write( Convert.ToByte( value ) );
+                WriteValue( Convert.ToByte( value ) );
             }
             else if( underlyingType == typeof(SByte) )
             {
-                _writer.Write( (byte)EToken.Enum1 );
-                _writer.Write( Convert.ToSByte( value ) );
+                WriteValue( Convert.ToSByte( value ) );
             }
             else if( underlyingType == typeof(Int16) )
             {
-                _writer.Write( (byte)EToken.Enum2 );
-                _writer.Write( Convert.ToInt16( value ) );
+                WriteValue( Convert.ToInt16( value ) );
             }
             else if( underlyingType == typeof(UInt16) )
             {
-                _writer.Write( (byte)EToken.Enum2 );
-                _writer.Write( Convert.ToUInt16( value ) );
+                WriteValue( Convert.ToUInt16( value ) );
             }
             else if( underlyingType == typeof(Int32) )
             {
-                _writer.Write( (byte)EToken.Enum4 );
-                _writer.Write( Convert.ToInt32( value ) );
+                WriteValue( Convert.ToInt32( value ) );
             }
             else if( underlyingType == typeof(UInt32) )
             {
-                _writer.Write( (byte)EToken.Enum4 );
-                _writer.Write( Convert.ToUInt32( value ) );
+                WriteValue( Convert.ToUInt32( value ) );
             }
             else if( underlyingType == typeof(Int64) )
             {
-                _writer.Write( (byte)EToken.Enum8 );
-                _writer.Write( Convert.ToInt64( value ) );
+                WriteValue( Convert.ToInt64( value ) );
             }
             else if( underlyingType == typeof(UInt64) )
             {
-                _writer.Write( (byte)EToken.Enum8 );
-                _writer.Write( Convert.ToUInt64( value ) );
+                WriteValue( Convert.ToUInt64( value ) );
             }
             else
                 throw new Exception( $"Unsupported enum type {underlyingType}" );
@@ -212,6 +212,97 @@ namespace GDDB.Serialization
                 WriteNullValue();
             WriteValue( GetTypeName( value) );
             WriteEndArray();
+        }
+
+        protected override void WriteRaw(Byte value )
+        {
+            _writer.Write( value );
+        }
+
+        private void WriteMinimalInteger( Int64 value )
+        {
+            if ( value == 0 )
+            {
+                _writer.Write( (byte)EToken.Null );
+                return;
+            }
+
+            if ( value > 0 )
+            {
+                if ( value <= Byte.MaxValue )
+                {
+                    _writer.Write( (byte)EToken.UInt8 );
+                    _writer.Write( (byte)value );
+                }
+                else if ( value <= UInt16.MaxValue )
+                {
+                    _writer.Write( (byte)EToken.UInt16 );
+                    _writer.Write( (UInt16)value );
+                }
+                else if ( value <= UInt32.MaxValue )
+                {
+                    _writer.Write( (byte)EToken.UInt32 );
+                    _writer.Write( (UInt32)value );
+                }
+                else 
+                {
+                    _writer.Write( (byte)EToken.Int64 );
+                    _writer.Write( value );
+                }
+            }
+            else
+            {
+                if( value >= SByte.MinValue )
+                {
+                    _writer.Write( (byte)EToken.Int8 );
+                    _writer.Write( (SByte)value );
+                }
+                else if( value >= Int16.MinValue )
+                {
+                    _writer.Write( (byte)EToken.Int16 );
+                    _writer.Write( (Int16)value );
+                }
+                else if( value >= Int32.MinValue )
+                {
+                    _writer.Write( (byte)EToken.Int32 );
+                    _writer.Write( (Int32)value );
+                }
+                else
+                {
+                    _writer.Write( (byte)EToken.Int64 );
+                    _writer.Write( value );
+                }
+            }
+        }
+
+        private void WriteMinimalInteger( UInt64 value )
+        {
+            if ( value == 0 )
+            {
+                _writer.Write( (byte)EToken.Null );
+                return;
+            }
+
+            if ( value <= Byte.MaxValue )
+            {
+                _writer.Write( (byte)EToken.UInt8 );
+                _writer.Write( (byte)value );
+            }
+            else if ( value <= UInt16.MaxValue )
+            {
+                _writer.Write( (byte)EToken.UInt16 );
+                _writer.Write( (UInt16)value );
+            }
+            else if ( value <= UInt32.MaxValue )
+            {
+                _writer.Write( (byte)EToken.UInt32 );
+                _writer.Write( (UInt32)value );
+            }
+            else
+            {
+                _writer.Write( (byte)EToken.UInt64 );
+                _writer.Write( value );
+            }
         }
 
         private static String GetTypeName( Type type )

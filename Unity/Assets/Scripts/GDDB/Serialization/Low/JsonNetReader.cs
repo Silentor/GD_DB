@@ -106,9 +106,37 @@ namespace GDDB.Serialization
             return Convert.ToByte( _reader.Value );
         }
 
+        public override SByte GetInt8Value( )
+        {
+            return Convert.ToSByte( _reader.Value );
+        }
+
+        public override UInt16 GetUInt16Value( )
+        {
+            return Convert.ToUInt16( _reader.Value );
+        }
+
+        public override Int16 GetInt16Value( )
+        {
+            return Convert.ToInt16( _reader.Value );
+        }
+
         public override Int32 GetInt32Value( )
         {
             return Convert.ToInt32( _reader.Value );
+        }
+
+        public override UInt32 GetUInt32Value( )
+        {
+            return Convert.ToUInt32( _reader.Value );
+        }
+
+        public override Int64 GetInt64Value( )
+        {
+            if( _reader.Value is BigInteger bi )
+                return (Int64)bi;
+
+            return Convert.ToInt64( _reader.Value );
         }
 
         public override UInt64 GetUInt64Value( )

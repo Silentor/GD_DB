@@ -36,14 +36,14 @@ namespace GDDB.Serialization
         {
             _reader = reader;
 
-            reader.SetAlias( 0, EToken.PropertyName, NameTag );            //Common to Folders
-            reader.SetAlias( 1, EToken.PropertyName, IdTag );                //Common to Folders
+            reader.SetAlias( 101, EToken.PropertyName, NameTag );            //Common to Folders
+            reader.SetAlias( 102, EToken.PropertyName, IdTag );                //Common to Folders
             //reader.SetPropertyNameAlias( 2, ".folders" );
             //reader.SetPropertyNameAlias( 3, ".objs" );
-            reader.SetAlias( 4, EToken.PropertyName, TypeTag );
-            reader.SetAlias( 5, EToken.PropertyName, EnabledTag );
-            reader.SetAlias( 6, EToken.PropertyName, ComponentsTag );
-            reader.SetAlias( 7, EToken.PropertyName, LocalIdTag );
+            reader.SetAlias( 105, EToken.PropertyName, TypeTag );
+            reader.SetAlias( 106, EToken.PropertyName, EnabledTag );
+            reader.SetAlias( 107, EToken.PropertyName, ComponentsTag );
+            reader.SetAlias( 108, EToken.PropertyName, LocalIdTag );
 
 #if UNITY_2021_2_OR_NEWER
             AddSerializer( new Vector3Serializer() );

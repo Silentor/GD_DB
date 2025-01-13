@@ -302,9 +302,8 @@ namespace GDDB.Tests
             var deserializer = GetReader( backend, buffer );
             deserializer.ReadStartObject();
             Assert.AreEqual( "TestInt", deserializer.ReadPropertyName());
-            Assert.IsTrue( deserializer.ReadNextToken().IsIntegerToken() );
-            var actualValue = deserializer.GetIntegerValue( );
-            Assert.AreEqual( value, actualValue );
+            var actualValue = deserializer.ReadIntegerValue( );
+            actualValue.Should().Be( value );
         }
 
         [Test]
@@ -328,15 +327,14 @@ namespace GDDB.Tests
             var deserializer = GetReader( backend, buffer );
             deserializer.ReadStartObject();
             var actualValue = deserializer.ReadPropertyInt32( "TestInt32" );
-            Assert.AreEqual( value, actualValue );
+            actualValue.Should().Be( value );
 
             // Read and assert via generic read
             deserializer = GetReader( backend, buffer );
             deserializer.ReadStartObject();
             deserializer.ReadPropertyName();
-            Assert.IsTrue( deserializer.ReadNextToken().IsIntegerToken() );
-            var actualValue2 = deserializer.GetIntegerValue( );
-            Assert.AreEqual( value, actualValue2 );
+            var actualValue2 = deserializer.ReadIntegerValue( );
+            actualValue2.Should().Be( value );
         }
 
         [Test]
@@ -361,8 +359,7 @@ namespace GDDB.Tests
             deserializer.ReadStartObject();
             Assert.AreEqual( "TestUInt64", deserializer.ReadPropertyName(  ) );
             //Assert.AreEqual( EToken.UInt64, deserializer.ReadNextToken() );    JSON.NET fail that assert, its guess type from value, so its know that value is Integer but cannot know that its UInt64 (for 0 value for example) 
-            Assert.IsTrue( deserializer.ReadNextToken().IsIntegerToken() );
-            var actualValue = deserializer.GetUInt64Value( );
+            var actualValue = deserializer.ReadUInt64Value( );
             Assert.AreEqual( value, actualValue );
         }
 

@@ -45,11 +45,11 @@ namespace GDDB.Serialization
         //Decimal  = Number + 14,
         //DateTime  = Number + 15,
 
-        Enum    = Number + (1 << 4),
-        Enum1   = Enum,
-        Enum2   = Enum + 1,
-        Enum4   = Enum + 2,
-        Enum8   = Enum + 3,
+        // Enum    = Number + (1 << 4),
+        // Enum1   = Enum,
+        // Enum2   = Enum + 1,
+        // Enum4   = Enum + 2,
+        // Enum8   = Enum + 3,
 
         Alias   = 1 << 7,
     }
@@ -101,10 +101,10 @@ namespace GDDB.Serialization
             return token == EToken.True || token == EToken.False;
         }
 
-        public static Boolean IsEnumToken( this EToken token )
-        {
-            return ((Byte)token & 0b1101_0000) == (Byte)EToken.Enum;
-        }
+        // public static Boolean IsEnumToken( this EToken token )
+        // {
+        //     return ((Byte)token & 0b1101_0000) == (Byte)EToken.Enum;
+        // }
 
         public static Boolean IsAliasToken( this EToken token )
         {

@@ -20,14 +20,14 @@ namespace GDDB.Serialization
         {
             _writer = writer;
 
-            writer.SetAlias( 0, EToken.PropertyName, NameTag );            //Common to Folders
-            writer.SetAlias( 1, EToken.PropertyName, IdTag );                //Common to Folders
+            writer.SetAlias( 101, EToken.PropertyName, NameTag );            //Common to Folders
+            writer.SetAlias( 102, EToken.PropertyName, IdTag );                //Common to Folders
             //writer.SetPropertyNameAlias( 2, ".folders" );
             //writer.SetPropertyNameAlias( 3, ".objs" );
-            writer.SetAlias( 4, EToken.PropertyName, TypeTag );
-            writer.SetAlias( 5, EToken.PropertyName, EnabledTag );
-            writer.SetAlias( 6, EToken.PropertyName, ComponentsTag );
-            writer.SetAlias( 7, EToken.PropertyName, LocalIdTag );
+            writer.SetAlias( 105, EToken.PropertyName, TypeTag );
+            writer.SetAlias( 106, EToken.PropertyName, EnabledTag );
+            writer.SetAlias( 107, EToken.PropertyName, ComponentsTag );
+            writer.SetAlias( 108, EToken.PropertyName, LocalIdTag );
 
 #if UNITY_2021_2_OR_NEWER
             AddSerializer( new Vector3Serializer() );
