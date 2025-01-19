@@ -568,7 +568,7 @@ namespace GDDB.Tests
 
 
         [Test]
-        public void ReaderPathTests( [Values]EBackend backend )
+        public void ReaderPathTests( [Values(EBackend.JsonNet)]EBackend backend )
         {
                 //Arrange
                 var buffer = GetBuffer( backend );
@@ -676,7 +676,7 @@ namespace GDDB.Tests
                 //Arrange
                 var buffer     = GetBuffer( backend );
                 var writer     = GetWriter( backend, buffer );
-                var serializer = new DBDataSerializer(  );         
+                var serializer = new DBDataSerializer(  );                      //Compression/decompression incapsulated in DB Data serializer
 
                 var rootFolder = GetFolder( "Root", null );
                 var gdo        = GDObject.CreateInstance<GDRoot>();
@@ -691,10 +691,11 @@ namespace GDDB.Tests
                 LogBuffer( buffer );
 
                 //Act and Assert
-                var reader     = GetReader( backend, buffer );
-                var compressor = new CompressAnalyzer();
-                var compressStats = compressor.GetCommonDataTokens( reader );
-
+                var reader       = GetReader( backend, buffer );
+                var deserializer = new DBDataSerializer(  );
+                var result = deserializer.Deserialize( reader, NullGdAssetResolver.Instance, out _ );
+                result.rootFolder.Objects.Count.Should().Be( 1 );
+                result.objects[0].Components.Count.Should().Be( 3 );
         }      
 
         GDObject CreateGDObject( String name )

@@ -43,7 +43,7 @@ namespace GDDB_User
         private GdDb _binaryGDDB;
         private GdDb _editorGDDB;
 
-        private CustomSampler _sjsonSampler = CustomSampler.Create( "SimpleJson.Parse" );
+        private readonly CustomSampler _loadBinaryFileSampler = CustomSampler.Create( "Runner.LoadBinaryFile" );
 
         //[GdTypeFilter(MainCategory.Mobs, EMobs.Elves)]
         //[GdTypeFilter(MainCategory.Game)]                      
@@ -328,8 +328,10 @@ namespace GDDB_User
 
         private void LoadBinaryFromMemoryBuffer( IGdAssetResolver assetResolver )
         {
-            var binDB = File.ReadAllBytes( Application.persistentDataPath + "/DefaultGDDB.bin" );
-            var jloader = new GdFileLoader( binDB, assetResolver );
+            _loadBinaryFileSampler.Begin();
+            var bytes = File.ReadAllBytes( Application.persistentDataPath + "/DefaultGDDB.bin" );
+            _loadBinaryFileSampler.End();
+            var jloader = new GdFileLoader( bytes, assetResolver );
             _binaryGDDB = jloader.GetGameDataBase();
         }
 

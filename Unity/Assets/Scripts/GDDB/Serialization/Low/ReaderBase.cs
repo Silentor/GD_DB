@@ -9,8 +9,6 @@ namespace GDDB.Serialization
 
         public abstract String Path { get; }
 
-        public abstract void SetAlias( UInt32 id, EToken token, String stringValue );
-
         public abstract EToken ReadNextToken( );
 
         public abstract void ReadStartObject( );
@@ -21,7 +19,6 @@ namespace GDDB.Serialization
         
         public abstract String GetPropertyName( );
         public abstract String GetStringValue( );
-
 
         /// <summary>
         /// Get any integer value up to int64
@@ -40,7 +37,7 @@ namespace GDDB.Serialization
         public abstract Object GetEnumValue( Type enumType );
 
         //Its a complex type, so we read it as a whole instead of get from buffer
-        public abstract Type ReadTypeValue( Assembly defaultAssembly );
+        public abstract Type ReadTypeValue(  );
           
         /// <summary>
         /// Get any float value (single or double)

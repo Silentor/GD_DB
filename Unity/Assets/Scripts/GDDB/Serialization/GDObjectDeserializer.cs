@@ -27,7 +27,6 @@ namespace GDDB.Serialization
         private readonly CustomSampler                              _deserObjectSampler   = CustomSampler.Create( $"{nameof(GDObjectDeserializer)}.{nameof(Deserialize)}" );
         private readonly CustomSampler                              _resolveObjectSampler = CustomSampler.Create( $"{nameof(GDObjectDeserializer)}.{nameof(ResolveGDObjectReferences)}" );
         private readonly CustomSampler                              _getTypeConstructorSampler = CustomSampler.Create( $"{nameof(GDObjectDeserializer)}.{nameof(GetTypeConstructor)}" );
-        private readonly Dictionary<Type, IReadOnlyList<FieldInfo>> _fieldsCache          = new();
         private readonly Dictionary<Type, ConstructorInfo>          _constructorCache     = new();
 
         public IReadOnlyList<GDObject> LoadedObjects => _loadedObjects;
@@ -36,14 +35,17 @@ namespace GDDB.Serialization
         {
             _reader = reader;
 
-            reader.SetAlias( 101, EToken.PropertyName, NameTag );            //Common to Folders
-            reader.SetAlias( 102, EToken.PropertyName, IdTag );                //Common to Folders
-            //reader.SetPropertyNameAlias( 2, ".folders" );
-            //reader.SetPropertyNameAlias( 3, ".objs" );
-            reader.SetAlias( 105, EToken.PropertyName, TypeTag );
-            reader.SetAlias( 106, EToken.PropertyName, EnabledTag );
-            reader.SetAlias( 107, EToken.PropertyName, ComponentsTag );
-            reader.SetAlias( 108, EToken.PropertyName, LocalIdTag );
+            if ( reader is BinaryReader bReader )
+            {
+                bReader.SetAlias( 101, EToken.PropertyName, NameTag );            //Common to Folders
+                bReader.SetAlias( 102, EToken.PropertyName, IdTag );                //Common to Folders
+                //reader.SetPropertyNameAlias( 2, ".folders" );
+                //reader.SetPropertyNameAlias( 3, ".objs" );
+                bReader.SetAlias( 105, EToken.PropertyName, TypeTag );
+                bReader.SetAlias( 106, EToken.PropertyName, EnabledTag );
+                bReader.SetAlias( 107, EToken.PropertyName, ComponentsTag );
+                bReader.SetAlias( 108, EToken.PropertyName, LocalIdTag );
+            }
 
 #if UNITY_2021_2_OR_NEWER
             AddSerializer( new Vector3Serializer() );
@@ -165,8 +167,8 @@ namespace GDDB.Serialization
             String typeName = null;
             if ( propName == TypeTag )
             {
-                type = reader.ReadTypeValue( typeof(GDObject).Assembly );
-                guid     = reader.ReadPropertyGuid( IdTag );
+                type = reader.ReadTypeValue(  );
+                guid = reader.ReadPropertyGuid( IdTag );
             }
             else if( propName == IdTag )
             {
@@ -232,7 +234,7 @@ namespace GDDB.Serialization
             var objectType = propertyType;
             if ( reader.GetPropertyName() == TypeTag )
             {
-                objectType = reader.ReadTypeValue( propertyType.Assembly );
+                objectType = reader.ReadTypeValue(  );
                 if( objectType == null )
                     throw new InvalidOperationException( $"[{nameof(GDObjectDeserializer)}]-[{nameof(ReadObject)}] Cannot read the type. Property type for this object (destination type) is {propertyType}" );
                 reader.ReadNextToken();         //Stand on next property name or EndObject
@@ -267,7 +269,7 @@ namespace GDDB.Serialization
             if( propNameOrEndObject == EToken.EndObject )
                 return;
 
-            var fields = GetTypeFields( obj.GetType() );
+            var fields = GetSerializableFields( obj.GetType() );
 
             do
             {
@@ -279,29 +281,22 @@ namespace GDDB.Serialization
                 }
                 else
                 {
-                    if ( IsFieldSerializable( field ) )
+                    try
                     {
-                        try
+                        reader.ReadNextToken();
+                        var value = ReadSomething( reader, field.FieldType );
+                        if ( value is UnresolvedGDObjectReference gdRef )                        //Should be resolved after all objects deserialization
                         {
-                            reader.ReadNextToken();
-                            var value = ReadSomething( reader, field.FieldType );
-                            if ( value is UnresolvedGDObjectReference gdRef )                        //Should be resolved after all objects deserialization
-                            {
-                                gdRef.TargetObject = obj;
-                                gdRef.Field        = field;
-                                _unresolvedReferences.Add( gdRef );
-                            }
-                            else
-                                field.SetValue( obj, value );
+                            gdRef.TargetObject = obj;
+                            gdRef.Field        = field;
+                            _unresolvedReferences.Add( gdRef );
                         }
-                        catch ( Exception ex )
-                        {
-                            throw new ReaderPropertyException( field.Name, reader, $"Error setting field {field} from json {reader.Path}", ex );
-                        }
+                        else
+                            field.SetValue( obj, value );
                     }
-                    else
+                    catch ( Exception ex )
                     {
-                        reader.SkipProperty();
+                        throw new ReaderPropertyException( field.Name, reader, $"Error setting field {field} from json {reader.Path}", ex );
                     }
                 }
                 reader.ReadNextToken();
@@ -445,17 +440,6 @@ namespace GDDB.Serialization
                                                  Guids = references,
                                          };
             }
-        }
-
-        private IReadOnlyList<FieldInfo> GetTypeFields( Type type )           
-        {
-            if ( !_fieldsCache.TryGetValue( type, out var fields ) )
-            {
-                fields = type.GetFields( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance );
-                _fieldsCache.Add( type, fields );
-            }
-
-            return fields;
         }
 
         private ConstructorInfo GetTypeConstructor(Type type )

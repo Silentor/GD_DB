@@ -11,17 +11,32 @@ namespace GDDB.Serialization
         public override String Path => "Not implemented";
 
         private readonly System.IO.BinaryWriter          _writer;
-        private readonly SortedDictionary<(EToken, String), UInt32> _aliases = new ();
+        private readonly Dictionary<String, UInt32> _propertyNameAliases = new ();
+        private readonly Dictionary<String, UInt32> _stringValueAliases = new ();
+        //public readonly Dictionary<Type, Int32> DebugTypesCounter = new ();
+        //public readonly Dictionary<String, Int32> DebugNamespaceCounter = new ();
 
         public BinaryWriter( Stream writer )
         {
             _writer = new System.IO.BinaryWriter( writer );
         }
 
-        public override void SetAlias( UInt32 id, EToken token, String stringValue )
+        public void SetAlias( UInt32 id, EToken token, String stringValue )
         {
             Assert.IsTrue( id <= 127 );
-             _aliases[(token, stringValue)] = id;
+            switch ( token )
+            {
+                case EToken.PropertyName:
+                    _propertyNameAliases[stringValue] = id;
+                    _stringValueAliases.Remove( stringValue );
+                    break;
+                case EToken.String:
+                    _stringValueAliases[stringValue] = id;
+                    _propertyNameAliases.Remove( stringValue );
+                    break;
+                default:
+                    throw new Exception( $"Unsupported token {token}" );                
+            }
         }
 
         public override void WriteStartObject( )
@@ -51,7 +66,7 @@ namespace GDDB.Serialization
 
         public override WriterBase WritePropertyName(String propertyName )
         {
-            if( _aliases.TryGetValue( (EToken.PropertyName, propertyName), out var id ) )
+            if( _propertyNameAliases.TryGetValue( propertyName, out var id ) )
             {
                 _writer.Write( (byte)((UInt32)EToken.Alias | id) );
                 return this;
@@ -71,7 +86,7 @@ namespace GDDB.Serialization
         {
             if( value != null )
             {
-                if( _aliases.TryGetValue( (EToken.String, value), out var id ) )
+                if( _stringValueAliases.TryGetValue( value, out var id ) )
                 {
                     _writer.Write( (byte)((UInt32)EToken.Alias | id) );
                     return;
@@ -199,19 +214,30 @@ namespace GDDB.Serialization
                 throw new Exception( $"Unsupported enum type {underlyingType}" );
         }
 
-        public override void WriteValue(Type value, Boolean includeAssembly )
+        public override void WriteValue( Type value )
         {
             WriteStartArray();
-            if( includeAssembly )
-                WriteValue( value.Assembly.GetName().Name );
-            else
-                WriteNullValue();
+            WriteValue( value.Assembly.GetName().Name );
             if( value.Namespace != null )
                 WriteValue( value.Namespace );
             else 
                 WriteNullValue();
             WriteValue( GetTypeName( value) );
             WriteEndArray();
+
+            //DEBUG
+            // if( DebugTypesCounter.TryGetValue( value, out var count ) )
+            //     DebugTypesCounter[value] = count + 1;
+            // else
+            //     DebugTypesCounter[value] = 1;
+            //
+            // var namespaceName = value.Namespace;
+            // if( namespaceName != null )
+            //     if( DebugNamespaceCounter.TryGetValue( namespaceName, out count ) )
+            //         DebugNamespaceCounter[namespaceName] = count + 1;
+            //     else
+            //         DebugNamespaceCounter[namespaceName] = 1;
+
         }
 
         protected override void WriteRaw(Byte value )

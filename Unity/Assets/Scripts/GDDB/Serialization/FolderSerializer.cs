@@ -19,10 +19,13 @@ namespace GDDB.Serialization
         public void Serialize( Folder root, GDObjectSerializer objectSerializer, WriterBase writer )
         {
             _serFolderSampler.Begin();
-            writer.SetAlias( 101, EToken.PropertyName, NameTag ); 
-            writer.SetAlias( 102, EToken.PropertyName, IdTag );   
-            writer.SetAlias( 103, EToken.PropertyName, ".folders" );
-            writer.SetAlias( 104, EToken.PropertyName, ".objs" );
+            if ( writer is BinaryWriter bWriter )
+            {
+                bWriter.SetAlias( 101, EToken.PropertyName, NameTag ); 
+                bWriter.SetAlias( 102, EToken.PropertyName, IdTag );   
+                bWriter.SetAlias( 103, EToken.PropertyName, ".folders" );
+                bWriter.SetAlias( 104, EToken.PropertyName, ".objs" );
+            }
             SerializeFolder( writer, root, objectSerializer );
             _serFolderSampler.End();
         }
@@ -31,10 +34,13 @@ namespace GDDB.Serialization
 
         public Folder Deserialize( ReaderBase reader, GDObjectDeserializer? objectSerializer )
         {
-            reader.SetAlias( 101, EToken.PropertyName, NameTag ); 
-            reader.SetAlias( 102, EToken.PropertyName, IdTag );   
-            reader.SetAlias( 103, EToken.PropertyName, ".folders" );
-            reader.SetAlias( 104, EToken.PropertyName, ".objs" );
+            if ( reader is BinaryReader bReader )
+            {
+                bReader.SetAlias( 101, EToken.PropertyName, NameTag );
+                bReader.SetAlias( 102, EToken.PropertyName, IdTag );
+                bReader.SetAlias( 103, EToken.PropertyName, ".folders" );
+                bReader.SetAlias( 104, EToken.PropertyName, ".objs" );
+            }
 
             reader.ReadStartObject();
             return DeserializeFolder( reader, null, objectSerializer );

@@ -24,8 +24,8 @@ namespace GDDB
         {
             if ( String.IsNullOrWhiteSpace( name ) || !IsFolderNameValid( name ) )
                 throw new ArgumentException( $"Incorrect folder name '{name}'", nameof(name) );
-            if( folderGuid == Guid.Empty )
-                throw new ArgumentException( "Empty guid", nameof(folderGuid) );
+            if ( folderGuid == Guid.Empty )
+                throw new ArgumentException(  $"Empty guid for folder {name}", nameof(folderGuid) );
 
             Name       = name;
             FolderGuid = folderGuid;

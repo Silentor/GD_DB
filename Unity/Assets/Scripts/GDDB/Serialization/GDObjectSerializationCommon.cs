@@ -17,6 +17,7 @@ namespace GDDB.Serialization
 
         protected readonly Dictionary<Type, TypeCustomSerializer> _serializers       = new();
         private readonly   Dictionary<Type, Boolean>              _isTypeSerializableCache = new();
+        private readonly   Dictionary<Type, FieldInfo[]>          _serializableFieldsCache = new();
 
 #if UNITY_EDITOR
         private readonly HashSet<Type> _missedCustomTypeSerializersWarnings = new();
@@ -24,6 +25,17 @@ namespace GDDB.Serialization
 
         public GDObjectSerializationCommon( )
         {
+        }
+
+        public FieldInfo[] GetSerializableFields( Type type )
+        {
+            if ( !_serializableFieldsCache.TryGetValue( type, out var fields ) )
+            {
+                var allFields = type.GetFields( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance );
+                fields = allFields.Where( IsFieldSerializable ).ToArray();
+                _serializableFieldsCache.Add( type, fields );
+            }
+            return fields;
         }
 
         protected Boolean IsFieldSerializable( FieldInfo field )
@@ -101,8 +113,8 @@ namespace GDDB.Serialization
             if ( !isUnityAssetType )
             {
                 //Check serializable fields for serialization support
-                var fields = type.GetFields( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance );
-                if ( !fields.Any( IsFieldSerializable ) )
+                var fields = GetSerializableFields( type );
+                if ( fields.Length == 0 )
                     return false;
             }
 

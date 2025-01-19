@@ -23,7 +23,8 @@ namespace GDDB.Serialization
         private String _stringBuffer;
         private String  _assemblyNameBuffer;   //for Type token
 
-        private readonly SortedDictionary<UInt32, (EToken token, String value)> _aliases = new ();
+        private readonly Dictionary<UInt32, (EToken token, String value)> _aliases = new ();
+        private readonly Dictionary<String, Type> _typeCache = new ();
 
         private readonly CustomSampler _readNextTokenSampler   = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(ReadNextToken)}" );
         private readonly CustomSampler _getGuidValueSampler    = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(GetGuidValue)}" );
@@ -34,8 +35,12 @@ namespace GDDB.Serialization
         private readonly CustomSampler _getEnumValueSampler    = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(GetEnumValue)}" );
 
         private readonly CustomSampler _readTypeValueSampler    = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(ReadTypeValue)}" );
+        private readonly CustomSampler _readTypeValue2Sampler    = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(ReadTypeValue)}2" );
+        private readonly CustomSampler _readTypeValue3Sampler    = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(ReadTypeValue)}3" );
+        private readonly CustomSampler _readTypeValue4Sampler    = CustomSampler.Create( $"{nameof(ReaderBase)}.{nameof(ReadTypeValue)}4" );
 
-        private readonly CustomSampler _storeValueSampler    = CustomSampler.Create( $"{nameof(BinaryReader)}.{nameof(StoreValue)}" );
+        //private readonly CustomSampler _storeValueSampler    = CustomSampler.Create( $"{nameof(BinaryReader)}.{nameof(StoreValue)}" );
+        private readonly CustomSampler _processAliasSampler    = CustomSampler.Create( $"{nameof(BinaryReader)}.ProcessAlias" );
         private readonly CustomSampler _processPathSampler   = CustomSampler.Create( $"{nameof(BinaryReader)}.ProcessPath" );
 
         public BinaryReader( System.IO.Stream binaryStream )
@@ -49,35 +54,36 @@ namespace GDDB.Serialization
 
         public override String Path
         {
-            get
-            {
-                if( _path.Count == 0 )
-                    return String.Empty;
-                else
-                {
-                    var sb = new System.Text.StringBuilder();
-                    foreach ( var container in _path.Reverse() )
-                    {
-                        if( container.Token == EToken.StartObject )
-                        {
-                            sb.Append( "." );
-                            if ( container.PropertyName != null )                                
-                                sb.Append( container.PropertyName );
-                        }
-                        else if( container.Token == EToken.StartArray )
-                        {
-                            sb.Append( "[" );
-                            if( container.ElementIndex >= 0 )
-                                sb.Append( container.ElementIndex );
-                            sb.Append( "]" );
-                        }
-                    }
-                    return sb.ToString();
-                }
-            }
+            get => "Optimized out";
+            // get
+            // {
+            //     if( _path.Count == 0 )
+            //         return String.Empty;
+            //     else
+            //     {
+            //         var sb = new System.Text.StringBuilder();
+            //         foreach ( var container in _path.Reverse() )
+            //         {
+            //             if( container.Token == EToken.StartObject )
+            //             {
+            //                 sb.Append( "." );
+            //                 if ( container.PropertyName != null )                                
+            //                     sb.Append( container.PropertyName );
+            //             }
+            //             else if( container.Token == EToken.StartArray )
+            //             {
+            //                 sb.Append( "[" );
+            //                 if( container.ElementIndex >= 0 )
+            //                     sb.Append( container.ElementIndex );
+            //                 sb.Append( "]" );
+            //             }
+            //         }
+            //         return sb.ToString();
+            //     }
+            // }
         }
 
-        public override void SetAlias( UInt32 id, EToken token, String stringValue )
+        public void SetAlias( UInt32 id, EToken token, String stringValue )
         {
             Assert.IsTrue( id <= 127 );
             _aliases[id] = (token, stringValue);
@@ -85,70 +91,146 @@ namespace GDDB.Serialization
 
         public override EToken ReadNextToken( )
         {
-            if( CurrentToken == EToken.EoF )
-            {
-                return EToken.EoF;
-            }
-
             _readNextTokenSampler.Begin();
 
             if ( _reader.BaseStream.Position < _reader.BaseStream.Length )
             {
                 var currentToken = (EToken)_reader.ReadByte();
-                currentToken = StoreValue( currentToken );
-                CurrentToken = currentToken;
                 
-                _processPathSampler.Begin();
-                if ( _path.TryPeek( out var arr ) && arr.Token == EToken.StartArray )
+                switch ( currentToken )                           //Process token
                 {
-                    var lastObject = _path.Pop();
-                    lastObject.ElementIndex += 1;                   //Count array elements for path
-                    _path.Push( lastObject );
+                    case EToken.Int8:
+                        _intBuffer = _reader.ReadSByte();
+                        break;
+
+                    case EToken.UInt8:
+                        _intBuffer = _reader.ReadByte();
+                        break;
+
+                    case EToken.Int16:
+                        _intBuffer = _reader.ReadInt16();
+                        break;
+
+                    case EToken.UInt16:
+                        _intBuffer = _reader.ReadUInt16();
+                        break;
+
+                    case EToken.Int32:
+                        _intBuffer = _reader.ReadInt32();
+                        break;
+
+                    case EToken.UInt32:
+                        _intBuffer = _reader.ReadUInt32();
+                        break;
+
+                    case EToken.Int64:
+                        _intBuffer = _reader.ReadInt64();
+                        break;
+
+                    case EToken.UInt64:
+                        _intBuffer = unchecked((Int64)_reader.ReadUInt64());
+                        break;
+
+                    case EToken.Guid:
+                        Span<Byte> buffer = stackalloc Byte[16];
+                        Assert.IsTrue( _reader.Read( buffer ) == 16 );
+                        _guidBuffer = new Guid( buffer );
+                        break;
+
+                    case EToken.Single:
+                        _floatBuffer = _reader.ReadSingle();
+                        break;
+
+                    case EToken.Double:
+                        _doubleBuffer = _reader.ReadDouble();
+                        break;
+
+                    case EToken.String:
+                    case EToken.PropertyName:
+                        _stringBuffer = _reader.ReadString();
+                        break;
+
+                    case EToken.StartObject:
+                    case EToken.StartArray:
+                        _depth++;
+                        break;
+
+                    case EToken.EndObject:
+                    case EToken.EndArray:
+                        _depth--;
+                        if( _depth < 0 )
+                            throw new Exception( "Unexpected end of container" );
+                        break;
+
+                    default:
+                    {
+                        if ( currentToken.IsAliasToken() )
+                        {
+                            _processAliasSampler.Begin();
+                            var id = (UInt32)currentToken & 0x7F;
+                            if ( _aliases.TryGetValue( id, out var alias ) )             //Replace alias with property name
+                            {
+                                currentToken  = alias.token;
+                                _stringBuffer = alias.value;
+                            }
+
+                            //Debug.LogWarning( $"[{nameof(BinaryReader)}]-[{nameof(StoreValue)}] Property name alias id {id} is not defined" );
+                            //SkipProperty();
+                            _processAliasSampler.End();
+                        }
+
+                        break;
+                    }
                 }
 
-                if ( currentToken == EToken.StartObject )
-                {
-                    _path.Push( new Container { Token = EToken.StartObject } );
-                    _depth++;
-                }
-                else if ( currentToken == EToken.StartArray )
-                {
-                    _path.Push( new Container { Token = EToken.StartArray, ElementIndex = -1} );
-                    _depth++;
-                }
-                else if ( currentToken == EToken.EndObject )
-                {
-                    _depth--;
-                    var lastObject = _path.Pop();
-                    Assert.IsTrue( lastObject.Token == EToken.StartObject );
-                }
-                else if( currentToken == EToken.EndArray )
-                {
-                    _depth--;
-                    var lastArray = _path.Pop();
-                    Assert.IsTrue( lastArray.Token == EToken.StartArray );
-                }
-                else if( currentToken == EToken.PropertyName )
-                {
-                    var lastObject = _path.Pop();
-                    Assert.IsTrue( lastObject.Token == EToken.StartObject );
-                    lastObject.PropertyName = _stringBuffer;
-                    _path.Push( lastObject );
-                }
-                _processPathSampler.End();
+                CurrentToken = currentToken;
 
-                if( _depth < 0 )
-                    throw new Exception( $"Unexpected end of container" );
+                // _processPathSampler.Begin();
+                // if ( _path.TryPeek( out var arr ) && arr.Token == EToken.StartArray )
+                // {
+                //     var lastObject = _path.Pop();
+                //     lastObject.ElementIndex += 1;                   //Count array elements for path
+                //     _path.Push( lastObject );
+                // }
+                //
+                // if ( currentToken == EToken.StartObject )
+                // {
+                //     _path.Push( new Container { Token = EToken.StartObject } );
+                //     _depth++;
+                // }
+                // else if ( currentToken == EToken.StartArray )
+                // {
+                //     _path.Push( new Container { Token = EToken.StartArray, ElementIndex = -1} );
+                //     _depth++;
+                // }
+                // else if ( currentToken == EToken.EndObject )
+                // {
+                //     _depth--;
+                //     var lastObject = _path.Pop();
+                //     Assert.IsTrue( lastObject.Token == EToken.StartObject );
+                // }
+                // else if( currentToken == EToken.EndArray )
+                // {
+                //     _depth--;
+                //     var lastArray = _path.Pop();
+                //     Assert.IsTrue( lastArray.Token == EToken.StartArray );
+                // }
+                // else if( currentToken == EToken.PropertyName )
+                // {
+                //     var lastObject = _path.Pop();
+                //     Assert.IsTrue( lastObject.Token == EToken.StartObject );
+                //     lastObject.PropertyName = _stringBuffer;
+                //     _path.Push( lastObject );
+                // }
+                // _processPathSampler.End();
 
                 _readNextTokenSampler.End();
                 return CurrentToken;
             }
-            else
-            {
-                CurrentToken = EToken.EoF;
-                _readNextTokenSampler.End();
-                return EToken.EoF;
-            }
+
+            CurrentToken = EToken.EoF;
+            _readNextTokenSampler.End();
+            return EToken.EoF;
         }
 
         public override void ReadStartObject( )
@@ -356,7 +438,7 @@ namespace GDDB.Serialization
             }
         }
 
-        public override Type ReadTypeValue(Assembly defaultAssembly )
+        public override Type ReadTypeValue( )
         {
             _readTypeValueSampler.Begin();
 
@@ -364,18 +446,26 @@ namespace GDDB.Serialization
             {
                 case EToken.StartArray:
                 {
+                    _readTypeValue2Sampler.Begin();
                     var assemblyName = ReadStringValue();
                     var @namespace   = ReadStringValue();
                     var typeName     = ReadStringValue();
                     ReadEndArray();
+                    _readTypeValue2Sampler.End();
                     
-                    if ( assemblyName != null )
-                        defaultAssembly = Assembly.Load( assemblyName );
-
+                    _readTypeValue3Sampler.Begin();
+                    var assembly = Assembly.Load( assemblyName );
+                    _readTypeValue3Sampler.End();
                     var typeNameString = @namespace != null ? $"{@namespace}.{typeName}" : typeName;
-                    if ( defaultAssembly != null )
+                    if ( assembly != null )
                     {
-                        var result = defaultAssembly.GetType( typeNameString );
+                        _readTypeValue4Sampler.Begin();
+                        if( !_typeCache.TryGetValue( typeNameString, out var result ) )
+                        {
+                            result                     = assembly.GetType( typeNameString );
+                            _typeCache[typeNameString] = result;
+                        }
+                        _readTypeValue4Sampler.End();
                         _readTypeValueSampler.End();
                         return result;
                     }
@@ -480,87 +570,6 @@ namespace GDDB.Serialization
                     }
                 }
             }
-        }
-
-        private EToken StoreValue( EToken token )
-        {
-            _storeValueSampler.Begin();
-
-            if ( token.IsAliasToken() )
-            {
-                var id = (UInt32)token & 0x7F;
-                if( _aliases.TryGetValue( id, out var alias ) )             //Replace alias with property name
-                {
-                    token = alias.token;
-                    _stringBuffer = alias.value;
-                }
-                else
-                {
-                    //Debug.LogWarning( $"[{nameof(BinaryReader)}]-[{nameof(StoreValue)}] Property name alias id {id} is not defined" );
-                    //SkipProperty();
-                }
-
-                _storeValueSampler.End();
-                return token;
-            }
-
-            switch ( token )                           //Read payload
-            {
-                case EToken.Int8:
-                    _intBuffer = _reader.ReadSByte();
-                    break;
-
-                case EToken.UInt8:
-                    _intBuffer = _reader.ReadByte();
-                    break;
-
-                case EToken.Int16:
-                    _intBuffer = _reader.ReadInt16();
-                    break;
-
-                case EToken.UInt16:
-                    _intBuffer = _reader.ReadUInt16();
-                    break;
-
-                case EToken.Int32:
-                    _intBuffer = _reader.ReadInt32();
-                    break;
-
-                case EToken.UInt32:
-                    _intBuffer = _reader.ReadUInt32();
-                    break;
-
-                case EToken.Int64:
-                    _intBuffer = _reader.ReadInt64();
-                    break;
-
-                case EToken.UInt64:
-                    _intBuffer = unchecked((Int64)_reader.ReadUInt64());
-                    break;
-
-                case EToken.Guid:
-                    Span<Byte> buffer = stackalloc Byte[16];
-                    Assert.IsTrue( _reader.Read( buffer ) == 16 );
-                    _guidBuffer = new Guid( buffer );
-                    break;
-
-                case EToken.Single:
-                    _floatBuffer = _reader.ReadSingle();
-                    break;
-
-                case EToken.Double:
-                    _doubleBuffer = _reader.ReadDouble();
-                    break;
-
-                case EToken.String:
-                case EToken.PropertyName:
-                    _stringBuffer = _reader.ReadString();
-                    break;    
-            }
-
-            _storeValueSampler.End();
-
-            return token;
         }
 
         private struct Container

@@ -20,14 +20,17 @@ namespace GDDB.Serialization
         {
             _writer = writer;
 
-            writer.SetAlias( 101, EToken.PropertyName, NameTag );            //Common to Folders
-            writer.SetAlias( 102, EToken.PropertyName, IdTag );                //Common to Folders
-            //writer.SetPropertyNameAlias( 2, ".folders" );
-            //writer.SetPropertyNameAlias( 3, ".objs" );
-            writer.SetAlias( 105, EToken.PropertyName, TypeTag );
-            writer.SetAlias( 106, EToken.PropertyName, EnabledTag );
-            writer.SetAlias( 107, EToken.PropertyName, ComponentsTag );
-            writer.SetAlias( 108, EToken.PropertyName, LocalIdTag );
+            if ( writer is BinaryWriter bWriter )
+            {
+                bWriter.SetAlias( 101, EToken.PropertyName, NameTag );            //Common to Folders
+                bWriter.SetAlias( 102, EToken.PropertyName, IdTag );                //Common to Folders
+                //writer.SetPropertyNameAlias( 2, ".folders" );
+                //writer.SetPropertyNameAlias( 3, ".objs" );
+                bWriter.SetAlias( 105, EToken.PropertyName, TypeTag );
+                bWriter.SetAlias( 106, EToken.PropertyName, EnabledTag );
+                bWriter.SetAlias( 107, EToken.PropertyName, ComponentsTag );
+                bWriter.SetAlias( 108, EToken.PropertyName, LocalIdTag );
+            }
 
 #if UNITY_2021_2_OR_NEWER
             AddSerializer( new Vector3Serializer() );
@@ -84,7 +87,7 @@ namespace GDDB.Serialization
                 if ( type != typeof(GDObject) )
                 {
                     writer.WritePropertyName( TypeTag );
-                    writer.WriteValue( type, type.Assembly != typeof(GDObject).Assembly );
+                    writer.WriteValue( type );
                 }
                 writer.WritePropertyName( IdTag );
                 writer.WriteValue( obj.Guid );
@@ -126,7 +129,7 @@ namespace GDDB.Serialization
             if ( propertyType != actualType )
             {
                 writer.WritePropertyName( TypeTag );
-                writer.WriteValue( actualType, propertyType.Assembly != actualType.Assembly );
+                writer.WriteValue( actualType );
             }
 
             WriteObjectContent( actualType, obj, writer );
@@ -144,19 +147,16 @@ namespace GDDB.Serialization
 
         private void WriteObjectContent( Type actualType, Object obj, WriterBase writer )
         {
-            foreach (var field in actualType.GetFields( BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance ))
+            foreach (var field in GetSerializableFields( actualType ))
             {
-                if( IsFieldSerializable( field ))
+                var value = field.GetValue(obj);
+                if ( value != null )
                 {
-                    var value = field.GetValue(obj);
-                    if ( value != null )
-                    {
-                        WriteProperty( field.Name, field.FieldType, value, value.GetType(), writer );
-                    }
-                    else
-                    {
-                        WriteNullProperty( field.Name, field.FieldType, writer );
-                    }
+                    WriteProperty( field.Name, field.FieldType, value, value.GetType(), writer );
+                }
+                else
+                {
+                    WriteNullProperty( field.Name, field.FieldType, writer );
                 }
             }
         }

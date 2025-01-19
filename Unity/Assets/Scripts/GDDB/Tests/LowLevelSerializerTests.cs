@@ -465,11 +465,12 @@ namespace GDDB.Tests
         }
 
         [Test]
-        public void TestAliases( [Values]EBackend backend )
+        public void TestAliases( [Values(EBackend.Binary)]EBackend backend )
         {
             // Write
+            backend = EBackend.Binary;
             var buffer     = GetBuffer( backend );
-            var serializer = GetWriter( backend, buffer );
+            var serializer = (BinaryWriter)GetWriter( backend, buffer );
             serializer.SetAlias( 0, EToken.PropertyName, "TestAliasPropName" );
             serializer.SetAlias( 1, EToken.String, "TestAliasValue" );
             serializer.WriteStartObject();
@@ -488,7 +489,6 @@ namespace GDDB.Tests
             // Log
             LogBuffer( buffer );
 
-            if ( backend == EBackend.Binary )
             {
                 // Read without setting alias, should read alias token
                 var deserializer = GetReader( backend, buffer );
@@ -503,7 +503,7 @@ namespace GDDB.Tests
 
             { 
                 //Read with alias processing, should read aliased property name
-                var deserializer = GetReader( backend, buffer );
+                var deserializer = (BinaryReader)GetReader( backend, buffer );
                 deserializer.SetAlias( 0, EToken.PropertyName, "TestAliasPropName" );
                 deserializer.SetAlias( 1, EToken.String,       "TestAliasValue" );
                 deserializer.ReadStartObject();
@@ -696,10 +696,7 @@ namespace GDDB.Tests
             var buffer     = GetBuffer( backend );
             var serializer = GetWriter( backend, buffer );
             serializer.WriteStartArray();
-            serializer.WriteValue( testType, true );
-            serializer.WriteValue( testType, false );
-            serializer.WriteValue( testType, true );
-            serializer.WriteValue( testType, false );
+            serializer.WriteValue( testType );
             serializer.WriteEndArray();
 
             // Save to file
@@ -711,10 +708,7 @@ namespace GDDB.Tests
             // Read and assert
             var deserializer = GetReader( backend, buffer );
             deserializer.ReadStartArray();
-            deserializer.ReadTypeValue( null ).Should().Be( testType );                 //Assembly included in serialized type name
-            deserializer.ReadTypeValue( testType.Assembly).Should().Be( testType );     //Assembly no included, use given assembly
-            deserializer.ReadTypeValue( Assembly.Load( "GDDB.Tests.AnotherAssembly" )).Should().Be( testType );     //Assembly included, but we give some other assembly
-            deserializer.ReadTypeValue( null ).Should().Be( testType.Assembly.GetName().Name == "mscorlib" ? testType : null );                     //Assembly not included nor given
+            deserializer.ReadTypeValue(  ).Should().Be( testType );                 //Assembly included in serialized type name
         }
 
         [Test]

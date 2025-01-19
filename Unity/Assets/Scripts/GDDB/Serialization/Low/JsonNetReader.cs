@@ -32,11 +32,6 @@ namespace GDDB.Serialization
 
         public override String Path => _reader.Path;
 
-        public override void SetAlias( UInt32 id, EToken token, String stringValue )
-        {
-            //Not supported
-        }
-
         public override EToken ReadNextToken( )
         {
             if ( CurrentToken == EToken.EoF )
@@ -192,17 +187,11 @@ namespace GDDB.Serialization
             }
         }
 
-        public override Type ReadTypeValue(Assembly defaultAssembly )
+        public override Type ReadTypeValue( )
         {
             var typeString = ReadStringValue();
             var result = Type.GetType( typeString );
-            if( result != null )
-                return result;
-
-            if( defaultAssembly != null )
-                return defaultAssembly.GetType( typeString );
-
-            return null;
+            return result;
         }
 
         public override Double GetFloatValue( )
