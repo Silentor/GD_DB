@@ -13,6 +13,7 @@ namespace GDDB.Serialization
     {
         private readonly System.IO.BinaryReader _reader;
         private          Int32                  _depth;
+        private          Int32                  _tokenIndex;
 
         private readonly Stack<Container> _path = new ( 16 );
 
@@ -54,7 +55,7 @@ namespace GDDB.Serialization
 
         public override String Path
         {
-            get => "Optimized out";
+            get => $"Token index: {Index}, depth: {Depth}, token {CurrentToken}";
             // get
             // {
             //     if( _path.Count == 0 )
@@ -82,6 +83,10 @@ namespace GDDB.Serialization
             //     }
             // }
         }
+
+        public Int32 Depth => _depth;
+
+        public Int32 Index => _tokenIndex;
 
         public void SetAlias( UInt32 id, EToken token, String stringValue )
         {
@@ -133,7 +138,8 @@ namespace GDDB.Serialization
 
                     case EToken.Guid:
                         Span<Byte> buffer = stackalloc Byte[16];
-                        Assert.IsTrue( _reader.Read( buffer ) == 16 );
+                        var readBytes   = _reader.Read( buffer );
+                        Assert.IsTrue( readBytes == 16 );
                         _guidBuffer = new Guid( buffer );
                         break;
 
@@ -224,6 +230,7 @@ namespace GDDB.Serialization
                 // }
                 // _processPathSampler.End();
 
+                _tokenIndex++;
                 _readNextTokenSampler.End();
                 return CurrentToken;
             }

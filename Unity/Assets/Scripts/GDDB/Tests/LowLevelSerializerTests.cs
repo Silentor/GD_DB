@@ -802,7 +802,54 @@ namespace GDDB.Tests
             deserializer.ReadEndObject();
         }
 
-        
+        [Test]
+        public void TestTokenIndex(  )
+        {
+            // Write
+            var backend = EBackend.Binary;
+            var buffer     = GetBuffer( backend );
+            var serializer = GetWriter( backend, buffer );
+            serializer.WriteStartObject();
+            serializer.WritePropertyName( "NullStringImplicit" );
+            serializer.WriteValue( (String)null );
+            serializer.WritePropertyName( "NullStringExplicit" );
+            serializer.WriteNullValue();
+            serializer.WritePropertyName( "NullInt32" );
+            serializer.WriteNullValue();
+            serializer.WritePropertyName( "NullDouble" );
+            serializer.WriteNullValue();
+            serializer.WritePropertyName( "NullBool" );
+            serializer.WriteNullValue();
+            serializer.WritePropertyName( "Array" );
+            serializer.WriteStartArray();
+            serializer.WriteNullValue();
+            serializer.WriteNullValue();
+            serializer.WriteNullValue();
+            serializer.WriteEndArray();
+            serializer.WriteEndObject();
+
+            // Save to file
+            SaveToFile( backend, "test", buffer );
+
+            // Log
+            LogBuffer( buffer );
+
+            // Read and assert
+            var deserializer = (BinaryReader)GetReader( backend, buffer );
+            deserializer.Index.Should().Be( 0 );            
+            deserializer.ReadStartObject();
+            deserializer.Index.Should().Be( 1 );
+            deserializer.ReadPropertyName(  );
+            deserializer.Index.Should().Be( 2 );
+
+            while ( deserializer.ReadNextToken() != EToken.EoF )
+            {
+            }
+
+            var lastIndex = deserializer.Index;
+            deserializer.ReadNextToken();
+            lastIndex.Should().Be( deserializer.Index );
+        }
 
        
     }
