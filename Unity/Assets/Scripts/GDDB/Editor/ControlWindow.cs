@@ -28,20 +28,6 @@ namespace GDDB.Editor
             GDBSourceGenerator.SourceUpdated += UpdateSourceGenInfo;
         }
 
-        private void OnValidated( IReadOnlyList<ValidationReport> reports )
-        {
-            if( _dbValidationLbl == null )
-                return;
-
-            _dbValidationLbl.text = $"Validation: errors {reports.Count}";
-        }
-
-        private void OnGddbStructureChanged( IReadOnlyList<GDObject> changedObjects, IReadOnlyList<String> deletedObjects )
-        {
-            UpdateGDBInfo( );
-            UpdateSourceGenInfo();
-        }
-
         private void OnDisable( )
         {
             GDAssets.GDDBAssetsChanged.Unsubscribe( OnGddbStructureChanged );
@@ -51,7 +37,6 @@ namespace GDDB.Editor
 
         private void CreateGUI( )
         {
-            Debug.Log( $"[{nameof(ControlWindow)}]-[{nameof(CreateGUI)}] " );
             var window = UnityEngine.Resources.Load<VisualTreeAsset>( "ControlWindow" ).Instantiate();
 
             _dbStatsLbl = window.Q<Label>( "GDBInfo" );
@@ -86,6 +71,20 @@ namespace GDDB.Editor
             OnValidated( Validator.Reports  );
 
             rootVisualElement.Add( window );
+        }
+
+        private void OnValidated( IReadOnlyList<ValidationReport> reports )
+        {
+            if( _dbValidationLbl == null )
+                return;
+
+            _dbValidationLbl.text = $"Validation: errors {reports.Count}";
+        }
+
+        private void OnGddbStructureChanged( IReadOnlyList<GDObject> changedObjects, IReadOnlyList<String> deletedObjects )
+        {
+            UpdateGDBInfo( );
+            UpdateSourceGenInfo();
         }
 
         private void GenerateSourceManual( )
