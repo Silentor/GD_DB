@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <ui:VisualElement name="Toolbar" style="flex-grow: 1; height: 22px; min-height: 22px; max-height: 22px; flex-direction: row;">
+        <ui:Button text="Open bin..." parse-escape-sequences="true" display-tooltip-when-elided="true" name="OpenBinBtn" style="max-width: 100px;" />
+        <ui:Button text="Open json..." parse-escape-sequences="true" display-tooltip-when-elided="true" name="OpenJsonBtn" style="max-width: 100px;" />
+    </ui:VisualElement>
+    <ui:ListView name="Content" style="flex-grow: 1;" />
+</ui:UXML>
