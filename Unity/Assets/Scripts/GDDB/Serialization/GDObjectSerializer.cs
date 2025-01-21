@@ -20,18 +20,6 @@ namespace GDDB.Serialization
         {
             _writer = writer;
 
-            if ( writer is BinaryWriter bWriter )
-            {
-                bWriter.SetAlias( 101, EToken.PropertyName, NameTag );            //Common to Folders
-                bWriter.SetAlias( 102, EToken.PropertyName, IdTag );                //Common to Folders
-                //writer.SetPropertyNameAlias( 2, ".folders" );
-                //writer.SetPropertyNameAlias( 3, ".objs" );
-                bWriter.SetAlias( 105, EToken.PropertyName, TypeTag );
-                bWriter.SetAlias( 106, EToken.PropertyName, EnabledTag );
-                bWriter.SetAlias( 107, EToken.PropertyName, ComponentsTag );
-                bWriter.SetAlias( 108, EToken.PropertyName, LocalIdTag );
-            }
-
 #if UNITY_2021_2_OR_NEWER
             AddSerializer( new Vector3Serializer() );
             AddSerializer( new Vector3IntSerializer() );

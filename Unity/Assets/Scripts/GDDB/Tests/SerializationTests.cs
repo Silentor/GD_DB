@@ -490,7 +490,7 @@ namespace GDDB.Tests
         }
 
         [Test]
-        public void FoldersSerializationTest( [Values]EBackend backend )
+        public void FullDBSerializationTest( [Values]EBackend backend )
         {
             //Arrange
             var root      = GetFolder( "Root", null  ) ;
@@ -547,14 +547,15 @@ namespace GDDB.Tests
                 //Act
                 var buffer = GetBuffer( backend );
                 var writer = GetWriter( backend, buffer );
-                var serializer = new DBDataSerializer();
-                serializer.Serialize( writer, root , NullGdAssetResolver.Instance );
+                var serializer = new FolderSerializer();
+                var objectSerializer = new GDObjectSerializer( writer );                        //Serialized with Objects
+                serializer.Serialize( root, objectSerializer, writer );
 
                 LogBuffer( buffer );
 
                 var reader = GetReader( backend, buffer );
                 var folderSerializer = new FolderSerializer();
-                var rootFolder       = folderSerializer.Deserialize( reader, null ); //Because objectSerializer is null, we don't get objects
+                var rootFolder       = folderSerializer.Deserialize( reader, null ); //Because objectSerializer is null, we don't deserialized objects
 
                 //Assert
                 rootFolder.SubFolders.Count.Should().Be( 2 );

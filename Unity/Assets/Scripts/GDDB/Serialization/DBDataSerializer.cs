@@ -24,12 +24,13 @@ namespace GDDB.Serialization
             var folderSerializer  = new FolderSerializer( );
 
             List<SymbolData> typeSymbols    = null;
-            var              isCompressible = writer is BinaryWriter;
+            var bWriter = writer as BinaryWriter;
+            var              isCompressible = bWriter != null;
             //isCompressible = false;
             if ( isCompressible )
             {
                 _compressAnalyzeSampler.Begin();
-                var compressTimer = timer.ElapsedMilliseconds;
+                //var compressTimer = timer.ElapsedMilliseconds;
                 typeSymbols   = GetMostCommonSymbols( rootFolder, objectsSerializer ).Take( 100 ).ToList();       //Limit custom aliases to 100
                 _compressAnalyzeSampler.End();
                 // Debug.Log( $"[{nameof(DBDataSerializer)}]-[{nameof(Serialize)}] Compressions analysis ended, time {timer.ElapsedMilliseconds - compressTimer} ms" );
@@ -38,6 +39,16 @@ namespace GDDB.Serialization
                 // {
                 //     Debug.Log( $"{typeSymbol.Symbol}, count {typeSymbol.Count}, score {typeSymbol.Score}, token {typeSymbol.Token}" );
                 // }
+
+                //Set default aliases
+                bWriter.SetAlias( 101, EToken.PropertyName, GDObjectSerializationCommon.NameTag );
+                bWriter.SetAlias( 102, EToken.PropertyName, GDObjectSerializationCommon.IdTag );               
+                bWriter.SetAlias( 103, EToken.PropertyName, FolderSerializer.FoldersTag );
+                bWriter.SetAlias( 104, EToken.PropertyName, FolderSerializer.ObjectsTag );
+                bWriter.SetAlias( 105, EToken.PropertyName, GDObjectSerializationCommon.TypeTag );
+                bWriter.SetAlias( 106, EToken.PropertyName, GDObjectSerializationCommon.EnabledTag );
+                bWriter.SetAlias( 107, EToken.PropertyName, GDObjectSerializationCommon.ComponentsTag );
+                bWriter.SetAlias( 108, EToken.PropertyName, GDObjectSerializationCommon.LocalIdTag );
             }
 
             writer.WriteStartObject();
@@ -60,7 +71,6 @@ namespace GDDB.Serialization
                 writer.WriteEndArray();
             
                 //Actually set aliases for compression
-                var bWriter = (BinaryWriter)writer;
                 for ( int i = 0; i < typeSymbols.Count; i++ )
                 {
                     bWriter.SetAlias( (Byte)i, typeSymbols[i].Token, typeSymbols[i].Symbol );
@@ -98,6 +108,21 @@ namespace GDDB.Serialization
             var       objectsSerializer = new GDObjectDeserializer( reader );
             var       foldersSerializer = new FolderSerializer();
 
+            //Set default aliases
+            if ( reader is BinaryReader bReader )
+            {
+                bReader.SetAlias( 101, EToken.PropertyName, GDObjectSerializationCommon.NameTag );
+                bReader.SetAlias( 102, EToken.PropertyName, GDObjectSerializationCommon.IdTag );
+                bReader.SetAlias( 103, EToken.PropertyName, FolderSerializer.FoldersTag );
+                bReader.SetAlias( 104, EToken.PropertyName, FolderSerializer.ObjectsTag );
+                bReader.SetAlias( 105, EToken.PropertyName, GDObjectSerializationCommon.TypeTag );
+                bReader.SetAlias( 106, EToken.PropertyName, GDObjectSerializationCommon.EnabledTag );
+                bReader.SetAlias( 107, EToken.PropertyName, GDObjectSerializationCommon.ComponentsTag );
+                bReader.SetAlias( 108, EToken.PropertyName, GDObjectSerializationCommon.LocalIdTag );
+            }
+            else 
+                bReader = null;
+
             reader.ReadStartObject();
             var propName = reader.ReadPropertyName();
             if ( propName == ".version" )        //Not implemented for now
@@ -113,7 +138,7 @@ namespace GDDB.Serialization
                 propName = reader.ReadPropertyName();
             }
 
-            if( propName == ".aliases" )              //Read compression aliases if data is compressed
+            if( propName == ".aliases" && bReader != null )              //Read compression aliases if data is compressed
             {
                 var aliases = new List<(Byte, SymbolData)>();
                 reader.ReadStartArray();
@@ -128,7 +153,6 @@ namespace GDDB.Serialization
                 }
                 reader.EnsureEndArray();
 
-                var bReader = (BinaryReader)reader;         //Only binary reader supports aliases
                 foreach ( var alias in aliases )
                     bReader.SetAlias( alias.Item1, alias.Item2.Token, alias.Item2.Symbol );
 
