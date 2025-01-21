@@ -16,22 +16,15 @@ namespace GDDB.Editor
         private          ListView       _content;
         private readonly List<ItemData> _data = new List<ItemData>();
 
-        [MenuItem( "GDDB/Open data file viewer..." )]
-        private static void ShowWindow( )
-        {
-            var window = GetWindow<DataFileViewer>();
-            window.titleContent = new GUIContent( "Data file viewer" );
-            window.Show();
-        }
+        
 
         private void CreateGUI( )
         {
             var window = UnityEngine.Resources.Load<VisualTreeAsset>( "DataFileViewer" ).Instantiate();
             var openBinBtn = window.Q<Button>( "OpenBinBtn" );
-            openBinBtn.clicked += ( ) =>
-            {
-                OpenBinFile();
-            };
+            openBinBtn.clicked += OpenBinFile;
+            var openJsonBtn = window.Q<Button>( "OpenJsonBtn" );
+            openJsonBtn.clicked += OpenJsonFile;
 
             _content          =  window.Q<ListView>( "Content" );
             _content.fixedItemHeight = 20;
@@ -41,6 +34,7 @@ namespace GDDB.Editor
 
             rootVisualElement.Add( window );
         }
+
 
         private void BindItem( VisualElement itemWidget, Int32 itemIndex )
         {
@@ -75,18 +69,34 @@ namespace GDDB.Editor
             var filePath = EditorUtility.OpenFilePanel( "Open bin file", defaultFolder, "bin" );
             if ( System.IO.File.Exists( filePath ) )
             {
-                var data = LoadFile( filePath );
+                using var fileStream = new FileStream( filePath, FileMode.Open, FileAccess.Read );
+                var reader = new BinaryReader( fileStream );
+                var data = LoadFile( reader );
                 UpdateContent( data );
             }
         }
 
-        private List<ItemData> LoadFile( String filePath )
+        private void OpenJsonFile( )
         {
-            if( String.IsNullOrEmpty( filePath ) )
-                return new List<ItemData>();
+            var defaultFolder = "Assets";
+            if( AssetDatabase.IsValidFolder( "Assets/StreamingAssets" ) )
+                defaultFolder = "Assets/StreamingAssets";
+            else if( AssetDatabase.IsValidFolder( "Assets/Resources" ) )
+                defaultFolder = "Assets/Resources";
 
-            var file   = File.ReadAllBytes( filePath );
-            var reader = new BinaryReader( new MemoryStream( file ) );
+            var filePath = EditorUtility.OpenFilePanel( "Open json file", defaultFolder, "json" );
+            if ( System.IO.File.Exists( filePath ) )
+            {
+                using var fileStream = new FileStream( filePath, FileMode.Open, FileAccess.Read );
+                var reader = new JsonNetReader( new StreamReader( fileStream ) );
+                var data = LoadFile( reader );
+                UpdateContent( data );
+            }
+        }
+
+
+        private List<ItemData> LoadFile( ReaderBase reader )
+        {
             var index  = 0;
             var data   = new List<ItemData>();
             while( reader.ReadNextToken() != EToken.EoF )

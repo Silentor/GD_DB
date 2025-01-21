@@ -18,14 +18,22 @@ namespace GDDB.Editor
         }
 
         [MenuItem( "GDDB/Open GDDB test generator window", priority = 1 )]
-        private static void ShowWindow( )
+        private static void ShowGeneratorWindow( )
         {
             var window = EditorWindow.GetWindow<StressTestDBGenerator>();
             window.titleContent = new GUIContent( "GDDB Generator" );
             window.Show();
         }
 
-        [MenuItem( "GDDB/Print project hierarchy", priority = 2 )]
+        [MenuItem( "GDDB/Open data file viewer", priority = 2)]
+        private static void ShowWindow( )
+        {
+            var window = EditorWindow.GetWindow<DataFileViewer>();
+            window.titleContent = new GUIContent( "Data file viewer" );
+            window.Show();
+        }
+
+        [MenuItem( "GDDB/Print project hierarchy", priority = 3 )]
         private static void PrintHierarchyToConsole( )
         {
             var  parser  = new FoldersParser();
@@ -41,7 +49,7 @@ namespace GDDB.Editor
             }
         }
 
-        [MenuItem( "GDDB/Load and print hierarchy..", priority = 3 )]
+        [MenuItem( "GDDB/Load and print hierarchy..", priority = 4 )]
         private static void LoadPrintHierarchyToConsole( )
         {
             var oldFolderKey       = $"{nameof(MainMenuIntegration)}.{nameof(LoadPrintHierarchyToConsole)}.OldFolder";

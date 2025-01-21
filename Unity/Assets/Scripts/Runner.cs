@@ -51,22 +51,37 @@ namespace GDDB_User
 
         private void Awake( )
         {
+            var memory = new MemoryStream();
+            using var writer = new System.IO.BinaryWriter( memory );
+            writer.Write( (Byte)1 );
+            writer.Write( (UInt64)2 );
+
+            var memory2 = new MemoryStream( memory.ToArray() );
+            using var reader = new System.IO.BinaryReader( memory2 );
+            if( reader.ReadByte() !=  1 ) throw new Exception("Invalid byte");
+            if( reader.ReadUInt64() != 2 ) throw new Exception("Invalid ulong");
+
+            Debug.Log( $"Its ok, buffer size {memory.ToArray().Length} bytes" );
+
+            return;
+
+
             //var typeStr = "GDDB.TestGDObject, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null";
             //var typeStr = "GDDB.TestGDObject, Assembly-CSharp";
-            var typeStr = "GDDB.TestGDObject";
-            var type    = Type.GetType( typeStr );
-            Assert.IsTrue( type != null );
-
-            var test = TestObject.CreateInstance<Test2>();
-            Assert.IsTrue( test.Id == 42 );
-
-            if ( FolderJson )
-            {
-                var       json       = FolderJson.text;
-                var       deser      = new FolderSerializer();
-                var       reader     = new JsonNetReader( json,  false );
-                var       folder     = deser.Deserialize( reader, null );
-            }
+            // var typeStr = "GDDB.TestGDObject";
+            // var type    = Type.GetType( typeStr );
+            // Assert.IsTrue( type != null );
+            //
+            // var test = TestObject.CreateInstance<Test2>();
+            // Assert.IsTrue( test.Id == 42 );
+            //
+            // if ( FolderJson )
+            // {
+            //     var       json       = FolderJson.text;
+            //     var       deser      = new FolderSerializer();
+            //     var       reader     = new JsonNetReader( json,  false );
+            //     var       folder     = deser.Deserialize( reader, null );
+            // }
 
 
             //var loader = new GdEditorLoader( );
