@@ -30,7 +30,8 @@ namespace GDDB.Serialization
             _reader = new JsonTextReader( stream );
         }
 
-        public override String Path => _reader.Path;
+        public override String Path  => _reader.Path;
+        public override Int32  Depth => _reader.Depth;
 
         public override EToken ReadNextToken( )
         {

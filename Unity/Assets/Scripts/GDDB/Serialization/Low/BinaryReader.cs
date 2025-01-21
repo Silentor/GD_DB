@@ -84,7 +84,14 @@ namespace GDDB.Serialization
             // }
         }
 
-        public Int32 Depth => _depth;
+        public override Int32 Depth
+        {
+            get
+            {
+                var currentToken = CurrentToken;
+                return currentToken == EToken.StartObject || currentToken == EToken.StartArray ? _depth - 1 : _depth;
+            }
+        }
 
         public Int32 Index => _tokenIndex;
 

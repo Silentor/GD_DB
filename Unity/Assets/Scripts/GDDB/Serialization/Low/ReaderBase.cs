@@ -9,6 +9,8 @@ namespace GDDB.Serialization
 
         public abstract String Path { get; }
 
+        public abstract Int32 Depth { get; }
+
         public abstract EToken ReadNextToken( );
 
         public abstract void ReadStartObject( );

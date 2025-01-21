@@ -810,22 +810,26 @@ namespace GDDB.Tests
             var buffer     = GetBuffer( backend );
             var serializer = GetWriter( backend, buffer );
             serializer.WriteStartObject();
-            serializer.WritePropertyName( "NullStringImplicit" );
-            serializer.WriteValue( (String)null );
-            serializer.WritePropertyName( "NullStringExplicit" );
-            serializer.WriteNullValue();
-            serializer.WritePropertyName( "NullInt32" );
-            serializer.WriteNullValue();
-            serializer.WritePropertyName( "NullDouble" );
-            serializer.WriteNullValue();
-            serializer.WritePropertyName( "NullBool" );
-            serializer.WriteNullValue();
-            serializer.WritePropertyName( "Array" );
+            serializer.WritePropertyName( "testName" );
+            serializer.WriteValue( "testValue" );
+            serializer.WritePropertyName( "testInt" );
+            serializer.WriteValue( 42 );
+            serializer.WritePropertyName( "testIntArray" );
             serializer.WriteStartArray();
-            serializer.WriteNullValue();
-            serializer.WriteNullValue();
-            serializer.WriteNullValue();
+            serializer.WriteValue( 1 );
+            serializer.WriteValue( 2 );
+            serializer.WriteValue( 3 );
             serializer.WriteEndArray();
+            serializer.WritePropertyName( "testMiscArray" );
+            serializer.WriteStartArray();
+            serializer.WriteValue( 42 );
+            serializer.WriteValue( "testValue" );
+            serializer.WriteStartObject();
+            serializer.WritePropertyName( "embeddedObject" );
+            serializer.WriteValue( "embeddedValue" );
+            serializer.WriteEndObject();
+            serializer.WriteEndArray();
+
             serializer.WriteEndObject();
 
             // Save to file
@@ -851,7 +855,67 @@ namespace GDDB.Tests
             lastIndex.Should().Be( deserializer.Index );
         }
 
-       
+
+        [Test]
+        public void TestTokenDepth( [Values]EBackend backend )
+        {
+            // Write
+            var buffer     = GetBuffer( backend );
+            var serializer = GetWriter( backend, buffer );
+            serializer.WriteStartObject();
+            serializer.WritePropertyName( "testName" );
+            serializer.WriteValue( "testValue" );
+            serializer.WritePropertyName( "testInt" );
+            serializer.WriteValue( 42 );
+            serializer.WritePropertyName( "testIntArray" );
+            serializer.WriteStartArray();
+            serializer.WriteValue( 1 );
+            serializer.WriteValue( 2 );
+            serializer.WriteValue( 3 );
+            serializer.WriteEndArray();
+            serializer.WritePropertyName( "testMiscArray" );
+            serializer.WriteStartArray();
+            serializer.WriteValue( 42 );
+            serializer.WriteValue( "testValue" );
+            serializer.WriteStartObject();
+            serializer.WritePropertyName( "embeddedObject" );
+            serializer.WriteValue( "embeddedValue" );
+            serializer.WriteEndObject();
+            serializer.WriteEndArray();
+
+            serializer.WriteEndObject();
+
+            // Save to file
+            SaveToFile( backend, "test", buffer );
+
+            // Log
+            LogBuffer( buffer );
+
+            // Read and assert
+            var deserializer = GetReader( backend, buffer );
+            deserializer.Depth.Should().Be( 0 );            
+            deserializer.ReadStartObject();
+            deserializer.Depth.Should().Be( 0 );
+            deserializer.ReadPropertyName(  );
+            deserializer.Depth.Should().Be( 1 );
+            while ( deserializer.ReadNextToken() != EToken.StartArray ) {};
+            deserializer.Depth.Should().Be( 1 );
+            deserializer.ReadNextToken();
+            deserializer.Depth.Should().Be( 2 );
+            deserializer.ReadNextToken();
+            deserializer.Depth.Should().Be( 2 );
+            deserializer.ReadNextToken();
+            deserializer.Depth.Should().Be( 2 );
+            deserializer.ReadEndArray();
+            deserializer.Depth.Should().Be( 1 );
+
+            while ( deserializer.ReadNextToken() != EToken.EoF )
+            {
+            }
+
+            deserializer.Depth.Should().Be( 0 );
+        }
+
     }
 }
 
