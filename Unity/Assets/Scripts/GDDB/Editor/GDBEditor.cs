@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using GDDB.Serialization;
 using UnityEditor;
 using UnityEngine;
+using GDDB;
 
 namespace GDDB.Editor
 {

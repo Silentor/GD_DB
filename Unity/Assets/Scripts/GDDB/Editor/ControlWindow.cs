@@ -15,11 +15,13 @@ namespace GDDB.Editor
         private Label         _dbStatsLbl;
         private Label         _dbHashLbl;
         private Label         _dbValidationLbl;
-        private Label         _generatedStructureHashLbl;
-        private VisualElement _sourceGenHashIcon;
+        private Label         _sourceGenFileHashLbl;
+        private VisualElement _sourceGenFileHashIcon;
         private Button        _sourceGenBtn;
+        private Label         _sourceGenCodeHashLbl;
+        private VisualElement _sourceGenCodeHashIcon;
 
-        
+
         private void OnEnable( )
         {
             //Debug.Log( $"[{nameof(ControlWindow)}]-[{nameof(OnEnable)}] " );
@@ -48,8 +50,10 @@ namespace GDDB.Editor
             var container     = sourceGenSettingsBox.Q<VisualElement>( "SerializedSettings" );
             var sgSettings      = SourceGeneratorSettings.instance;
             container.Add( new InspectorElement(sgSettings) );
-            _generatedStructureHashLbl =  sourceGenSettingsBox.Q<Label>( "SourceGenHash" );
-            _sourceGenHashIcon         =  sourceGenSettingsBox.Q<VisualElement>( "SourceGenHashIcon" );
+            _sourceGenFileHashLbl =  sourceGenSettingsBox.Q<Label>( "SourceGenFileHash" );
+            _sourceGenFileHashIcon         =  sourceGenSettingsBox.Q<VisualElement>( "SourceGenFileHashIcon" );
+            _sourceGenCodeHashLbl =  sourceGenSettingsBox.Q<Label>( "SourceGenCodeHash" );
+            _sourceGenCodeHashIcon         =  sourceGenSettingsBox.Q<VisualElement>( "SourceGenCodeHashIcon" );
             _sourceGenBtn              =  sourceGenSettingsBox.Q<Button>( "SourceGenBtn" );
             _sourceGenBtn.clicked      += GenerateSourceManual;
 
@@ -139,13 +143,16 @@ namespace GDDB.Editor
         private void UpdateSourceGenInfo( )
         {
             //Can be called before GUI is created somehow
-            if( _generatedStructureHashLbl == null )
+            if( _sourceGenFileHashLbl == null )
                 return;
 
             var rootFolderHash        = GDBEditor.GDB.RootFolder.GetFoldersChecksum();
+            var generatedFileHash = GDBSourceGenerator.GetGeneratedFileChecksum();
             var generatedCodeHash = GDBSourceGenerator.GetGeneratedCodeChecksum();
-            _generatedStructureHashLbl.text = "Generated source hash: " + generatedCodeHash;
-            _sourceGenHashIcon.style.backgroundImage = rootFolderHash == generatedCodeHash ? Resources.HashOkIcon : Resources.HashNotOkIcon;
+            _sourceGenFileHashLbl.text = "Generated file hash: " + generatedFileHash;
+            _sourceGenFileHashIcon.style.backgroundImage = rootFolderHash == generatedFileHash ? Resources.HashOkIcon : Resources.HashNotOkIcon;
+            _sourceGenCodeHashLbl.text = "Generated code hash: " + generatedCodeHash;
+            _sourceGenCodeHashIcon.style.backgroundImage = rootFolderHash == generatedCodeHash ? Resources.HashOkIcon : Resources.HashNotOkIcon;
         }
 
         private static class Resources

@@ -66,20 +66,29 @@
       <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\Exceptions.cs">
         <Link>GDDB\Exceptions.cs</Link>
       </Compile>
-      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\FoldersJsonSerializer.cs">
-        <Link>GDDB\FoldersSerializer.cs</Link>
+      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\FolderSerializer.cs">
+        <Link>GDDB\FolderSerializer.cs</Link>
       </Compile>
-        <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\ObjectsJsonDeserializer.cs">
-            <Link>GDDB\ObjectsJsonDeserializer.cs</Link>
-        </Compile>
-        <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\ObjectsJsonCommon.cs">
-            <Link>GDDB\ObjectsJsonCommon.cs</Link>
-        </Compile>
+      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\GDObjectDeserializer.cs">
+        <Link>GDDB\GDObjectDeserializer.cs</Link>
+      </Compile>
+      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\GDObjectSerializationCommon.cs">
+        <Link>GDDB\GDObjectSerializationCommon.cs</Link>
+      </Compile>
       <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\IGdAssetResolver.cs">
         <Link>GDDB\IGdAssetResolver.cs</Link>
       </Compile>
-      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\JsonReaderExtensions.cs">
-        <Link>GDDB\JsonReaderExtensions.cs</Link>
+      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\Low\JsonNetReader.cs">
+        <Link>GDDB\JsonNetReader.cs</Link>
+      </Compile>
+      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\Low\ReaderBase.cs">
+        <Link>GDDB\ReaderBase.cs</Link>
+      </Compile>
+      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\Low\Token.cs">
+        <Link>GDDB\Token.cs</Link>
+      </Compile>
+      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\Low\WriterBase.cs">
+        <Link>GDDB\WriterBase.cs</Link>
       </Compile>
       <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\TypeCustomSerializer.cs">
         <Link>GDDB\TypeCustomSerializer.cs</Link>

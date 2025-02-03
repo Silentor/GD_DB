@@ -11,10 +11,12 @@ public class CodeEmitter
     private static readonly String AssemblyName = Assembly.GetExecutingAssembly().GetName().Name;
     private static readonly String AssemblyVersion = Assembly.GetExecutingAssembly(). GetName().Version.ToString();
     private static readonly String FileHeader = "//Generated from {0} at {1} hash {2}";
-    private static readonly String GeneratedTypeAttribute = $"[global::System.CodeDom.Compiler.GeneratedCodeAttribute(\"{AssemblyName}\", \"{AssemblyVersion}\")]";
-    private static readonly String GdDbTypeName = "GdDb";
-    
 
+    private static readonly String GdDbTypeName = "GdDb";
+
+    private static readonly String GeneratedTypeAttributeTemplate = "[global::System.CodeDom.Compiler.GeneratedCodeAttribute(\"{0}\", \"{1}\")]";
+    private static String GeneratedTypeAttribute;
+    
     // public String GenerateEnums( String treeFilePath, Category rootCategory, IReadOnlyCollection<Category> allCategories  )
     // {
     //     var sb = new StringBuilder();
@@ -32,6 +34,8 @@ public class CodeEmitter
 
     public String GenerateFolders( String treeFilePath, UInt64 hash, DateTime generationTime, IReadOnlyCollection<Folder> allFolders  )
     {
+        GeneratedTypeAttribute = String.Format( GeneratedTypeAttributeTemplate, AssemblyName, hash.ToString() );
+
         var sb = new StringBuilder();
         sb.AppendLine( String.Format( FileHeader, treeFilePath, generationTime, hash ));
         sb.AppendLine( "#nullable enable" );
@@ -55,6 +59,8 @@ public class CodeEmitter
 
     public String GenerateGdDbPartial( String treeFilePath, UInt64 hash, DateTime generationTime, Folder rootFolder )
     {
+        GeneratedTypeAttribute = String.Format( GeneratedTypeAttributeTemplate, AssemblyName, hash.ToString() );
+
         var sb = new StringBuilder();
         sb.AppendLine( String.Format( FileHeader, treeFilePath, generationTime, hash ));
         sb.AppendLine( "namespace GDDB" );
@@ -115,7 +121,7 @@ public class CodeEmitter
     {
         var classFolderName    = GetFolderClassName( folder );
 
-        sb.AppendLine( $"//Folder {folder.GetPath()}, subfolders {folder.SubFolders.Count}, objects {folder.Objects.Count}" );
+        sb.AppendLine( $"//Folder {folder.GetPath()}, subfolders {folder.SubFolders.Count}" );
         sb.AppendLine( GeneratedTypeAttribute );
         sb.AppendLine(
                 $$"""

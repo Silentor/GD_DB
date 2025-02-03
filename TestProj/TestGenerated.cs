@@ -5,11 +5,12 @@ using GDDB;
 
 namespace GDDB;
 
-public partial class GdDb
-{
+//public partial class GdDb
+//{
     //public TestRootFolder TestRoot => new( RootFolder );
-}
+//}
 
+/*
 public readonly struct TestRootFolder : IEnumerable<GDObject>, IEquatable<TestRootFolder>
 {
     public readonly Folder Folder;
@@ -106,5 +107,6 @@ public readonly struct TestHumansFolder : IEnumerable<GDObject>
     IEnumerator IEnumerable.GetEnumerator( )
     {
         return GetEnumerator();
-    } 
+    }
 }
+*/

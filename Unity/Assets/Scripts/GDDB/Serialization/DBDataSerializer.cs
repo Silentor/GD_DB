@@ -174,6 +174,7 @@ namespace GDDB.Serialization
             return (rootFolder, objectsSerializer.LoadedObjects);
         }
 
+#if UNITY_EDITOR
         /// <summary>
         /// For now we just inspect GDObject/GDComponent types, count assembly, namespace, type name and field names of most common types
         /// </summary>
@@ -281,7 +282,7 @@ namespace GDDB.Serialization
                     result.Add( symbolData );
             }
         }
-
+#endif
         private class SymbolData
         {
             public String Symbol;
@@ -289,5 +290,7 @@ namespace GDDB.Serialization
             public Int32  Score;
             public EToken Token;
         }
+
+
     }
 }

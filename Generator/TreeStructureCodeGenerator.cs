@@ -11,6 +11,8 @@ namespace GDDB.SourceGenerator
     [Generator]
     public class TreeStructureCodeGenerator : IIncrementalGenerator
     {
+        private const String LogFileName = $"{nameof(TreeStructureCodeGenerator)}.log";
+
         private static readonly DiagnosticDescriptor JsonParsingError = new ( 
                 "GDDB001", 
                 "Folders json parsing error", 
@@ -47,9 +49,9 @@ namespace GDDB.SourceGenerator
             {
                 Console.WriteLine( $"[DemoSourceGenerator] RegisterPostInitializationOutput {DateTime.Now}" );
             } );
-            var compilations = context.CompilationProvider.Select( (cmp, cancel) => cmp.AssemblyName );
+            var compilations = context.CompilationProvider.Select( static (cmp, cancel) => cmp.AssemblyName );
             var jsonFileData = context.AdditionalTextsProvider
-                                  .Where(static (text) => text.Path.EndsWith("TreeStructure.json"))
+                                  .Where(static (text) => text.Path.EndsWith("GdDbSourceGen.additionalfile"))
                                   .Select(static (text, cancellationToken) =>
                                    {
                                        var name = Path.GetFileNameWithoutExtension(text.Path);
@@ -74,29 +76,35 @@ namespace GDDB.SourceGenerator
                         //context.ReportDiagnostic( Diagnostic.Create( DebugInfo, null ) );
 
                         // #if DEBUG
-                        // if (!Debugger.IsAttached)                                            !
-                        // {
-                        //     Debugger.Launch();
-                        // }
+                        //if (!Debugger.IsAttached)                                            
+                        //{
+                            //Debugger.Launch();
+                        //}
                         // #endif 
 
                         //Console.WriteLine( $"[DemoSourceGenerator] Parsing file {pair.name}, compilation {context.}" );
 
                         //Generate code for GDDB assembly only, because this code heavily depends on gddb types
                         var assemblyName = pair.Right;
-                        if( assemblyName == null || assemblyName != "GDDB" )
+                        if( assemblyName == null || assemblyName != "GDDB")
                             return;
 
                         var json = pair.Left;
 
-                        var      foldersSerializer = new FoldersJsonSerializer();
+                        var      foldersSerializer = new FolderSerializer();
                         Folder rootFolder;
                         UInt64? dataHash = null;
                         try
                         {
-                            using var strReader = new StringReader( pair.Left.code );
-                            using var jsonReader = new JsonTextReader( strReader );
-                            rootFolder = foldersSerializer.Deserialize( jsonReader, null, out dataHash );
+                            using var strReader  = new StringReader( json.code );
+                            var       reader = new JsonNetReader( strReader );
+                            reader.ReadStartObject();
+                            reader.ReadPropertyName( "hash" );
+                            dataHash = reader.ReadUInt64Value();
+                            reader.ReadPropertyName( "Root" );
+                            rootFolder = foldersSerializer.Deserialize( reader, null );
+
+                            reader.ReadEndObject();
                         }
                         catch ( JsonException e )
                         {
@@ -130,6 +138,12 @@ namespace GDDB.SourceGenerator
 
                         Console.WriteLine( $"[DemoSourceGenerator] Finished" );
                     } );
+        }
+
+        private void Log( String message )
+        {
+            //File.AppendAllText( LogFileName, message );
+            //Console.WriteLine( $"[DemoSourceGenerator] {message}" );
         }
       
     }

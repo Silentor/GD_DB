@@ -28,10 +28,12 @@ var str     = System.IO.File.ReadAllText(file.FullName);
 //var gdTypeExt = emitter.GenerateGdTypeExtensions( "test.json", category, categories );
 //Console.WriteLine(gdTypeExt);
 
-var loader = new GdJsonLoader( str );
-var db = loader.GetGameDataBase();
+var loader = new GdFileLoader( str );
+var db     = loader.GetGameDataBase();
+var obj    = db.AllObjects[ 0 ];
+Console.WriteLine( obj.Name );
 //Console.WriteLine( db.RootFolder.Name );
-//Console.WriteLine( db.Root.Folder.Name );
+Console.WriteLine( db.Root.Folder.Name );
 //db.Root.Folder2.
 //var humans = db.Root.Mobs.Humans.ParentFolder;
 //var elves  = db.GetGDInfo().GetMobs().GetElves().ToArray();

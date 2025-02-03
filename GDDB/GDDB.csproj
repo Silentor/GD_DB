@@ -11,6 +11,12 @@
     </ItemGroup>
 
     <ItemGroup>
+        <AdditionalFiles Include="..\Unity\Assets\Structure.GdDbSourceGen.additionalfile">
+            <Link>Structure.GdDbSourceGen.additionalfile</Link>
+        </AdditionalFiles>
+    </ItemGroup>
+
+    <ItemGroup>
         <Compile Include="..\Unity\Assets\Scripts\GDDB\Crossplatform\UnityAttributes.cs">
             <Link>Crossplatform\UnityAttributes.cs</Link>
         </Compile>
@@ -41,32 +47,44 @@
         <Compile Include="..\Unity\Assets\Scripts\GDDB\GDObject.cs">
             <Link>GDDB\GDObject.cs</Link>
         </Compile>
-        <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\DBJsonSerializer.cs">
-            <Link>GDDB\DBJsonSerializer.cs</Link>
+        <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\DBDataSerializer.cs">
+          <Link>GDDB\DBDataSerializer.cs</Link>
         </Compile>
         <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\Exceptions.cs">
             <Link>GDDB\Exceptions.cs</Link>
         </Compile>
-        <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\FoldersJsonSerializer.cs">
-            <Link>GDDB\FoldersSerializer.cs</Link>
+        <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\FolderSerializer.cs">
+          <Link>GDDB\FolderSerializer.cs</Link>
         </Compile>
-        <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\GdJsonLoader.cs">
-            <Link>GDDB\GdJsonLoader.cs</Link>
+        <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\GdFileLoader.cs">
+          <Link>GDDB\GdFileLoader.cs</Link>
         </Compile>
         <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\GdLoader.cs">
             <Link>GDDB\GdLoader.cs</Link>
         </Compile>
-        <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\ObjectsJsonDeserializer.cs">
-            <Link>GDDB\ObjectsJsonDeserializer.cs</Link>
+        <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\GDObjectDeserializer.cs">
+          <Link>GDDB\GDObjectDeserializer.cs</Link>
         </Compile>
-        <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\ObjectsJsonCommon.cs">
-            <Link>GDDB\ObjectsJsonCommon.cs</Link>
+        <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\GDObjectSerializationCommon.cs">
+          <Link>GDDB\GDObjectSerializationCommon.cs</Link>
         </Compile>
         <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\IGdAssetResolver.cs">
             <Link>GDDB\IGdAssetResolver.cs</Link>
         </Compile>
-        <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\JsonReaderExtensions.cs">
-            <Link>GDDB\JsonReaderExtensions.cs</Link>
+        <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\Low\BinaryReader.cs">
+          <Link>GDDB\BinaryReader.cs</Link>
+        </Compile>
+        <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\Low\JsonNetReader.cs">
+          <Link>GDDB\JsonNetReader.cs</Link>
+        </Compile>
+        <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\Low\ReaderBase.cs">
+          <Link>GDDB\ReaderBase.cs</Link>
+        </Compile>
+        <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\Low\Token.cs">
+          <Link>GDDB\Token.cs</Link>
+        </Compile>
+        <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\Low\WriterBase.cs">
+          <Link>GDDB\WriterBase.cs</Link>
         </Compile>
         <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\TypeCustomSerializer.cs">
             <Link>GDDB\TypeCustomSerializer.cs</Link>

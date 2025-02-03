@@ -11,11 +11,4 @@
       <ProjectReference Include="..\GDDB\GDDB.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Content Include="..\Unity\Assets\StreamingAssets\DefaultGDDB.json">
-        <Link>DefaultGDDB.json</Link>
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
-    </ItemGroup>
-
 </Project>

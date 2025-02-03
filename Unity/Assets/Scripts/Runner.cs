@@ -63,28 +63,14 @@ namespace GDDB_User
 
             Debug.Log( $"Its ok, buffer size {memory.ToArray().Length} bytes" );
 
+            var type = typeof(GDDB.Generated.DBFolder);
+            Debug.Log( type.AssemblyQualifiedName );
+
             return;
 
 
-            //var typeStr = "GDDB.TestGDObject, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null";
-            //var typeStr = "GDDB.TestGDObject, Assembly-CSharp";
-            // var typeStr = "GDDB.TestGDObject";
-            // var type    = Type.GetType( typeStr );
-            // Assert.IsTrue( type != null );
-            //
-            // var test = TestObject.CreateInstance<Test2>();
-            // Assert.IsTrue( test.Id == 42 );
-            //
-            // if ( FolderJson )
-            // {
-            //     var       json       = FolderJson.text;
-            //     var       deser      = new FolderSerializer();
-            //     var       reader     = new JsonNetReader( json,  false );
-            //     var       folder     = deser.Deserialize( reader, null );
-            // }
-
-
-            //var loader = new GdEditorLoader( );
+            var loader = new GdEditorLoader( );
+            //loader.GetGameDataBase().
 
             // var all = Resources.LoadAll( "" );
             // foreach ( var res in all )

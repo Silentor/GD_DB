@@ -7,6 +7,6 @@ using GDDB.Serialization;
 var json = System.IO.File.ReadAllText("DefaultGDDB.json");
 
 var timer = System.Diagnostics.Stopwatch.StartNew();
-var loader = new GdJsonLoader( json );
+var loader = new GdFileLoader( json );
 timer.Stop();
 Console.WriteLine( $"Loaded GDDB ({loader.GetGameDataBase().AllObjects.Count} objects) from json string length {json.Length}" );
