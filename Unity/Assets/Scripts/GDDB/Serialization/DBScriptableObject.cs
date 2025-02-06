@@ -13,9 +13,9 @@ namespace GDDB.Serialization
     [Serializable]
     public struct SerializableFolder
     {
-        public String           Name;
-        public SerializableGuid Guid;
-        public Int32            Depth;
-        public List<GDObject>   Objects;
+        public String                   Name;
+        public SerializableGuid         Guid;
+        public Int32                    Depth;
+        public List<ScriptableObject>   Objects;
     }
 }

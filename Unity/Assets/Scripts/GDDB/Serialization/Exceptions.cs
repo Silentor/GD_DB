@@ -184,7 +184,7 @@ namespace GDDB.Serialization
         {
         }
 
-        public ReaderFolderException( Folder folder, ReaderBase reader, string message)
+        public ReaderFolderException( GdFolder folder, ReaderBase reader, string message)
                 : base( message )
         {
             Reader       = reader;
@@ -194,7 +194,7 @@ namespace GDDB.Serialization
             FolderPath = folder.GetPath();
         }
 
-        public ReaderFolderException( Folder folder, ReaderBase reader, string message, Exception inner)
+        public ReaderFolderException( GdFolder folder, ReaderBase reader, string message, Exception inner)
                 : base( message, inner )
         {
             Reader       = reader;

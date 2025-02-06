@@ -40,4 +40,20 @@ namespace GDDB.Tests
         }
     }
 
+    public class TestSO : ScriptableObject
+    {
+        public Int32            Value;
+
+        public GDObject         GDObjectReference;
+        public TestSO2          SOObjectReference;
+        public TestSO           SelfReference;
+    }
+
+    public class TestSO2 : ScriptableObject
+    {
+        public String Value;
+        public TestSO CircularReference;
+
+    }
+
 }

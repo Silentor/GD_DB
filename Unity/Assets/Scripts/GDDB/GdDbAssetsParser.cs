@@ -5,6 +5,7 @@ using Debug = UnityEngine.Debug;
 
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEngine;
 #endif
 
 namespace GDDB.Editor
@@ -15,12 +16,12 @@ namespace GDDB.Editor
     /// Creates GDDB DOM from folders and GDO assets structure. Starts from Assets/ folder
     /// Works only in Editor
     /// </summary>
-    public class FoldersParser
+    public class GdDbAssetsParser
     {
-        public Folder Root           { get; private set; }
+        public GdFolder Root           { get; private set; }
 
-        public IReadOnlyList<GDObject> AllObjects   =>  _allObjects;
-        public IReadOnlyList<Folder> AllFolders     =>  _allFolders;
+        public IReadOnlyList<ScriptableObject> AllObjects       =>  _allObjects;
+        public IReadOnlyList<GdFolder> AllFolders               =>  _allFolders;
 
         /// <summary>
         /// Equivalent to Unity's Assets folder.
@@ -37,15 +38,36 @@ namespace GDDB.Editor
             var disabledObjects = 0;
 
             _allObjects.Clear();
+            _allFolders.Clear();
 
-            //Get all GDObjects
-            var gdoids        = AssetDatabase.FindAssets("t:GDObject", new []{"Assets/"});   //Skip packages, consider collect GDObjects from Packages?
-            if( gdoids.Length == 0 )
+            //Find GD Root object
+            var rootsIds = AssetDatabase.FindAssets("t:GDRoot", new []{"Assets/"});   //Skip packages, consider collect GDObjects from Packages?
+            var gdroots  = new List<GDRoot>();
+            foreach ( var rootsId in rootsIds )
             {
-                Debug.LogError( $"[{nameof(FoldersParser)}] No GDObjects found, impossible to parse game data base" );
-                return false;
+                var path = AssetDatabase.GUIDToAssetPath( rootsId );
+                var root = AssetDatabase.LoadAssetAtPath<GDRoot>( path );
+                if( root.EnabledObject )
+                    gdroots.Add( root );
             }
 
+            if( gdroots.Count == 0 )
+            {
+                Debug.LogError( $"[{nameof(GdDbAssetsParser)}] No database assets found. Please add GDRoot object to the folder with game design data files (ScriptableObjects and GDObjects)" );
+                return false;
+            }
+            else if( gdroots.Count > 1 )     //todo implement several roots support
+            {
+                Debug.LogError( $"[{nameof(GdDbAssetsParser)}] Multiple database assets found, only one supported. Will use {AssetDatabase.GetAssetPath( gdroots[0] )} as a root" );
+            }
+
+            var rootObjectPath = AssetDatabase.GetAssetPath( gdroots[0] );
+            var rootFolderPath = System.IO.Path.GetDirectoryName( rootObjectPath );
+            var rootObject     = gdroots[0];
+            var dbId = rootObject.Id;
+
+            //Get all GDObjects under root
+            var gdoids        = AssetDatabase.FindAssets("t:ScriptableObject", new []{rootFolderPath});   //Skip packages, consider collect GDObjects from Packages?
             var gdos = new GDObjectPath[gdoids.Length];
             for ( var i = 0; i < gdoids.Length; i++ )
             {
@@ -58,7 +80,7 @@ namespace GDDB.Editor
             }
 
             //Assign Assets folder guid for consistency (Unity is not counts Assets as a folder asset  )
-            var assetsFolder = new Folder( "Assets", AssetsFolderGuid );
+            var assetsFolder = new GdFolder( "Assets", AssetsFolderGuid );
             var foldersCache = new List<(Guid, String )> { (assetsFolder.FolderGuid, assetsFolder.Name ) };
 
             //Add GDObjects to hierarchy
@@ -67,8 +89,8 @@ namespace GDDB.Editor
             for ( var i = 0; i < gdos.Length; i++ )
             {
                 var gdoData  = gdos[ i ];
-                var gdobject = AssetDatabase.LoadAssetAtPath<GDObject>( gdoData.Path );
-                if ( !gdobject.EnabledObject )
+                var gdobject = AssetDatabase.LoadAssetAtPath<ScriptableObject>( gdoData.Path );
+                if ( gdobject is GDObject gdo && !gdo.EnabledObject )
                 {
                     disabledObjects++;
                     continue;
@@ -85,7 +107,7 @@ namespace GDDB.Editor
                 _allObjects.Clear();
                 _allFolders.Clear();
                 Root  = assetsFolder;
-                Debug.LogWarning( $"[{nameof(FoldersParser)}] No enabled GDObjects found, impossible to parse game data base" );
+                Debug.LogWarning( $"[{nameof(GdDbAssetsParser)}] No enabled GDObjects found, impossible to parse game data base" );
                 return false;
             }
 
@@ -107,18 +129,18 @@ namespace GDDB.Editor
                 _allFolders.Add( folder );
 
             timer.Stop();
-            Debug.Log( $"[{nameof(FoldersParser)}]-[{nameof(Parse)}] processed {gdos.Length} GDObject assets, added {addedObjectCount} GDObjects and {_allFolders.Count} folders, disabled {disabledObjects} objects, root folder {Root.Name}, time {timer.ElapsedMilliseconds} ms" );
+            Debug.Log( $"[{nameof(GdDbAssetsParser)}]-[{nameof(Parse)}] processed {gdos.Length} GDObject assets, added {addedObjectCount} GDObjects and {_allFolders.Count} folders, disabled {disabledObjects} objects, root folder {rootFolderPath}, time {timer.ElapsedMilliseconds} ms" );
 
             return true;
         }
 
-        public void DebugParse( Folder presetHierarchy )
+        public void DebugParse( GdFolder presetHierarchy )
         {
             Root = presetHierarchy;
             CalculateDepth( Root );
         }
 
-        private void CalculateDepth( Folder root )
+        private void CalculateDepth( GdFolder root )
         {
             root.Depth = 0;
             foreach ( var folder in root.EnumerateFoldersDFS( false ) )
@@ -139,7 +161,7 @@ namespace GDDB.Editor
             var gdoids        = AssetDatabase.FindAssets("t:GDObject", new []{"Assets/"});   //Skip packages, consider collect GDObjects from Packages?
             if( gdoids.Length == 0 )
             {
-                Debug.LogError( $"[{nameof(FoldersParser)}] No GDObjects found, impossible to parse game data base" );
+                Debug.LogError( $"[{nameof(GdDbAssetsParser)}] No GDObjects found, impossible to parse game data base" );
                 gdos = Array.Empty<GDObjectPath>();
                 return null;
             }
@@ -167,7 +189,7 @@ namespace GDDB.Editor
             return result;
         }
 
-        private Folder GetOrCreateFolderForSplittedPath( Folder root, String[] splittedObjectPath, List<(Guid, String)> foldersCache )
+        private GdFolder GetOrCreateFolderForSplittedPath( GdFolder root, String[] splittedObjectPath, List<(Guid, String)> foldersCache )
         {
             //Create folders hierarchy
             var parentFolder = root;
@@ -182,7 +204,7 @@ namespace GDDB.Editor
                 {
                     var newFolderPath = String.Concat( parentFolder.GetPath(), "/", pathPart );
                     var newFolderGuid = GetFolderGuid( newFolderPath, foldersCache );
-                    folder = new Folder( pathPart, newFolderGuid, parentFolder );
+                    folder = new GdFolder( pathPart, newFolderGuid, parentFolder );
                     //_allFolders.Add( folder );
                 }
 
@@ -277,8 +299,8 @@ namespace GDDB.Editor
             return new ArraySegment<String>( mostCommonFolder.Array, 0, i ); 
         }
 
-        private readonly List<GDObject> _allObjects = new ();
-        private readonly List<Folder> _allFolders = new ();
+        private readonly List<ScriptableObject>     _allObjects = new ();
+        private readonly List<GdFolder>             _allFolders = new ();
 
         private struct GDObjectPath
         {

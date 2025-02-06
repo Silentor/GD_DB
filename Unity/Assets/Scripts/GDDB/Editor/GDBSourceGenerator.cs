@@ -90,7 +90,7 @@ namespace GDDB.Editor
 
         public static void GenerateGDBSource( Boolean forceRegenerate = false )
         {
-            var databaseHash = GDBEditor.GDB.RootFolder.GetFoldersChecksum();
+            var databaseHash = GDBEditor.DB.RootFolder.GetFoldersChecksum();
             var generatedHash = GetGeneratedFileChecksum();
             if( databaseHash != generatedHash || forceRegenerate )
             {
@@ -104,7 +104,7 @@ namespace GDDB.Editor
                 writer.WritePropertyName( "hash" );
                 writer.WriteValue( databaseHash );
                 writer.WritePropertyName( "Root" );
-                serializer.Serialize( GDBEditor.GDB.RootFolder, null, writer);
+                serializer.Serialize( GDBEditor.DB.RootFolder, null, writer);
                 writer.WriteEndObject();
 
                 var sourceFilePath = GetSourceFilePath();

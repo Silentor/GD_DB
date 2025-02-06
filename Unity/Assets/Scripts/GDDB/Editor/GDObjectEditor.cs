@@ -337,7 +337,7 @@ namespace GDDB.Editor
 
             try
             {
-                foreach ( var gdObject in GDBEditor.AllObjects )
+                foreach ( var gdObject in GDBEditor.AllObjects.OfType<GDObject>() )
                 {
                     if ( gdObject.Components.Any( c => c is null ) )            //Something wrong here (null ref component of missed component type)
                     {
@@ -454,7 +454,7 @@ namespace GDDB.Editor
             //Save db to json
             var toJsonBtn = new Button( ( ) => 
             {
-                var editorDB        = GDBEditor.GDB;
+                var editorDB        = GDBEditor.DB;
                 var assetsReference = CreateInstance<DirectAssetReferences>();
                 var buffer          = new StringBuilder();
                 var writer          = new JsonNetWriter( buffer, true );
@@ -474,7 +474,7 @@ namespace GDDB.Editor
                 var dbFile = new FileInfo( dbOutputPath );
                 Debug.Log( $"[{nameof(GDObjectEditor)}] Saved gddb to {dbOutputPath}, size {EditorUtility.FormatBytes( dbFile.Length)}, asset resolver to {assetsPath}"  );
             } );
-            toJsonBtn.text         = $"DB to Json ({GDBEditor.GDB.Name}.gddb.json)";
+            toJsonBtn.text         = $"DB to Json ({GDBEditor.DB.Name}.gddb.json)";
             toJsonBtn.style.width  = 100;
             toJsonBtn.style.height = 20;
             toolbar.Add( toJsonBtn );
@@ -482,7 +482,7 @@ namespace GDDB.Editor
             //Save db to binary
             var toBinaryBtn = new Button( ( ) => 
             {
-                var editorDB        = GDBEditor.GDB;
+                var editorDB        = GDBEditor.DB;
                 var assetsReference = CreateInstance<DirectAssetReferences>();
                 var buffer          = new MemoryStream();
                 var writer          = new BinaryWriter( buffer );
@@ -502,7 +502,7 @@ namespace GDDB.Editor
                 var dbFile = new FileInfo( dbOutputPath );
                 Debug.Log( $"[{nameof(GDObjectEditor)}] Saved gddb to {dbOutputPath}, size {EditorUtility.FormatBytes( dbFile.Length)}, asset resolver to {assetsPath}"  );
             } );
-            toJsonBtn.text         = $"DB to Json ({GDBEditor.GDB.Name}.gddb.json)";
+            toJsonBtn.text         = $"DB to Json ({GDBEditor.DB.Name}.gddb.json)";
             toJsonBtn.style.width  = 100;
             toJsonBtn.style.height = 20;
             toolbar.Add( toJsonBtn );
@@ -510,8 +510,8 @@ namespace GDDB.Editor
             //Save db to scriptable object
             var toSoBtn = new Button( ( ) => {
                 var serializer = new DBScriptableObjectSerializer();
-                var dbAsset    = serializer.Serialize( GDBEditor.GDB.RootFolder);
-                var path       = $"Assets/Resources/{GDBEditor.GDB.Name}.folders.asset";
+                var dbAsset    = serializer.Serialize( GDBEditor.DB.RootFolder);
+                var path       = $"Assets/Resources/{GDBEditor.DB.Name}.folders.asset";
                 AssetDatabase.CreateAsset( dbAsset, path );
                 Debug.Log( $"[{nameof(GDObjectEditor)}]-[{nameof(ProcessDebugToolbar)}] Saved GDDB in asset form to {path}", dbAsset );
             } );

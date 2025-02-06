@@ -12,6 +12,7 @@ using NUnit.Framework.Interfaces;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestRunner;
+using Object = System.Object;
 
 //[assembly:TestRunCallback(typeof(GDDB.Tests.SerializationTests))]
 
@@ -86,7 +87,7 @@ namespace GDDB.Tests
             //Assert
             var reader       = GetReader( backend, buffer );
             var deserializer = new GDObjectDeserializer( reader );
-            var comp_copy    = deserializer.Deserialize( ).Components.First() as PrimitivesComponent;
+            var comp_copy    = ((GDObject)deserializer.Deserialize( )).Components.First() as PrimitivesComponent;
             comp_copy.Should().BeEquivalentTo( comp );
         }
 
@@ -115,7 +116,7 @@ namespace GDDB.Tests
             //Assert
             var reader       = GetReader( backend, buffer );
             var deserializer = new GDObjectDeserializer( reader );
-            var copy         = deserializer.Deserialize( ).Components.First() as NullReferencesAsEmptyComponent;
+            var copy         = ( (GDObject)deserializer.Deserialize() ).Components.First() as NullReferencesAsEmptyComponent;
             copy.StringMustBeEmpty.Should().BeEmpty(  );
             copy.NestedClassMustBeEmpty.StringMustBeEmpty.Should().BeEmpty(  );
             copy.NestedClassMustBeEmpty.IntParam.Should()
@@ -177,7 +178,7 @@ namespace GDDB.Tests
                 //Assert
                 var reader       = GetReader( backend, buffer );
                 var deserializer = new GDObjectDeserializer( reader );
-                var copy         = deserializer.Deserialize( ).Components.First() as EnumsComponent;
+                var copy         = ( (GDObject)deserializer.Deserialize() ).Components.First() as EnumsComponent;
                 copy.DefaultEnum.Should().Be( enumComp.DefaultEnum );
                 //copy.BigEnum.Should().Be( enumComp.BigEnum );
                 copy.SignedEnum.Should().Be( enumComp.SignedEnum );
@@ -210,7 +211,7 @@ namespace GDDB.Tests
                 //Assert
                 var reader       = GetReader( backend, buffer );
                 var deserializer = new GDObjectDeserializer( reader );
-                var copy         = deserializer.Deserialize( ).Components.First() as NullReferencesAsEmptyComponent;
+                var copy         = ( (GDObject)deserializer.Deserialize() ).Components.First() as NullReferencesAsEmptyComponent;
                 copy.StringMustBeEmpty.Should().BeEmpty(  );
                 copy.NestedClassMustBeEmpty.StringMustBeEmpty.Should().BeEmpty(  );
                 copy.NestedClassMustBeEmpty.IntParam.Should()
@@ -261,7 +262,7 @@ namespace GDDB.Tests
             //Asset deserialized data
             var reader       = GetReader( backend, buffer );
             var deserializer = new GDObjectDeserializer( reader );
-            var copy         = deserializer.Deserialize(  ).Components.First() as CollectionTestComponent;
+            var copy         = ( (GDObject)deserializer.Deserialize() ).Components.First() as CollectionTestComponent;
             copy.OldIntArray.Should().BeEquivalentTo( new CollectionTestComponent().OldIntArray );
             copy.IntArray.Should().BeEquivalentTo( collComp.IntArray );
             copy.StrArray.Should().BeEquivalentTo( new String[] { String.Empty, String.Empty, "3" } );
@@ -300,7 +301,7 @@ namespace GDDB.Tests
              //Assert
              var reader       = GetReader( backend, buffer );
              var deserializer = new GDObjectDeserializer( reader );
-             var copyObj      = deserializer.Deserialize(  );
+             var copyObj      = (GDObject)deserializer.Deserialize();
              obj.Guid.Should().NotBe( Guid.Empty );
              copyObj.Guid.Should().Be( obj.Guid );
         }
@@ -404,7 +405,7 @@ namespace GDDB.Tests
                 //Assert
                 var reader       = GetReader( backend, buffer );
                 var deserializer = new GDObjectDeserializer( reader );
-                var copyObjects  = deserializer.Deserialize( );
+                var copyObjects  = (GDObject)deserializer.Deserialize();
                 copyObjects.GetComponent<UnitySimpleTypesComponent>().Should().BeEquivalentTo( comp );
         }
 
@@ -481,7 +482,7 @@ namespace GDDB.Tests
                 //Assert
                 var reader       = GetReader( backend, buffer );
                 var deserializer = new GDObjectDeserializer( reader );
-                var copyObjects  = deserializer.Deserialize( testAssetResolver );
+                var copyObjects  = (GDObject)deserializer.Deserialize( testAssetResolver );
                 var copyComp     = copyObjects.GetComponent<UnityAssetReferenceComponent>();
                 copyComp.Texture2D.Should().BeSameAs( testTexture );
                 copyComp.Material.Should().BeSameAs( testMat );
@@ -523,10 +524,10 @@ namespace GDDB.Tests
             mobsFolder.Objects.Count.Should().Be( 1 );
             var elvesFolder = mobsFolder.SubFolders.Single( f => f.Name == "Elves" );
             elvesFolder.Objects.Count.Should().Be( 2 );
-            elvesFolder.Objects.Select( gdo => gdo.Guid ).Should().BeEquivalentTo( new[] { elf1.Guid, elf2.Guid } );
+            elvesFolder.Objects.OfType<GDObject>().Select( gdo => gdo.Guid ).Should().BeEquivalentTo( new[] { elf1.Guid, elf2.Guid } );
             elvesFolder.SubFolders.Should().BeEmpty();
-            elvesFolder.Objects.Select( gdo => gdo.Guid ).Should().BeEquivalentTo( new[] { elf1.Guid, elf2.Guid } );
-            elvesFolder.Objects.Select( gdo => gdo.Name ).Should().BeEquivalentTo( new[] { "Elf1", "Elf2" } );
+            elvesFolder.Objects.OfType<GDObject>().Select( gdo => gdo.Guid ).Should().BeEquivalentTo( new[] { elf1.Guid, elf2.Guid } );
+            elvesFolder.Objects.OfType<GDObject>().Select( gdo => gdo.Name ).Should().BeEquivalentTo( new[] { "Elf1", "Elf2" } );
         }
 
         [Test]
@@ -696,8 +697,113 @@ namespace GDDB.Tests
                 var deserializer = new DBDataSerializer(  );
                 var result = deserializer.Deserialize( reader, NullGdAssetResolver.Instance, out _ );
                 result.rootFolder.Objects.Count.Should().Be( 1 );
-                result.objects[0].Components.Count.Should().Be( 3 );
-        }      
+                ( (GDObject)result.objects[ 0 ] ).Components.Count.Should().Be( 3 );
+        }
+
+        [Test]
+        public void TestScriptableObjectsInDB( [Values]EBackend backend)
+        {
+              //Arrange
+              var so1 = ScriptableObject.CreateInstance<TestSO>();
+              var so2 = ScriptableObject.CreateInstance<TestSO2>();
+              var gdo = GDObject.CreateInstance<GDObject>();
+              var rootFolder = GetFolder( "Root", null );
+
+              rootFolder.Objects.Add( so1 );
+              rootFolder.Objects.Add( so2 );
+              rootFolder.Objects.Add( gdo );
+
+              so1.name = "SO1";
+              so1.Value = 42;
+              so1.SOObjectReference = so2;
+              so1.SelfReference = so1;
+              so1.GDObjectReference = gdo;
+
+              so2.name = "SO2";
+              so2.CircularReference = so1;
+
+              gdo.name = "GDO";
+
+              //Act
+              var buffer           = GetBuffer( backend );
+              var writer           = GetWriter( backend, buffer );
+              var serializer       = new FolderSerializer();
+              var objectSerializer = new GDObjectSerializer( writer );
+              serializer.Serialize( rootFolder, objectSerializer, writer );
+
+              LogBuffer( buffer );
+
+              var reader           = GetReader( backend, buffer );
+              var folderSerializer = new FolderSerializer();
+              var objectDeserializer = new GDObjectDeserializer( reader );
+              var rootFolder2       = folderSerializer.Deserialize( reader, objectDeserializer );
+              objectDeserializer.ResolveGDObjectReferences();
+
+              //Assert
+              objectDeserializer.LoadedObjects.Count.Should().Be( 3 );
+              rootFolder2.Objects.Count.Should().Be( rootFolder.Objects.Count );
+              rootFolder2.Name.Should().Be( "Root" );
+
+              var so1_copy = (TestSO)rootFolder2.Objects.First( so => so.name   == "SO1" );
+              var so2_copy = (TestSO2)rootFolder2.Objects.First( so => so.name  == "SO2" );
+              var gdo_copy = (GDObject)rootFolder2.Objects.First( so => so.name == "GDO" );
+              so1_copy.Value.Should().Be( so1.Value );
+              so1_copy.SelfReference.Should().BeSameAs( so1_copy );
+              so1_copy.SOObjectReference.Should().BeSameAs( so2_copy );
+              so1_copy.GDObjectReference.Should().BeSameAs( gdo_copy );
+
+              so2_copy.Value.Should().Be( string.Empty );                       //Unity deserialize null string as empty
+              so2_copy.CircularReference.Should().BeSameAs( so1_copy );
+        }
+
+        [Test]
+        public void TesNullGDObjectReferences( [Values]EBackend backend)
+        {
+              //Arrange
+              var so1 = ScriptableObject.CreateInstance<TestSO>();
+              var so2 = ScriptableObject.CreateInstance<TestSO2>();
+              var gdo = GDObject.CreateInstance<GDObject>();
+              var rootFolder = GetFolder( "Root", null );
+
+              rootFolder.Objects.Add( so1 );
+              rootFolder.Objects.Add( so2 );
+              rootFolder.Objects.Add( gdo );
+
+              so1.name = "SO1";
+              so2.name = "SO2";
+              gdo.name = "GDO";
+
+              //Act
+              var buffer           = GetBuffer( backend );
+              var writer           = GetWriter( backend, buffer );
+              var serializer       = new FolderSerializer();
+              var objectSerializer = new GDObjectSerializer( writer );
+              serializer.Serialize( rootFolder, objectSerializer, writer );
+
+              LogBuffer( buffer );
+
+              var reader           = GetReader( backend, buffer );
+              var folderSerializer = new FolderSerializer();
+              var objectDeserializer = new GDObjectDeserializer( reader );
+              var rootFolder2       = folderSerializer.Deserialize( reader, objectDeserializer );
+              objectDeserializer.ResolveGDObjectReferences();
+
+              //Assert
+              objectDeserializer.LoadedObjects.Count.Should().Be( 3 );
+              rootFolder2.Objects.Count.Should().Be( rootFolder.Objects.Count );
+              rootFolder2.Name.Should().Be( "Root" );
+
+              var so1_copy = (TestSO)rootFolder2.Objects.First( so => so.name   == "SO1" );
+              var so2_copy = (TestSO2)rootFolder2.Objects.First( so => so.name  == "SO2" );
+              //var gdo_copy = (GDObject)rootFolder2.Objects.First( so => so.name == "GDO" );
+              so1_copy.Value.Should().Be( so1.Value );
+              so1_copy.SelfReference.Should().BeNull(  );
+              so1_copy.SOObjectReference.Should().BeNull(  );
+              so1_copy.GDObjectReference.Should().BeNull(  );
+
+              so2_copy.Value.Should().Be( string.Empty );                       //Unity deserialize null string as empty
+              so2_copy.CircularReference.Should().BeNull(  );
+        }
 
         GDObject CreateGDObject( String name )
         {
@@ -713,16 +819,16 @@ namespace GDDB.Tests
                 return gdo;
         }
 
-        private Folder GetFolder( String name, Folder parent )
+        private GdFolder GetFolder( String name, GdFolder parent )
         { 
                 if ( parent != null )
                 {
-                        var result = new Folder( name, Guid.NewGuid(), parent );
+                        var result = new GdFolder( name, Guid.NewGuid(), parent );
                         return result;
                 }
                 else
                 {
-                        return new Folder( name, Guid.NewGuid() );
+                        return new GdFolder( name, Guid.NewGuid() );
                 }
         }
 

@@ -2,9 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Reflection;
-using Newtonsoft.Json.Linq;
 using Object = System.Object;
 using UnityEngine;
 
@@ -38,9 +36,10 @@ namespace GDDB.Serialization
 
 #if UNITY_EDITOR
 
-        public void Serialize( GDObject @object,IGdAssetResolver assetResolver = null )
+        public void Serialize( ScriptableObject @object,IGdAssetResolver assetResolver = null )
         {
-            if ( !@object.EnabledObject )
+            var gdobject = @object as GDObject;
+            if ( gdobject && !gdobject.EnabledObject )
                 return;
 
             _assetResolver = assetResolver ?? NullGdAssetResolver.Instance;
@@ -48,10 +47,12 @@ namespace GDDB.Serialization
             if( @object is ISerializationCallbackReceiver serializationCallbackReceiver)
                 serializationCallbackReceiver.OnBeforeSerialize();
 
-            foreach ( var gdComponent in @object.Components )
-                if( gdComponent is ISerializationCallbackReceiver componentSerializationCallbackReceiver )
-                    componentSerializationCallbackReceiver.OnBeforeSerialize();
-
+            if( gdobject )
+            {
+                foreach ( var gdComponent in gdobject.Components )
+                    if ( gdComponent is ISerializationCallbackReceiver componentSerializationCallbackReceiver )
+                        componentSerializationCallbackReceiver.OnBeforeSerialize();
+            }
             WriteGDObject( @object, _writer );                    
 
             //Debug.Log( $"[{nameof(GDObjectSerializer)}] Serialized gd object {@object.Name} to {_writer.GetType().Name}, referenced {_assetResolver.Count} assets, used asset resolver {_assetResolver.GetType().Name}" );
@@ -64,7 +65,7 @@ namespace GDDB.Serialization
 
 #if UNITY_EDITOR
 
-        private void  WriteGDObject( GDObject obj, WriterBase writer )
+        private void  WriteGDObject( ScriptableObject obj, WriterBase writer )
         {
             try
             {
@@ -72,39 +73,54 @@ namespace GDDB.Serialization
                 writer.WritePropertyName( NameTag );
                 writer.WriteValue( obj.name );
                 var type = obj.GetType();
-                if ( type != typeof(GDObject) )
+
+                if ( obj is GDObject gdobj )                                 //Serialize as GDObject ( with components )
+                {
+                    if ( type != typeof(GDObject) )
+                    {
+                        writer.WritePropertyName( TypeTag );
+                        writer.WriteValue( type );
+                    }
+                    writer.WritePropertyName( IdTag );
+                    writer.WriteValue( gdobj.Guid );
+                    if ( !gdobj.EnabledObject )
+                    {
+                        writer.WritePropertyName( EnabledTag );
+                        writer.WriteValue( false );
+                    }
+
+                    writer.WritePropertyName( ComponentsTag );
+                    writer.WriteStartArray();
+                    foreach ( var gdComponent in gdobj.Components )
+                    {
+                        if( gdComponent == null || gdComponent.GetType().IsAbstract )       //Seems like missed class component
+                            continue;
+
+                        WriteObject( typeof(GDComponent), gdComponent, writer ) ;
+                    }
+                    writer.WriteEndArray();
+                }
+                else                                                        //Serialize as plain ScriptableObject (no components, no embedded guid, no Enabled flag)
                 {
                     writer.WritePropertyName( TypeTag );
                     writer.WriteValue( type );
+                    writer.WritePropertyName( IdTag );
+                    var guid = GetGuidFromSO( obj );
+                    writer.WriteValue( guid );
                 }
-                writer.WritePropertyName( IdTag );
-                writer.WriteValue( obj.Guid );
-                if ( !obj.EnabledObject )
-                {
-                    writer.WritePropertyName( EnabledTag );
-                    writer.WriteValue( false );
-                }
-
-                writer.WritePropertyName( ComponentsTag );
-                writer.WriteStartArray();
-                foreach ( var gdComponent in obj.Components )
-                {
-                    if( gdComponent == null || gdComponent.GetType().IsAbstract )       //Seems like missed class component
-                        continue;
-
-                    WriteObject( typeof(GDComponent), gdComponent, writer ) ;
-                }
-                writer.WriteEndArray();
 
                 WriteObjectContent( type, obj, writer );
-
                 writer.WriteEndObject();
 
                 ObjectsWritten++;
             }
             catch ( Exception e )
             {
-                throw new WriterObjectException( obj.name, obj.GetType(), _writer, $"Error writing object {obj.name} ({obj.Guid}) of type {obj.GetType()}", e );
+                throw new WriterObjectException( obj.name, obj.GetType(), _writer, 
+                        obj is GDObject gdobj 
+                                ? $"Error writing object {obj.name} ({gdobj.Guid}) of type {obj.GetType()}"
+                                : $"Error writing object {obj.name} of type {obj.GetType()}", 
+                        e );
             }
         }
 
@@ -207,9 +223,15 @@ namespace GDDB.Serialization
                 var elementType = valueType.GetGenericArguments()[0];
                 WriteCollection( elementType, (IList)value, writer );
             }
-            else if( typeof(GDObject).IsAssignableFrom( valueType) )
+            else if( typeof(ScriptableObject).IsAssignableFrom( valueType) )
             {
-                writer.WriteValue( ((GDObject)value).Guid );                  
+                if( value is GDObject gdObject )
+                    writer.WriteValue( gdObject.Guid );
+                else 
+                {
+                     var guid = GetGuidFromSO( (ScriptableObject)value );
+                     writer.WriteValue( guid );
+                }
             }
             else if ( _serializers.TryGetValue( propertyType, out var serializer ) )
             {
@@ -234,7 +256,11 @@ namespace GDDB.Serialization
                 writer.WriteStartArray();                           //todo consider write null, save some bytes for binary mode
                 writer.WriteEndArray();
             }
-            else
+            else if ( typeof(UnityEngine.Object).IsAssignableFrom( propertyType ) )     //Reference-stored Unity objects
+            {
+                writer.WriteNullValue();
+            }
+            else 
             {
                 //Create and serialize empty object (Unity-way compatibility)       //todo consider write JSON null, restore object at loading
                 var emptyObject  = CreateEmptyObject( propertyType );
@@ -301,6 +327,18 @@ namespace GDDB.Serialization
             //Null fields will be 'inited' by serializer
             var result = defaultConstructor.Invoke( Array.Empty<Object>() );
             return result;
+        }
+
+        private Guid GetGuidFromSO( ScriptableObject obj )
+        {
+            if ( UnityEditor.AssetDatabase.TryGetGUIDAndLocalFileIdentifier( obj, out var guidStr, out Int64 _ ) )
+                return Guid.ParseExact( guidStr, "N" );
+            else
+            {
+                //Probably runtime created for test purposes, so create runtime stable guid
+                var guid = new Guid( obj.GetInstanceID(), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 );
+                return guid;
+            }
         }
 
 #endif

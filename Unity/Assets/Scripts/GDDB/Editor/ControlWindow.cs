@@ -100,7 +100,7 @@ namespace GDDB.Editor
         {
             if ( String.IsNullOrEmpty( updateSettings.ScriptableObjectDBPath ) ) throw new InvalidOperationException( "Output path is empty" );
 
-            GDDBUpdater.UpdateScriptableObjectDB( updateSettings, GDBEditor.GDB );
+            GDDBUpdater.UpdateScriptableObjectDB( updateSettings, GDBEditor.DB );
             var result = AssetDatabase.LoadAssetAtPath<DBScriptableObject>( updateSettings.ScriptableObjectDBPath  );
             if( result )
                 EditorGUIUtility.PingObject( result );
@@ -112,7 +112,7 @@ namespace GDDB.Editor
         {
             if ( String.IsNullOrEmpty( updateSettings.JsonDBPath ) ) throw new InvalidOperationException( "Output path is empty" );
 
-            GDDBUpdater.UpdateJsonDB( updateSettings, GDBEditor.GDB, true );
+            GDDBUpdater.UpdateJsonDB( updateSettings, GDBEditor.DB, true );
             EditorUtility.RevealInFinder( updateSettings.JsonDBPath );
 
             if ( Validator.Reports.Count > 0 ) Debug.LogError( $"[{nameof(ControlWindow)}] GDDB validation errors detected, count {Validator.Reports.Count}" );
@@ -122,7 +122,7 @@ namespace GDDB.Editor
         {
             if ( String.IsNullOrEmpty( updateSettings.BinaryDBPath ) ) throw new InvalidOperationException( "Output path is empty" );
 
-            GDDBUpdater.UpdateBinaryDB( updateSettings, GDBEditor.GDB, true );
+            GDDBUpdater.UpdateBinaryDB( updateSettings, GDBEditor.DB, true );
             EditorUtility.RevealInFinder( updateSettings.BinaryDBPath );
 
             if ( Validator.Reports.Count > 0 ) Debug.LogError( $"[{nameof(ControlWindow)}] GDDB validation errors detected, count {Validator.Reports.Count}" );
@@ -134,7 +134,7 @@ namespace GDDB.Editor
             if( _dbStatsLbl == null )
                 return;
 
-            var rootFolder   = GDBEditor.GDB.RootFolder;
+            var rootFolder   = GDBEditor.DB.RootFolder;
             var rootFullPath = AssetDatabase.GUIDToAssetPath( rootFolder.FolderGuid.ToString("N") );
             _dbStatsLbl.text = $"GDB root folder: {rootFullPath}, objects {GDBEditor.AllObjects.Count}, folders {GDBEditor.AllFolders.Count}";
             _dbHashLbl.text  = "DB structure hash: " + rootFolder.GetFoldersChecksum( );
@@ -146,7 +146,7 @@ namespace GDDB.Editor
             if( _sourceGenFileHashLbl == null )
                 return;
 
-            var rootFolderHash        = GDBEditor.GDB.RootFolder.GetFoldersChecksum();
+            var rootFolderHash        = GDBEditor.DB.RootFolder.GetFoldersChecksum();
             var generatedFileHash = GDBSourceGenerator.GetGeneratedFileChecksum();
             var generatedCodeHash = GDBSourceGenerator.GetGeneratedCodeChecksum();
             _sourceGenFileHashLbl.text = "Generated file hash: " + generatedFileHash;

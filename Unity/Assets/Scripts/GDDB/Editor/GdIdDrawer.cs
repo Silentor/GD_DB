@@ -42,7 +42,7 @@ namespace GDDB.Editor
                 var filterAttr     = fieldInfo.GetCustomAttribute( typeof(GdTypeFilterAttribute) ) ;
                 var query          = (filterAttr as GdTypeFilterAttribute)?.Query;
                 var components     = (filterAttr as GdTypeFilterAttribute)?.Components;
-                var treeBrowser    = GdDbTreeWindow.Open( gddb, query, components, selectedObject, dropDownRect );
+                var treeBrowser    = GdDbTreePopup.Open( gddb, query, components, selectedObject, dropDownRect );
                 treeBrowser.Selected += ( gdObject ) =>
                 {
                     SetGDObject( property, gdObject );

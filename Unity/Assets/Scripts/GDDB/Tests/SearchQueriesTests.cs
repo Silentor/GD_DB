@@ -42,16 +42,16 @@ namespace GDDB.Tests
             return result;
         }
 
-        private Folder GetFolder( String name, Folder parent )
+        private GdFolder GetFolder( String name, GdFolder parent )
         {
             if ( parent != null )
             {
-                var result = new Folder( name, Guid.NewGuid(), parent );
+                var result = new GdFolder( name, Guid.NewGuid(), parent );
                 return result;
             }
             else
             {
-                return new Folder( name, Guid.NewGuid() );
+                return new GdFolder( name, Guid.NewGuid() );
             }
         }
 

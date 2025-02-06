@@ -13,8 +13,8 @@ namespace GDDB.Serialization
         /// <summary>
         /// Get all enabled GD Objects
         /// </summary>
-        public readonly IReadOnlyList<GDObject> AllObjects;
-        public readonly IReadOnlyList<Folder> AllFolders;
+        public readonly IReadOnlyList<ScriptableObject> AllObjects;
+        public readonly IReadOnlyList<GdFolder>         AllFolders;
 
         public GdEditorLoader(  )
         {
@@ -22,7 +22,7 @@ namespace GDDB.Serialization
                 throw new System.NotSupportedException( "GdEditorLoader can be used only in editor" );            
  #else
 
-                var parser  = new FoldersParser();
+                var parser  = new GdDbAssetsParser();
                 if ( parser.Parse() )
                 {
                     // if( !gdRoot )

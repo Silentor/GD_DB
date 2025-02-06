@@ -6,6 +6,9 @@ using UnityEngine;
 
 namespace GDDB.Editor
 {
+    /// <summary>
+    /// Check database objects for errors. There are default and custom validations (via interface implementation)
+    /// </summary>
     [InitializeOnLoad]
     public static class Validator
     {
@@ -24,17 +27,18 @@ namespace GDDB.Editor
 
         public static IReadOnlyList<ValidationReport> Validate( )
         {
-            var gddb    = GDBEditor.GDB;
+            var gddb    = GDBEditor.DB;
             _reports.Clear();                     
             var timer            = DateTime.Now;
             int validatedCounter = 0;
 
             foreach ( var folder in gddb.RootFolder.EnumerateFoldersDFS(  ) )
             {
-                foreach ( var gdo in folder.Objects )
+                foreach ( var obj in folder.Objects )
                 {
-                    if ( gdo.EnabledObject )
+                    if ( obj is GDObject gdo )
                     {
+                        if ( !gdo.EnabledObject ) continue;
                         DefaultGDOValidations( gdo, folder, _reports );
                         validatedCounter++;
                     }
@@ -63,12 +67,12 @@ namespace GDDB.Editor
             Validate();
         }
 
-        private static void DefaultGDOValidations( GDObject gdo, Folder folder, List<ValidationReport> reports )
+        private static void DefaultGDOValidations( GDObject gdo, GdFolder folder, List<ValidationReport> reports )
         {
-             CheckMissedComponentsVaslidation( gdo, folder, reports );
+             CheckMissedComponentsValidation( gdo, folder, reports );
         }
 
-        private static void CheckMissedComponentsVaslidation( GDObject gdo, Folder folder, List<ValidationReport> reports )
+        private static void CheckMissedComponentsValidation( GDObject gdo, GdFolder folder, List<ValidationReport> reports )
         {
             var so        = new SerializedObject( gdo );
             var compsProp = so.FindProperty( "Components" );

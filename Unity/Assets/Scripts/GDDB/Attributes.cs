@@ -11,7 +11,14 @@ namespace GDDB
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = true )]
     public class GdTypeFilterAttribute : Attribute
     {
+        /// <summary>
+        /// Path + object name query
+        /// </summary>
         public String   Query           { get; }
+
+        /// <summary>
+        /// GDObject components
+        /// </summary>
         public Type[]   Components      { get; }
 
         public GdTypeFilterAttribute( )

@@ -36,7 +36,7 @@ namespace GDDB.Editor
         [MenuItem( "GDDB/Print project hierarchy", priority = 3 )]
         private static void PrintHierarchyToConsole( )
         {
-            var  parser  = new FoldersParser();
+            var  parser  = new GdDbAssetsParser();
             if ( parser.Parse() )
             {
                 Debug.Log( $"Root folder: {parser.Root.GetPath()}, folder checksum {parser.Root.GetFoldersChecksum()}" );

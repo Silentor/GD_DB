@@ -13,17 +13,17 @@ namespace GDDB.Editor
     [InitializeOnLoad]
     public class GDBEditor
     {
-        private static GdDb                    _gbd;
-        private static Boolean                 _isGDAssetsChanged = true;
-        private static IReadOnlyList<GDObject> _allObjects;
-        private static IReadOnlyList<Folder> _allFolders;
+        private static GdDb                            _gbd;
+        private static Boolean                         _isGDAssetsChanged = true;
+        private static IReadOnlyList<ScriptableObject> _allObjects;
+        private static IReadOnlyList<GdFolder>         _allFolders;
 
         static GDBEditor( )
         {
             GDAssets.GDDBAssetsChanged.Subscribe( -1000, OnGddbStructureChanged );     //Update editor GDDB instance, so it need to be first call
         }
 
-        public static IReadOnlyList<GDObject> AllObjects
+        public static IReadOnlyList<ScriptableObject> AllObjects
         {
             get
             {
@@ -32,7 +32,7 @@ namespace GDDB.Editor
             }
         }
 
-        public static IReadOnlyList<Folder> AllFolders
+        public static IReadOnlyList<GdFolder> AllFolders
         {
             get
             {
@@ -41,7 +41,7 @@ namespace GDDB.Editor
             }
         }
 
-        public static GdDb GDB
+        public static GdDb DB
         {
             get
             {

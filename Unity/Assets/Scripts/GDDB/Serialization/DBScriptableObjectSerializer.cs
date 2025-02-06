@@ -10,7 +10,7 @@ namespace GDDB.Serialization
     /// </summary>
     public class DBScriptableObjectSerializer
     {
-        public DBScriptableObject Serialize( Folder rootFolder )
+        public DBScriptableObject Serialize( GdFolder rootFolder )
         {
             var timer = new System.Diagnostics.Stopwatch();
 
@@ -37,7 +37,7 @@ namespace GDDB.Serialization
             return result;
         }       
 
-        public Folder Deserialize( DBScriptableObject dbso )
+        public GdFolder Deserialize( DBScriptableObject dbso )
         {
             if ( dbso.Folders.Count == 0 )
                 return null;
@@ -53,14 +53,14 @@ namespace GDDB.Serialization
             return rootFolder;
         }
 
-        private Folder LoadFolder( List<SerializableFolder> folders, ref Int32 index, Folder parent )
+        private GdFolder LoadFolder( List<SerializableFolder> folders, ref Int32 index, GdFolder parent )
         {
             var myData = folders[ index ];
             var depth = myData.Depth;
             var name = myData.Name;
             var guid = myData.Guid.Guid;
             
-            var folder = parent != null ? new Folder( name, guid, parent ) : new Folder( name, guid );
+            var folder = parent != null ? new GdFolder( name, guid, parent ) : new GdFolder( name, guid );
             folder.Depth = depth;
             folder.Objects.AddRange( myData.Objects );
 

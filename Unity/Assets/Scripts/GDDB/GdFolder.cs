@@ -5,22 +5,23 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using JetBrains.Annotations;
+using UnityEngine;
 
 namespace GDDB
 {
     [DebuggerDisplay("Path {GetPath()}, folders {SubFolders.Count}, objects {Objects.Count}")]
-    public class Folder
+    public class GdFolder
     {
         public readonly String  Name;
         //public          String  Path { get; internal set; }
-        public          Folder? Parent;
+        public          GdFolder? Parent;
         public          Int32   Depth;
         public readonly Guid    FolderGuid;
 
-        public readonly List<Folder>   SubFolders = new ();
-        public readonly List<GDObject> Objects    = new();
+        public readonly List<GdFolder>          SubFolders = new ();
+        public readonly List<ScriptableObject>  Objects    = new();
 
-        public Folder( [NotNull] String name, Guid folderGuid )
+        public GdFolder( [NotNull] String name, Guid folderGuid )
         {
             if ( String.IsNullOrWhiteSpace( name ) || !IsFolderNameValid( name ) )
                 throw new ArgumentException( $"Incorrect folder name '{name}'", nameof(name) );
@@ -31,7 +32,7 @@ namespace GDDB
             FolderGuid = folderGuid;
         }
 
-        public Folder( String name, Guid folderGuid, [NotNull] Folder parent )
+        public GdFolder( String name, Guid folderGuid, [NotNull] GdFolder parent )
         {
             if ( parent == null ) throw new ArgumentNullException( nameof(parent) );
             if ( String.IsNullOrWhiteSpace( name ) || !IsFolderNameValid( name ) )
@@ -64,7 +65,7 @@ namespace GDDB
             else return String.Concat( Parent.GetPath(),  "/", Name );
         }
 
-        public IEnumerable<Folder> EnumeratePath( )
+        public IEnumerable<GdFolder> EnumeratePath( )
         {
             var current = this;
             while ( current != null )
@@ -74,7 +75,7 @@ namespace GDDB
             }
         }
 
-        public IEnumerable<Folder> EnumerateFoldersDFS( Boolean includeSelf = true )
+        public IEnumerable<GdFolder> EnumerateFoldersDFS( Boolean includeSelf = true )
         {
             if( includeSelf )
                 yield return this;
@@ -87,7 +88,7 @@ namespace GDDB
             }
         }
 
-        public Folder GetRootFolder( )
+        public GdFolder GetRootFolder( )
         {
             if( Parent == null )
                 return this;
@@ -178,7 +179,7 @@ namespace GDDB
             foreach ( var obj in Objects )
             {
                 result.Append( ' ', childIndent );
-                result.AppendLine( obj.Name );
+                result.AppendLine( obj.name );
             }
         }
 

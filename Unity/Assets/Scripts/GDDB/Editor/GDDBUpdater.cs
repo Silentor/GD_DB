@@ -39,7 +39,7 @@ namespace GDDB.Editor
                 if ( settings.AutoUpdateOnRun )
                 {
                     AssetDatabase.SaveAssets();
-                    var editorDB = GDBEditor.GDB;
+                    var editorDB = GDBEditor.DB;
                     UpdateScriptableObjectDB( settings, editorDB );
                     UpdateJsonDB( settings, editorDB );
                     UpdateBinaryDB( settings, editorDB );
@@ -71,7 +71,7 @@ namespace GDDB.Editor
             if ( settings.AutoUpdateOnBuild )
             {
                 AssetDatabase.SaveAssets();
-                var editorDB   = GDBEditor.GDB;
+                var editorDB   = GDBEditor.DB;
 
                 if ( editorDB.AllObjects.Any() )
                 {

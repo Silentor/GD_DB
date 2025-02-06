@@ -63,8 +63,8 @@ namespace GDDB_User
 
             Debug.Log( $"Its ok, buffer size {memory.ToArray().Length} bytes" );
 
-            var type = typeof(GDDB.Generated.DBFolder);
-            Debug.Log( type.AssemblyQualifiedName );
+            //var type = typeof(GDDB.Generated.DBFolder);
+            //Debug.Log( type.AssemblyQualifiedName );
 
             return;
 
@@ -178,7 +178,7 @@ namespace GDDB_User
 
         }
 
-        private Boolean CompareFolders( Folder f1, Folder f2 )
+        private Boolean CompareFolders( GdFolder f1, GdFolder f2 )
         {
             using var f1Iter = f1.EnumerateFoldersDFS().GetEnumerator();
             using var f2Iter = f2.EnumerateFoldersDFS().GetEnumerator();

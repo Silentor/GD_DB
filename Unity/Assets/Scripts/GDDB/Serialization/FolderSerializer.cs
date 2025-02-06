@@ -16,7 +16,7 @@ namespace GDDB.Serialization
 
 #if UNITY_EDITOR
 
-        public void Serialize( Folder root, GDObjectSerializer objectSerializer, WriterBase writer )
+        public void Serialize( GdFolder root, GDObjectSerializer objectSerializer, WriterBase writer )
         {
             _serFolderSampler.Begin();
             SerializeFolder( writer, root, objectSerializer );
@@ -25,7 +25,7 @@ namespace GDDB.Serialization
 
 #endif
 
-        public Folder Deserialize( ReaderBase reader, GDObjectDeserializer? objectSerializer )
+        public GdFolder Deserialize( ReaderBase reader, GDObjectDeserializer? objectSerializer )
         {
             reader.ReadStartObject();
             return DeserializeFolder( reader, null, objectSerializer );
@@ -33,7 +33,7 @@ namespace GDDB.Serialization
 
 #if UNITY_EDITOR
 
-        private void SerializeFolder( WriterBase writer, Folder folder, GDObjectSerializer objectSerializer )
+        private void SerializeFolder( WriterBase writer, GdFolder folder, GDObjectSerializer objectSerializer )
         {
             writer.WriteStartObject();
 
@@ -67,7 +67,7 @@ namespace GDDB.Serialization
                     //objects.Add( objJson );
 
                     //Full embed object write
-                    if ( obj.EnabledObject )
+                    if ( obj is not GDObject gdo || gdo.EnabledObject )
                     {
                         objectSerializer.Serialize( obj );
                     }
@@ -87,7 +87,7 @@ namespace GDDB.Serialization
         /// <param name="parent"></param>
         /// <param name="objectSerializer"></param>
         /// <returns></returns>
-        private Folder DeserializeFolder( ReaderBase reader, Folder? parent, GDObjectDeserializer? objectSerializer )
+        private GdFolder DeserializeFolder( ReaderBase reader, GdFolder? parent, GDObjectDeserializer? objectSerializer )
         {
             _deserFolderSampler.Begin();
             reader.EnsureStartObject();
@@ -96,7 +96,7 @@ namespace GDDB.Serialization
             var name    = reader.ReadStringValue();
             var guid = reader.ReadPropertyGuid( IdTag );
 
-            var folder = new Folder( name, guid )
+            var folder = new GdFolder( name, guid )
             {
                 Depth = parent != null ? parent.Depth + 1 : 0,
                 Parent = parent

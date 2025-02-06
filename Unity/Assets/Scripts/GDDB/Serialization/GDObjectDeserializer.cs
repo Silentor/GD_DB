@@ -16,20 +16,22 @@ using Object = System.Object;
 
 namespace GDDB.Serialization
 {
-    //Reader part of GDJson
+    /// <summary>
+    /// Reads gd objects from reader, stores cross gd objects references and able to resolve them after all objects are read
+    /// </summary>
     public class GDObjectDeserializer : GDObjectSerializationCommon
     {
         private readonly ReaderBase                                 _reader;
 
         private          IGdAssetResolver                           _assetResolver;
         private readonly List<UnresolvedGDObjectReference>          _unresolvedReferences = new ();
-        private readonly List<GDObject>                             _loadedObjects        = new ();     //To resolve loaded references in place
+        private readonly List<GDObjectAndGuid>                      _loadedObjects        = new ();     //To resolve gd objects cross-references
         private readonly CustomSampler                              _deserObjectSampler   = CustomSampler.Create( $"{nameof(GDObjectDeserializer)}.{nameof(Deserialize)}" );
         private readonly CustomSampler                              _resolveObjectSampler = CustomSampler.Create( $"{nameof(GDObjectDeserializer)}.{nameof(ResolveGDObjectReferences)}" );
         private readonly CustomSampler                              _getTypeConstructorSampler = CustomSampler.Create( $"{nameof(GDObjectDeserializer)}.{nameof(GetTypeConstructor)}" );
         private readonly Dictionary<Type, ConstructorInfo>          _constructorCache     = new();
 
-        public IReadOnlyList<GDObject> LoadedObjects => _loadedObjects;
+        public IReadOnlyList<GDObjectAndGuid> LoadedObjects => _loadedObjects;
 
         public GDObjectDeserializer( ReaderBase reader )
         {
@@ -64,7 +66,7 @@ namespace GDDB.Serialization
         /// </summary>
         /// <param name="assetResolver"></param>
         /// <returns></returns>
-        public GDObject Deserialize( IGdAssetResolver? assetResolver = null )
+        public ScriptableObject Deserialize( IGdAssetResolver? assetResolver = null )
         {
             _assetResolver    = assetResolver ?? NullGdAssetResolver.Instance;
 
@@ -78,30 +80,32 @@ namespace GDDB.Serialization
             if( result is ISerializationCallbackReceiver serializationCallbackReceiver)
                 serializationCallbackReceiver.OnAfterDeserialize();
 
-            foreach ( var gdComponent in result.Components )
-                if( gdComponent is ISerializationCallbackReceiver componentSerializationCallbackReceiver )
-                    componentSerializationCallbackReceiver.OnAfterDeserialize();
-
-            _loadedObjects.Add( result );
+            if( result is GDObject gdObject )
+                foreach ( var gdComponent in gdObject.Components )
+                    if( gdComponent is ISerializationCallbackReceiver componentSerializationCallbackReceiver )
+                        componentSerializationCallbackReceiver.OnAfterDeserialize();
+            
             return result;
         }
 
         public void ResolveGDObjectReferences( )
         {
             _resolveObjectSampler.Begin();
+            _loadedObjects.Sort();
             foreach ( var unresolvedReference in _unresolvedReferences )
             {
                 if( unresolvedReference.Guids != null )                //Collection target field
                 {
-                    if ( unresolvedReference.Field.FieldType.IsArray )
+                    if ( unresolvedReference.Field.FieldType.IsArray )             //Array of gdobject references
                     {
                         var result = Array.CreateInstance( unresolvedReference.Field.FieldType.GetElementType(), unresolvedReference.Guids.Count );
                         for ( int i = 0; i < unresolvedReference.Guids.Count; i++ )
                         {
                             var guid           = unresolvedReference.Guids[i];
-                            var resolvedObject = _loadedObjects.FirstOrDefault( gdo => gdo.Guid == guid );
-                            if ( resolvedObject )
+                            var resolvedObjectIndex = _loadedObjects.BinarySearch( new GDObjectAndGuid(){Guid = guid} );
+                            if ( resolvedObjectIndex >= 0 )
                             {
+                                var resolvedObject = _loadedObjects[resolvedObjectIndex].GdObject;
                                 result.SetValue( resolvedObject, i );
                             }
                             else
@@ -113,13 +117,14 @@ namespace GDDB.Serialization
                     }
                     else
                     {
-                        var result = (IList)Activator.CreateInstance( unresolvedReference.Field.FieldType );
+                        var result = (IList)Activator.CreateInstance( unresolvedReference.Field.FieldType );    //List of gdobject references
                         for ( int i = 0; i < unresolvedReference.Guids.Count; i++ )
                         {
-                            var guid           = unresolvedReference.Guids[i];
-                            var resolvedObject = _loadedObjects.FirstOrDefault( gdo => gdo.Guid == guid );
-                            if ( resolvedObject )
+                            var guid                = unresolvedReference.Guids[i];
+                            var resolvedObjectIndex = _loadedObjects.BinarySearch( new GDObjectAndGuid(){Guid = guid} );
+                            if ( resolvedObjectIndex >= 0 )
                             {
+                                var resolvedObject      = _loadedObjects.FirstOrDefault( gdo => gdo.Guid == guid );
                                 result.Add( resolvedObject );
                             }
                             else
@@ -132,9 +137,12 @@ namespace GDDB.Serialization
                 }
                 else                                 //Scalar target field
                 {
-                    var resolvedObject = _loadedObjects.FirstOrDefault( gdo => gdo.Guid == unresolvedReference.Guid );
-                    if( resolvedObject )
+                    var resolvedObjectIndex = _loadedObjects.BinarySearch( new GDObjectAndGuid(){Guid = unresolvedReference.Guid} );
+                    if ( resolvedObjectIndex >= 0 )
+                    {
+                        var resolvedObject      = _loadedObjects[resolvedObjectIndex].GdObject;
                         unresolvedReference.Field.SetValue( unresolvedReference.TargetObject, resolvedObject );
+                    }
                     else
                     {
                         Debug.LogError( $"[{nameof(GDObjectDeserializer)}]-[{nameof(ResolveGDObjectReferences)}] cannot resolve GDObject reference {unresolvedReference.Guid}. Target object {unresolvedReference.TargetObject.GetType().Name}, field {unresolvedReference.Field}" );
@@ -144,7 +152,7 @@ namespace GDDB.Serialization
             _resolveObjectSampler.End();
         }
 
-        private GDObject ReadGDObject( ReaderBase reader )
+        private ScriptableObject ReadGDObject( ReaderBase reader )
         {
             reader.EnsureStartObject();
             var name = reader.ReadPropertyString( NameTag );
@@ -167,46 +175,75 @@ namespace GDDB.Serialization
             if ( type == null )
                 throw new ReaderObjectException( name, null, reader, $"Cannot find the type {typeName}, object name {name}" );
 
-            var obj     = GDObject.CreateInstance( type ).SetGuid( guid );
-            obj.hideFlags     = HideFlags.HideAndDontSave;
-            obj.name          = name;
+            if ( typeof(GDObject).IsAssignableFrom( type ) )
+            {    
+                var obj       = GDObject.CreateInstance( type ).SetGuid( guid );
+                obj.hideFlags = HideFlags.HideAndDontSave;
+                obj.name      = name;
 
-            try
-            {
-                //Components should be read from reserved property
-                reader.ReadNextToken();         reader.EnsurePropertyName( ComponentsTag );
-                reader.ReadStartArray();
-
-                while ( reader.ReadNextToken() != EToken.EndArray )
+                try
                 {
-                    reader.EnsureStartObject();
+                    //Components should be read from reserved property
+                    reader.ReadNextToken();         reader.EnsurePropertyName( ComponentsTag );
+                    reader.ReadStartArray();
 
-                    try
+                    while ( reader.ReadNextToken() != EToken.EndArray )
                     {
-                        var component = (GDComponent)ReadObject( reader, typeof(GDComponent) );
-                        obj.Components.Add( component );
+                        reader.EnsureStartObject();
+
+                        try
+                        {
+                            var component = (GDComponent)ReadObject( reader, typeof(GDComponent) );
+                            obj.Components.Add( component );
+                        }
+                        catch ( Exception e )
+                        {
+                            throw new ReaderComponentException( obj.Components.Count, reader,
+                                    $"Error reading component index {obj.Components.Count} of GDObject {obj.Name} ({obj.Guid}) from {reader.Path}", e );
+                        }
                     }
-                    catch ( Exception e )
+                    reader.EnsureEndArray(  );
+
+                    reader.ReadNextToken();
+                    if ( type != typeof(GDObject) && reader.CurrentToken != EToken.EndObject )         //There can be properties of descendants of GDObject type
                     {
-                        throw new ReaderComponentException( obj.Components.Count, reader,
-                                $"Error reading component index {obj.Components.Count} of GDObject {obj.Name} ({obj.Guid}) from {reader.Path}", e );
+                        ReadObjectProperties( reader, obj );
                     }
+
+                    reader.EnsureEndObject();          
+                    _loadedObjects.Add( new GDObjectAndGuid(){Guid = guid, GdObject = obj} );
+                    return obj;
                 }
-                reader.EnsureEndArray(  );
-
-                reader.ReadNextToken();
-                if ( type != typeof(GDObject) && reader.CurrentToken != EToken.EndObject )         //There can be properties of descendants of GDObject type
+                catch ( Exception e )
                 {
-                    ReadObjectProperties( reader, obj );
+                    throw new ReaderObjectException( obj.Name, obj.GetType(), reader,
+                            $"Error reading object {obj.Name} of type {obj.GetType()} id {obj.Guid} from {reader.Path}", e );
                 }
-
-                reader.EnsureEndObject();
-                return obj;
             }
-            catch ( Exception e )
+            else                                                           //Read plain ScriptableObject
             {
-                throw new ReaderObjectException( obj.Name, obj.GetType(), reader,
-                        $"Error reading object {obj.Name} of type {obj.GetType()} from {reader.Path}", e );
+                var obj           = ScriptableObject.CreateInstance( type );
+                obj.hideFlags = HideFlags.HideAndDontSave;
+                obj.name      = name;
+
+                try
+                {
+                    reader.ReadNextToken();
+                    if ( type != typeof(ScriptableObject) && reader.CurrentToken != EToken.EndObject )         //There can be properties of descendants of Scriptable object type
+                    {
+                        ReadObjectProperties( reader, obj );
+                    }
+
+                    reader.EnsureEndObject();
+                    _loadedObjects.Add( new GDObjectAndGuid(){Guid = guid, GdObject = obj} );
+                    return obj;
+                }
+                catch ( Exception e )
+                {
+                    throw new ReaderObjectException( obj.name, obj.GetType(), reader,
+                            $"Error reading object {obj.name} of type {obj.GetType()} id {guid} from {reader.Path}", e );
+                }
+
             }
         }
 
@@ -331,20 +368,23 @@ namespace GDDB.Serialization
             {
                 return ReadCollectionFromJson( reader, propertyType );
             }
-            else if ( typeof(GDObject).IsAssignableFrom( propertyType ) )                 //Read GDObject by reference
-            {
-                var guid = reader.GetGuidValue();
-                var referencedObj = _loadedObjects.FirstOrDefault( gdo => gdo.Guid == guid );
-                if( referencedObj )
-                    return referencedObj;
-                else
-                    return new UnresolvedGDObjectReference(){Guid = guid};
-            }
             else if ( _serializers.TryGetValue( propertyType, out var deserializer ) )
             {
                 var result = deserializer.DeserializeBase( reader );
-                //reader.ReadNextToken();
                 return result;
+            }
+            else if ( typeof(ScriptableObject).IsAssignableFrom( propertyType ) )                 //Read GDObject by reference
+            {
+                var guid                = reader.GetGuidValue();
+                if ( guid == Guid.Empty )
+                    return null;
+                var resolvedObjectIndex = _loadedObjects.BinarySearch( new GDObjectAndGuid(){Guid = guid} );
+                if( resolvedObjectIndex >= 0 )
+                {
+                    return _loadedObjects[resolvedObjectIndex].GdObject;
+                }
+                else
+                    return new UnresolvedGDObjectReference(){Guid = guid};
             }
             else if ( typeof(UnityEngine.Object).IsAssignableFrom( propertyType ) )      //Read Unity asset by reference
             {
@@ -451,6 +491,42 @@ namespace GDDB.Serialization
             //Target info
             public Object  TargetObject;
             public FieldInfo Field;
+        }
+
+        public struct GDObjectAndGuid : IEquatable<GDObjectAndGuid>, IComparable<GDObjectAndGuid>
+        {
+            public ScriptableObject GdObject;
+            public Guid     Guid;
+
+            public bool Equals(GDObjectAndGuid other)
+            {
+                return Guid.Equals( other.Guid );
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is GDObjectAndGuid other && Equals( other );
+            }
+
+            public override int GetHashCode( )
+            {
+                return Guid.GetHashCode();
+            }
+
+            public static bool operator ==(GDObjectAndGuid left, GDObjectAndGuid right)
+            {
+                return left.Equals( right );
+            }
+
+            public static bool operator !=(GDObjectAndGuid left, GDObjectAndGuid right)
+            {
+                return !left.Equals( right );
+            }
+
+            public int CompareTo(GDObjectAndGuid other)
+            {
+                return Guid.CompareTo( other.Guid );
+            }
         }
 
     }

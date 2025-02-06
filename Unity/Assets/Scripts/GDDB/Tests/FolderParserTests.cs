@@ -11,8 +11,8 @@ namespace GDDB.Tests
         public void TestPathPartsEnumerator()
         {
             var path = "Assets/Scripts/GDDB/Tests/FolderParserTests.cs";
-            var partsWithFile = Enumerate( new FoldersParser.PathPartsEnumerator( path ) );
-            var partsWithoutFile = Enumerate( new FoldersParser.PathPartsEnumerator( path, true ) );
+            var partsWithFile = Enumerate( new GdDbAssetsParser.PathPartsEnumerator( path ) );
+            var partsWithoutFile = Enumerate( new GdDbAssetsParser.PathPartsEnumerator( path, true ) );
 
             Assert.AreEqual( 5,                      partsWithFile.Count );
             Assert.AreEqual( "Assets",               partsWithFile[0] );
@@ -28,7 +28,7 @@ namespace GDDB.Tests
             Assert.AreEqual( "Tests",                partsWithoutFile[3] );
         }
 
-        private List<String> Enumerate( FoldersParser.PathPartsEnumerator parts )
+        private List<String> Enumerate( GdDbAssetsParser.PathPartsEnumerator parts )
         {
             var result = new List<String>();
             while ( parts.MoveNext() )

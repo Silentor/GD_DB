@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
@@ -14,7 +13,7 @@ namespace GDDB.Serialization
         private readonly CustomSampler _compressAnalyzeSampler = CustomSampler.Create( $"{nameof(DBDataSerializer)}.CompressAnalyze" );
 
 #if UNITY_EDITOR
-        public void Serialize( WriterBase writer, Folder rootFolder, IGdAssetResolver assetsResolver )
+        public void Serialize( WriterBase writer, GdFolder rootFolder, IGdAssetResolver assetsResolver )
         {
             var hash  = rootFolder.GetFoldersChecksum();
 
@@ -101,7 +100,7 @@ namespace GDDB.Serialization
         //     return Deserialize( new StreamReader( jsonFile, Encoding.UTF8, false, 1024, true ), assetsResolver );
         // }
 
-        public (Folder rootFolder, IReadOnlyList<GDObject> objects) Deserialize( ReaderBase reader, IGdAssetResolver assetsResolver, out UInt64? hash )
+        public (GdFolder rootFolder, IReadOnlyList<ScriptableObject> objects) Deserialize( ReaderBase reader, IGdAssetResolver assetsResolver, out UInt64? hash )
         {
             _deserializeSampler.Begin();
             var       timer             = System.Diagnostics.Stopwatch.StartNew();
@@ -171,7 +170,7 @@ namespace GDDB.Serialization
             Debug.Log( $"[{nameof(DBDataSerializer)}]-[{nameof(Deserialize)}] deserialized db from {reader.GetType().Name}, objects {objectsSerializer.LoadedObjects.Count}, referenced {assetsResolver.Count} assets, time {timer.ElapsedMilliseconds} ms" );
             _deserializeSampler.End();
 
-            return (rootFolder, objectsSerializer.LoadedObjects);
+            return (rootFolder, objectsSerializer.LoadedObjects.Select( lo => lo.GdObject ).ToArray() );
         }
 
 #if UNITY_EDITOR
@@ -181,7 +180,7 @@ namespace GDDB.Serialization
         /// <param name="rootFolder"></param>
         /// <param name="objectsSerializer"></param>
         /// <returns></returns>
-        private List<SymbolData> GetMostCommonSymbols( Folder rootFolder, GDObjectSerializer objectsSerializer )
+        private List<SymbolData> GetMostCommonSymbols( GdFolder rootFolder, GDObjectSerializer objectsSerializer )
         {
             var assembliesCounter = new Dictionary<Assembly, SymbolData>();
             var nsCounter = new Dictionary<String, SymbolData>();
@@ -189,14 +188,17 @@ namespace GDDB.Serialization
             var fieldsCounter = new Dictionary<String, SymbolData>();
             foreach ( var folder in rootFolder.EnumerateFoldersDFS() )
             {
-                foreach ( var gdObject in folder.Objects )
+                foreach ( var obj in folder.Objects )
                 {
-                    var gdObjectType = gdObject.GetType();
+                    var gdObjectType = obj.GetType();
                     if( gdObjectType != typeof(GDObject) )                          //We do not serialize GDObject type in folders
                         ProcessType( gdObjectType );
-                    foreach ( var gdComponent in gdObject.Components )
+                    if ( obj is GDObject gdobj )
                     {
-                        ProcessType( gdComponent.GetType() );                        
+                        foreach ( var gdComponent in gdobj.Components )
+                        {
+                            ProcessType( gdComponent.GetType() );
+                        }
                     }
                 }
             }

@@ -176,7 +176,7 @@ namespace GDDB.Editor
             var asset       = EditorUtility.InstanceIDToObject( instanceId );
             if ( asset )
             {
-                var editorDB = GDBEditor.GDB;
+                var editorDB = GDBEditor.DB;
                 if( editorDB.AllObjects.Count == 0 )
                 {
                     itemData.DebugName = "GDDB is empty";
@@ -185,7 +185,7 @@ namespace GDDB.Editor
                 }
 
                 itemData.DebugName = asset.name;
-                var rootFolder  = GDBEditor.GDB.RootFolder;
+                var rootFolder  = GDBEditor.DB.RootFolder;
                 if ( asset is DefaultAsset folderAsset )
                 {
                     var folderGuid = new Guid( AssetDatabase.AssetPathToGUID( AssetDatabase.GetAssetPath( folderAsset ) ) );

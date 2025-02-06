@@ -13,12 +13,11 @@ namespace GDDB
 
         public UInt64 Hash { get; } = 0;
 
-        //public         GDRoot                  Root       { get; }
-        public         Folder                  RootFolder { get; }
+        public         GdFolder                  RootFolder { get; }
 
-        public virtual IReadOnlyList<GDObject> AllObjects { get; }
+        public virtual IReadOnlyList<ScriptableObject> AllObjects { get; }
 
-        public GdDb( Folder dbStructure, IReadOnlyList<GDObject> allObjects, UInt64 hash = 0 )
+        public GdDb( GdFolder dbStructure, IReadOnlyList<ScriptableObject> allObjects, UInt64 hash = 0 )
         {
             RootFolder = dbStructure;
             //Root       = allObjects.OfType<GDRoot>().Single( );
@@ -28,9 +27,9 @@ namespace GDDB
 
         public IEnumerable<T> GetComponents<T>() where T : GDComponent
         {
-            foreach ( var gdObject in AllObjects )
+            foreach ( var gdObj in AllObjects.OfType<GDObject>() )
             {
-                foreach ( var component in gdObject.Components )
+                foreach ( var component in gdObj.Components )
                 {
                     if ( component is T t )
                         yield return t;
@@ -55,7 +54,7 @@ namespace GDDB
         /// Wildcards is supported
         /// </example>
         /// </remarks>
-        public IEnumerable<GDObject> GetObjects( String path )
+        public IEnumerable<ScriptableObject> GetObjects( String path )
         {
             //Short path - return all objects
             if( String.IsNullOrEmpty( path ) )
@@ -79,14 +78,14 @@ namespace GDDB
 
         public IEnumerable<GDObject> GetObjects( String path, Type componentType )
         {
-            foreach ( var gdObject in GetObjects( path ) )
+            foreach ( var gdo in GetObjects( path ).OfType<GDObject>() )
             {
-                if ( gdObject.HasComponent( componentType ) )
-                    yield return gdObject;
+                if ( gdo.HasComponent( componentType ) )
+                    yield return gdo;
             }
         }
 
-        public IEnumerable<(Folder, GDObject)> GetObjectsAndFolders( String path )
+        public IEnumerable<(GdFolder, ScriptableObject)> GetObjectsAndFolders( String path )
         {
             //Short path - return all objects
             if( String.IsNullOrEmpty( path ) )
@@ -108,37 +107,37 @@ namespace GDDB
             }
         }
 
-        public IEnumerable<(Folder, GDObject)> GetObjectsAndFolders( String path, params Type[] componentType )
+        public IEnumerable<(GdFolder, GDObject)> GetObjectsAndFolders( String path, params Type[] componentType )
         {
-            foreach ( var gdObject in GetObjectsAndFolders( path ) )
+            foreach ( var obj in GetObjectsAndFolders( path ) )
             {
-                if ( gdObject.Item2.HasComponents( componentType ) )
-                    yield return gdObject;
+                if ( obj.Item2 is GDObject gdo && gdo.HasComponents( componentType ) )
+                    yield return (obj.Item1, gdo);
             }
         }
 
-        public Folder GetFolder( GdId folderId )
-        {
-            foreach ( var folder in RootFolder.EnumerateFoldersDFS(  ) )
-            {
-                if ( folder.FolderGuid == folderId.GUID )
-                    return folder;
-            }
+        // public GdFolder GetFolder( GdId folderId )
+        // {
+        //     foreach ( var folder in RootFolder.EnumerateFoldersDFS(  ) )
+        //     {
+        //         if ( folder.FolderGuid == folderId.GUID )
+        //             return folder;
+        //     }
+        //
+        //     return null;
+        // }
 
-            return null;
-        }
-
-        public GDObject GetObject( GdId objectId )
-        {
-            var guid = objectId.GUID;
-            foreach ( var gdObject in AllObjects )
-            {
-                if( gdObject.Guid == guid )
-                    return gdObject;
-            }
-
-            return null;
-        }
+        // public GDObject GetObject( GdId objectId )
+        // {
+        //     var guid = objectId.GUID;
+        //     foreach ( var obj in AllObjects )
+        //     {
+        //         if( obj is GDObject gdo && gdo.Guid == guid )
+        //             return gdo;
+        //     }
+        //
+        //     return null;
+        // }
 
         // public GDObject GetObject( GdType type )
         // {
@@ -206,7 +205,7 @@ namespace GDDB
 
         
 
-        private void PrintRecursively(Folder folder, int indent, ref Int32 foldersCount, ref Int32 objectsCount )
+        private void PrintRecursively(GdFolder folder, int indent, ref Int32 foldersCount, ref Int32 objectsCount )
         {
             foldersCount++;
             var indentStr = new String(' ', indent);
@@ -219,7 +218,10 @@ namespace GDDB
             foreach ( var obj in folder.Objects )
             {
                 objectsCount++;
-                Debug.Log($"  {indentStr}{obj.Name}, type {obj.GetType().Name}, components {obj.Components.Count}");
+                if( obj is GDObject gdo )
+                    Debug.Log($"  {indentStr}{gdo.name}, type {obj.GetType().Name}, components {gdo.Components.Count}");
+                else
+                    Debug.Log($"  {indentStr}{obj.name}, type {obj.GetType().Name}");
             }
         }
 
@@ -228,7 +230,7 @@ namespace GDDB
             public Query  NextPart;
             public readonly String Term;
 
-            public abstract IEnumerable<GDObject> ProcessFolder( Folder folder );
+            public abstract IEnumerable<ScriptableObject> ProcessFolder( GdFolder folder );
 
             protected Query( String term )
             {
@@ -257,11 +259,11 @@ namespace GDDB
                 FileNameRegex = new Regex( WildcardToRegex( term ) );
             }
 
-            public override IEnumerable<GDObject> ProcessFolder(Folder folder )
+            public override IEnumerable<ScriptableObject> ProcessFolder(GdFolder folder )
             {
                 foreach ( var gdAsset in folder.Objects )
                 {
-                    if( FileNameRegex.IsMatch( gdAsset.Name ) )
+                    if( FileNameRegex.IsMatch( gdAsset.name ) )
                         yield return gdAsset;
                 }
             }
@@ -282,7 +284,7 @@ namespace GDDB
                 FolderNameRegex = new Regex( WildcardToRegex( FolderName ) );
             }
 
-            public override IEnumerable<GDObject> ProcessFolder(Folder folder )
+            public override IEnumerable<ScriptableObject> ProcessFolder(GdFolder folder )
             {
                 if ( Delim == "/" )
                 {
