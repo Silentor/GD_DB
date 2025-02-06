@@ -20,6 +20,11 @@ namespace GDDB.Editor
         public Int32   JsonDBPlayerIndent       = 0;
         public String  AssetsReferencePath  = "Assets/Resources/DefaultGDDBAssetsRef.asset";
 
+        private void OnDisable( )
+        {
+            Save();
+        }
+
         private void OnDestroy( )
         {
             Save();

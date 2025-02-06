@@ -23,7 +23,7 @@ namespace GDDB.Editor
         private VisualElement _gettingStartedBlock;
 
 
-        private void OnEnable( )
+        private void Awake( )
         {
             //Debug.Log( $"[{nameof(ControlWindow)}]-[{nameof(OnEnable)}] " );
             Validator.Validated += OnValidated;
@@ -31,11 +31,14 @@ namespace GDDB.Editor
             GDBEditor.Updated += OnEditorDBUpdated;
         }
         
-        private void OnDisable( )
+        private void OnDestroy( )
         {
             Validator.Validated              -= OnValidated;
             GDBSourceGenerator.SourceUpdated -= UpdateSourceGenInfo;
             GDBEditor.Updated                -= OnEditorDBUpdated;
+
+            SourceGeneratorSettings.instance.Save();
+            UpdateDBSettings.instance.Save();
         }
 
         private void CreateGUI( )
