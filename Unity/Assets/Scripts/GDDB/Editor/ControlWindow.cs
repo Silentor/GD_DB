@@ -20,21 +20,22 @@ namespace GDDB.Editor
         private Button        _sourceGenBtn;
         private Label         _sourceGenCodeHashLbl;
         private VisualElement _sourceGenCodeHashIcon;
+        private VisualElement _gettingStartedBlock;
 
 
         private void OnEnable( )
         {
             //Debug.Log( $"[{nameof(ControlWindow)}]-[{nameof(OnEnable)}] " );
-            GDAssets.GDDBAssetsChanged.Subscribe( 10, OnGddbStructureChanged );
             Validator.Validated += OnValidated;
             GDBSourceGenerator.SourceUpdated += UpdateSourceGenInfo;
+            GDBEditor.Updated += OnEditorDBUpdated;
         }
-
+        
         private void OnDisable( )
         {
-            GDAssets.GDDBAssetsChanged.Unsubscribe( OnGddbStructureChanged );
             Validator.Validated              -= OnValidated;
             GDBSourceGenerator.SourceUpdated -= UpdateSourceGenInfo;
+            GDBEditor.Updated                -= OnEditorDBUpdated;
         }
 
         private void CreateGUI( )
@@ -44,6 +45,11 @@ namespace GDDB.Editor
             _dbStatsLbl = window.Q<Label>( "GDBInfo" );
             _dbHashLbl = window.Q<Label>( "GDBHash" );
             _dbValidationLbl = window.Q<Label>( "Validation" );
+
+            //Show getting started section if no GDDB detected
+            _gettingStartedBlock = window.Q<VisualElement>( "GettingStarted" );
+            _gettingStartedBlock.Q<Button>( "SelectRootFolderBtn" ).clicked += CreateNewGDRootAsset;
+            _gettingStartedBlock.style.display = GDBEditor.DB == null ? DisplayStyle.Flex : DisplayStyle.None;
 
             //Source Gen settings
             var sourceGenSettingsBox = window.Q<VisualElement>( "SourceGenSettings" );
@@ -77,18 +83,14 @@ namespace GDDB.Editor
             rootVisualElement.Add( window );
         }
 
+        
+
         private void OnValidated( IReadOnlyList<ValidationReport> reports )
         {
             if( _dbValidationLbl == null )
                 return;
 
             _dbValidationLbl.text = $"Validation: errors {reports.Count}";
-        }
-
-        private void OnGddbStructureChanged( IReadOnlyList<GDObject> changedObjects, IReadOnlyList<String> deletedObjects )
-        {
-            UpdateGDBInfo( );
-            UpdateSourceGenInfo();
         }
 
         private void GenerateSourceManual( )
@@ -128,10 +130,17 @@ namespace GDDB.Editor
             if ( Validator.Reports.Count > 0 ) Debug.LogError( $"[{nameof(ControlWindow)}] GDDB validation errors detected, count {Validator.Reports.Count}" );
         }
 
+        private void OnEditorDBUpdated( )
+        {
+            _gettingStartedBlock.style.display = GDBEditor.DB == null ? DisplayStyle.Flex : DisplayStyle.None;
+            UpdateGDBInfo( );
+            UpdateSourceGenInfo();
+        }
+
         private void UpdateGDBInfo( )
         {
             //Can be called before GUI is created from event handler
-            if( _dbStatsLbl == null )
+            if( _dbStatsLbl == null || GDBEditor.DB == null )
                 return;
 
             var rootFolder   = GDBEditor.DB.RootFolder;
@@ -143,7 +152,7 @@ namespace GDDB.Editor
         private void UpdateSourceGenInfo( )
         {
             //Can be called before GUI is created somehow
-            if( _sourceGenFileHashLbl == null )
+            if( _sourceGenFileHashLbl == null || GDBEditor.DB == null )
                 return;
 
             var rootFolderHash        = GDBEditor.DB.RootFolder.GetFoldersChecksum();
@@ -153,6 +162,41 @@ namespace GDDB.Editor
             _sourceGenFileHashIcon.style.backgroundImage = rootFolderHash == generatedFileHash ? Resources.HashOkIcon : Resources.HashNotOkIcon;
             _sourceGenCodeHashLbl.text = "Generated code hash: " + generatedCodeHash;
             _sourceGenCodeHashIcon.style.backgroundImage = rootFolderHash == generatedCodeHash ? Resources.HashOkIcon : Resources.HashNotOkIcon;
+        }
+
+        private static void CreateNewGDRootAsset( )
+        {
+            var newRootFolder = EditorUtility.OpenFolderPanel( "Select GDDB root folder", Application.dataPath, "" );
+            if ( !String.IsNullOrEmpty( newRootFolder ) )
+            {
+                if ( newRootFolder == Application.dataPath )
+                {
+                    EditorUtility.DisplayDialog( "Error",
+                            "Please do not select Assets folder as root folder of game design data base. You do not want to include to GDDB all assets of your project. Select some dedicated subfolder for game design data.",
+                            "Cancel" );
+                    return;
+                }
+
+                if( !newRootFolder.StartsWith( Application.dataPath ) )
+                {
+                    EditorUtility.DisplayDialog( "Error",
+                            "Please select root folder somewhere inside your project Assets folder.",
+                            "Cancel" );
+                    return;
+                }
+
+                if ( !System.IO.Directory.Exists( newRootFolder ) )
+                {
+                    Directory.CreateDirectory( newRootFolder );
+                    AssetDatabase.Refresh( ImportAssetOptions.ForceSynchronousImport );
+                }
+
+                var newGddbRoot = GDObject.CreateInstance<GDRoot>();
+                newGddbRoot.name = "GDRoot";
+                newRootFolder = newRootFolder.Replace( Application.dataPath, "Assets" );
+                AssetDatabase.CreateAsset( newGddbRoot, $"{newRootFolder}/{newGddbRoot.name}.asset" );
+                EditorGUIUtility.PingObject( newGddbRoot );
+            }
         }
 
         private static class Resources

@@ -28,7 +28,11 @@ namespace GDDB.Editor
         public static IReadOnlyList<ValidationReport> Validate( )
         {
             var gddb    = GDBEditor.DB;
-            _reports.Clear();                     
+            _reports.Clear();
+
+            if (  gddb == null )                                    //No GDDB in project
+                return Array.Empty<ValidationReport>();
+
             var timer            = DateTime.Now;
             int validatedCounter = 0;
 

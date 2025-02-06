@@ -90,6 +90,9 @@ namespace GDDB.Editor
 
         public static void GenerateGDBSource( Boolean forceRegenerate = false )
         {
+            if( GDBEditor.DB == null )
+                return;
+
             var databaseHash = GDBEditor.DB.RootFolder.GetFoldersChecksum();
             var generatedHash = GetGeneratedFileChecksum();
             if( databaseHash != generatedHash || forceRegenerate )

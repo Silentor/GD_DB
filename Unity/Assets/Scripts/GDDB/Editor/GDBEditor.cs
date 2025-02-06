@@ -13,10 +13,6 @@ namespace GDDB.Editor
     [InitializeOnLoad]
     public class GDBEditor
     {
-        private static GdDb                            _gbd;
-        private static Boolean                         _isGDAssetsChanged = true;
-        private static IReadOnlyList<ScriptableObject> _allObjects;
-        private static IReadOnlyList<GdFolder>         _allFolders;
 
         static GDBEditor( )
         {
@@ -50,9 +46,16 @@ namespace GDDB.Editor
             }
         }
 
+        public static event Action Updated;
+
+        private static GdDb                            _gbd;
+        private static Boolean                         _isGDAssetsChanged = true;
+        private static IReadOnlyList<ScriptableObject> _allObjects;
+        private static IReadOnlyList<GdFolder>         _allFolders;
+
         private static void UpdateState( )
         {
-            if( _gbd == null || _isGDAssetsChanged )
+            if( _isGDAssetsChanged )
             {
                 var loader = new GdEditorLoader();
                 _gbd               = loader.GetGameDataBase();
@@ -66,6 +69,7 @@ namespace GDDB.Editor
         {
             Debug.Log( $"[{nameof(GDBEditor)}]-[{nameof(OnGddbStructureChanged)}] Editor GDB instance will be recreated due to changed GDObjects assets " );
             _isGDAssetsChanged = true;
+            Updated?.Invoke();
         }
     }
 }

@@ -45,7 +45,7 @@ namespace GDDB.Editor
         {
             const Single IconSize  = 18;
 
-            if ( Event.current.type != EventType.Repaint || !IsMainListRect(rect) )
+            if ( Event.current.type != EventType.Repaint || !IsMainListRect(rect) || GDBEditor.DB == null )
                 return;
 
             var iconRect = new Rect( rect.x + rect.width, rect.y, IconSize, IconSize );

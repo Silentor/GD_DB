@@ -24,6 +24,11 @@ namespace GDDB.Editor
             Save();
         }
 
+        private void OnDisable( )
+        {
+            Save();
+        }
+
         public void Save( )
         {
             Save( true );

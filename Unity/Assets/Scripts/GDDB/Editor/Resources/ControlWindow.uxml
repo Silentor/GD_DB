@@ -2,6 +2,16 @@
     <ui:Label tabindex="-1" text="Game Data Base info:" parse-escape-sequences="true" display-tooltip-when-elided="true" name="GDBInfo" />
     <ui:Label tabindex="-1" text="Game Data Base assets hash:" parse-escape-sequences="true" display-tooltip-when-elided="true" name="GDBHash" />
     <ui:Label tabindex="-1" text="Validation:" parse-escape-sequences="true" display-tooltip-when-elided="true" name="Validation" />
+    <ui:VisualElement name="GettingStarted" style="border-left-color: rgb(156, 156, 156); border-right-color: rgb(156, 156, 156); border-top-color: rgb(156, 156, 156); border-bottom-color: rgb(156, 156, 156); border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; visibility: visible;">
+        <ui:Label tabindex="-1" text="Getting started" parse-escape-sequences="true" display-tooltip-when-elided="true" style="white-space: normal;" />
+        <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
+            <ui:VisualElement name="Icon" style="flex-shrink: 0; width: 60px; background-image: resource(&apos;rocket_launch_48dp&apos;); -unity-background-scale-mode: scale-to-fit;" />
+            <ui:VisualElement name="Content" style="flex-grow: 1;">
+                <ui:Label tabindex="-1" text="To begin using GDDB, select folder for your game desing data files and add GDRoot object to this folder" parse-escape-sequences="true" display-tooltip-when-elided="true" style="white-space: normal;" />
+                <ui:Button text="Select root folder..." parse-escape-sequences="true" display-tooltip-when-elided="true" name="SelectRootFolderBtn" style="width: 150px;" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
     <ui:VisualElement name="SourceGenSettings" style="border-left-color: rgb(156, 156, 156); border-right-color: rgb(156, 156, 156); border-top-color: rgb(156, 156, 156); border-bottom-color: rgb(156, 156, 156); border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px;">
         <ui:Label tabindex="-1" text="Source generator settings" parse-escape-sequences="true" display-tooltip-when-elided="true" />
         <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
