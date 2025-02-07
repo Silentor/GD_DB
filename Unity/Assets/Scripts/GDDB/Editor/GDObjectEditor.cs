@@ -445,107 +445,12 @@ namespace GDDB.Editor
 
         private void ProcessDebugToolbar( VisualElement root )
         {
+            root.Add( new Label("Debug") );
             var toolbar = new Box()
                           {
                                   style = { flexDirection = FlexDirection.Row, justifyContent = Justify.SpaceBetween }
                           };
             root.Add( toolbar );
-
-            //Save db to json
-            var toJsonBtn = new Button( ( ) => 
-            {
-                var editorDB        = GDBEditor.DB;
-                var assetsReference = CreateInstance<DirectAssetReferences>();
-                var buffer          = new StringBuilder();
-                var writer          = new JsonNetWriter( buffer, true );
-                var serializer      = new DBDataSerializer();
-                serializer.Serialize( writer, editorDB.RootFolder, assetsReference );
-
-                //Save hierarchy to json
-                var dbOutputPath   = Application.streamingAssetsPath + $"/{editorDB.Name}.gddb.json";
-                File.WriteAllText( dbOutputPath, buffer.ToString() );
-
-                //Save referenced assets to scriptable object list
-                var assetsPath = $"Assets/Resources/{editorDB.Name}.assets.asset";
-                AssetDatabase.CreateAsset( assetsReference, assetsPath );
-
-                AssetDatabase.Refresh();
-
-                var dbFile = new FileInfo( dbOutputPath );
-                Debug.Log( $"[{nameof(GDObjectEditor)}] Saved gddb to {dbOutputPath}, size {EditorUtility.FormatBytes( dbFile.Length)}, asset resolver to {assetsPath}"  );
-            } );
-            toJsonBtn.text         = $"DB to Json ({GDBEditor.DB.Name}.gddb.json)";
-            toJsonBtn.style.width  = 100;
-            toJsonBtn.style.height = 20;
-            toolbar.Add( toJsonBtn );
-
-            //Save db to binary
-            var toBinaryBtn = new Button( ( ) => 
-            {
-                var editorDB        = GDBEditor.DB;
-                var assetsReference = CreateInstance<DirectAssetReferences>();
-                var buffer          = new MemoryStream();
-                var writer          = new BinaryWriter( buffer );
-                var serializer      = new DBDataSerializer();
-                serializer.Serialize( writer, editorDB.RootFolder, assetsReference );
-
-                //Save hierarchy to json
-                var dbOutputPath   = Application.streamingAssetsPath + $"/{editorDB.Name}.gddb.json";
-                File.WriteAllText( dbOutputPath, buffer.ToString() );
-
-                //Save referenced assets to scriptable object list
-                var assetsPath = $"Assets/Resources/{editorDB.Name}.assets.asset";
-                AssetDatabase.CreateAsset( assetsReference, assetsPath );
-
-                AssetDatabase.Refresh();
-
-                var dbFile = new FileInfo( dbOutputPath );
-                Debug.Log( $"[{nameof(GDObjectEditor)}] Saved gddb to {dbOutputPath}, size {EditorUtility.FormatBytes( dbFile.Length)}, asset resolver to {assetsPath}"  );
-            } );
-            toJsonBtn.text         = $"DB to Json ({GDBEditor.DB.Name}.gddb.json)";
-            toJsonBtn.style.width  = 100;
-            toJsonBtn.style.height = 20;
-            toolbar.Add( toJsonBtn );
-
-            //Save db to scriptable object
-            var toSoBtn = new Button( ( ) => {
-                var serializer = new DBScriptableObjectSerializer();
-                var dbAsset    = serializer.Serialize( GDBEditor.DB.RootFolder);
-                var path       = $"Assets/Resources/{GDBEditor.DB.Name}.folders.asset";
-                AssetDatabase.CreateAsset( dbAsset, path );
-                Debug.Log( $"[{nameof(GDObjectEditor)}]-[{nameof(ProcessDebugToolbar)}] Saved GDDB in asset form to {path}", dbAsset );
-            } );
-            toSoBtn.text       = "DB to SO";
-            toSoBtn.style.width  = 100;
-            toSoBtn.style.height = 20;
-            toolbar.Add( toSoBtn );
-
-            //Load bd from json and print to console 
-            var fromJsonBtn = new Button( ( ) => {
-                var path = EditorUtility.OpenFilePanel( "Open JSON", Application.streamingAssetsPath, "json" );
-                if ( !String.IsNullOrEmpty( path ) )
-                {
-                    var textFromFile = File.ReadAllText( path );
-                    var gdJson = new GdFileLoader( textFromFile ).GetGameDataBase();
-                    Debug.Log( $"Loaded gd DB {gdJson.Name}, total objects {gdJson.AllObjects.Count}" );
-                    gdJson.Print();
-                }
-            } );
-            fromJsonBtn.text           = "Print Json DB";
-            fromJsonBtn.style.width  = 100;
-            fromJsonBtn.style.height = 20;
-            toolbar.Add( fromJsonBtn );
-
-            //Print bd from editor to console
-            var printHierarchy = new Button( ( ) => 
-            {
-                var gddb = new GdEditorLoader(  ).GetGameDataBase();
-                gddb.Print();
-            } );
-            printHierarchy.text         = "Print editor DB";
-            printHierarchy.style.width  = 100;
-            printHierarchy.style.height = 20;
-            toolbar.Add( printHierarchy );
 
             //Print object json to console
             var printObjBtn = new Button( ( ) => {
