@@ -21,6 +21,7 @@ namespace GDDB.Editor
         private Label         _sourceGenCodeHashLbl;
         private VisualElement _sourceGenCodeHashIcon;
         private VisualElement _gettingStartedBlock;
+        private Button        _removeSourceBtn;
 
 
         private void Awake( )
@@ -59,12 +60,14 @@ namespace GDDB.Editor
             var container     = sourceGenSettingsBox.Q<VisualElement>( "SerializedSettings" );
             var sgSettings      = SourceGeneratorSettings.instance;
             container.Add( new InspectorElement(sgSettings) );
-            _sourceGenFileHashLbl =  sourceGenSettingsBox.Q<Label>( "SourceGenFileHash" );
-            _sourceGenFileHashIcon         =  sourceGenSettingsBox.Q<VisualElement>( "SourceGenFileHashIcon" );
-            _sourceGenCodeHashLbl =  sourceGenSettingsBox.Q<Label>( "SourceGenCodeHash" );
-            _sourceGenCodeHashIcon         =  sourceGenSettingsBox.Q<VisualElement>( "SourceGenCodeHashIcon" );
-            _sourceGenBtn              =  sourceGenSettingsBox.Q<Button>( "SourceGenBtn" );
-            _sourceGenBtn.clicked      += GenerateSourceManual;
+            _sourceGenFileHashLbl    =  sourceGenSettingsBox.Q<Label>( "SourceGenFileHash" );
+            _sourceGenFileHashIcon   =  sourceGenSettingsBox.Q<VisualElement>( "SourceGenFileHashIcon" );
+            _sourceGenCodeHashLbl    =  sourceGenSettingsBox.Q<Label>( "SourceGenCodeHash" );
+            _sourceGenCodeHashIcon   =  sourceGenSettingsBox.Q<VisualElement>( "SourceGenCodeHashIcon" );
+            _sourceGenBtn            =  sourceGenSettingsBox.Q<Button>( "SourceGenBtn" );
+            _sourceGenBtn.clicked    += GenerateSourceManual;
+            _removeSourceBtn         =  sourceGenSettingsBox.Q<Button>( "RemoveSourceBtn" );
+            _removeSourceBtn.clicked += RemoveSource;
 
             //Update DB settings
             var updateDBSettingsBox = window.Q<VisualElement>( "DBUpdateSettings" );
@@ -86,7 +89,6 @@ namespace GDDB.Editor
             rootVisualElement.Add( window );
         }
 
-        
 
         private void OnValidated( IReadOnlyList<ValidationReport> reports )
         {
@@ -100,6 +102,12 @@ namespace GDDB.Editor
         {
             GDBSourceGenerator.GenerateGDBSource( true );
         }
+
+        private void RemoveSource( )
+        {
+            GDBSourceGenerator.RemoveSourceFile();
+        }
+
 
         private void SaveGDDBToSO( UpdateDBSettings updateSettings )
         {

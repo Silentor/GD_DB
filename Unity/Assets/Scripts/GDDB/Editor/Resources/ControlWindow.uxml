@@ -26,7 +26,10 @@
                     <ui:VisualElement name="SourceGenCodeHashIcon" style="width: 18px; height: 18px; background-image: resource(&apos;check_24dp&apos;);" />
                 </ui:VisualElement>
                 <ui:VisualElement name="SerializedSettings" style="flex-grow: 1;" />
-                <ui:Button text="Force Generate" parse-escape-sequences="true" display-tooltip-when-elided="true" name="SourceGenBtn" style="width: 150px;" />
+                <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
+                    <ui:Button text="Force Generate" parse-escape-sequences="true" display-tooltip-when-elided="true" name="SourceGenBtn" style="width: 150px;" />
+                    <ui:Button text="Remove source" parse-escape-sequences="true" display-tooltip-when-elided="true" name="RemoveSourceBtn" style="width: 150px;" />
+                </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

@@ -92,8 +92,8 @@ namespace GDDB.SourceGenerator
                         var json = pair.Left;
 
                         var      foldersSerializer = new FolderSerializer();
-                        Folder rootFolder;
-                        UInt64? dataHash = null;
+                        GdFolder rootFolder;
+                        UInt64?  dataHash = null;
                         try
                         {
                             using var strReader  = new StringReader( json.code );

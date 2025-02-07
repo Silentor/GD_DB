@@ -115,9 +115,12 @@ namespace GDDB.Editor
                 if ( !Directory.Exists( directory ) )
                     Directory.CreateDirectory( directory );
                 File.WriteAllText( sourceFilePath, buffer.ToString() );
+                AssetDatabase.Refresh( ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport );
 
                 Debug.Log( $"[{nameof(GDBSourceGenerator)}]-[{nameof(GenerateGDBSource)}] Updated source generator structure file {sourceFilePath}" );
                 SourceUpdated?.Invoke();
+
+                return;
 
                 //Trigger recompile of GDDB assembly and source generation
                 var gddbSourceFile = AssetDatabase.FindAssets( "t:MonoScript GdDb" );
@@ -170,6 +173,17 @@ namespace GDDB.Editor
             }
 
             return 0;
+        }
+
+        public static void RemoveSourceFile( )
+        {
+            var sourceFilePath = GetSourceFilePath();
+            if( File.Exists( sourceFilePath ) )
+            {
+                File.Delete( sourceFilePath );
+                Debug.Log( $"[{nameof(GDBSourceGenerator)}]-[{nameof(RemoveSourceFile)}] Removed source generator structure file {sourceFilePath}" );
+                AssetDatabase.Refresh();
+            }
         }
     }
 }

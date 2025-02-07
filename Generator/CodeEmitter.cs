@@ -32,7 +32,7 @@ public class CodeEmitter
     //     return sb.ToString();
     // }
 
-    public String GenerateFolders( String treeFilePath, UInt64 hash, DateTime generationTime, IReadOnlyCollection<Folder> allFolders  )
+    public String GenerateFolders( String treeFilePath, UInt64 hash, DateTime generationTime, IReadOnlyCollection<GdFolder> allFolders  )
     {
         GeneratedTypeAttribute = String.Format( GeneratedTypeAttributeTemplate, AssemblyName, hash.ToString() );
 
@@ -57,7 +57,7 @@ public class CodeEmitter
         return sb.ToString();
     }
 
-    public String GenerateGdDbPartial( String treeFilePath, UInt64 hash, DateTime generationTime, Folder rootFolder )
+    public String GenerateGdDbPartial( String treeFilePath, UInt64 hash, DateTime generationTime, GdFolder rootFolder )
     {
         GeneratedTypeAttribute = String.Format( GeneratedTypeAttributeTemplate, AssemblyName, hash.ToString() );
 
@@ -76,7 +76,7 @@ public class CodeEmitter
         return sb.ToString();
     }
 
-    public String GenerateGdDbExtensions( String treeFilePath, IReadOnlyCollection<Folder> allFolders )
+    public String GenerateGdDbExtensions( String treeFilePath, IReadOnlyCollection<GdFolder> allFolders )
     {
         var sb = new StringBuilder();
         sb.AppendLine( String.Format( FileHeader, treeFilePath, DateTime.Now ));
@@ -117,7 +117,7 @@ public class CodeEmitter
     //     return sb.ToString();
     // }
 
-    private void GenerateFolder( StringBuilder sb, Folder folder )
+    private void GenerateFolder( StringBuilder sb, GdFolder folder )
     {
         var classFolderName    = GetFolderClassName( folder );
 
@@ -125,19 +125,19 @@ public class CodeEmitter
         sb.AppendLine( GeneratedTypeAttribute );
         sb.AppendLine(
                 $$"""
-                public readonly struct {{classFolderName}} : IEnumerable<GDObject>, IEquatable<{{classFolderName}}>
+                public readonly struct {{classFolderName}} : IEnumerable<UnityEngine.ScriptableObject>, IEquatable<{{classFolderName}}>
                 {
                     //Underlying untyped Folder object
-                    public readonly Folder Folder;
+                    public readonly GdFolder Folder;
                     
-                    internal {{classFolderName}}( Folder folder )
+                    internal {{classFolderName}}( GdFolder folder )
                     {
                         Folder = folder;
                     }
                     
                 #region IEnumerable
                 
-                    public IEnumerator<GDObject> GetEnumerator( )
+                    public IEnumerator<UnityEngine.ScriptableObject> GetEnumerator( )
                     {
                         return Folder.Objects.GetEnumerator();
                     }
@@ -178,7 +178,7 @@ public class CodeEmitter
                 #endregion
                 
                 //Access to GDObjects of this Folder
-                public GDObject this[ Int32 objectIndex ] => Folder.Objects[ objectIndex ];
+                public UnityEngine.ScriptableObject this[ Int32 objectIndex ] => Folder.Objects[ objectIndex ];
                 
                 """);
 
@@ -213,7 +213,7 @@ public class CodeEmitter
         return sanitizedName;
     }
 
-    private String GetFolderClassName( Folder folder )
+    private String GetFolderClassName( GdFolder folder )
     {
         //Check cached folder name
         foreach ( var folderAndName in _folderClassNames )
@@ -241,7 +241,7 @@ public class CodeEmitter
         return folderName;
     }
 
-    private String GetMemberName( Folder folder )
+    private String GetMemberName( GdFolder folder )
     {
         //Check cached member name
         foreach ( var folderAndName in _memberNames )
@@ -290,9 +290,9 @@ public class CodeEmitter
 
     private struct FolderAndName
     {
-        public Folder Folder;
-        public String Name;
-        public Int32  DuplicateCounter;
+        public GdFolder Folder;
+        public String   Name;
+        public Int32    DuplicateCounter;
     }
 
     // private static void GenerateEnum( StringBuilder sb, Category category )

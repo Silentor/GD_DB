@@ -31,7 +31,7 @@ var str     = System.IO.File.ReadAllText(file.FullName);
 var loader = new GdFileLoader( str );
 var db     = loader.GetGameDataBase();
 var obj    = db.AllObjects[ 0 ];
-Console.WriteLine( obj.Name );
+Console.WriteLine( obj.name );
 //Console.WriteLine( db.RootFolder.Name );
 Console.WriteLine( db.Root.Folder.Name );
 //db.Root.Folder2.
