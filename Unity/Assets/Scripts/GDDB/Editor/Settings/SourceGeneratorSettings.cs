@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace GDDB.Editor
 {
-    [FilePath("ProjectSettings/GDDB.SourceGenSettings.asset", FilePathAttribute.Location.ProjectFolder)]
+    [FilePath("ProjectSettings/GDDB/SourceGenSettings.asset", FilePathAttribute.Location.ProjectFolder)]
     public class SourceGeneratorSettings : ScriptableSingleton<SourceGeneratorSettings>
     {
         public Boolean AutoGenerateOnSourceChanged;
