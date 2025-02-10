@@ -91,6 +91,7 @@ namespace GDDB.Queries
             StringToken prevToken = null;
             StringToken result    = null;
             var         position  = 0;
+            var count = 0;
             while ( position < value.Length )
             {
                 var token = ExtractNextStringToken( value, ref position );
@@ -99,6 +100,31 @@ namespace GDDB.Queries
                 if ( prevToken != null )
                     prevToken.NextToken = token;
                 prevToken = token;
+                count++;
+            }
+
+            //Optimization pass for common queries
+            if ( count == 2 )
+            {
+                if ( result is AnyTextToken && result.NextToken is LiteralToken lt )
+                {
+                    return new AsterixAndLiteralToken( lt.Literal );
+                }
+                else if( result is LiteralToken lt2 && result.NextToken is AnyTextToken )
+                {
+                    return new LiteralAndAsterixToken( lt2.Literal );
+                }
+            }
+            else if ( count == 3 )
+            {
+                if( result is AnyTextToken && result.NextToken is LiteralToken lt && lt.NextToken is AnyTextToken )
+                {
+                    return new ContainsLiteralToken( lt.Literal );
+                }
+                else if( result is LiteralToken lt2 && lt2.NextToken is AnyTextToken && lt2.NextToken.NextToken is LiteralToken lt3 )
+                {
+                    return new AsterixBetweenLiteralsToken( lt2.Literal, lt3.Literal );
+                }
             }
 
             return result;

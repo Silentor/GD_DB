@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace GDDB.Queries
 {
@@ -281,4 +282,81 @@ namespace GDDB.Queries
             }
         }
     }
+
+#region Optimized String tokens
+
+    //Optimized for "*somesuffix" query, must be only one token in chain
+    public class AsterixAndLiteralToken : StringToken
+    {
+        public readonly String Literal;    //todo Uppercase it and uppercase the input string and compare ordinal
+
+        public AsterixAndLiteralToken( String literal )
+        {
+            Literal = literal;
+        }
+
+        public override Boolean Match( String input, Int32 position )
+        {
+            Assert.IsNull( NextToken );
+            return input.EndsWith( Literal, StringComparison.OrdinalIgnoreCase );
+        }
+    }
+
+    //Optimized for "someprefix*" query, must be only one token in chain
+    public class LiteralAndAsterixToken : StringToken
+    {
+        public readonly String Literal;    //todo Uppercase it and uppercase the input string and compare ordinal
+
+        public LiteralAndAsterixToken( String literal )
+        {
+            Literal = literal;
+        }
+
+        public override Boolean Match( String input, Int32 position )
+        {
+            Assert.IsNull( NextToken );
+            return input.StartsWith( Literal, StringComparison.OrdinalIgnoreCase );
+        }
+    }
+
+    //Optimized for "*some*" query, must be only one token in chain
+    public class ContainsLiteralToken : StringToken
+    {
+        public readonly String Literal;    //todo Uppercase it and uppercase the input string and compare ordinal
+
+        public ContainsLiteralToken( String literal )
+        {
+            Literal = literal;
+        }
+
+        public override Boolean Match( String input, Int32 position )
+        {
+            Assert.IsNull( NextToken );
+            return input.Contains( Literal, StringComparison.OrdinalIgnoreCase );
+        }
+    }
+
+    //Optimized for "some*text" query, must be only one token in chain
+    public class AsterixBetweenLiteralsToken : StringToken
+    {
+        public readonly String Literal1;    //todo Uppercase it and uppercase the input string and compare ordinal
+        public readonly String Literal2;    //todo Uppercase it and uppercase the input string and compare ordinal
+
+        public AsterixBetweenLiteralsToken( String literal1, String literal2 )
+        {
+            Literal1 = literal1;
+            Literal2 = literal2;
+        }
+
+        public override Boolean Match( String input, Int32 position )
+        {
+            Assert.IsNull( NextToken );
+            return input.Length >= Literal1.Length + Literal2.Length 
+                   && input.StartsWith( Literal1, StringComparison.OrdinalIgnoreCase ) 
+                   && input.EndsWith( Literal2, StringComparison.OrdinalIgnoreCase );
+        }
+    }
+
+
+#endregion
 }

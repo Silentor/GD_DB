@@ -1362,11 +1362,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: TestIdReference.Serializalble1
-      value: 15020655872604272499
+      value: 3406041121107337331
       objectReference: {fileID: 0}
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: TestIdReference.Serializalble2
-      value: 5117550504033167770
+      value: 5859060303919078872
       objectReference: {fileID: 0}
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: TestUnsafeId.bs.Array.data[11]

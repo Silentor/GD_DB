@@ -1,10 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using FluentAssertions.Extensions;
 using GDDB;
 using GDDB.Serialization;
 using TMPro;
@@ -13,6 +15,7 @@ using UnityEngine.Assertions;
 using UnityEngine.Profiling;
 using UnityEngine.Scripting;
 using UnityEngine.UI;
+using Debug = UnityEngine.Debug;
 using Object = UnityEngine.Object;
 
 namespace GDDB_User
@@ -29,7 +32,7 @@ namespace GDDB_User
 
         public Int32            TestField;
         public GDObject         TestDirectObject;
-        [GdTypeFilter("Mobs//", typeof(TestMobComponent))]
+        [GdTypeFilter("Mobs/**/*", typeof(TestMobComponent))]
         public GdId             TestIdReference;
         public Object           TestFolderReference;
         public Classes          NullObject;
@@ -49,7 +52,7 @@ namespace GDDB_User
         //[GdTypeFilter(MainCategory.Game)]                      
         //public GdType TestTypeRestrictedMobs;
 
-        private void Awake( )
+        private IEnumerator Start( )
         {
             var memory = new MemoryStream();
             using var writer = new System.IO.BinaryWriter( memory );
@@ -63,41 +66,16 @@ namespace GDDB_User
 
             Debug.Log( $"Its ok, buffer size {memory.ToArray().Length} bytes" );
 
-            //var type = typeof(GDDB.Generated.DBFolder);
-            //Debug.Log( type.AssemblyQualifiedName );
-
-            return;
-
-
-            var loader = new GdEditorLoader( );
-            //loader.GetGameDataBase().
-
-            // var all = Resources.LoadAll( "" );
-            // foreach ( var res in all )
-            // {
-            //     Debug.Log( res.name );
-            // }
-
-            //Load GDDB from asset
+            //Load GDDB from SO asset
             DBScriptableObject db;
             db = DB ? DB : Resources.Load<DBScriptableObject>( "DefaultGDDB" );
             var     aloader   = new GdScriptableObjectLoader( db );
             _soGDDB   = aloader.GetGameDataBase();
             Debug.Log( $"Loaded db from SO, loaded hash {_soGDDB.Hash}" );
 
-            //Load GDDB from JSON with Unity assets resolver
-            var assetsResolver = Resources.Load<DirectAssetReferences>( "DefaultGDDBAssetsRef" );
-            using var dbInJson       =  File.OpenRead( Application.streamingAssetsPath + "/DefaultGDDB.json" );
-            using var stringReader   = new StreamReader( dbInJson );
-            var jsonloader        = new GdFileLoader( stringReader, assetsResolver );
-            _jsonGDDB         = jsonloader.GetGameDataBase();
-            Debug.Log( $"Loaded db from json, loaded hash {_jsonGDDB.Hash}" );
+            yield return StartCoroutine( LoadDBViaJsonNetAsync() );
 
-            //Load GDDB from binary with Unity assets resolver
-            using var fileStraem = File.OpenRead( Application.streamingAssetsPath + "/DefaultGDDB.bin" );
-            var binLoader = new GdFileLoader( fileStraem, assetsResolver );
-            _binaryGDDB = binLoader.GetGameDataBase();
-            Debug.Log( $"Loaded db from binary, loaded hash {_binaryGDDB.Hash}" );
+            yield return StartCoroutine( LoadDBViaBinaryAsync() );
 
 #if UNITY_EDITOR
             _editorGDDB           = new GdEditorLoader().GetGameDataBase();
@@ -105,6 +83,17 @@ namespace GDDB_User
 #endif
             UpdateDebugLabel();
 
+            var result = new List<ScriptableObject>();
+            var timer  = Stopwatch.StartNew();
+            _binaryGDDB.FindObjects( "**/*00", result );
+            timer.Stop();
+
+            Debug.Log( $"Items {result.Count}, time {timer.Elapsed.TotalMicroseconds()} mks" );
+
+            foreach ( var res in result )
+            {
+                Debug.Log( res.name );
+            }
 
             //var textureFromGD = fromJsonGDB.Root.Test7.Mobs5.Folder.Objects.First( gdo => gdo.HasComponent<GDComponentChild3>() ).GetComponent<GDComponentChild3>();
             //DebugImageOutput.texture = textureFromGD.TexValue;
@@ -219,74 +208,73 @@ namespace GDDB_User
         public void LoadDBViaJsonNet( )
         {
             StartCoroutine( LoadDBViaJsonNetAsync() );
-
-            IEnumerator LoadDBViaJsonNetAsync( )
-            {
-                yield return null;
-                GC.Collect();
-                yield return null;
-
-                yield return StartCoroutine( SaveFileFromStreamingAssetsToPersistent( "DefaultGDDB.json" ) );
-
-                var assetResolver = Resources.Load<DirectAssetReferences>( "Default.assets" );
-
-                yield return null;
-                GC.Collect();
-                yield return null;
-
-
-                LoadJsonFromFileStream( assetResolver );
-
-                yield return null;
-                GC.Collect();
-                yield return null;
-
-                LoadJsonFromStringBuffer( assetResolver );
-
-                yield return null;
-                GC.Collect();
-                yield return null;
-
-                LoadJsonFromBytesBuffer( assetResolver );
-
-                yield return null;
-                GC.Collect();
-                yield return null;
-            }
-
         }
+
+        private IEnumerator LoadDBViaJsonNetAsync( )
+        {
+            yield return null;
+            GC.Collect();
+            yield return null;
+
+            yield return StartCoroutine( SaveFileFromStreamingAssetsToPersistent( "DefaultGDDB.json" ) );
+
+            var assetResolver = Resources.Load<DirectAssetReferences>( "Default.assets" );
+
+            yield return null;
+            GC.Collect();
+            yield return null;
+
+
+            LoadJsonFromFileStream( assetResolver );
+
+            yield return null;
+            GC.Collect();
+            yield return null;
+
+            LoadJsonFromStringBuffer( assetResolver );
+
+            yield return null;
+            GC.Collect();
+            yield return null;
+
+            LoadJsonFromBytesBuffer( assetResolver );
+
+            yield return null;
+            GC.Collect();
+            yield return null;
+        }
+
 
         public void LoadDBViaBinary( )
         {
             StartCoroutine( LoadDBViaBinaryAsync() );
+        }
 
-            IEnumerator LoadDBViaBinaryAsync( )
-            {
-                yield return null;
-                GC.Collect();
-                yield return null;
+        private IEnumerator LoadDBViaBinaryAsync( )
+        {
+            yield return null;
+            GC.Collect();
+            yield return null;
 
-                yield return StartCoroutine( SaveFileFromStreamingAssetsToPersistent( "DefaultGDDB.bin" ) );
+            yield return StartCoroutine( SaveFileFromStreamingAssetsToPersistent( "DefaultGDDB.bin" ) );
 
-                var assetResolver = Resources.Load<DirectAssetReferences>( "Default.assets" );
+            var assetResolver = Resources.Load<DirectAssetReferences>( "Default.assets" );
 
-                yield return null;
-                GC.Collect();
-                yield return null;
+            yield return null;
+            GC.Collect();
+            yield return null;
 
-                LoadBinaryFromFileStream( assetResolver );
+            LoadBinaryFromFileStream( assetResolver );
 
-                yield return null;
-                GC.Collect();
-                yield return null;
+            yield return null;
+            GC.Collect();
+            yield return null;
 
-                LoadBinaryFromMemoryBuffer( assetResolver );
+            LoadBinaryFromMemoryBuffer( assetResolver );
 
-                yield return null;
-                GC.Collect();
-                yield return null;
-            }
-
+            yield return null;
+            GC.Collect();
+            yield return null;
         }
 
         private IEnumerator SaveFileFromStreamingAssetsToPersistent( String fileName )

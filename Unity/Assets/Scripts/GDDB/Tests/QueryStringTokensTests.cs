@@ -79,5 +79,41 @@ namespace GDDB.Tests
             token.Match( "ork skin 10", 0 ).Should().BeTrue(  );
             token.Match( "potion 15", 0 ).Should().BeFalse(  );
         }
+
+        [Test]
+        public void TestOptimizedTokens( )
+        {
+            var token = new AsterixBetweenLiteralsToken( "some", "text" );
+            token.Match( "some  bla-bla text", 0 ).Should().BeTrue(  );
+            token.Match( "sometext", 0 ).Should().BeTrue(  );
+            token.Match( "soxt", 0 ).Should().BeFalse(  );
+
+            token = new AsterixBetweenLiteralsToken( "tete", "tete" );
+            token.Match( "tete",               0 ).Should().BeFalse(  );
+            token.Match( "tetete",               0 ).Should().BeFalse(  );
+            token.Match( "tetetete",               0 ).Should().BeTrue(  );
+
+            var token2 = new ContainsLiteralToken( "some" );
+            token2.Match( "some  bla-bla text", 0 ).Should().BeTrue(  );
+            token2.Match( "some",           0 ).Should().BeTrue(  );
+            token2.Match( "!!11some",               0 ).Should().BeTrue(  );
+            token2.Match( "somesome",               0 ).Should().BeTrue(  );
+            token2.Match( "somsom",               0 ).Should().BeFalse(  );
+
+            var token3 = new AsterixAndLiteralToken( "some" );
+            token3.Match( "sssome", 0 ).Should().BeTrue(  );
+            token3.Match( "some",               0 ).Should().BeTrue(  );
+            token3.Match( "!!11some",           0 ).Should().BeTrue(  );
+            token3.Match( "somesome",           0 ).Should().BeTrue(  );
+            token3.Match( "some_",             0 ).Should().BeFalse(  );
+
+            var token4 = new LiteralAndAsterixToken( "some" );
+            token4.Match( "someee",   0 ).Should().BeTrue(  );
+            token4.Match( "some",     0 ).Should().BeTrue(  );
+            token4.Match( "some!!", 0 ).Should().BeTrue(  );
+            token4.Match( "somesome", 0 ).Should().BeTrue(  );
+            token4.Match( "_some",    0 ).Should().BeFalse(  );
+
+        }
     }
 }
