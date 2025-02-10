@@ -17,6 +17,7 @@ namespace GDDB.Queries
     public class Parser
     {
         private readonly Executor _executor;
+        private List<HierarchyToken> _buffer = new (  );
 
         public Parser( Executor executor )
         {
@@ -29,33 +30,33 @@ namespace GDDB.Queries
                 return null;
         
             var parts = query.Split( '/', StringSplitOptions.RemoveEmptyEntries );
-            var result = new List<HierarchyToken>(  );
+            _buffer.Clear();
             for ( int i = 0; i < parts.Length; i++ )
             {
                 if( i < parts.Length - 1 )
-                    result.Add( ParseFolderToken( parts[ i ] ) );
+                    _buffer.Add( ParseFolderToken( parts[ i ] ) );
                 else
-                    result.Add( ParseObjectsToken( parts[ i ] ) );                
+                    _buffer.Add( ParseObjectsToken( parts[ i ] ) );                
             }
 
             //Normalization and optimization
-            if ( result.Count == 2 && result[ 0 ] is AllSubfoldersRecursivelyToken &&
-                 result[ 1 ] is AllFilesToken )              //Optimize "**/*" query (all objects in db)
+            if ( _buffer.Count == 2 && _buffer[ 0 ] is AllSubfoldersRecursivelyToken &&
+                 _buffer[ 1 ] is AllFilesToken )              //Optimize "**/*" query (all objects in db)
             {
-                result.Clear();
-                result.Add( new AllFilesInDBToken( _executor.DB ) );
+                _buffer.Clear();
+                _buffer.Add( new AllFilesInDBToken( _executor.DB ) );
             }
 
             //Make syntax tree
-            for ( int i = 0; i < result.Count - 1; i++ )
+            for ( int i = 0; i < _buffer.Count - 1; i++ )
             {
-                if ( result[ i ] is FolderToken fToken )
+                if ( _buffer[ i ] is FolderToken fToken )
                 {
-                    fToken.NextToken = result[ i + 1 ];
+                    fToken.NextToken = _buffer[ i + 1 ];
                 }
             }
 
-            return result[ 0 ];
+            return _buffer[ 0 ];
         }
 
         public HierarchyToken ParseFoldersQuery( String query )
