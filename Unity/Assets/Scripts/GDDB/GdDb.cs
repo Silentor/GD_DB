@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using GDDB.Queries;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -23,6 +24,8 @@ namespace GDDB
             //Root       = allObjects.OfType<GDRoot>().Single( );
             AllObjects = allObjects;
             Hash       = hash;
+            _queryExecutor = new Executor( this );
+            _queryParser   = new Parser( _queryExecutor );
         }
 
         public IEnumerable<T> GetComponents<T>() where T : GDComponent
@@ -39,80 +42,46 @@ namespace GDDB
 
         
         /// <summary>
-        /// Query objects by folders/objects path
+        /// Query objects by folders/objects path. Glob syntax
         /// </summary>
-        /// <param name="path">Query path of folders and files, supports * wildcard for folder name</param>
+        /// <param name="path">Query path of folders and files, supports * and ? wildcard for folder/object names</param>
         /// <returns></returns>
-        /// <remarks>
-        /// <example>
-        /// null or empty path - return all objects
-        /// Humans/ - return all objects in Humans folder(s) (but not from subfolders)
-        /// Mobs/Orcs/ - return all objects in Orcs folder that is in Mobs folder
-        /// Mobs/*/ - return all objects in all folders of Mobs folder(s)
-        /// Mobs// - return all objects in Mobs folder and all subfolders 
-        /// CommonMobs - return all object(s) with name CommonMobs
-        /// Wildcards is supported
-        /// </example>
-        /// </remarks>
-        public IEnumerable<ScriptableObject> GetObjects( String path )
+        public void FindObjects( String path, List<ScriptableObject> resultObjects, List<GdFolder> resultFolders = null )
         {
-            //Short path - return all objects
-            if( String.IsNullOrEmpty( path ) )
-            {
-                foreach ( var folder in RootFolder.EnumerateFoldersDFS(  ) )
-                    foreach ( var obj in folder.Objects )
-                        yield return obj;
-                yield break;
-            }
+            var  query = _queryParser.ParseObjectsQuery( path );
+            _queryExecutor.FindObjects( query, resultObjects, resultFolders );
+        }   
 
-            var query        = ConvertPathToQuery( path );
+        public void FindObjects( String path, Type[] components, List<ScriptableObject> resultObjects, List<GdFolder> resultFolders = null )
+        {
+            FindObjects( path, resultObjects, resultFolders );
 
-            foreach ( var folder in  RootFolder.EnumerateFoldersDFS(  ) )
+            if ( resultFolders != null )
             {
-                foreach ( var gdObject in query.First().ProcessFolder( folder ) )
+                for ( int i = 0; i < resultObjects.Count; i++ )
                 {
-                    yield return    gdObject;
+                    if ( resultObjects[ i ] is GDObject gdo && gdo.HasComponents( components ) )
+                        continue;
+                    else
+                    {
+                        resultObjects.RemoveAt( i );
+                        resultFolders.RemoveAt( i );
+                        i--;
+                    }
                 }
             }
-        }
-
-        public IEnumerable<GDObject> GetObjects( String path, Type componentType )
-        {
-            foreach ( var gdo in GetObjects( path ).OfType<GDObject>() )
+            else
             {
-                if ( gdo.HasComponent( componentType ) )
-                    yield return gdo;
-            }
-        }
-
-        public IEnumerable<(GdFolder, ScriptableObject)> GetObjectsAndFolders( String path )
-        {
-            //Short path - return all objects
-            if( String.IsNullOrEmpty( path ) )
-            {
-                foreach ( var folder in RootFolder.EnumerateFoldersDFS(  ) )
-                    foreach ( var obj in folder.Objects )
-                        yield return (folder, obj);
-                yield break;
-            }
-
-            var query        = ConvertPathToQuery( path );
-
-            foreach ( var folder in  RootFolder.EnumerateFoldersDFS(  ) )
-            {
-                foreach ( var gdObject in query.First().ProcessFolder( folder ) )
+                for ( int i = 0; i < resultObjects.Count; i++ )
                 {
-                    yield return   (folder, gdObject);
+                    if ( resultObjects[ i ] is GDObject gdo && gdo.HasComponents( components ) )
+                        continue;
+                    else
+                    {
+                        resultObjects.RemoveAt( i );
+                        i--;
+                    }
                 }
-            }
-        }
-
-        public IEnumerable<(GdFolder, GDObject)> GetObjectsAndFolders( String path, params Type[] componentType )
-        {
-            foreach ( var obj in GetObjectsAndFolders( path ) )
-            {
-                if ( obj.Item2 is GDObject gdo && gdo.HasComponents( componentType ) )
-                    yield return (obj.Item1, gdo);
             }
         }
 
@@ -162,49 +131,9 @@ namespace GDDB
             Debug.Log( $"DB name {Name}, Folders {foldersCount}, objects {objectsCount}" );
         }
 
-        private readonly Regex _pathPartsQuery = new (@"(^[^\/]*\/+)|([^\/]+\/+)|([^\/]*$)", RegexOptions.Singleline | RegexOptions.ExplicitCapture ); 
+        private readonly Parser _queryParser;
+        private readonly Executor _queryExecutor;
         
-
-        //Custom split with preservation of slash at the folders names end
-        private IReadOnlyList<String> Split( String assetPath )
-        {
-            if ( String.IsNullOrEmpty( assetPath ) )
-                return Array.Empty<String>();
-
-            var matches = _pathPartsQuery.Matches( assetPath );
-            var result  = matches.Select( m => m.Value ).ToArray();
-            return result;
-        }
-
-        private IReadOnlyList<Query> ConvertPathToQuery( String path )
-        {
-            var splittedPath = Split( path );
-            var result       = new List<Query>( splittedPath.Count );
-            for ( int i = 0; i < splittedPath.Count; i++ )
-            {
-                var   partStr = splittedPath[ i ] ;
-                Query query;
-                if ( partStr.EndsWith( "/" ) )
-                {
-                    query = new FolderQuery( partStr );
-                }
-                else
-                {
-                    query = new FileQuery( partStr );
-                }
-
-                result.Add( query );
-                if( i > 0 )
-                    result[ i - 1 ].NextPart = query;
-                if( query is FileQuery )
-                    break;
-            }
-
-            return result;
-        }
-
-        
-
         private void PrintRecursively(GdFolder folder, int indent, ref Int32 foldersCount, ref Int32 objectsCount )
         {
             foldersCount++;
@@ -222,113 +151,6 @@ namespace GDDB
                     Debug.Log($"  {indentStr}{gdo.name}, type {obj.GetType().Name}, components {gdo.Components.Count}");
                 else
                     Debug.Log($"  {indentStr}{obj.name}, type {obj.GetType().Name}");
-            }
-        }
-
-        private abstract class Query 
-        {
-            public Query  NextPart;
-            public readonly String Term;
-
-            public abstract IEnumerable<ScriptableObject> ProcessFolder( GdFolder folder );
-
-            protected Query( String term )
-            {
-                Term = term;
-            }
-
-            protected readonly Regex IsWildcardsPresent = new (@"[\*\?]", RegexOptions.Singleline | RegexOptions.ExplicitCapture );
-
-            //https://www.codeproject.com/Articles/11556/Converting-Wildcards-to-Regexes
-            public static string WildcardToRegex( string pattern )
-            {
-                return "^" + Regex.Escape(pattern).
-                                   Replace("\\*", ".*").
-                                   Replace("\\?", ".") + "$";
-            }
-        }
-
-        private class FileQuery : Query
-        {
-            public readonly Regex FileNameRegex;
-
-            public FileQuery( String term ) : base( term )
-            {
-                if( String.IsNullOrEmpty( term ) )
-                    term = "*";
-                FileNameRegex = new Regex( WildcardToRegex( term ) );
-            }
-
-            public override IEnumerable<ScriptableObject> ProcessFolder(GdFolder folder )
-            {
-                foreach ( var gdAsset in folder.Objects )
-                {
-                    if( FileNameRegex.IsMatch( gdAsset.name ) )
-                        yield return gdAsset;
-                }
-            }
-        }
-
-        private class FolderQuery : Query
-        {
-            public readonly String FolderName; 
-            public readonly String Delim; 
-            public readonly Regex FolderNameRegex;
-
-            public FolderQuery( String term ) : base( term )
-            {
-                var delimIndex = term.IndexOf( '/' );
-                Assert.IsTrue( delimIndex >= 0 );
-                FolderName = term[ ..delimIndex ];
-                Delim      = term[ delimIndex.. ];
-                FolderNameRegex = new Regex( WildcardToRegex( FolderName ) );
-            }
-
-            public override IEnumerable<ScriptableObject> ProcessFolder(GdFolder folder )
-            {
-                if ( Delim == "/" )
-                {
-                    if ( FolderNameRegex.IsMatch( folder.Name ) )
-                    {
-                        if( NextPart is FileQuery )
-                            foreach ( var gdObject in NextPart.ProcessFolder( folder ) )
-                            {
-                                yield return gdObject;
-                            }
-                        else
-                        {
-                            foreach ( var subFolder in folder.SubFolders )
-                            {
-                                foreach ( var gdObject in NextPart.ProcessFolder( subFolder ) )
-                                {
-                                    yield return gdObject;
-                                }
-                            }
-                        }
-                    }
-                }
-                else if( Delim == "//" )
-                {
-                    if ( FolderNameRegex.IsMatch( folder.Name ) )
-                        if( NextPart is FileQuery )
-                            foreach ( var f in folder.EnumerateFoldersDFS(  ) )
-                            {
-                                foreach ( var gdObject in NextPart.ProcessFolder( f ) )
-                                {
-                                    yield return    gdObject;
-                                }
-                            }
-                        else
-                        {
-                            foreach ( var subFolder in folder.EnumerateFoldersDFS(  ) )
-                            {
-                                foreach ( var gdObject in NextPart.ProcessFolder( subFolder ) )
-                                {
-                                    yield return gdObject;
-                                }
-                            }
-                        }
-                }
             }
         }
     }

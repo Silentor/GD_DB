@@ -86,14 +86,22 @@ namespace GDDB.Editor
             GdFolder rootFolder = db.RootFolder;
             if ( !String.IsNullOrEmpty( query ) )
             {
-                var result = components != null ? db.GetObjectsAndFolders( query, components ).Select( gdo => (gdo.Item1, (ScriptableObject)gdo.Item2) ) : db.GetObjectsAndFolders( query );
+                var objects = new List<ScriptableObject>();
+                var folders = new List<GdFolder>();
+                if( components != null && components.Length > 0 )
+                    db.FindObjects( query, components, objects, folders );
+                else
+                    db.FindObjects( query, objects, folders );
+
                 //Reconstruct tree from search result
                 Dictionary<Guid, GdFolder> queryFolders = new ();
 
-                foreach ( var (folder, obj) in result  )
+                for ( int i = 0; i < objects.Count; i++ )
                 {
-                     var tempFolder = GetTempFolder( folder );
-                     tempFolder.Objects.Add( obj );
+                    var obj = objects[ i ];
+                    var folder = folders[ i ];
+                    var tempFolder = GetTempFolder( folder );
+                    tempFolder.Objects.Add( obj );
                 }
 
                 if( queryFolders.Count == 0 )

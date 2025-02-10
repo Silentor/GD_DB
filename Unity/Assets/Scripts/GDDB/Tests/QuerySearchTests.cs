@@ -1,14 +1,16 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using GDDB.Editor;
+using GDDB.Queries;
 using NUnit.Framework;
 using UnityEngine;
 
 namespace GDDB.Tests
 {
     
-    public class SearchQueriesTests
+    public class QuerySearchTests
     {
         private GdDb _db;
 
@@ -55,6 +57,29 @@ namespace GDDB.Tests
             }
         }
 
+        private IReadOnlyList<ScriptableObject> FindObjects( String query )
+        {
+            var result = new List<ScriptableObject>();
+            _db.FindObjects( query, result );
+            return result;
+        }
+
+        private (IReadOnlyList<ScriptableObject>, IReadOnlyList<GdFolder>) FindObjectsWithFolders( String query )
+        {
+            var result = new List<ScriptableObject>();
+            var resultFolders = new List<GdFolder>();
+            _db.FindObjects( query, result, resultFolders );
+            return (result, resultFolders);
+        }
+
+
+        // private IReadOnlyList<GdFolder> FindFolders( String query )
+        // {
+        //     var result = new List<GdFolder>();
+        //     _db.FindFolders( query, result );
+        //     return result;
+        // }
+
         [Test]
         public void PrintHierarchy()
         {
@@ -65,34 +90,33 @@ namespace GDDB.Tests
         public void TestEmptyQuery()
         {
             //Act
-            var allObjects = _db.GetObjects( "" );
+            var noObjects = FindObjects( "" );
+            var noObjects2 = FindObjects( null );
 
             //Assert
-            allObjects.Count().Should().Be( 12 );
+            noObjects.Count().Should().Be( 0 );
+            noObjects2.Count().Should().Be( 0 );
         }
 
         [Test]
         public void TestOneFolderQuery()
         {
             //Act
-            var allObjects = _db.GetObjects( "Humans/" ).ToArray();
-            var allObjects2 = _db.GetObjects( "Orcs/" ).ToArray();
-            var allObjects3 = _db.GetObjects( "Mobs/" ).ToArray();
+            var allObjects  = FindObjects( "Mobs/Humans/*" ).ToArray();
+            var allObjects2 = FindObjects( "Mobs/Orcs/*" ).ToArray();
 
             //Assert
             allObjects.Count().Should().Be( 3 );
             allObjects.Select( gdo => gdo.name ).Should().BeEquivalentTo( "Hero", "Knight", "Peasant" );
             allObjects2.Count().Should().Be( 3 );
             allObjects2.Select( gdo => gdo.name ).Should().BeEquivalentTo( "Grunt", "WolfRider", "Shaman" );
-            allObjects3.Count().Should().Be( 1 );
-            allObjects3.Select( gdo => gdo.name ).Should().BeEquivalentTo( "CommonMobs" );
         }
 
         [Test]
         public void TestTwoFoldersQuery()
         {
             //Act
-            var allObjects = _db.GetObjects( "Mobs/Orcs/" ).ToArray();  //Files from Mobs/Orcs/
+            var allObjects = FindObjects( "Mobs/Orcs/*" ).ToArray();  //Files from Mobs/Orcs/
 
             //Assert
             allObjects.Count().Should().Be( 3 );
@@ -103,7 +127,7 @@ namespace GDDB.Tests
         public void TestAnyFolderQuery()
         {
             //Act
-            var allObjects = _db.GetObjects( "Mobs/*/" ).ToArray();     //Files from all folders under Mobs/
+            var allObjects = FindObjects( "Mobs/*/*" ).ToArray();     //Files from all folders under Mobs/
 
             //Assert
             allObjects.Count().Should().Be( 6 );
@@ -114,7 +138,7 @@ namespace GDDB.Tests
         public void  TestFoldersAnyFolderHierarchyQuery()
         {
             //Act
-            var allObjects = _db.GetObjects( "Mobs/*/*/" ).ToArray();      //Files from all folders 2 levels under Mobs/
+            var allObjects = FindObjects( "Mobs/*/*/*" ).ToArray();      //Files from all folders 2 levels under Mobs/
 
             //Assert
             allObjects.Count().Should().Be( 4 );
@@ -125,7 +149,7 @@ namespace GDDB.Tests
         public void TestFolderInDifferentPlacesQuery()
         {
             //Act
-            var allObjects = _db.GetObjects( "Skins/" ).ToArray();     //There are several Skins folders in different places, collect all files
+            var allObjects = FindObjects( "**/Skins/*" ).ToArray();     //There are several Skins folders in different places, collect all files
 
             //Assert
             allObjects.Count().Should().Be( 4 );
@@ -136,7 +160,7 @@ namespace GDDB.Tests
         public void TestRecursiveFoldersQuery()
         {
             //Act
-            var allObjects = _db.GetObjects( "Mobs//" ).ToArray();     //Files from Mobs/ and all folders under Mobs/ recursively
+            var allObjects = FindObjects( "Mobs/**/*" ).ToArray();     //Files from Mobs/ and all folders under Mobs/ recursively
 
             //Assert
             allObjects.Count().Should().Be( 11 );
@@ -147,7 +171,7 @@ namespace GDDB.Tests
         public void TestAllFilesInFolderQuery()
         {
             //Act
-            var allObjects = _db.GetObjects( "Mobs/*" ).ToArray();     //All files from Mobs/  (synonym to Mobs/)
+            var allObjects = FindObjects( "Mobs/*" ).ToArray();     //All files from Mobs/  (synonym to Mobs/)
 
             //Assert
             allObjects.Count().Should().Be( 1 );
@@ -158,7 +182,7 @@ namespace GDDB.Tests
         public void TestJustAssetNameQuery()
         {
             //Act
-            var allObjects = _db.GetObjects( "CommonMobs" ).ToArray();     //Find all assets with name CommonMobs
+            var allObjects = FindObjects( "Mobs/CommonMobs" ).ToArray();     //Find all assets in root folder with name CommonMobs
 
             //Assert
             allObjects.Count().Should().Be( 1 );
@@ -169,7 +193,7 @@ namespace GDDB.Tests
         public void TestFolderMaskQuery()
         {
             //Act
-            var allObjects = _db.GetObjects( "Mo*/*mans/" ).ToArray();     //Find all assets if Mobs/Humans
+            var allObjects = FindObjects( "Mo*/*mans/*" ).ToArray();     //Find all assets if Mobs/Humans
 
             //Assert
             allObjects.Count().Should().Be( 3 );
@@ -180,7 +204,7 @@ namespace GDDB.Tests
         public void TestFileMaskQuery()
         {
             //Act
-            var allObjects = _db.GetObjects( "*ru*" ).ToArray();     //Find all assets by mask
+            var allObjects = FindObjects( "**/*ru*" ).ToArray();     //Find all assets by mask
 
             //Assert
             allObjects.Count().Should().Be( 2 );
@@ -191,8 +215,8 @@ namespace GDDB.Tests
         public void TestFolderPath( )
         {
             //Act
-            var chieftan      = _db.GetObjectsAndFolders( "Chieftan" );      //Find chieftan skin
-            var orcSkinFolder = chieftan.Single().Item1;
+            var chieftan      = FindObjectsWithFolders( "**/Chieftan" );      //Find chieftan skin
+            var orcSkinFolder = chieftan.Item2.Single();
 
             //Assert
             orcSkinFolder.GetPath().Should().Be( "GdDb/Mobs/Orcs/Skins" );

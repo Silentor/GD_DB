@@ -20,7 +20,7 @@ namespace GDDB.Queries
 
     public abstract class FileToken : HierarchyToken
     {
-        public abstract void ProcessFolder( IReadOnlyList<GdFolder> input, List<ScriptableObject> output );
+        public abstract void ProcessFolder(  IReadOnlyList<GdFolder> input, List<ScriptableObject> output, List<GdFolder> outputFolders = null );
     }
 
     public abstract class FolderToken : HierarchyToken
@@ -32,11 +32,24 @@ namespace GDDB.Queries
 
     public class AllFilesToken : FileToken
     {
-        public override void ProcessFolder( IReadOnlyList<GdFolder> input, List<ScriptableObject> output )
+        public override void ProcessFolder(  IReadOnlyList<GdFolder> input, List<ScriptableObject> output, List<GdFolder> outputFolders = null )
         {
-            foreach ( var folder in input )
+            if( outputFolders != null )
             {
-                output.AddRange( folder.Objects );
+                foreach ( var folder in input )
+                    foreach ( var obj in folder.Objects )
+                    {
+                        output.Add( obj );
+                        outputFolders.Add( folder );
+                    }
+            }
+            else
+            {
+                foreach ( var folder in input )
+                    foreach ( var obj in folder.Objects )
+                    {
+                        output.Add( obj );
+                    }
             }
         }
     }
@@ -50,9 +63,23 @@ namespace GDDB.Queries
             _db = db;
         }
 
-        public override void ProcessFolder( IReadOnlyList<GdFolder> input, List<ScriptableObject> output )
+        public override void ProcessFolder(  IReadOnlyList<GdFolder> input, List<ScriptableObject> output, List<GdFolder> outputFolders = null )
         {
-            output.AddRange( _db.AllObjects );
+            if( outputFolders != null )
+            {
+                foreach ( var folder in _db.RootFolder.EnumerateFoldersDFS(  ) )
+                {
+                    foreach ( var obj in folder.Objects )
+                    {
+                        output.Add( obj );
+                        outputFolders.Add( folder );
+                    }
+                }
+            }
+            else
+            {
+                output.AddRange( _db.AllObjects );
+            }
         }
     }
 
@@ -67,16 +94,33 @@ namespace GDDB.Queries
             _executor = executor;
         }
 
-        public override void ProcessFolder( IReadOnlyList<GdFolder> input, List<ScriptableObject> output )
+        public override void ProcessFolder(  IReadOnlyList<GdFolder> input, List<ScriptableObject> output, List<GdFolder> outputFolders = null )
         {
-            foreach ( var folder in input )
+            if( outputFolders != null )
             {
-                foreach ( var obj in folder.Objects )
+                foreach ( var folder in input )
                 {
-                    if( _executor.MatchString( obj.name, Wildcard ) )
-                        output.Add( obj );
+                    foreach ( var obj in folder.Objects )
+                    {
+                        if( _executor.MatchString( obj.name, Wildcard ) )
+                        {
+                            output.Add( obj );
+                            outputFolders.Add( folder );
+                        }
+                    }
                 }
             }
+            else
+            {
+                foreach ( var folder in input )
+                {
+                    foreach ( var obj in folder.Objects )
+                    {
+                        if( _executor.MatchString( obj.name, Wildcard ) )
+                            output.Add( obj );
+                    }
+                }
+            } 
         }
     }
 

@@ -4,6 +4,9 @@ using UnityEngine;
 
 namespace GDDB.Queries
 {
+    /// <summary>
+    /// Glob-like query parser and executor for GDDB. For query syntax see <see cref="Parser"/>
+    /// </summary>
     public class Executor
     {
         public readonly GdDb DB;
@@ -13,61 +16,70 @@ namespace GDDB.Queries
             DB = db;
         }
 
-        public IReadOnlyList<ScriptableObject> FindObjects( HierarchyToken token )
+        public void FindObjects( HierarchyToken query, List<ScriptableObject> resultObjects, List<GdFolder> resultFolders = null )
         {
-            var input = new List<GdFolder>(  ){DB.RootFolder};
-            var outputFolders = new List<GdFolder>(  );
+            if( query == null )
+                return;
 
-            var loopDefencerCounter = 0;
-            var currentToken = token;
+            var inputFolders = RentFolderList();
+            inputFolders.Add( DB.RootFolder );
+
+            var loopDefenerCounter = 0;
+            var currentToken = query;
             while ( currentToken != null )
             {
                 if ( currentToken is FolderToken folderToken )
                 {
-                    outputFolders.Clear();
-                    folderToken.ProcessFolder( input, outputFolders );
-                    input.Clear();
-                    input.AddRange( outputFolders );
+                    var outputFolders = RentFolderList();
+                    folderToken.ProcessFolder( inputFolders, outputFolders );
+                    inputFolders.Clear();
+                    inputFolders.AddRange( outputFolders );
+                    ReturnFoldersList( outputFolders );
                     currentToken = folderToken.NextToken;
                 }
                 else if ( currentToken is FileToken fileToken )
                 {
-                    var outputObjects = new List<ScriptableObject>(  );
-                    fileToken.ProcessFolder( input, outputObjects );
-                    return outputObjects;
+                    fileToken.ProcessFolder( inputFolders, resultObjects, resultFolders );
+                    ReturnFoldersList( inputFolders );
+                    return;
                 }
 
-                if( loopDefencerCounter++ > 100 )
+                if( loopDefenerCounter++ > 100 )
                     throw new InvalidOperationException( $"[{nameof(Executor)}]-[{nameof(FindObjects)}] too many loops while processing hierarchy, probably there is a loop in hierarchy tokens" );
             }
 
-            return Array.Empty<ScriptableObject>();
+            //Should not reach this point for valid query?
+            ReturnFoldersList( inputFolders );
         }
 
-        public IReadOnlyList<GdFolder> FindFolders( HierarchyToken token )
+        public void FindFolders( HierarchyToken query, List<GdFolder> result )
         {
-            var input         = new List<GdFolder>(  ){DB.RootFolder};
-            var outputFolders = new List<GdFolder>(  );
+            if( query == null )
+                return;
+
+            var input  = RentFolderList();
+            input.Add( DB.RootFolder );
 
             var loopDefencerCounter = 0;
-            var currentToken        = token;
+            var currentToken        = query;
             while ( currentToken != null )
             {
                 if ( currentToken is FolderToken folderToken )
                 {
-                    outputFolders.Clear();
+                    var outputFolders = RentFolderList();
                     folderToken.ProcessFolder( input, outputFolders );
                     input.Clear();
                     input.AddRange( outputFolders );
+                    ReturnFoldersList( outputFolders );
                     currentToken = folderToken.NextToken;
                 }
 
                 if( loopDefencerCounter++ > 100 )
                     throw new InvalidOperationException( $"[{nameof(Executor)}]-[{nameof(FindFolders)}] too many loops while processing hierarchy, probably there is a loop in hierarchy tokens" );
-
             }
 
-            return outputFolders;
+            result.AddRange( input );
+            ReturnFoldersList( input );
         }
 
 
@@ -76,6 +88,95 @@ namespace GDDB.Queries
             var position = 0;
             return wildcard.Match( str, position );
         }
+
+        private readonly List<List<GdFolder>>         _folderListsForRent = new (  );
+        private readonly List<List<ScriptableObject>> _objectListsForRent = new (  );
+        private Int32 _rentedFoldersCount;
+        private Int32 _rentedObjectsCount;
+
+        private List<GdFolder> RentFolderList()
+        {
+            _rentedFoldersCount++;
+            if( _folderListsForRent.Count == 0 )
+                return new List<GdFolder>(  );
+            else
+            {
+                var result = _folderListsForRent[ ^1 ];
+                _folderListsForRent.RemoveAt( _folderListsForRent.Count - 1 );
+                return result;
+            }
+        }
+
+        private void ReturnFoldersList( List<GdFolder> list )
+        {
+            _rentedFoldersCount--;
+            list.Clear();
+            _folderListsForRent.Add( list );
+        }
+
+        private List<ScriptableObject> RentObjectList()
+        {
+            _rentedObjectsCount++;
+            if( _objectListsForRent.Count == 0 )
+                return new List<ScriptableObject>(  );
+            else
+            {
+                var result = _objectListsForRent[ ^1 ];
+                _objectListsForRent.RemoveAt( _objectListsForRent.Count - 1 );
+                return result;
+            }
+        }
+
+        private void ReturnObjectList( List<ScriptableObject> list )
+        {
+            _rentedObjectsCount--;
+            list.Clear();
+            _objectListsForRent.Add( list );
+        }
+
+        public readonly struct ObjectInFolder : IEquatable<ObjectInFolder>
+        {
+            public readonly GdFolder         Folder;
+            public readonly ScriptableObject Object;
+
+            public ObjectInFolder(GdFolder folder, ScriptableObject o )
+            {
+                Folder      = folder;
+                Object = o;
+            }
+
+            public void Deconstruct( out GdFolder folder, out ScriptableObject obj )
+            {
+                folder = Folder;
+                obj = Object;
+            }
+
+            public bool Equals(ObjectInFolder other)
+            {
+                return Equals( Folder.FolderGuid, other.Folder.FolderGuid ) && Equals( Object, other.Object );
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is ObjectInFolder other && Equals( other );
+            }
+
+            public override int GetHashCode( )
+            {
+                return HashCode.Combine( Folder.FolderGuid, Object );
+            }
+
+            public static bool operator ==(ObjectInFolder left, ObjectInFolder right)
+            {
+                return left.Equals( right );
+            }
+
+            public static bool operator !=(ObjectInFolder left, ObjectInFolder right)
+            {
+                return !left.Equals( right );
+            }
+        }
+
 
     }
 }

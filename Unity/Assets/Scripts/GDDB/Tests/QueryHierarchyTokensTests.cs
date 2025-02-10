@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using GDDB.Editor;
@@ -58,6 +59,21 @@ namespace GDDB.Tests
             }
         }
 
+        private IReadOnlyList<ScriptableObject> FindObjects( HierarchyToken query )
+        {
+            var result = new List<ScriptableObject>();
+            _executor.FindObjects( query, result );
+            return result;
+        }
+
+        private IReadOnlyList<GdFolder> FindFolders( HierarchyToken query )
+        {
+            var result = new List<GdFolder>();
+            _executor.FindFolders( query, result );
+            return result;
+        }
+
+
         [Test]
         public void PrintHierarchy()
         {
@@ -68,11 +84,11 @@ namespace GDDB.Tests
         public void TestAllFilesInDB()
         {
             var token = HierarchyToken.Append( new AllFoldersInDBToken( _db ), new AllFilesToken() );
-            var result = _executor.FindObjects( token );
+            var result = FindObjects( token );
             result.Count().Should().Be( 12 );
 
             token  = HierarchyToken.Append( new AllSubfoldersRecursivelyToken( ), new AllFilesToken() );
-            result = _executor.FindObjects( token );
+            result = FindObjects( token );
             result.Count().Should().Be( 12 );
         }
 
@@ -80,10 +96,10 @@ namespace GDDB.Tests
         public void TestAllSubfoldersToken()
         {
             //Act
-            var folders1 = _executor.FindFolders( new AllSubfoldersToken() ) ;
-            var folders2 = _executor.FindFolders( HierarchyToken.Append( new AllSubfoldersToken(), new AllSubfoldersToken() ) );
-            var folders3 = _executor.FindFolders( HierarchyToken.Append( new AllSubfoldersToken(), new AllSubfoldersToken(), new AllSubfoldersToken() ) ) ;
-            var folders4 = _executor.FindFolders( HierarchyToken.Append( new AllSubfoldersToken(), new AllSubfoldersToken(), new AllSubfoldersToken(), new AllSubfoldersToken() ) ) ;
+            var folders1 = FindFolders( new AllSubfoldersToken() ) ;
+            var folders2 = FindFolders( HierarchyToken.Append( new AllSubfoldersToken(), new AllSubfoldersToken() ) );
+            var folders3 = FindFolders( HierarchyToken.Append( new AllSubfoldersToken(), new AllSubfoldersToken(), new AllSubfoldersToken() ) ) ;
+            var folders4 = FindFolders( HierarchyToken.Append( new AllSubfoldersToken(), new AllSubfoldersToken(), new AllSubfoldersToken(), new AllSubfoldersToken() ) ) ;
 
             //Assert
             folders1.Count().Should().Be( 1 );
@@ -99,8 +115,8 @@ namespace GDDB.Tests
         public void TestAllFoldersTokens()
         {
             //Act
-            var folders1 = _executor.FindFolders( new AllFoldersInDBToken( _db ) ) ;
-            var folders2 = _executor.FindFolders( new AllSubfoldersRecursivelyToken() );
+            var folders1 = FindFolders( new AllFoldersInDBToken( _db ) ) ;
+            var folders2 = FindFolders( new AllSubfoldersRecursivelyToken() );
 
             //Assert
             folders1.Count().Should().Be( 6 );
@@ -120,18 +136,18 @@ namespace GDDB.Tests
             var skinsFolderToken2 = new WildcardSubfoldersToken( new LiteralToken( "Skins" ), _executor );
             var errorFolderToken = new WildcardSubfoldersToken( new LiteralToken( "Error" ), _executor );
 
-            var folders1 = _executor.FindFolders( mobsFolderToken ) ;
-            var folders2 = _executor.FindFolders( HierarchyToken.Append( mobsFolderToken, orcsFolderToken ) ) ;
-            var folders3 = _executor.FindFolders( HierarchyToken.Append( mobsFolderToken, orcsFolderToken, skinsFolderToken ) ) ;
-            var folders4 = _executor.FindFolders( HierarchyToken.Append( mobsFolderToken, new AllSubfoldersToken(), skinsFolderToken ) ) ;
-            var folders5 = _executor.FindFolders( HierarchyToken.Append( new AllSubfoldersRecursivelyToken(), skinsFolderToken ) ) ;
-
-            _executor.FindFolders( HierarchyToken.Append( mobsFolderToken, orcsFolderToken, skinsFolderToken, skinsFolderToken2 ) ).Count().Should().Be( 0 );
-            _executor.FindFolders( HierarchyToken.Append( mobsFolderToken, mobsFolderToken2 ) ).Count().Should().Be( 0 );
-            _executor.FindFolders( HierarchyToken.Append( mobsFolderToken, errorFolderToken, orcsFolderToken ) ).Count().Should().Be( 0 );
-            _executor.FindFolders( HierarchyToken.Append( mobsFolderToken, errorFolderToken, skinsFolderToken ) ).Count().Should().Be( 0 );
+            var folders1 = FindFolders( mobsFolderToken ) ;
+            var folders2 = FindFolders( HierarchyToken.Append( mobsFolderToken, orcsFolderToken ) ) ;
+            var folders3 = FindFolders( HierarchyToken.Append( mobsFolderToken, orcsFolderToken, skinsFolderToken ) ) ;
+            var folders4 = FindFolders( HierarchyToken.Append( mobsFolderToken, new AllSubfoldersToken(), skinsFolderToken ) ) ;
+            var folders5 = FindFolders( HierarchyToken.Append( new AllSubfoldersRecursivelyToken(), skinsFolderToken ) ) ;
 
             //Assert
+            FindFolders( HierarchyToken.Append( mobsFolderToken, orcsFolderToken, skinsFolderToken, skinsFolderToken2 ) ).Count().Should().Be( 0 );
+            FindFolders( HierarchyToken.Append( mobsFolderToken, mobsFolderToken2 ) ).Count().Should().Be( 0 );
+            FindFolders( HierarchyToken.Append( mobsFolderToken, errorFolderToken, orcsFolderToken ) ).Count().Should().Be( 0 );
+            FindFolders( HierarchyToken.Append( mobsFolderToken, errorFolderToken, skinsFolderToken ) ).Count().Should().Be( 0 );
+            
             folders1.Count().Should().Be( 1 );
             folders1.Select( f => f.Name ).Should().BeEquivalentTo( "Mobs" );
             folders2.Count().Should().Be( 1 );
@@ -148,11 +164,22 @@ namespace GDDB.Tests
         public void TestWildcardFilesToken()
         {
             //Act
-            var objects1 = _executor.FindObjects( HierarchyToken.Append( new AllFoldersInDBToken( _db ), new WildcardFilesToken( StringToken.Append( new LiteralToken( "default" ), new AnyTextToken() ), _executor ) ) ) ;
+            var objects1 = FindObjects( HierarchyToken.Append( new AllFoldersInDBToken( _db ), new WildcardFilesToken( StringToken.Append( new LiteralToken( "default" ), new AnyTextToken() ), _executor ) ) ) ;
 
             //Assert
             objects1.Count().Should().Be( 1 );
             objects1.Select( f => f.name ).Should().BeEquivalentTo( "DefaultSkin" );
+        }
+
+        [Test]
+        public void TestFindFilesFromSeveralFoldersToken()
+        {
+            //Act
+            var objects1 = FindObjects( HierarchyToken.Append( new AllSubfoldersRecursivelyToken( ), new WildcardSubfoldersToken( new LiteralToken( "Skins" ), _executor ), new AllFilesToken() ) ) ;
+
+            //Assert
+            objects1.Count().Should().Be( 4 );
+            objects1.Select( f => f.name ).Should().BeEquivalentTo( "DefaultSkin", "Templar", "Crusader", "Chieftan" );
         }
     }
 }

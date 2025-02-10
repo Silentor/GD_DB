@@ -3,6 +3,17 @@ using System.Collections.Generic;
 
 namespace GDDB.Queries
 {
+    /// <summary>
+    /// Parses glob-like path and string queries to tokens. * - zero or more symbols, ? - exactly one symbol, ** - current folder and all subfolders recursively
+    /// </summary>
+    /// <example>
+    /// * - all files in current (root) folder
+    /// mydata - file with name mydata in current (root) folder
+    /// */* - all files in all subfolders of current (root) folder
+    /// **/* - all files in all subfolders of current (root) folder and in all subfolders of subfolders. Shortly all files in DB
+    /// Mobs/*skin - all files in Mobs folder with names ending with skin
+    /// Mobs/Orcs/orc_?? - all files kind of orc_01, orc_02, etc in Orcs folder of Mobs folder
+    /// </example>
     public class Parser
     {
         private readonly Executor _executor;
@@ -46,6 +57,52 @@ namespace GDDB.Queries
 
             return result[ 0 ];
         }
+
+        public HierarchyToken ParseFoldersQuery( String query )
+        {
+            if ( String.IsNullOrEmpty( query ) )
+                return null;
+        
+            var parts  = query.Split( '/', StringSplitOptions.RemoveEmptyEntries );
+            var result = new List<HierarchyToken>(  );
+            for ( int i = 0; i < parts.Length; i++ )
+            {
+                result.Add( ParseFolderToken( parts[ i ] ) );
+            }
+    
+            //Make syntax tree
+            for ( int i = 0; i < result.Count - 1; i++ )
+            {
+                if ( result[ i ] is FolderToken fToken )
+                {
+                    fToken.NextToken = result[ i + 1 ];
+                }
+            }
+
+            return result[ 0 ];
+        }
+
+        public StringToken ParseString( String value )
+        {
+            //Fast pass
+            if ( value == "*" )
+                return new AnyTextToken();
+
+            StringToken prevToken = null;
+            StringToken result    = null;
+            var         position  = 0;
+            while ( position < value.Length )
+            {
+                var token = ExtractNextStringToken( value, ref position );
+                if ( result == null )
+                    result = token;
+                if ( prevToken != null )
+                    prevToken.NextToken = token;
+                prevToken = token;
+            }
+
+            return result;
+        }
         
         private FolderToken ParseFolderToken( String queryPart )
         {
@@ -69,29 +126,7 @@ namespace GDDB.Queries
             }
         }
 
-        private static readonly Char[] WildcardChars = new[] {'*', '?'};
-
-        public StringToken ParseString( String value )
-        {
-             //Fast pass
-             if ( value == "*" )
-                 return new AnyTextToken();
-
-             StringToken prevToken = null;
-             StringToken result   = null;
-             var         position = 0;
-             while ( position < value.Length )
-             {
-                    var token = ExtractNextStringToken( value, ref position );
-                    if ( result == null )
-                        result = token;
-                    if ( prevToken != null )
-                        prevToken.NextToken = token;
-                    prevToken = token;
-             }
-
-             return result;
-        }
+        
 
         private StringToken ExtractNextStringToken( String value, ref Int32 position )
         {          
