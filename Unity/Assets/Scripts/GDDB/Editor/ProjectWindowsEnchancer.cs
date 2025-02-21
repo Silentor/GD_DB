@@ -27,7 +27,7 @@ namespace GDDB.Editor
             //EditorApplication.projectWindowItemOnGUI += DrawIcons2;
 
             GDObjectEditor.Changed += GDObjectEditorOnChanged;
-            GDAssets.GDDBAssetsChanged.Subscribe( 1000, GbbdStructureChanged );
+            GDAssetProcessor.GDDBAssetsChanged.Subscribe( 1000, GbbdStructureChanged );
         }
 
         private static void GbbdStructureChanged( IReadOnlyList<GDObject> changedObjects, IReadOnlyList<String> deletedObjects )
@@ -45,7 +45,7 @@ namespace GDDB.Editor
         {
             const Single IconSize  = 18;
 
-            if ( Event.current.type != EventType.Repaint || !IsMainListRect(rect) || GDBEditor.DB == null )
+            if ( Event.current.type != EventType.Repaint || !IsMainListRect(rect) || GDDBEditor.DB == null )
                 return;
 
             var iconRect = new Rect( rect.x + rect.width, rect.y, IconSize, IconSize );
@@ -176,7 +176,7 @@ namespace GDDB.Editor
             var asset       = EditorUtility.InstanceIDToObject( instanceId );
             if ( asset )
             {
-                var editorDB = GDBEditor.DB;
+                var editorDB = GDDBEditor.DB;
                 if( editorDB.AllObjects.Count == 0 )
                 {
                     itemData.DebugName = "GDDB is empty";
@@ -185,7 +185,7 @@ namespace GDDB.Editor
                 }
 
                 itemData.DebugName = asset.name;
-                var rootFolder  = GDBEditor.DB.RootFolder;
+                var rootFolder  = GDDBEditor.DB.RootFolder;
                 if ( asset is DefaultAsset folderAsset )
                 {
                     var folderGuid = new Guid( AssetDatabase.AssetPathToGUID( AssetDatabase.GetAssetPath( folderAsset ) ) );

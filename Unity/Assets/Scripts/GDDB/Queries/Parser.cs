@@ -16,8 +16,8 @@ namespace GDDB.Queries
     /// </example>
     public class Parser
     {
-        private readonly Executor _executor;
-        private List<HierarchyToken> _buffer = new (  );
+        private readonly Executor             _executor;
+        private readonly List<HierarchyToken> _buffer = new (  );
 
         public Parser( Executor executor )
         {

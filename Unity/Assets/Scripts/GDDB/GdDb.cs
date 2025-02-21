@@ -49,7 +49,7 @@ namespace GDDB
         public void FindObjects( String path, List<ScriptableObject> resultObjects, List<GdFolder> resultFolders = null )
         {
             var  query = _queryParser.ParseObjectsQuery( path );
-            _queryExecutor.FindObjects( query, resultObjects, resultFolders );
+            _queryExecutor.FindObjects( query, RootFolder, resultObjects, resultFolders );
         }   
 
         public void FindObjects( String path, Type[] components, List<ScriptableObject> resultObjects, List<GdFolder> resultFolders = null )

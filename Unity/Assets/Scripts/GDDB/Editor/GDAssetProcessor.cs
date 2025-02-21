@@ -12,7 +12,7 @@ namespace GDDB.Editor
     /// <summary>
     /// Watch for changes of GDDB structure in Asset Database 
     /// </summary>
-    public class GDAssets : UnityEditor.AssetPostprocessor
+    public class GDAssetProcessor : UnityEditor.AssetPostprocessor
     {
         /// <summary>
         /// Lists are reused
@@ -22,7 +22,7 @@ namespace GDDB.Editor
         private static readonly List<GDObject>  _modifiedGDObjects = new ();
         private static readonly List<String>    _removedGDObjects = new ();
 
-        static GDAssets()
+        static GDAssetProcessor()
         {
             CompilationPipeline.compilationStarted += CompilationPipelineOncompilationStarted;
 
@@ -116,7 +116,7 @@ namespace GDDB.Editor
             
             if( _modifiedGDObjects.Count > 0 || _removedGDObjects.Count > 0 )
             {
-                Debug.Log( $"[{nameof(GDAssets)}]-[{nameof(OnPostprocessAllAssets)}] changed {_modifiedGDObjects.Count}, removed {_removedGDObjects.Count} GDObjects" );
+                Debug.Log( $"[{nameof(GDAssetProcessor)}]-[{nameof(OnPostprocessAllAssets)}] changed {_modifiedGDObjects.Count}, removed {_removedGDObjects.Count} GDObjects" );
                 GDDBAssetsChanged?.Invoke( _modifiedGDObjects, _removedGDObjects );
             }
 

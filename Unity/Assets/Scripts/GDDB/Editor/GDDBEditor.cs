@@ -11,12 +11,12 @@ namespace GDDB.Editor
     /// Editor static access to cached GDB
     /// </summary>
     [InitializeOnLoad]
-    public class GDBEditor
+    public class GDDBEditor
     {
 
-        static GDBEditor( )
+        static GDDBEditor( )
         {
-            GDAssets.GDDBAssetsChanged.Subscribe( -1000, OnGddbStructureChanged );     //Update editor GDDB instance, so it need to be first call
+            GDAssetProcessor.GDDBAssetsChanged.Subscribe( -1000, OnGddbStructureChanged );     //Update editor GDDB instance, so it need to be first call
         }
 
         public static IReadOnlyList<ScriptableObject> AllObjects
@@ -46,6 +46,16 @@ namespace GDDB.Editor
             }
         }
 
+        public static Guid GetGDObjectGuid( ScriptableObject obj )
+        {
+            if( obj is GDObject gdObject )
+                return gdObject.Guid;
+            else if( AssetDatabase.TryGetGUIDAndLocalFileIdentifier( obj, out var guid, out long _ ) )
+                return Guid.ParseExact( guid, "N" );
+            else
+                return Guid.Empty;
+        }
+
         public static event Action Updated;
 
         private static GdDb                            _gbd;
@@ -67,7 +77,7 @@ namespace GDDB.Editor
 
         private static void OnGddbStructureChanged(IReadOnlyList<GDObject> changedObjects, IReadOnlyList<String> deletedObjects )
         {
-            Debug.Log( $"[{nameof(GDBEditor)}]-[{nameof(OnGddbStructureChanged)}] Editor GDB instance will be recreated due to changed GDObjects assets " );
+            Debug.Log( $"[{nameof(GDDBEditor)}]-[{nameof(OnGddbStructureChanged)}] Editor GDB instance will be recreated due to changed GDObjects assets " );
             _isGDAssetsChanged = true;
             Updated?.Invoke();
         }

@@ -18,7 +18,7 @@ namespace GDDB.Editor
 
         static Validator( )
         {
-            GDAssets.GDDBAssetsChanged.Subscribe( 500, OnGDDBChanged );      //After editor GDDB updated and Before project window drawer
+            GDAssetProcessor.GDDBAssetsChanged.Subscribe( 500, OnGDDBChanged );      //After editor GDDB updated and Before project window drawer
             OnGDDBChanged( Array.Empty<GDObject>(), ArraySegment<String>.Empty );
             GDObjectEditor.Changed += _ => Validate();
         }
@@ -27,7 +27,7 @@ namespace GDDB.Editor
 
         public static IReadOnlyList<ValidationReport> Validate( )
         {
-            var gddb    = GDBEditor.DB;
+            var gddb    = GDDBEditor.DB;
             _reports.Clear();
 
             if (  gddb == null )                                    //No GDDB in project

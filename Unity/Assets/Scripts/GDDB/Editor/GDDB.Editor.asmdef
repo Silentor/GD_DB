@@ -2,7 +2,8 @@
     "name": "GDDB.Editor",
     "rootNamespace": "",
     "references": [
-        "GUID:143657c3878a4d14fa823dce00523f26"
+        "GUID:143657c3878a4d14fa823dce00523f26",
+        "GUID:478a2357cc57436488a56e564b08d223"
     ],
     "includePlatforms": [
         "Editor"

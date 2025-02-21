@@ -1362,11 +1362,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: TestIdReference.Serializalble1
-      value: 3406041121107337331
+      value: 6171196277635138813
       objectReference: {fileID: 0}
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: TestIdReference.Serializalble2
-      value: 5859060303919078872
+      value: 17381016158105949704
       objectReference: {fileID: 0}
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: TestUnsafeId.bs.Array.data[11]
@@ -1375,6 +1375,14 @@ PrefabInstance:
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: TestUnsafeId.bs.Array.data[12]
       value: 255
+      objectReference: {fileID: 0}
+    - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
+      propertyPath: testRefReference.Serializalble1
+      value: 9621055853188281031
+      objectReference: {fileID: 0}
+    - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
+      propertyPath: testRefReference.Serializalble2
+      value: 9095723928028107530
       objectReference: {fileID: 0}
     - target: {fileID: 6999935956975957650, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: m_Name

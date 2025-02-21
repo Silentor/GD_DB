@@ -6,7 +6,7 @@ namespace GDDB
 {
     [Serializable]
     [StructLayout(LayoutKind.Explicit, Pack = 1)]
-    public struct GdFolderId : IEquatable<GdFolderId>
+    public struct GdRef : IEquatable<GdRef>
     {
         [FieldOffset(0)]
         public Guid   GUID;
@@ -15,7 +15,7 @@ namespace GDDB
         [FieldOffset(8)]
         public UInt64 Serializalble2;
 
-        public GdFolderId( UInt64 part1, UInt64 part2 )
+        public GdRef( UInt64 part1, UInt64 part2 )
         {
             GUID           = default;
             Serializalble1 = part1;
@@ -27,14 +27,14 @@ namespace GDDB
             return GUID.ToString();
         }
 
-        public bool Equals(GdFolderId other)
+        public bool Equals(GdRef other)
         {
             return GUID.Equals( other.GUID );
         }
 
         public override bool Equals(object? obj)
         {
-            return obj is GdFolderId other && Equals( other );
+            return obj is GdRef other && Equals( other );
         }
 
         public override int GetHashCode( )
@@ -42,12 +42,12 @@ namespace GDDB
             return GUID.GetHashCode();
         }
 
-        public static bool operator ==(GdFolderId left, GdFolderId right)
+        public static bool operator ==(GdRef left, GdRef right)
         {
             return left.Equals( right );
         }
 
-        public static bool operator !=(GdFolderId left, GdFolderId right)
+        public static bool operator !=(GdRef left, GdRef right)
         {
             return !left.Equals( right );
         }

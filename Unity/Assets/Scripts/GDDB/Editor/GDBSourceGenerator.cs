@@ -25,7 +25,7 @@ namespace GDDB.Editor
 
         static GDBSourceGenerator( )
         {
-            GDAssets.GDDBAssetsChanged.Subscribe( 5, OnGddbStructureChanged );
+            GDAssetProcessor.GDDBAssetsChanged.Subscribe( 5, OnGddbStructureChanged );
             EditorApplication.focusChanged += EditorApplicationOnfocusChanged;
             EditorApplication.playModeStateChanged += EditorApplicationOnplayModeStateChanged;
             GDDBUpdater.BuildPreprocessing += BuildPreprocessorOnBuildPreprocessing;
@@ -90,10 +90,10 @@ namespace GDDB.Editor
 
         public static void GenerateGDBSource( Boolean forceRegenerate = false )
         {
-            if( GDBEditor.DB == null )
+            if( GDDBEditor.DB == null )
                 return;
 
-            var databaseHash = GDBEditor.DB.RootFolder.GetFoldersChecksum();
+            var databaseHash = GDDBEditor.DB.RootFolder.GetFoldersChecksum();
             var generatedHash = GetGeneratedFileChecksum();
             if( databaseHash != generatedHash || forceRegenerate )
             {
@@ -107,7 +107,7 @@ namespace GDDB.Editor
                 writer.WritePropertyName( "hash" );
                 writer.WriteValue( databaseHash );
                 writer.WritePropertyName( "Root" );
-                serializer.Serialize( GDBEditor.DB.RootFolder, null, writer);
+                serializer.Serialize( GDDBEditor.DB.RootFolder, null, writer);
                 writer.WriteEndObject();
 
                 var sourceFilePath = GetSourceFilePath();

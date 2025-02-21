@@ -31,9 +31,9 @@ namespace GDDB.Editor
             set => EditorPrefs.SetString( _lastSearchStringKey, value );
         }
 
-        public SearchPopup.EListMode SearchListMode
+        public GDComponentSearchPopup.EListMode SearchListMode
         {
-            get => (SearchPopup.EListMode)EditorPrefs.GetInt( _listModeKey, 0 );
+            get => (GDComponentSearchPopup.EListMode)EditorPrefs.GetInt( _listModeKey, 0 );
             set => EditorPrefs.SetInt( _listModeKey, (Int32)value );
         }
 

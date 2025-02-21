@@ -62,7 +62,7 @@ namespace GDDB.Tests
         private IReadOnlyList<ScriptableObject> FindObjects( HierarchyToken query )
         {
             var result = new List<ScriptableObject>();
-            _executor.FindObjects( query, result );
+            _executor.FindObjects( query, _db.RootFolder, result );
             return result;
         }
 

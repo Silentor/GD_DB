@@ -39,7 +39,7 @@ namespace GDDB.Editor
             _favorites = new List<Type>();
             _settings.LoadFavoriteComponents( _favorites );
 
-            GDAssets.GDDBAssetsChanged.Subscribe( OnGDDBChanged);
+            GDAssetProcessor.GDDBAssetsChanged.Subscribe( OnGDDBChanged);
         }
 
         private void OnGDDBChanged(IReadOnlyList<GDObject> changedObjects, IReadOnlyList<String> removedObjects )
@@ -50,7 +50,7 @@ namespace GDDB.Editor
 
         protected virtual void OnDisable( )
         {
-            GDAssets.GDDBAssetsChanged.Unsubscribe( OnGDDBChanged );
+            GDAssetProcessor.GDDBAssetsChanged.Unsubscribe( OnGDDBChanged );
         }
 
         public override VisualElement CreateInspectorGUI( )
@@ -337,7 +337,7 @@ namespace GDDB.Editor
 
             try
             {
-                foreach ( var gdObject in GDBEditor.AllObjects.OfType<GDObject>() )
+                foreach ( var gdObject in GDDBEditor.AllObjects.OfType<GDObject>() )
                 {
                     if ( gdObject.Components.Any( c => c is null ) )            //Something wrong here (null ref component of missed component type)
                     {
@@ -355,7 +355,7 @@ namespace GDDB.Editor
                         }
                     }
 
-                    if( EditorUtility.DisplayCancelableProgressBar( "GDDB component fix", "Remove null components", counter / (Single)GDBEditor.AllObjects.Count ) )
+                    if( EditorUtility.DisplayCancelableProgressBar( "GDDB component fix", "Remove null components", counter / (Single)GDDBEditor.AllObjects.Count ) )
                         break;
                 }
             }
@@ -437,7 +437,7 @@ namespace GDDB.Editor
 
         private void ShowSelectComponentPopup( Button sender, Action<Type> onSelectComponent )
         {
-            var searchPopupLogic = new SearchPopup( _settings );
+            var searchPopupLogic = new GDComponentSearchPopup( _settings );
             searchPopupLogic.Selected += onSelectComponent;
             searchPopupLogic.Closed   += ( ) => _settings.LoadFavoriteComponents( _favorites );
             PopupWindow.Show( sender.worldBound, searchPopupLogic );

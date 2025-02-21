@@ -29,14 +29,14 @@ namespace GDDB.Editor
             //Debug.Log( $"[{nameof(ControlWindow)}]-[{nameof(OnEnable)}] " );
             Validator.Validated += OnValidated;
             GDBSourceGenerator.SourceUpdated += UpdateSourceGenInfo;
-            GDBEditor.Updated += OnEditorDBUpdated;
+            GDDBEditor.Updated += OnEditorDBUpdated;
         }
         
         private void OnDestroy( )
         {
             Validator.Validated              -= OnValidated;
             GDBSourceGenerator.SourceUpdated -= UpdateSourceGenInfo;
-            GDBEditor.Updated                -= OnEditorDBUpdated;
+            GDDBEditor.Updated                -= OnEditorDBUpdated;
 
             SourceGeneratorSettings.instance.Save();
             UpdateDBSettings.instance.Save();
@@ -53,7 +53,7 @@ namespace GDDB.Editor
             //Show getting started section if no GDDB detected
             _gettingStartedBlock = window.Q<VisualElement>( "GettingStarted" );
             _gettingStartedBlock.Q<Button>( "SelectRootFolderBtn" ).clicked += CreateNewGDRootAsset;
-            _gettingStartedBlock.style.display = GDBEditor.DB == null ? DisplayStyle.Flex : DisplayStyle.None;
+            _gettingStartedBlock.style.display = GDDBEditor.DB == null ? DisplayStyle.Flex : DisplayStyle.None;
 
             //Source Gen settings
             var sourceGenSettingsBox = window.Q<VisualElement>( "SourceGenSettings" );
@@ -113,7 +113,7 @@ namespace GDDB.Editor
         {
             if ( String.IsNullOrEmpty( updateSettings.ScriptableObjectDBPath ) ) throw new InvalidOperationException( "Output path is empty" );
 
-            GDDBUpdater.UpdateScriptableObjectDB( updateSettings, GDBEditor.DB );
+            GDDBUpdater.UpdateScriptableObjectDB( updateSettings, GDDBEditor.DB );
             var result = AssetDatabase.LoadAssetAtPath<DBScriptableObject>( updateSettings.ScriptableObjectDBPath  );
             if( result )
                 EditorGUIUtility.PingObject( result );
@@ -125,7 +125,7 @@ namespace GDDB.Editor
         {
             if ( String.IsNullOrEmpty( updateSettings.JsonDBPath ) ) throw new InvalidOperationException( "Output path is empty" );
 
-            GDDBUpdater.UpdateJsonDB( updateSettings, GDBEditor.DB, true );
+            GDDBUpdater.UpdateJsonDB( updateSettings, GDDBEditor.DB, true );
             EditorUtility.RevealInFinder( updateSettings.JsonDBPath );
 
             if ( Validator.Reports.Count > 0 ) Debug.LogError( $"[{nameof(ControlWindow)}] GDDB validation errors detected, count {Validator.Reports.Count}" );
@@ -135,7 +135,7 @@ namespace GDDB.Editor
         {
             if ( String.IsNullOrEmpty( updateSettings.BinaryDBPath ) ) throw new InvalidOperationException( "Output path is empty" );
 
-            GDDBUpdater.UpdateBinaryDB( updateSettings, GDBEditor.DB, true );
+            GDDBUpdater.UpdateBinaryDB( updateSettings, GDDBEditor.DB, true );
             EditorUtility.RevealInFinder( updateSettings.BinaryDBPath );
 
             if ( Validator.Reports.Count > 0 ) Debug.LogError( $"[{nameof(ControlWindow)}] GDDB validation errors detected, count {Validator.Reports.Count}" );
@@ -143,7 +143,7 @@ namespace GDDB.Editor
 
         private void OnEditorDBUpdated( )
         {
-            _gettingStartedBlock.style.display = GDBEditor.DB == null ? DisplayStyle.Flex : DisplayStyle.None;
+            _gettingStartedBlock.style.display = GDDBEditor.DB == null ? DisplayStyle.Flex : DisplayStyle.None;
             UpdateGDBInfo( );
             UpdateSourceGenInfo();
         }
@@ -151,22 +151,22 @@ namespace GDDB.Editor
         private void UpdateGDBInfo( )
         {
             //Can be called before GUI is created from event handler
-            if( _dbStatsLbl == null || GDBEditor.DB == null )
+            if( _dbStatsLbl == null || GDDBEditor.DB == null )
                 return;
 
-            var rootFolder   = GDBEditor.DB.RootFolder;
+            var rootFolder   = GDDBEditor.DB.RootFolder;
             var rootFullPath = AssetDatabase.GUIDToAssetPath( rootFolder.FolderGuid.ToString("N") );
-            _dbStatsLbl.text = $"GDB root folder: {rootFullPath}, objects {GDBEditor.AllObjects.Count}, folders {GDBEditor.AllFolders.Count}";
+            _dbStatsLbl.text = $"GDB root folder: {rootFullPath}, objects {GDDBEditor.AllObjects.Count}, folders {GDDBEditor.AllFolders.Count}";
             _dbHashLbl.text  = "DB structure hash: " + rootFolder.GetFoldersChecksum( );
         }
 
         private void UpdateSourceGenInfo( )
         {
             //Can be called before GUI is created somehow
-            if( _sourceGenFileHashLbl == null || GDBEditor.DB == null )
+            if( _sourceGenFileHashLbl == null || GDDBEditor.DB == null )
                 return;
 
-            var rootFolderHash        = GDBEditor.DB.RootFolder.GetFoldersChecksum();
+            var rootFolderHash        = GDDBEditor.DB.RootFolder.GetFoldersChecksum();
             var generatedFileHash = GDBSourceGenerator.GetGeneratedFileChecksum();
             var generatedCodeHash = GDBSourceGenerator.GetGeneratedCodeChecksum();
             _sourceGenFileHashLbl.text = "Generated file hash: " + generatedFileHash;

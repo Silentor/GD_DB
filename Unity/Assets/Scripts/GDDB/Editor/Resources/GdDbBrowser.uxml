@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <ui:VisualElement name="Border" class="unity-box" style="flex-grow: 1;">
+        <ui:VisualElement name="ToolBar" style="flex-grow: 1; height: 20px; max-height: 20px; min-height: 20px; flex-direction: row;">
+            <ui:VisualElement style="flex-grow: 0; height: 20px; max-height: 20px; flex-shrink: 0; min-height: 20px; width: 20px; max-width: 20px; min-width: 20px; background-image: resource(&apos;search_24dp&apos;);" />
+            <ui:TextField picking-mode="Ignore" name="QueryTxt" style="flex-grow: 1;" />
+        </ui:VisualElement>
+        <ui:TreeView fixed-item-height="18" name="BrowserTreeView" />
+        <ui:Label tabindex="-1" text="No objects found" parse-escape-sequences="true" display-tooltip-when-elided="true" name="StatsLbl" />
+    </ui:VisualElement>
+</ui:UXML>

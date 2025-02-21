@@ -27,7 +27,7 @@ namespace GDDB.Editor
         static GDDBUpdater( )
         {
             EditorApplication.playModeStateChanged += EditorApplicationOnplayModeStateChanged;
-            GDAssets.GDDBAssetsChanged.Subscribe( (_, _) => _isDBDirty = true );
+            GDAssetProcessor.GDDBAssetsChanged.Subscribe( (_, _) => _isDBDirty = true );
             GDObjectEditor.Changed += _ => _isDBDirty = true;
         }
 
@@ -39,7 +39,7 @@ namespace GDDB.Editor
                 if ( settings.AutoUpdateOnRun )
                 {
                     AssetDatabase.SaveAssets();
-                    var editorDB = GDBEditor.DB;
+                    var editorDB = GDDBEditor.DB;
                     UpdateScriptableObjectDB( settings, editorDB );
                     UpdateJsonDB( settings, editorDB );
                     UpdateBinaryDB( settings, editorDB );
@@ -71,7 +71,7 @@ namespace GDDB.Editor
             if ( settings.AutoUpdateOnBuild )
             {
                 AssetDatabase.SaveAssets();
-                var editorDB   = GDBEditor.DB;
+                var editorDB   = GDDBEditor.DB;
 
                 if ( editorDB.AllObjects.Any() )
                 {

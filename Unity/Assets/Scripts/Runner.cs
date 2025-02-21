@@ -22,18 +22,21 @@ namespace GDDB_User
 {
     public class Runner : MonoBehaviour
     {
-        public Vector4 TestVector4;
-        public Vector3 TestVector3;
-        public UnityEngine.MeshColliderCookingOptions TestEnum;
-        public DBScriptableObject                     DB;
+        public GdFolderRef FolderRef;
 
+        [GdTypeFilter("Mobs/**/*")]
+        public GdRef        TestObjectReference;
+
+
+
+        public DBScriptableObject                     DB;
         public TMP_Text DebugOutput;
         public RawImage DebugImageOutput;
 
         public Int32            TestField;
         public GDObject         TestDirectObject;
-        [GdTypeFilter("Mobs/**/*", typeof(TestMobComponent))]
-        public GdId             TestIdReference;
+        
+        
         public Object           TestFolderReference;
         public Classes          NullObject;
         [SerializeReference]

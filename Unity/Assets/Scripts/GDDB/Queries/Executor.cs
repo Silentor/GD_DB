@@ -16,13 +16,13 @@ namespace GDDB.Queries
             DB = db;
         }
 
-        public void FindObjects( HierarchyToken query, List<ScriptableObject> resultObjects, List<GdFolder> resultFolders = null )
+        public void FindObjects( HierarchyToken query, GdFolder rootFolder, List<ScriptableObject> resultObjects, List<GdFolder> resultFolders = null )
         {
             if( query == null )
                 return;
 
             var inputFolders = RentFolderList();
-            inputFolders.Add( DB.RootFolder );
+            inputFolders.Add( rootFolder );
 
             var loopDefenerCounter = 0;
             var currentToken = query;

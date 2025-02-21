@@ -8,9 +8,9 @@ using Object = System.Object;
 
 namespace GDDB.Editor
 {
-    public class SearchPopup : PopupWindowContent
+    public class GDComponentSearchPopup : PopupWindowContent
     {
-        public SearchPopup(   Settings settings )
+        public GDComponentSearchPopup(   Settings settings )
         {
             _settings       = settings;
         }
@@ -44,11 +44,11 @@ namespace GDDB.Editor
         {
             base.OnOpen();
 
-            var asset    = UnityEngine.Resources.Load<VisualTreeAsset>( "SearchPopup" );
+            var asset    = UnityEngine.Resources.Load<VisualTreeAsset>( "GDComponentSearchPopup" );
             var instance = asset.Instantiate();
             editorWindow.rootVisualElement.Add( instance );
 
-            _itemAsset = UnityEngine.Resources.Load<VisualTreeAsset>( "SearchPopupItem" );
+            _itemAsset = UnityEngine.Resources.Load<VisualTreeAsset>( "GDComponentSearchPopupItem" );
 
             _searchToolBtn = instance.Q<Button>( "SearchBtn" );
             _searchToolBtn.clicked += SearchToolBtn_Clicked;

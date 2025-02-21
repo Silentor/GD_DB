@@ -32,14 +32,14 @@ namespace GDDB.Serialization
                     AllObjects = parser.AllObjects;
                     AllFolders = parser.AllFolders;
 
-                    Debug.Log( $"[{nameof(GdEditorLoader)}]-[{nameof(GdEditorLoader)}] loaded GDDB from assets" );
+                    Debug.Log( $"[{nameof(GdEditorLoader)}]-[{nameof(GdEditorLoader)}] loaded GDDB from Editor assets" );
                 }
                 else
                 {
                     _db        = null;
                     AllObjects = Array.Empty<ScriptableObject>();
                     AllFolders = Array.Empty<GdFolder>();
-                    Debug.Log( $"[{nameof(GdEditorLoader)}]-[{nameof(GdEditorLoader)}] No GDDB assets found, there is no game design data base in project" );
+                    Debug.Log( $"[{nameof(GdEditorLoader)}]-[{nameof(GdEditorLoader)}] No GDDB Editor assets found, there is no game design data base in project" );
                 }
 #endif           
 
