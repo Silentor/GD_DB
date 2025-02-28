@@ -69,7 +69,7 @@ namespace GDDB.Tests
         private IReadOnlyList<GdFolder> FindFolders( HierarchyToken query )
         {
             var result = new List<GdFolder>();
-            _executor.FindFolders( query, result );
+            _executor.FindFolders( query, _db.RootFolder, result );
             return result;
         }
 

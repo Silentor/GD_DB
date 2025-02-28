@@ -1319,11 +1319,11 @@ PrefabInstance:
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: TestDirectObject
       value: 
-      objectReference: {fileID: 11400000, guid: ea12847d8145ae7459d43e0ee0045de7, type: 2}
+      objectReference: {fileID: 11400000, guid: b02a66dc92b20664ba989c9a3f767fe1, type: 2}
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: TestFolderReference
       value: 
-      objectReference: {fileID: 11500000, guid: 0bd0e2e89de2a734683d3bb11ad850c2, type: 3}
+      objectReference: {fileID: 102900000, guid: 02d80380891d94b4888b68207b631bd8, type: 3}
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: TestId.Serializalble1
       value: 5392103377966745527
@@ -1331,6 +1331,22 @@ PrefabInstance:
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: TestId.Serializalble2
       value: 15528910238761604809
+      objectReference: {fileID: 0}
+    - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
+      propertyPath: TestFolderRefernce.Part1
+      value: 163259416551206849
+      objectReference: {fileID: 0}
+    - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
+      propertyPath: TestFolderRefernce.Part2
+      value: 4673111603222955577
+      objectReference: {fileID: 0}
+    - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
+      propertyPath: TestObjectReference.Part1
+      value: 1289336007851301064
+      objectReference: {fileID: 0}
+    - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
+      propertyPath: TestObjectReference.Part2
+      value: 3499457036221022139
       objectReference: {fileID: 0}
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: TestTypeRestrictedMobs.Data
@@ -1383,6 +1399,14 @@ PrefabInstance:
     - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: testRefReference.Serializalble2
       value: 9095723928028107530
+      objectReference: {fileID: 0}
+    - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
+      propertyPath: TestObjectReference.Serializalble1
+      value: 1289336007851301064
+      objectReference: {fileID: 0}
+    - target: {fileID: 5648754065370670364, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
+      propertyPath: TestObjectReference.Serializalble2
+      value: 3499457036221022139
       objectReference: {fileID: 0}
     - target: {fileID: 6999935956975957650, guid: 70aae6456f5d7dc4597adec1d810e437, type: 3}
       propertyPath: m_Name

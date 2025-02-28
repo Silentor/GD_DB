@@ -17,16 +17,19 @@ namespace GDDB.Editor
     /// </summary>
     public class GdDbBrowserWidget
     {
-        public GdDbBrowserWidget( GdDb db, [CanBeNull] String query, Type[] components, [CanBeNull] ScriptableObject selectedObject )
+        public GdDbBrowserWidget( GdDb db, [CanBeNull] String query, Type[] components, [CanBeNull] Object selectedObject, EMode mode = EMode.ObjectsAndFolders )
         {
-            _db = db;
-            _query = query;
-            _components = components;
-            _selectedGDObject = selectedObject;
+            _db               = db;
+            _query            = query;
+            _components       = components;
+            _selectedObject = selectedObject;
+            _mode        = mode;
+            _queryExecutor = new Executor( _db );
+            _queryParser   = new Parser( _queryExecutor );
         }
 
-        public event Action<ScriptableObject> Selected;
-        public event Action<ScriptableObject> Chosed;
+        public event Action<GdFolder, ScriptableObject> Selected;
+        public event Action<GdFolder, ScriptableObject> Chosed;
 
         public void CreateGUI( VisualElement root )
         {
@@ -47,14 +50,18 @@ namespace GDDB.Editor
 
             root.Add( content );
 
-            Init( _db, _query, _components, _selectedGDObject );
+            if( _mode == EMode.ObjectsAndFolders )
+                InitObjectsBrowser( _db, _query, _components, _selectedObject as ScriptableObject ); 
+            else
+                InitFoldersBrowser( _db, _query, _selectedObject as GdFolder );
         }
 
         //Init values
-        private readonly GdDb             _db;
-        private readonly String           _query;
-        private readonly Type[]           _components;
-        private readonly ScriptableObject _selectedGDObject;
+        private readonly GdDb   _db;
+        private readonly String _query;
+        private readonly Type[] _components;
+        private readonly Object _selectedObject;
+        private readonly EMode  _mode;
 
         private GdFolder                        _rootFolder; //Root folder for the initial search query. It can be queried further 
         private List<TreeViewItemData<Object>> _treeItems;
@@ -66,37 +73,92 @@ namespace GDDB.Editor
 
         private void TreeView_selectionChanged(IEnumerable<Object> items )
         {
-            if ( items.Any() )
+            var selectedItem = items.FirstOrDefault();
+            if ( _mode == EMode.ObjectsAndFolders )
             {
-                var result = items.First();
-                if( result is ScriptableObject gdo )
-                    Selected?.Invoke( gdo );
+                if ( selectedItem is ScriptableObject gdo )
+                {
+                    var folder = _db.RootFolder.EnumerateFoldersDFS().FirstOrDefault( f => f.Objects.Contains( gdo ) );
+                    Selected?.Invoke( folder, gdo );
+                }
+            }
+            else
+            {
+                if ( selectedItem is GdFolder folder )
+                {
+                    Selected?.Invoke( folder, null );
+                }
             }
         }
 
         private void TreeView_Chosed(IEnumerable<Object> items )
         {
-            if ( items.Any() )
+            var selectedItem = items.FirstOrDefault();
+            if ( _mode == EMode.ObjectsAndFolders )
             {
-                var result = items.First();
-                if ( result is ScriptableObject gdo )
+                if ( selectedItem is ScriptableObject gdo )
                 {
-                    Chosed?.Invoke( gdo );
+                    var folder = _db.RootFolder.EnumerateFoldersDFS().FirstOrDefault( f => f.Objects.Contains( gdo ) );
+                    Chosed?.Invoke( folder, gdo );
+                }
+            }
+            else
+            {
+                if ( selectedItem is GdFolder folder )
+                {
+                    Chosed?.Invoke( folder, null );
                 }
             }
         }
 
-        private void Init(   GdDb db, String query, Type[] components, ScriptableObject selectedObject )
+        private void InitFoldersBrowser(   GdDb db, String query, GdFolder selectedFolder )
+        {
+            if ( !String.IsNullOrEmpty( query ) )
+            {
+                var folders = new List<GdFolder>();
+                db.FindFolders( query, folders );
+                
+                if( folders.Count == 0 )
+                {
+                    var hintLabelText = $"No folders found for query string '{query}'";
+
+                    _rootFolder    = null;
+                    _statsLbl.text = hintLabelText;
+                    //Initial query limits me to zero objects, so hide the tree
+                    _toolBar.style.display  = DisplayStyle.None;
+                    _treeView.style.display = DisplayStyle.None;
+                    return;
+                }
+
+                _rootFolder = ConvertSearchResultToHierarchy( Array.Empty<ScriptableObject>(), folders, true );
+            }
+            else
+            {
+                //Create copy of entire DB folders structure without objects
+                _rootFolder = ConvertSearchResultToHierarchy( Array.Empty<ScriptableObject>(), db.RootFolder.EnumerateFoldersDFS(  ).ToArray(), true );
+            }
+
+            _statsLbl.text = $"Folders found: {_rootFolder.EnumerateFoldersDFS().Count()}";
+
+            var rootTreeItem         = PrepareTreeRoot( _rootFolder );
+            _treeView.SetRootItems( new []{ rootTreeItem } );
+            _treeView.Rebuild();
+            _treeView.ExpandAll();
+            
+            var selectedTreeItem = FindTreeItemData( rootTreeItem, o => o is GdFolder f && f == selectedFolder );
+            if( selectedTreeItem.data != null )
+                _treeView.SetSelectionById( selectedTreeItem.id );
+        }
+        
+
+        private void InitObjectsBrowser(   GdDb db, String query, Type[] components, ScriptableObject selectedObject )
         {
             _rootFolder = db.RootFolder;
             if ( !String.IsNullOrEmpty( query ) )
             {
                 var objects = new List<ScriptableObject>();
                 var folders = new List<GdFolder>();
-                if( components != null && components.Length > 0 )
-                    db.FindObjects( query, components, objects, folders );
-                else
-                    db.FindObjects( query, objects, folders );
+                db.FindObjects( query, components, objects, folders );
                 
                 if( folders.Count == 0 )
                 {
@@ -112,7 +174,7 @@ namespace GDDB.Editor
                     return;
                 }
 
-                _rootFolder = ConvertSearchResultToFoldersHierarchy( objects, folders );
+                _rootFolder = ConvertSearchResultToHierarchy( objects, folders, true );
             }
 
             _statsLbl.text = $"Object found: {_rootFolder.EnumerateFoldersDFS().SelectMany( f => f.Objects ).Count()}";
@@ -129,6 +191,8 @@ namespace GDDB.Editor
 
         private readonly EditorWaitForSeconds _searchDelay = new ( 0.3f );
         private          EditorCoroutine      _searchDelayCoroutine;
+        private readonly Executor             _queryExecutor;
+        private readonly Parser               _queryParser;
 
         private void SearchAsync( String query, GdFolder rootFolder )
         {
@@ -149,7 +213,7 @@ namespace GDDB.Editor
             {
                 _treeView.SetRootItems( Array.Empty<TreeViewItemData<Object>>() );
                 _treeView.Rebuild();
-                _statsLbl.text = "No objects found";
+                _statsLbl.text = _mode == EMode.ObjectsAndFolders ? "No objects found" : "No folders found";
             }
             else
             {
@@ -158,7 +222,7 @@ namespace GDDB.Editor
                 _treeView.SetRootItems( new []{ rootTreeItem } );
                 _treeView.Rebuild();
                 _treeView.ExpandAll();
-                _statsLbl.text = $"Object found: {objectsFound}";
+                _statsLbl.text = _mode == EMode.ObjectsAndFolders ? $"Object found: {objectsFound}" : $"Folders found: {resultRootFolder.EnumerateFoldersDFS().Count()}";
             }
         }
 
@@ -167,31 +231,58 @@ namespace GDDB.Editor
             if ( String.IsNullOrEmpty( query ) )
                 return rootFolder;
 
-            var queryExecutor = new Executor( _db );
-            var queryParser = new Parser( queryExecutor );
             var objects = new List<ScriptableObject>();
             var folders = new List<GdFolder>();
-            var queryTokens = queryParser.ParseObjectsQuery( query );
-            queryExecutor.FindObjects( queryTokens, rootFolder, objects, folders );
-            var resultRootFolder = ConvertSearchResultToFoldersHierarchy( objects, folders );
+
+            if( _mode == EMode.ObjectsAndFolders )
+            {
+                var queryTokens = _queryParser.ParseObjectsQuery( query );
+                _queryExecutor.FindObjects( queryTokens, rootFolder, objects, folders );
+            }
+            else
+            {
+                var queryTokens = _queryParser.ParseFoldersQuery( query );
+                _queryExecutor.FindFolders( queryTokens, rootFolder, folders );
+            }
+
+            var resultRootFolder = ConvertSearchResultToHierarchy( objects, folders, false );
 
             return resultRootFolder;
         }
 
         //Reconstruct objects/folders tree from flat search result
-        private GdFolder ConvertSearchResultToFoldersHierarchy( IReadOnlyList<ScriptableObject> objects, IReadOnlyList<GdFolder> folders )
+        private GdFolder  ConvertSearchResultToHierarchy( IReadOnlyList<ScriptableObject> objects, IReadOnlyList<GdFolder> folders, Boolean removeEmptyTopFolders )
         {
             Dictionary<Guid, GdFolder> tempFolders = new ();
 
-            if ( objects.Count == 0 )
+            if ( folders.Count == 0 )
                 return null;
 
-            for ( int i = 0; i < objects.Count; i++ )
+            if( _mode == EMode.ObjectsAndFolders )
             {
-                var obj        = objects[ i ];
-                var folder     = folders[ i ];
-                var tempFolder = GetTempFolder( folder );
-                tempFolder.Objects.Add( obj );
+                for ( int i = 0; i < objects.Count; i++ )
+                {
+                    var obj        = objects[ i ];
+                    var folder     = folders[ i ];
+                    var tempFolder = GetTempFolder( folder );
+                    tempFolder.Objects.Add( obj );
+                }
+
+                //Remove root folder if no meaningful content
+                var rootFolder = tempFolders.Values.First();
+                if ( rootFolder == _db.RootFolder && rootFolder.SubFolders.Count == 1 && rootFolder.Objects.Count == 0 )
+                {
+                    rootFolder        = rootFolder.SubFolders[ 0 ];
+                    rootFolder.Parent = null;
+                }
+            }
+            else
+            {
+                for ( int i = 0; i < folders.Count; i++ )
+                {
+                    var folder     = folders[ i ];
+                    var tempFolder = GetTempFolder( folder );
+                }
             }
 
             GdFolder GetTempFolder( GdFolder originalFolder )
@@ -213,13 +304,14 @@ namespace GDDB.Editor
 
             var rootFolder = tempFolders.Values.First();
 
-            //Truncate top level folders without objects
-            while ( rootFolder.SubFolders.Count == 1 && rootFolder.Objects.Count == 0 )
-            {
-                rootFolder = rootFolder.SubFolders.First();
-                rootFolder.Parent = null;
-            }
-
+            // if( removeEmptyTopFolders )                             //Truncate top level folders without objects
+            // {
+            //     while ( rootFolder.SubFolders.Count == 1 && rootFolder.Objects.Count == 0 )
+            //     {
+            //         rootFolder        = rootFolder.SubFolders.First();
+            //         rootFolder.Parent = null;
+            //     }
+            // }
             return rootFolder;
         }
 
@@ -329,6 +421,12 @@ namespace GDDB.Editor
             public static readonly Texture2D GDObjectIcon = UnityEngine.Resources.Load<Texture2D>( "description_24dp" );
             public static readonly Texture2D SObjectIcon = UnityEngine.Resources.Load<Texture2D>( "description_24dp" );
             public static readonly Texture2D DatabaseIcon = UnityEngine.Resources.Load<Texture2D>( "database_24dp" );
+        }
+
+        public enum EMode
+        {
+            ObjectsAndFolders,
+            Folders,
         }
 
     }

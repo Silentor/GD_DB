@@ -56,6 +56,9 @@ namespace GDDB
         {
             FindObjects( path, resultObjects, resultFolders );
 
+            if( components == null || components.Length == 0 )
+                return;
+
             if ( resultFolders != null )
             {
                 for ( int i = 0; i < resultObjects.Count; i++ )
@@ -85,16 +88,22 @@ namespace GDDB
             }
         }
 
-        // public GdFolder GetFolder( GdId folderId )
-        // {
-        //     foreach ( var folder in RootFolder.EnumerateFoldersDFS(  ) )
-        //     {
-        //         if ( folder.FolderGuid == folderId.GUID )
-        //             return folder;
-        //     }
-        //
-        //     return null;
-        // }
+        public void FindFolders( String path, List<GdFolder> resultFolders )
+        {
+            var  query = _queryParser.ParseFoldersQuery( path );
+            _queryExecutor.FindFolders( query, RootFolder, resultFolders );
+        }
+
+        public GdFolder GetFolder( Guid folderId )
+        {
+            foreach ( var folder in RootFolder.EnumerateFoldersDFS(  ) )
+            {
+                if ( folder.FolderGuid == folderId )
+                    return folder;
+            }
+        
+            return null;
+        }
 
         // public GDObject GetObject( GdId objectId )
         // {

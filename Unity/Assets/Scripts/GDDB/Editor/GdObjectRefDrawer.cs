@@ -37,12 +37,12 @@ namespace GDDB.Editor
                 var filterAttr         = fieldInfo.GetCustomAttribute( typeof(GdTypeFilterAttribute) ) ;
                 var query              = (filterAttr as GdTypeFilterAttribute)?.Query;
                 var components         = (filterAttr as GdTypeFilterAttribute)?.Components;
-                var gddbBrowserContent = new GdDbBrowserPopupWindowContent( gddb, query, components, selectedObject, propertyPosition,
-                        ( sender, obj) =>
+                var gddbBrowserContent = new GdDbBrowserPopupWindowContent( gddb, query, components, selectedObject, propertyPosition, GdDbBrowserWidget.EMode.ObjectsAndFolders,
+                        ( sender, _, obj) =>
                         {
                             SetGDObject( property, obj );
                         },
-                        ( sender, obj) =>
+                        ( sender, _, obj) =>
                         {
                             SetGDObject( property, obj );
                             sender.editorWindow.Close();
@@ -56,12 +56,8 @@ namespace GDDB.Editor
 
         private ScriptableObject GetGDObject( SerializedProperty property )
         {
-            var gdid = new GdRef()
-                       {
-                               Serializalble1 = property.FindPropertyRelative( nameof(GdRef.Serializalble1) ).ulongValue,
-                               Serializalble2 = property.FindPropertyRelative( nameof(GdRef.Serializalble2) ).ulongValue,
-                       };
-            var path = AssetDatabase.GUIDToAssetPath( gdid.GUID.ToString("N") );
+            var guid = GuidToLongs.ToGuid( property.FindPropertyRelative( "Part1" ).ulongValue, property.FindPropertyRelative( "Part2" ).ulongValue );
+            var path = AssetDatabase.GUIDToAssetPath( guid.ToString("N") );
             if ( !String.IsNullOrEmpty( path ) )
             {
                 var obj = AssetDatabase.LoadAssetAtPath<ScriptableObject>( path );
@@ -75,14 +71,14 @@ namespace GDDB.Editor
         {
             if ( gdObject )
             {
-                var gdId = new GdRef { GUID = GDDBEditor.GetGDObjectGuid( gdObject ) };
-                property.FindPropertyRelative( nameof(GdRef.Serializalble1) ).ulongValue = gdId.Serializalble1;
-                property.FindPropertyRelative( nameof(GdRef.Serializalble2) ).ulongValue = gdId.Serializalble2;
+                var (part1, part2) = GuidToLongs.ToLongs( GDDBEditor.GetGDObjectGuid( gdObject ) ); 
+                property.FindPropertyRelative( "Part1" ).ulongValue = part1;
+                property.FindPropertyRelative( "Part2" ).ulongValue = part2;
             }
             else
             {
-                property.FindPropertyRelative( nameof(GdRef.Serializalble1) ).ulongValue = 0;
-                property.FindPropertyRelative( nameof(GdRef.Serializalble2) ).ulongValue = 0;
+                property.FindPropertyRelative( "Part1" ).ulongValue = 0;
+                property.FindPropertyRelative( "Part2" ).ulongValue = 0;
             }
             property.serializedObject.ApplyModifiedProperties();
         }

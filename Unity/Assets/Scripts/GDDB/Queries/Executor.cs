@@ -52,15 +52,15 @@ namespace GDDB.Queries
             ReturnFoldersList( inputFolders );
         }
 
-        public void FindFolders( HierarchyToken query, List<GdFolder> result )
+        public void FindFolders( HierarchyToken query, GdFolder rootFolder, List<GdFolder> result )
         {
             if( query == null )
                 return;
 
             var input  = RentFolderList();
-            input.Add( DB.RootFolder );
+            input.Add( rootFolder );
 
-            var loopDefencerCounter = 0;
+            var loopDefenderCounter = 0;
             var currentToken        = query;
             while ( currentToken != null )
             {
@@ -74,7 +74,7 @@ namespace GDDB.Queries
                     currentToken = folderToken.NextToken;
                 }
 
-                if( loopDefencerCounter++ > 100 )
+                if( loopDefenderCounter++ > 100 )
                     throw new InvalidOperationException( $"[{nameof(Executor)}]-[{nameof(FindFolders)}] too many loops while processing hierarchy, probably there is a loop in hierarchy tokens" );
             }
 

@@ -53,6 +53,14 @@ namespace GDDB.Tests
             result[ 2 ].Should().BeOfType<AllFilesToken>(  );
         }
 
+        [Test]
+        public void TestSomeIncorrectPathParser( )
+        {
+            var parser = new Parser( new Executor( null ) );
+            var result = parser.ParseObjectsQuery( "/" ).Flatten();         //Should be "/*" (all files in root folder)
+            result.Count.Should().Be( 0 );
+        }
+
 
     }
 
