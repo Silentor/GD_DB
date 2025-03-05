@@ -29,7 +29,7 @@ namespace GDDB.Queries
             if ( String.IsNullOrEmpty( query ) )
                 return null;
         
-            var parts = query.Split( '/', StringSplitOptions.RemoveEmptyEntries );
+            var parts = query.Split( '/' );
             _buffer.Clear();
             for ( int i = 0; i < parts.Length; i++ )
             {
@@ -39,15 +39,29 @@ namespace GDDB.Queries
                     _buffer.Add( ParseObjectsToken( parts[ i ] ) );                
             }
 
-            //Normalization and optimization
-            if ( _buffer.Count == 2 && _buffer[ 0 ] is AllSubfoldersRecursivelyToken &&
-                 _buffer[ 1 ] is AllFilesToken )              //Optimize "**/*" query (all objects in db)
+            //Optimize "**/*" query (all objects in db)
+            if ( _buffer.Count == 2 && _buffer[ 0 ] is AllSubfoldersRecursivelyToken &&  _buffer[ 1 ] is AllFilesToken )              
             {
                 _buffer.Clear();
                 _buffer.Add( new AllFilesInDBToken( _executor.DB ) );
             }
 
-            //Make syntax tree
+            //Special case: If no path specified, search entire DB (like Unity search bar). If no wildcard, convert it to Contains wildcard
+            if( _buffer.Count == 1 && _buffer[0] is WildcardFilesToken onlyObjName )  
+            {
+                _buffer.Clear();
+                _buffer.Add( new AllFoldersInDBToken( _executor.DB ) );
+                if( onlyObjName.Wildcard is LiteralToken nameLiteral && nameLiteral.NextToken == null )
+                    _buffer.Add( new WildcardFilesToken( new ContainsLiteralToken( nameLiteral.Literal ), _executor ) );
+                else
+                    _buffer.Add( onlyObjName );
+            }
+
+            //Root folder token can be safely deleted
+            if( _buffer.Count > 0 && _buffer[0] is IdentityFolderToken )
+                _buffer.RemoveAt( 0 );
+
+            //Link syntax tree
             for ( int i = 0; i < _buffer.Count - 1; i++ )
             {
                 if ( _buffer[ i ] is FolderToken fToken )
@@ -64,23 +78,39 @@ namespace GDDB.Queries
             if ( String.IsNullOrEmpty( query ) )
                 return null;
         
-            var parts  = query.Split( '/', StringSplitOptions.RemoveEmptyEntries );
-            var result = new List<HierarchyToken>(  );
+            var parts  = query.Split( '/' );
+            _buffer.Clear();
             for ( int i = 0; i < parts.Length; i++ )
             {
-                result.Add( ParseFolderToken( parts[ i ] ) );
+                _buffer.Add( ParseFolderToken( parts[ i ] ) );
             }
     
-            //Make syntax tree
-            for ( int i = 0; i < result.Count - 1; i++ )
+            //Optimizing syntax "tree"
+            //Special case: If no path specified, search entire DB (like Unity search bar). If no wildcard, convert it to Contains wildcard
+            if( _buffer.Count == 1 && _buffer[0] is WildcardSubfoldersToken onlyFolderName )  
             {
-                if ( result[ i ] is FolderToken fToken )
+                _buffer.Clear();
+                _buffer.Add( new AllFoldersInDBToken( _executor.DB ) );
+                if( onlyFolderName.Wildcard is LiteralToken nameLiteral && nameLiteral.NextToken == null )
+                    _buffer.Add( new WildcardSubfoldersToken( new ContainsLiteralToken( nameLiteral.Literal ), _executor ) );
+                else
+                    _buffer.Add( onlyFolderName );
+            }
+
+            //Root folder token can be safely deleted
+            if( _buffer.Count > 0 && _buffer[0] is IdentityFolderToken )
+                _buffer.RemoveAt( 0 );
+
+            //Link syntax tree
+            for ( int i = 0; i < _buffer.Count - 1; i++ )
+            {
+                if ( _buffer[ i ] is FolderToken fToken )
                 {
-                    fToken.NextToken = result[ i + 1 ];
+                    fToken.NextToken = _buffer[ i + 1 ];
                 }
             }
 
-            return result[ 0 ];
+            return _buffer[ 0 ];
         }
 
         public StringToken ParseString( String value )
@@ -133,7 +163,9 @@ namespace GDDB.Queries
         
         private FolderToken ParseFolderToken( String queryPart )
         {
-            if( queryPart == "*" )
+            if ( queryPart == String.Empty )
+                return new IdentityFolderToken();
+            else if( queryPart == "*" )
                 return new AllSubfoldersToken();
             else if ( queryPart == "**" )
                 return new AllSubfoldersRecursivelyToken();
@@ -201,6 +233,17 @@ namespace GDDB.Queries
                 position = value.Length;
                 return new LiteralToken( literal2 );
             }
+        }
+
+        private Boolean IsAnyWildcards( String value )
+        {
+            foreach ( var c in value )
+            {
+                if ( c == '*' || c == '?' )
+                    return true;
+            }
+
+            return false;
         }
     }
 }

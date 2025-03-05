@@ -139,12 +139,13 @@ namespace GDDB.Queries
     
     public class WildcardSubfoldersToken : FolderToken
     {
+        public readonly  StringToken Wildcard;
+
         private readonly Executor    _executor;
-        private readonly StringToken _wildcard;
 
         public WildcardSubfoldersToken( StringToken wildcard, Executor executor )
         {
-            _wildcard = wildcard;
+            Wildcard = wildcard;
             _executor = executor;
         }
 
@@ -154,7 +155,7 @@ namespace GDDB.Queries
             {
                 foreach ( var subFolder in folder.SubFolders )
                 {
-                    if( _executor.MatchString( subFolder.Name, _wildcard ) )
+                    if( _executor.MatchString( subFolder.Name, Wildcard ) )
                         output.Add( subFolder );
                 }
             }
@@ -188,6 +189,18 @@ namespace GDDB.Queries
         public override void ProcessFolder( IReadOnlyList<GdFolder> input, List<GdFolder> output )
         {
             output.AddRange( _db.RootFolder.EnumerateFoldersDFS( true ) );
+        }
+    }
+
+    public class IdentityFolderToken : FolderToken
+    {
+        public IdentityFolderToken( )
+        {
+        }
+
+        public override void ProcessFolder( IReadOnlyList<GdFolder> input, List<GdFolder> output )
+        {
+            output.AddRange( input );
         }
     }
 

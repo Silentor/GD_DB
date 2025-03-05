@@ -37,7 +37,7 @@ namespace GDDB.Tests
         public void TestWildcardObjectPathParser( )
         {
             var parser = new Parser( new Executor( null ) );
-            var result = parser.ParseObjectsQuery( "rootFiles" ).Flatten();
+            var result = parser.ParseObjectsQuery( "/rootFiles" ).Flatten();
             result.Count.Should().Be( 1 );
             result[ 0 ].Should().BeOfType<WildcardFilesToken>(  ).And.Subject.As<WildcardFilesToken>().Wildcard.Should().BeOfType<LiteralToken>(  ).And.Subject.As<LiteralToken>().Literal.Should().Be( "rootFiles" );
 
@@ -56,9 +56,40 @@ namespace GDDB.Tests
         [Test]
         public void TestSomeIncorrectPathParser( )
         {
+            //There are no incorrect syntax examples,  but should be
+        }
+
+
+        [Test]
+        public void TestShortQueryParser( )
+        {
             var parser = new Parser( new Executor( null ) );
-            var result = parser.ParseObjectsQuery( "/" ).Flatten();         //Should be "/*" (all files in root folder)
-            result.Count.Should().Be( 0 );
+
+            //Object name without folders part and without wildcards - fuzzy search entire DB (Unity search bar style in Project/Hierarchy windows)
+            var result = parser.ParseObjectsQuery( "test" ).Flatten();       
+            result.Count().Should().Be( 2 );
+            result[ 0 ].Should().BeOfType<AllFoldersInDBToken>(  );
+            result[ 1 ].Should().BeOfType<WildcardFilesToken>(  );
+            var wildcard = result[ 1 ].As<WildcardFilesToken>().Wildcard;
+            wildcard.Should().BeOfType<ContainsLiteralToken>(  ).And.Subject.As<ContainsLiteralToken>().Literal.Should().Be( "test" );
+            wildcard.NextToken.Should().BeNull(  );
+
+            result = parser.ParseObjectsQuery( "test*" ).Flatten();       
+            result.Count().Should().Be( 2 );
+            result[ 0 ].Should().BeOfType<AllFoldersInDBToken>(  );
+            result[ 1 ].Should().BeOfType<WildcardFilesToken>(  );
+            wildcard = result[ 1 ].As<WildcardFilesToken>().Wildcard;
+            wildcard.Should().BeOfType<LiteralAndAsterixToken>(  ).And.Subject.As<LiteralAndAsterixToken>().Literal.Should().Be( "test" );
+            wildcard.NextToken.Should().BeNull(  );
+
+            //Folder name without path part and without wildcards - fuzzy search entire DB (Unity search bar style in Project/Hierarchy windows)
+            result = parser.ParseFoldersQuery( "test" ).Flatten();       
+            result.Count().Should().Be( 2 );
+            result[ 0 ].Should().BeOfType<AllFoldersInDBToken>(  );
+            result[ 1 ].Should().BeOfType<WildcardSubfoldersToken>(  );
+            wildcard = result[ 1 ].As<WildcardSubfoldersToken>().Wildcard;
+            wildcard.Should().BeOfType<ContainsLiteralToken>(  ).And.Subject.As<ContainsLiteralToken>().Literal.Should().Be( "test" );
+            wildcard.NextToken.Should().BeNull(  );
         }
 
 

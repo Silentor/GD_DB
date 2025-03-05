@@ -210,22 +210,7 @@ namespace GDDB.Editor
             
             _searchDelayCoroutine = null;
             var resultRootFolder = SearchInternal( query, rootFolder );
-
-            if ( resultRootFolder == null )
-            {
-                _treeView.SetRootItems( Array.Empty<TreeViewItemData<TreeItem>>() );
-                _treeView.Rebuild();
-                _statsLbl.text = _mode == EMode.ObjectsAndFolders ? "No objects found" : "No folders found";
-            }
-            else
-            {
-                var objectsFound = resultRootFolder.EnumerateFoldersDFS(  ).SelectMany( f => f.Objects ).Count();
-                var rootTreeItem         = PrepareTreeRoot( resultRootFolder, _folders );
-                _treeView.SetRootItems( new []{ rootTreeItem } );
-                _treeView.Rebuild();
-                _treeView.ExpandAll();
-                _statsLbl.text = _mode == EMode.ObjectsAndFolders ? $"Object found: {objectsFound}" : $"Folders found: {resultRootFolder.EnumerateFoldersDFS().Count()}";
-            }
+            ShowSearchResults( resultRootFolder );
         }
 
         private GdFolder SearchInternal( String query, GdFolder rootFolder )
@@ -343,7 +328,10 @@ namespace GDDB.Editor
                     _treeView.Rebuild();
                     _treeView.ExpandAll();
                     _treeView.style.display = DisplayStyle.Flex;
-                    _statsLbl.text = $"Folders found: {rootFolder.EnumerateFoldersDFS().Count()}";
+                    var foldersCount = _folders != null 
+                            ? rootFolder.EnumerateFoldersDFS().Count( f => _folders.Contains( f, GdFolder.GuidComparer.Instance ) ) 
+                            : rootFolder.EnumerateFoldersDFS().Count();
+                    _statsLbl.text = $"Folders found: {foldersCount}";
                 } 
             }
 
