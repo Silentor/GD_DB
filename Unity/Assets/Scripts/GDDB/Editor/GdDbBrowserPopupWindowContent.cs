@@ -11,25 +11,25 @@ namespace GDDB.Editor
     /// </summary>
     public class GdDbBrowserPopupWindowContent : PopupWindowContent
     {
-        private readonly GdDb                    _db;
-        private readonly String                  _query;
-        private readonly Type[]                  _components;
-        private readonly Object                  _selectedObject;
-        private readonly Rect                    _activatorRect;
-        private readonly GdDbBrowserWidget.EMode _mode;
-        private readonly OnSelected              _onSelected;
-        private readonly OnSelected              _onChosed;
-        private          GdDbBrowserWidget       _widget;
-        private          Vector2                 _ownerWindowSize;
+        private readonly GdDb                            _db;
+        private readonly IReadOnlyList<ScriptableObject> _objects;
+        private readonly IReadOnlyList<GdFolder>         _folders;
+        private readonly Object                          _selectedObject;
+        private readonly Rect                            _activatorRect;
+        private readonly GdDbBrowserWidget.EMode         _mode;
+        private readonly OnSelected                      _onSelected;
+        private readonly OnSelected                      _onChosed;
+        private          GdDbBrowserWidget               _widget;
+        private          Vector2                         _ownerWindowSize;
 
-        public GdDbBrowserPopupWindowContent( GdDb db, String query, Type[] components, Object selectedObject, Rect activatorRect, GdDbBrowserWidget.EMode mode, OnSelected onSelected, OnSelected onChosed )
+        public GdDbBrowserPopupWindowContent( GdDb db, IReadOnlyList<ScriptableObject> objects, IReadOnlyList<GdFolder> folders, Object selectedObject, Rect activatorRect, GdDbBrowserWidget.EMode mode, OnSelected onSelected, OnSelected onChosed )
         {
             _db             = db;
-            _query          = query;
-            _components     = components;
+            _objects        = objects;
+            _folders   = folders;
             _selectedObject = selectedObject;
             _activatorRect  = activatorRect;
-            _mode      = mode;
+            _mode           = mode;
             _onSelected     = onSelected;
             _onChosed       = onChosed;
         }
@@ -38,26 +38,17 @@ namespace GDDB.Editor
         {
             if ( _mode == GdDbBrowserWidget.EMode.ObjectsAndFolders )
             {
-                if ( !String.IsNullOrEmpty( _query ) || (_components != null ) )
-                {
-                    var resultObjects = new List<ScriptableObject>();
-                    var resultFolders = new List<GdFolder>();
-                    _db.FindObjects( _query, _components, resultObjects, resultFolders );
-                    _widget = new GdDbBrowserWidget( _db, resultObjects, resultFolders, _selectedObject );
-                }
+                if ( _objects == null )
+                    _widget = new GdDbBrowserWidget( _db, _selectedObject );
                 else
-                    _widget = new GdDbBrowserWidget( _db, _selectedObject, GdDbBrowserWidget.EMode.ObjectsAndFolders );
+                    _widget = new GdDbBrowserWidget( _db, _objects, _folders, _selectedObject );
             }
             else
             {
-                if ( !String.IsNullOrEmpty( _query ) )
-                {
-                    var resultFolders = new List<GdFolder>();
-                    _db.FindFolders( _query, resultFolders );
-                    _widget = new GdDbBrowserWidget( _db, resultFolders, _selectedObject );
-                }
-                else
+                if( _folders == null )
                     _widget = new GdDbBrowserWidget( _db, _selectedObject, GdDbBrowserWidget.EMode.Folders );
+                else
+                    _widget = new GdDbBrowserWidget( _db, _folders, _selectedObject );
             }
 
             _widget.CreateGUI( editorWindow.rootVisualElement );

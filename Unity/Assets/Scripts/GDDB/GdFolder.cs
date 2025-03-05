@@ -10,7 +10,7 @@ using UnityEngine;
 namespace GDDB
 {
     [DebuggerDisplay("Path {GetPath()}, folders {SubFolders.Count}, objects {Objects.Count}")]
-    public class GdFolder
+    public class GdFolder : IEquatable<GdFolder>
     {
         public readonly String  Name;
         //public          String  Path { get; internal set; }
@@ -190,19 +190,34 @@ namespace GDDB
                                                                 .Concat( new []{     '\\', '*', ':'} )          //Unity limitation
                                                                 .ToArray();
 
-        public class GuidComparer : IEqualityComparer<GdFolder>
+        public bool Equals(GdFolder? other)
         {
-            public static readonly GuidComparer Instance = new GuidComparer();
+            if ( other is null ) return false;
+            if ( ReferenceEquals( this, other ) ) return true;
+            return FolderGuid.Equals( other.FolderGuid );
+        }
 
-            public Boolean Equals( GdFolder x, GdFolder y )
-            {
-                return x.FolderGuid == y.FolderGuid;
-            }
+        public override bool Equals(object? obj)
+        {
+            if ( obj is null ) return false;
+            if ( ReferenceEquals( this, obj ) ) return true;
+            if ( obj.GetType() != GetType() ) return false;
+            return Equals( (GdFolder) obj );
+        }
 
-            public Int32 GetHashCode( GdFolder obj )
-            {
-                return obj.FolderGuid.GetHashCode();
-            }
+        public override int GetHashCode( )
+        {
+            return FolderGuid.GetHashCode();
+        }
+
+        public static bool operator ==(GdFolder? left, GdFolder? right)
+        {
+            return Equals( left, right );
+        }
+
+        public static bool operator !=(GdFolder? left, GdFolder? right)
+        {
+            return !Equals( left, right );
         }
     }
 }

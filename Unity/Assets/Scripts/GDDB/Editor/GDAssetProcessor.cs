@@ -49,7 +49,7 @@ namespace GDDB.Editor
 
             void CompilationPipelineOnassemblyCompilationNotRequired(String obj )
             {
-                Debug.Log( $"not required compilation of assembly {obj} ({obj.GetHashCode()})" );
+                //Debug.Log( $"not required compilation of assembly {obj} ({obj.GetHashCode()})" );
             }
         }
 

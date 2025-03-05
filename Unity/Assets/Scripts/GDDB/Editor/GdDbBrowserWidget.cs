@@ -329,7 +329,7 @@ namespace GDDB.Editor
                     _treeView.ExpandAll();
                     _treeView.style.display = DisplayStyle.Flex;
                     var foldersCount = _folders != null 
-                            ? rootFolder.EnumerateFoldersDFS().Count( f => _folders.Contains( f, GdFolder.GuidComparer.Instance ) ) 
+                            ? rootFolder.EnumerateFoldersDFS().Count( f => _folders.Contains( f ) ) 
                             : rootFolder.EnumerateFoldersDFS().Count();
                     _statsLbl.text = $"Folders found: {foldersCount}";
                 } 
@@ -351,7 +351,7 @@ namespace GDDB.Editor
         {
             var childs = new List<TreeViewItemData<TreeItem>>();
             var isSelectable = _mode == EMode.Folders 
-                    ?  selectableFolders == null || selectableFolders.Contains( folder, GdFolder.GuidComparer.Instance )
+                    ?  selectableFolders == null || selectableFolders.Contains( folder )
                     : false;                          //In object mode folders always unselectable
             var result = new TreeViewItemData<TreeItem>( folder.FolderGuid.GetHashCode(), new TreeItem(folder) {State = isSelectable ? ETreeItemState.Normal : ETreeItemState.Disabled }, childs );
 

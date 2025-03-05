@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEditor;
@@ -26,6 +27,7 @@ namespace GDDB.Editor
             var folderLabelContent = GetFolderControlContent( selectedFolder );
             EditorGUI.LabelField( fieldPos, GUIContent.none, folderLabelContent, Resources.FolderBoxStyle );
 
+            //Ping folder on click support
             if( Event.current.isMouse && Event.current.type == EventType.MouseDown && fieldPos.Contains( Event.current.mousePosition ) && selectedFolder != null )
             {
                 var folderAssetPath = AssetDatabase.GUIDToAssetPath( selectedFolder.FolderGuid.ToString( "N" ) );
@@ -33,13 +35,27 @@ namespace GDDB.Editor
                 EditorGUIUtility.PingObject( folderAsset );
             }
 
+            //Drag and drop folders from Project view support
+            if ( (Event.current.type == EventType.DragUpdated || Event.current.type == EventType.DragPerform ) && fieldPos.Contains( Event.current.mousePosition ) )
+            {
+                var draggedObject = DragAndDrop.objectReferences.FirstOrDefault();
+                if ( draggedObject is DefaultAsset folderAsset )
+                {
+                    var folderGuid = Guid.Parse( AssetDatabase.AssetPathToGUID( AssetDatabase.GetAssetPath( folderAsset ) ) );
+                    var draggedFolder = GDDBEditor.DB.GetFolder( folderGuid );
+                    var allowedFolders = GetQueriedFolders();
+                    if ( draggedFolder != null && (allowedFolders == null || allowedFolders.Contains( draggedFolder )) )
+                        if( Event.current.type == EventType.DragUpdated )
+                            DragAndDrop.visualMode = DragAndDropVisualMode.Link;
+                        else
+                            SetGDFolder( property, draggedFolder );
+                }
+            }
+
             if ( GUI.Button( dropdownBtnPos, "\u02c5", Resources.PickerButton ) || IsPressEnter( controlId ) )
             {
                 var gddb               = GDDBEditor.DB;     
-                var filterAttr         = fieldInfo.GetCustomAttribute( typeof(GdTypeFilterAttribute) ) ;
-                var query              = (filterAttr as GdTypeFilterAttribute)?.Query;
-                var components         = (filterAttr as GdTypeFilterAttribute)?.Components;
-                var gddbBrowserContent = new GdDbBrowserPopupWindowContent( gddb, query, components, selectedFolder, propertyPosition, GdDbBrowserWidget.EMode.Folders, 
+                var gddbBrowserContent = new GdDbBrowserPopupWindowContent( gddb, null, GetQueriedFolders(), selectedFolder, propertyPosition, GdDbBrowserWidget.EMode.Folders, 
                         ( sender, folder, _) =>
                         {
                             SetGDFolder( property, folder );
@@ -96,6 +112,19 @@ namespace GDDB.Editor
                 property.FindPropertyRelative( "Part2" ).ulongValue = 0;
             }
             property.serializedObject.ApplyModifiedProperties();
+        }
+
+        private IReadOnlyList<GdFolder> GetQueriedFolders( )
+        {
+            var filterAttr = fieldInfo.GetCustomAttribute( typeof(GdTypeFilterAttribute) ) ;
+            if ( filterAttr == null )
+                return null;
+
+            var query      = (filterAttr as GdTypeFilterAttribute)?.Query;
+            var editorDB   = GDDBEditor.DB;
+            var resultFolders = new List<GdFolder>();
+            editorDB.FindFolders( query, resultFolders );
+            return resultFolders;
         }
 
         private static class Resources
