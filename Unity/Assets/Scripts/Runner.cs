@@ -89,12 +89,12 @@ namespace GDDB_User
 
             var result = new List<ScriptableObject>();
             var timer  = Stopwatch.StartNew();
-            _binaryGDDB.FindObjects( "**/*00", result );
+            var skins = _binaryGDDB.GetFolder( TestFolderRefernce ).Objects;
             timer.Stop();
 
             Debug.Log( $"Items {result.Count}, time {timer.Elapsed.TotalMicroseconds()} mks" );
 
-            foreach ( var res in result )
+            foreach ( var res in skins )
             {
                 Debug.Log( res.name );
             }

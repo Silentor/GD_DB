@@ -105,6 +105,11 @@ namespace GDDB
             return null;
         }
 
+        public GdFolder GetFolder( GdFolderRef folderRef )
+        {
+            return GetFolder( folderRef.Guid );
+        } 
+        
         // public GDObject GetObject( GdId objectId )
         // {
         //     var guid = objectId.GUID;

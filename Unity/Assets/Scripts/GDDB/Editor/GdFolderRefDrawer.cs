@@ -26,6 +26,13 @@ namespace GDDB.Editor
             var folderLabelContent = GetFolderControlContent( selectedFolder );
             EditorGUI.LabelField( fieldPos, GUIContent.none, folderLabelContent, Resources.FolderBoxStyle );
 
+            if( Event.current.isMouse && Event.current.type == EventType.MouseDown && fieldPos.Contains( Event.current.mousePosition ) && selectedFolder != null )
+            {
+                var folderAssetPath = AssetDatabase.GUIDToAssetPath( selectedFolder.FolderGuid.ToString( "N" ) );
+                var folderAsset     = AssetDatabase.LoadAssetAtPath<DefaultAsset>( folderAssetPath );
+                EditorGUIUtility.PingObject( folderAsset );
+            }
+
             if ( GUI.Button( dropdownBtnPos, "\u02c5", Resources.PickerButton ) || IsPressEnter( controlId ) )
             {
                 var gddb               = GDDBEditor.DB;     
