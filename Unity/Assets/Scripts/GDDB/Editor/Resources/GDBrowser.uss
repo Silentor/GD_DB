@@ -1,0 +1,10 @@
+.item-disabled {
+}
+
+.item-disabled > #Label {
+    opacity: 0.5%;
+}
+
+.item-disabled > #Icon {
+    opacity: 0.5%;
+}

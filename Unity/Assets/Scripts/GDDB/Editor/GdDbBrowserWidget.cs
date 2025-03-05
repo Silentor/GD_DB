@@ -17,15 +17,47 @@ namespace GDDB.Editor
     /// </summary>
     public class GdDbBrowserWidget
     {
-        public GdDbBrowserWidget( GdDb db, [CanBeNull] String query, Type[] components, [CanBeNull] Object selectedObject, EMode mode = EMode.ObjectsAndFolders )
+        /// <summary>
+        /// Constructor for browsing selected gd objects and folders 
+        /// </summary>
+        /// <param name="db"></param>
+        /// <param name="objects">Should align <see cref="folders"/> collection</param>
+        /// <param name="folders">Should align <see cref="objects"/> collection</param>
+        /// <param name="selectedObject"></param>
+        /// <param name="mode"></param>
+        public GdDbBrowserWidget( GdDb db, [NotNull] IReadOnlyList<ScriptableObject> objects, [NotNull] IReadOnlyList<GdFolder> folders, [CanBeNull] Object selectedObject ) : this( db, selectedObject, EMode.ObjectsAndFolders )
         {
-            _db               = db;
-            _query            = query;
-            _components       = components;
+            _folders = folders ?? throw new ArgumentNullException( nameof(folders) );
+            _objects = objects ?? throw new ArgumentNullException( nameof(objects) );
+        }
+
+        /// <summary>
+        /// Constructor for browsing selected gd folders 
+        /// </summary>
+        /// <param name="db"></param>
+        /// <param name="folders"></param>
+        /// <param name="objects"></param>
+        /// <param name="selectedObject"></param>
+        /// <param name="mode"></param>
+        public GdDbBrowserWidget( GdDb db, [NotNull] IReadOnlyList<GdFolder> folders, [CanBeNull] Object selectedObject ) :this( db, selectedObject, EMode.Folders )
+        {
+            _folders        = folders ?? throw new ArgumentNullException( nameof(folders) );
+        }
+
+
+        /// <summary>
+        /// Constructor for browsing entire DB
+        /// </summary>
+        /// <param name="db"></param>
+        /// <param name="selectedObject"></param>
+        /// <param name="mode"></param>
+        public GdDbBrowserWidget( [NotNull] GdDb db, [CanBeNull] Object selectedObject, EMode mode = EMode.ObjectsAndFolders )
+        {
+            _db             = db ?? throw new ArgumentNullException( nameof(db) );
             _selectedObject = selectedObject;
-            _mode        = mode;
-            _queryExecutor = new Executor( _db );
-            _queryParser   = new Parser( _queryExecutor );
+            _mode           = mode;
+            _queryExecutor  = new Executor( _db );
+            _queryParser    = new Parser( _queryExecutor );
         }
 
         public event Action<GdFolder, ScriptableObject> Selected;
@@ -51,17 +83,17 @@ namespace GDDB.Editor
             root.Add( content );
 
             if( _mode == EMode.ObjectsAndFolders )
-                InitObjectsBrowser( _db, _query, _components, _selectedObject as ScriptableObject ); 
+                InitObjectsBrowser( _db, _objects, _folders, _selectedObject as ScriptableObject ); 
             else
-                InitFoldersBrowser( _db, _query, _selectedObject as GdFolder );
+                InitFoldersBrowser( _db, _folders, _selectedObject as GdFolder );
         }
 
         //Init values
-        private readonly GdDb   _db;
-        private readonly String _query;
-        private readonly Type[] _components;
-        private readonly Object _selectedObject;
-        private readonly EMode  _mode;
+        private readonly GdDb            _db;
+        private readonly IReadOnlyList<GdFolder> _folders;
+        private readonly IReadOnlyList<ScriptableObject> _objects;
+        private readonly Object          _selectedObject;
+        private readonly EMode           _mode;
 
         private GdFolder                        _rootFolder; //Root folder for the initial search query. It can be queried further 
         private List<TreeViewItemData<Object>> _treeItems;
@@ -73,10 +105,14 @@ namespace GDDB.Editor
 
         private void TreeView_selectionChanged(IEnumerable<Object> items )
         {
-            var selectedItem = items.FirstOrDefault();
+            if( items.FirstOrDefault() is not TreeItem selectedItem )
+                return;
+            if( selectedItem.State != ETreeItemState.Normal )
+                return;
+
             if ( _mode == EMode.ObjectsAndFolders )
             {
-                if ( selectedItem is ScriptableObject gdo )
+                if ( selectedItem.Item is ScriptableObject gdo )
                 {
                     var folder = _db.RootFolder.EnumerateFoldersDFS().FirstOrDefault( f => f.Objects.Contains( gdo ) );
                     Selected?.Invoke( folder, gdo );
@@ -84,7 +120,7 @@ namespace GDDB.Editor
             }
             else
             {
-                if ( selectedItem is GdFolder folder )
+                if ( selectedItem.Item is GdFolder folder )
                 {
                     Selected?.Invoke( folder, null );
                 }
@@ -93,10 +129,14 @@ namespace GDDB.Editor
 
         private void TreeView_Chosed(IEnumerable<Object> items )
         {
-            var selectedItem = items.FirstOrDefault();
+            if( items.FirstOrDefault() is not TreeItem selectedItem )
+                return;
+            if( selectedItem.State != ETreeItemState.Normal )
+                return;
+
             if ( _mode == EMode.ObjectsAndFolders )
             {
-                if ( selectedItem is ScriptableObject gdo )
+                if ( selectedItem.Item is ScriptableObject gdo )
                 {
                     var folder = _db.RootFolder.EnumerateFoldersDFS().FirstOrDefault( f => f.Objects.Contains( gdo ) );
                     Chosed?.Invoke( folder, gdo );
@@ -104,89 +144,51 @@ namespace GDDB.Editor
             }
             else
             {
-                if ( selectedItem is GdFolder folder )
+                if ( selectedItem.Item is GdFolder folder )
                 {
                     Chosed?.Invoke( folder, null );
                 }
             }
         }
 
-        private void InitFoldersBrowser(   GdDb db, String query, GdFolder selectedFolder )
+        private void InitFoldersBrowser(   GdDb db, IReadOnlyList<GdFolder> folders, GdFolder selectedFolder )
         {
-            if ( !String.IsNullOrEmpty( query ) )
+            if ( folders == null )                  //Browse entire db
             {
-                var folders = new List<GdFolder>();
-                db.FindFolders( query, folders );
-                
-                if( folders.Count == 0 )
-                {
-                    var hintLabelText = $"No folders found for query string '{query}'";
-
-                    _rootFolder    = null;
-                    _statsLbl.text = hintLabelText;
-                    //Initial query limits me to zero objects, so hide the tree
-                    _toolBar.style.display  = DisplayStyle.None;
-                    _treeView.style.display = DisplayStyle.None;
-                    return;
-                }
-
-                _rootFolder = ConvertSearchResultToHierarchy( Array.Empty<ScriptableObject>(), folders, true );
+                var allFolders = db.RootFolder.EnumerateFoldersDFS(  ).ToArray(); 
+                _rootFolder             = ConvertSearchResultToHierarchy( Array.Empty<ScriptableObject>(), allFolders );
             }
-            else
+            else if ( folders.Count == 0 )
             {
-                //Create copy of entire DB folders structure without objects
-                _rootFolder = ConvertSearchResultToHierarchy( Array.Empty<ScriptableObject>(), db.RootFolder.EnumerateFoldersDFS(  ).ToArray(), true );
+                _rootFolder             = null;
+            }
+            else                           //Some folders to browse
+            {
+                _rootFolder             = ConvertSearchResultToHierarchy( Array.Empty<ScriptableObject>(), folders );
             }
 
-            _statsLbl.text = $"Folders found: {_rootFolder.EnumerateFoldersDFS().Count()}";
-
-            var rootTreeItem         = PrepareTreeRoot( _rootFolder );
-            _treeView.SetRootItems( new []{ rootTreeItem } );
-            _treeView.Rebuild();
-            _treeView.ExpandAll();
-            
-            var selectedTreeItem = FindTreeItemData( rootTreeItem, o => o is GdFolder f && f == selectedFolder );
-            if( selectedTreeItem.data != null )
-                _treeView.SetSelectionById( selectedTreeItem.id );
+            var selectedFolderId = selectedFolder?.FolderGuid.GetHashCode();
+            ShowSearchResults( _rootFolder, selectedFolderId );
         }
         
 
-        private void InitObjectsBrowser(   GdDb db, String query, Type[] components, ScriptableObject selectedObject )
+        private void InitObjectsBrowser( GdDb db, IReadOnlyList<ScriptableObject> objects, IReadOnlyList<GdFolder> folders, ScriptableObject selectedObject )
         {
-            _rootFolder = db.RootFolder;
-            if ( !String.IsNullOrEmpty( query ) )
+            if( objects == null )           //Browse entire db
             {
-                var objects = new List<ScriptableObject>();
-                var folders = new List<GdFolder>();
-                db.FindObjects( query, components, objects, folders );
-                
-                if( folders.Count == 0 )
-                {
-                    var hintLabelText = $"No objects found for query string '{query}'";
-                    if( components != null && components.Length > 0 )
-                        hintLabelText += $" with components <{String.Join(", ", components.Select( c => c.Name ).ToArray())}>";
-
-                    _rootFolder    = null;
-                    _statsLbl.text = hintLabelText;
-                    //Initial query limits me to zero objects, so hide the tree
-                    _toolBar.style.display = DisplayStyle.None;
-                    _treeView.style.display = DisplayStyle.None;
-                    return;
-                }
-
-                _rootFolder = ConvertSearchResultToHierarchy( objects, folders, true );
+                _rootFolder             = db.RootFolder;
+            } 
+            else if ( objects.Count == 0 )       //No objects to browse
+            {
+                _rootFolder             = null;
+            }
+            else                                //There are some objects to browse
+            {
+                _rootFolder             = ConvertSearchResultToHierarchy( objects, folders );
             }
 
-            _statsLbl.text = $"Object found: {_rootFolder.EnumerateFoldersDFS().SelectMany( f => f.Objects ).Count()}";
-
-            var rootTreeItem         = PrepareTreeRoot( _rootFolder );
-            _treeView.SetRootItems( new []{ rootTreeItem } );
-            _treeView.Rebuild();
-            _treeView.ExpandAll();
-            
-            var selectedTreeItem = FindTreeItemData( rootTreeItem, o => o is GDObject gdo && gdo == selectedObject );
-            if( selectedTreeItem.data != null )
-                _treeView.SetSelectionById( selectedTreeItem.id );
+            Int32? selectedObjectId = selectedObject != null ? GetGDObjectHash( selectedObject ) : null;
+            ShowSearchResults( _rootFolder, selectedObjectId );
         }
 
         private readonly EditorWaitForSeconds _searchDelay = new ( 0.3f );
@@ -211,14 +213,14 @@ namespace GDDB.Editor
 
             if ( resultRootFolder == null )
             {
-                _treeView.SetRootItems( Array.Empty<TreeViewItemData<Object>>() );
+                _treeView.SetRootItems( Array.Empty<TreeViewItemData<TreeItem>>() );
                 _treeView.Rebuild();
                 _statsLbl.text = _mode == EMode.ObjectsAndFolders ? "No objects found" : "No folders found";
             }
             else
             {
                 var objectsFound = resultRootFolder.EnumerateFoldersDFS(  ).SelectMany( f => f.Objects ).Count();
-                var rootTreeItem         = PrepareTreeRoot( resultRootFolder );
+                var rootTreeItem         = PrepareTreeRoot( resultRootFolder, _folders );
                 _treeView.SetRootItems( new []{ rootTreeItem } );
                 _treeView.Rebuild();
                 _treeView.ExpandAll();
@@ -245,19 +247,20 @@ namespace GDDB.Editor
                 _queryExecutor.FindFolders( queryTokens, rootFolder, folders );
             }
 
-            var resultRootFolder = ConvertSearchResultToHierarchy( objects, folders, false );
+            var resultRootFolder = ConvertSearchResultToHierarchy( objects, folders );
 
             return resultRootFolder;
         }
 
-        //Reconstruct objects/folders tree from flat search result
-        private GdFolder  ConvertSearchResultToHierarchy( IReadOnlyList<ScriptableObject> objects, IReadOnlyList<GdFolder> folders, Boolean removeEmptyTopFolders )
+        //Reconstruct objects/folders tree from flat search result lists
+        private GdFolder  ConvertSearchResultToHierarchy( IReadOnlyList<ScriptableObject> objects, IReadOnlyList<GdFolder> folders )
         {
             Dictionary<Guid, GdFolder> tempFolders = new ();
 
             if ( folders.Count == 0 )
                 return null;
 
+            GdFolder rootFolder;
             if( _mode == EMode.ObjectsAndFolders )
             {
                 for ( int i = 0; i < objects.Count; i++ )
@@ -267,14 +270,8 @@ namespace GDDB.Editor
                     var tempFolder = GetTempFolder( folder );
                     tempFolder.Objects.Add( obj );
                 }
-
-                //Remove root folder if no meaningful content
-                var rootFolder = tempFolders.Values.First();
-                if ( rootFolder == _db.RootFolder && rootFolder.SubFolders.Count == 1 && rootFolder.Objects.Count == 0 )
-                {
-                    rootFolder        = rootFolder.SubFolders[ 0 ];
-                    rootFolder.Parent = null;
-                }
+                rootFolder = tempFolders.Values.First();
+                
             }
             else
             {
@@ -283,7 +280,17 @@ namespace GDDB.Editor
                     var folder     = folders[ i ];
                     var tempFolder = GetTempFolder( folder );
                 }
+                rootFolder = tempFolders.Values.First();
             }
+
+            //Remove root folder if no meaningful content
+            if ( rootFolder == _db.RootFolder && rootFolder.SubFolders.Count == 1 && rootFolder.Objects.Count == 0 )
+            {
+                rootFolder        = rootFolder.SubFolders[ 0 ];
+                rootFolder.Parent = null;
+            }
+
+            return rootFolder;
 
             GdFolder GetTempFolder( GdFolder originalFolder )
             {
@@ -301,40 +308,74 @@ namespace GDDB.Editor
 
                 return tempFolder;
             }
-
-            var rootFolder = tempFolders.Values.First();
-
-            // if( removeEmptyTopFolders )                             //Truncate top level folders without objects
-            // {
-            //     while ( rootFolder.SubFolders.Count == 1 && rootFolder.Objects.Count == 0 )
-            //     {
-            //         rootFolder        = rootFolder.SubFolders.First();
-            //         rootFolder.Parent = null;
-            //     }
-            // }
-            return rootFolder;
         }
 
-        private TreeViewItemData<Object> PrepareTreeRoot( GdFolder rootFolder )
+        private void ShowSearchResults( GdFolder rootFolder, Int32? selectedObjectId = null )
         {
-            var rootItem = PrepareTreeItem( rootFolder );
+            if ( _mode == EMode.ObjectsAndFolders )
+            {
+                if ( rootFolder == null )
+                {
+                    _treeView.style.display = DisplayStyle.None;
+                    _statsLbl.text          = "No objects found";
+                }
+                else
+                {
+                    var rootTreeItem = PrepareTreeRoot( rootFolder, null );
+                    _treeView.SetRootItems( new []{ rootTreeItem } );
+                    _treeView.Rebuild();
+                    _treeView.ExpandAll();
+                    _treeView.style.display = DisplayStyle.Flex;
+                    _statsLbl.text          = $"Objects found: {rootFolder.EnumerateFoldersDFS().SelectMany( f => f.Objects ).Count()}";
+                }
+            }
+            else
+            {
+                if( rootFolder == null )
+                {
+                    _treeView.style.display = DisplayStyle.None;
+                    _statsLbl.text          = "No folders found";
+                }
+                else
+                {
+                    var rootTreeItem = PrepareTreeRoot( rootFolder, _folders );
+                    _treeView.SetRootItems( new []{ rootTreeItem } );
+                    _treeView.Rebuild();
+                    _treeView.ExpandAll();
+                    _treeView.style.display = DisplayStyle.Flex;
+                    _statsLbl.text = $"Folders found: {rootFolder.EnumerateFoldersDFS().Count()}";
+                } 
+            }
+
+            if ( selectedObjectId.HasValue )
+            {
+                _treeView.SetSelectionByIdWithoutNotify( new []{selectedObjectId.Value} );
+            }
+        }
+
+        private TreeViewItemData<TreeItem> PrepareTreeRoot( GdFolder rootFolder, IReadOnlyList<GdFolder> selectableFolders )
+        {
+            var rootItem = PrepareTreeItem( rootFolder, selectableFolders );
             return rootItem;
         }
 
-        private TreeViewItemData<Object> PrepareTreeItem( GdFolder folder )
+        private TreeViewItemData<TreeItem> PrepareTreeItem( GdFolder folder, IReadOnlyList<GdFolder> selectableFolders )
         {
-            var childs = new List<TreeViewItemData<Object>>();
-            var result = new TreeViewItemData<Object>( folder.GetHashCode(), folder, childs );
+            var childs = new List<TreeViewItemData<TreeItem>>();
+            var isSelectable = _mode == EMode.Folders 
+                    ?  selectableFolders == null || selectableFolders.Contains( folder, GdFolder.GuidComparer.Instance )
+                    : false;                          //In object mode folders always unselectable
+            var result = new TreeViewItemData<TreeItem>( folder.FolderGuid.GetHashCode(), new TreeItem(folder) {State = isSelectable ? ETreeItemState.Normal : ETreeItemState.Disabled }, childs );
 
             foreach ( var subFolder in folder.SubFolders )
             {
-                var subfolderItem = PrepareTreeItem( subFolder );
+                var subfolderItem = PrepareTreeItem( subFolder, selectableFolders );
                 childs.Add( subfolderItem );
             }
 
             foreach ( var gdo in folder.Objects )
             {
-                var objectTreeItem = new TreeViewItemData<Object>( GetGDObjectHash( gdo), gdo );
+                var objectTreeItem = new TreeViewItemData<TreeItem>( GetGDObjectHash( gdo), new TreeItem(gdo) );
                 childs.Add( objectTreeItem );
             }
 
@@ -343,45 +384,50 @@ namespace GDDB.Editor
 
         private void BindItem(VisualElement elem, Int32 index )
         {
-            var item  = _treeView.GetItemDataForIndex<Object>( index );
+            var item  = _treeView.GetItemDataForIndex<TreeItem>( index );
+            var container = elem.Q<VisualElement>( "Content" );
             var icon = elem.Q<VisualElement>( "Icon" );
             var label = elem.Q<Label>( "Label" );
-            if ( item is GdFolder folder )
+            if ( item.Item is GdFolder folder )
             {
                 icon.style.backgroundImage = Resources.FolderIcon;
                 label.text = folder.Name;
             }
-            else if ( item is GDRoot root )
+            else if ( item.Item is GDRoot root )
             {
                 icon.style.backgroundImage = Resources.DatabaseIcon;
                 label.text                 = $"{root.Name} ({root.Id})";
             }
-            else if ( item is GDObject gdo )
+            else if ( item.Item is GDObject gdo )
             {
                 icon.style.backgroundImage = Resources.GDObjectIcon;
                 label.text                 = gdo.name;
             }
-            else if ( item is ScriptableObject so )
+            else if ( item.Item is ScriptableObject so )
             {
                 icon.style.backgroundImage = Resources.GDObjectIcon;
                 label.text                 = so.name;
             }
+
+            if( item.State == ETreeItemState.Disabled )
+                container.AddToClassList( "item-disabled" );
         }
 
         private void UnbindItem(VisualElement elem, Int32 index )
         {
-            //throw new NotImplementedException();
+            var container = elem.Q<VisualElement>( "Content" );
+            container.RemoveFromClassList( "item-disabled" );
         }
 
-        private TreeViewItemData<Object> FindTreeItemData( TreeViewItemData<Object> root, Predicate<Object> predicate )
+        private TreeViewItemData<TreeItem> FindTreeItemData( TreeViewItemData<TreeItem> root, Predicate<Object> predicate )
         {
-            if( predicate( root.data ) )
+            if( predicate( root.data.Item ) )
                 return root;
 
             foreach ( var viewItemChild in root.children )
             {
                 var result = FindTreeItemData( viewItemChild, predicate );
-                if ( result.data != null )
+                if ( result.data.Item != null )
                     return result;
             }
 
@@ -416,7 +462,7 @@ namespace GDDB.Editor
         private static class Resources
         {
             public static readonly VisualTreeAsset BrowserWidget = UnityEngine.Resources.Load<VisualTreeAsset>( "GdDbBrowser" );
-            public static readonly VisualTreeAsset TreeItemElem = UnityEngine.Resources.Load<VisualTreeAsset>( "GdTreeItem" );
+            public static readonly VisualTreeAsset TreeItemElem = UnityEngine.Resources.Load<VisualTreeAsset>( "GdDbBrowserTreeItem" );
             public static readonly Texture2D FolderIcon = UnityEngine.Resources.Load<Texture2D>( "folder_24dp" );
             public static readonly Texture2D GDObjectIcon = UnityEngine.Resources.Load<Texture2D>( "description_24dp" );
             public static readonly Texture2D SObjectIcon = UnityEngine.Resources.Load<Texture2D>( "description_24dp" );
@@ -427,6 +473,23 @@ namespace GDDB.Editor
         {
             ObjectsAndFolders,
             Folders,
+        }
+
+        public struct TreeItem
+        {
+            public readonly Object          Item;         //gd object or folder
+            public ETreeItemState           State;
+
+            public TreeItem(Object item ) : this()
+            {
+                Item = item;
+            }
+        }
+
+        public enum ETreeItemState
+        {
+            Normal,
+            Disabled,
         }
 
     }
@@ -446,7 +509,7 @@ namespace GDDB.Editor
         private void OnEnable( )
         {
             var db = GDDBEditor.DB;
-            _browser = new GdDbBrowserWidget( db, null, null, null );
+            _browser = new GdDbBrowserWidget( db, null );
             _browser.CreateGUI( rootVisualElement );
         }
 

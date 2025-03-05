@@ -189,5 +189,20 @@ namespace GDDB
         private static readonly Char[] InvalidPathChars = System.IO.Path.GetInvalidPathChars()
                                                                 .Concat( new []{     '\\', '*', ':'} )          //Unity limitation
                                                                 .ToArray();
+
+        public class GuidComparer : IEqualityComparer<GdFolder>
+        {
+            public static readonly GuidComparer Instance = new GuidComparer();
+
+            public Boolean Equals( GdFolder x, GdFolder y )
+            {
+                return x.FolderGuid == y.FolderGuid;
+            }
+
+            public Int32 GetHashCode( GdFolder obj )
+            {
+                return obj.FolderGuid.GetHashCode();
+            }
+        }
     }
 }

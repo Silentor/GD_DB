@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using Object = System.Object;
@@ -35,7 +36,30 @@ namespace GDDB.Editor
 
         public override void OnOpen( )          //TODO add support for Unity 6 CreateGUI
         {
-            _widget = new GdDbBrowserWidget( _db, _query, _components, _selectedObject, _mode );
+            if ( _mode == GdDbBrowserWidget.EMode.ObjectsAndFolders )
+            {
+                if ( !String.IsNullOrEmpty( _query ) || (_components != null ) )
+                {
+                    var resultObjects = new List<ScriptableObject>();
+                    var resultFolders = new List<GdFolder>();
+                    _db.FindObjects( _query, _components, resultObjects, resultFolders );
+                    _widget = new GdDbBrowserWidget( _db, resultObjects, resultFolders, _selectedObject );
+                }
+                else
+                    _widget = new GdDbBrowserWidget( _db, _selectedObject, GdDbBrowserWidget.EMode.ObjectsAndFolders );
+            }
+            else
+            {
+                if ( !String.IsNullOrEmpty( _query ) )
+                {
+                    var resultFolders = new List<GdFolder>();
+                    _db.FindFolders( _query, resultFolders );
+                    _widget = new GdDbBrowserWidget( _db, resultFolders, _selectedObject );
+                }
+                else
+                    _widget = new GdDbBrowserWidget( _db, _selectedObject, GdDbBrowserWidget.EMode.Folders );
+            }
+
             _widget.CreateGUI( editorWindow.rootVisualElement );
             if( _onSelected != null )
                 _widget.Selected += ( folder, gdObject ) => _onSelected( this, folder, gdObject );

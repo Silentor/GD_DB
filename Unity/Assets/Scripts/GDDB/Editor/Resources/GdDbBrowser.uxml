@@ -1,4 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/Scripts/GDDB/Editor/Resources/GDBrowser.uss?fileID=7433441132597879392&amp;guid=c78739e4ae4477f47b1d84db766827d8&amp;type=3#GDBrowser" />
     <ui:VisualElement name="Border" class="unity-box" style="flex-grow: 1;">
         <ui:VisualElement name="ToolBar" style="flex-grow: 1; height: 20px; max-height: 20px; min-height: 20px; flex-direction: row;">
             <ui:VisualElement style="flex-grow: 0; height: 20px; max-height: 20px; flex-shrink: 0; min-height: 20px; width: 20px; max-width: 20px; min-width: 20px; background-image: resource(&apos;search_24dp&apos;);" />

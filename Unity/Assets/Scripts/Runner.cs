@@ -22,7 +22,7 @@ namespace GDDB_User
 {
     public class Runner : MonoBehaviour
     {
-        [GdTypeFilter( "Mobs/Elves/**" )]
+        [GdTypeFilter( "Mobs/**/Skins*" )]
         public GdFolderRef TestFolderRefernce;
 
         [GdTypeFilter("**/*skin*")]
