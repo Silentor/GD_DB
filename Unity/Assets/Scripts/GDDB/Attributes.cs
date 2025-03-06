@@ -6,32 +6,34 @@ using UnityEngine.Animations;
 namespace GDDB
 {
     /// <summary>
-    /// To restrict gd type value to specific categories 
+    /// To restrict gd object or gd folder property to specific items 
     /// </summary>
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = true )]
-    public class GdTypeFilterAttribute : Attribute
+    public class GdObjectFilterAttribute : Attribute
     {
         /// <summary>
-        /// Path + object name query
+        /// Allowed objects or folders query
         /// </summary>
         public String   Query           { get; }
 
         /// <summary>
-        /// GDObject components
+        /// Only allow gd object with given components
         /// </summary>
         public Type[]   Components      { get; }
 
-        public GdTypeFilterAttribute( )
+        public Boolean AllowNullReference { get; set; }                     = false;
+
+        public GdObjectFilterAttribute( )
         {
             Query = null;
         }
         
-        public GdTypeFilterAttribute( String query )
+        public GdObjectFilterAttribute( String query )
         {
             Query = query;
         }
 
-        public GdTypeFilterAttribute( String query, params Type[] componentTypes )
+        public GdObjectFilterAttribute( String query, params Type[] componentTypes )
         {
             Query = query;
 

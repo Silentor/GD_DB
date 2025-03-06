@@ -1,9 +1,10 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
     <Style src="project://database/Assets/Scripts/GDDB/Editor/Resources/GDBrowser.uss?fileID=7433441132597879392&amp;guid=c78739e4ae4477f47b1d84db766827d8&amp;type=3#GDBrowser" />
     <ui:VisualElement name="Border" class="unity-box" style="flex-grow: 1;">
-        <ui:VisualElement name="ToolBar" style="flex-grow: 1; height: 20px; max-height: 20px; min-height: 20px; flex-direction: row;">
-            <ui:VisualElement style="flex-grow: 0; height: 20px; max-height: 20px; flex-shrink: 0; min-height: 20px; width: 20px; max-width: 20px; min-width: 20px; background-image: resource(&apos;search_24dp&apos;);" />
-            <ui:TextField picking-mode="Ignore" name="QueryTxt" style="flex-grow: 1;" />
+        <ui:VisualElement name="ToolBar" style="flex-grow: 1; max-height: 22px; min-height: 22px; flex-direction: row; height: 22px;">
+            <ui:VisualElement name="QueryIcon" tooltip="Search items with wildcards support" style="flex-grow: 0; height: 20px; max-height: 20px; flex-shrink: 0; min-height: 20px; width: 20px; max-width: 20px; min-width: 20px; background-image: resource(&apos;search_24dp&apos;);" />
+            <ui:TextField picking-mode="Ignore" name="QueryTxt" tooltip="Search items with wildcards support" style="flex-grow: 1;" />
+            <ui:Button parse-escape-sequences="true" display-tooltip-when-elided="true" name="ClearSelectionBtn" tooltip="Clear selection" class="toolbar-btn" style="background-image: resource(&apos;delete_forever_24dp&apos;);" />
         </ui:VisualElement>
         <ui:TreeView fixed-item-height="18" name="BrowserTreeView" />
         <ui:Label tabindex="-1" text="No objects found" parse-escape-sequences="true" display-tooltip-when-elided="true" name="StatsLbl" />

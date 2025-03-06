@@ -22,13 +22,11 @@ namespace GDDB_User
 {
     public class Runner : MonoBehaviour
     {
-        [GdTypeFilter( "Mobs/**/Skins*" )]
+        [GdObjectFilter( "Mobs/**/Skins*")]
         public GdFolderRef TestFolderRefernce;
 
-        [GdTypeFilter("**/*skin*")]
+        [GdObjectFilter("**/*skin*")]
         public GdRef        TestObjectReference;
-
-
 
         public DBScriptableObject                     DB;
         public TMP_Text DebugOutput;

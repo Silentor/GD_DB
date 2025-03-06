@@ -29,15 +29,15 @@ namespace GDDB.Editor
             {
                 SetGDObject( property, newGDObject );
             }
-
+            
             if ( GUI.Button( dropdownBtnPos, "\u02c5", Resources.PickerButton ) )
             {
                 var gddb               = GDDBEditor.DB;     
                 var selectedObject     = GetGDObject( property );
-                var filterAttr         = fieldInfo.GetCustomAttribute( typeof(GdTypeFilterAttribute) ) ;
-                var query              = (filterAttr as GdTypeFilterAttribute)?.Query;
-                var components         = (filterAttr as GdTypeFilterAttribute)?.Components;
-                var gddbBrowserContent = new GdDbBrowserPopupWindowContent( gddb, query, components, selectedObject, propertyPosition, GdDbBrowserWidget.EMode.ObjectsAndFolders,
+                var filterAttr         = fieldInfo.GetCustomAttribute( typeof(GdObjectFilterAttribute) ) ;
+                var query              = (filterAttr as GdObjectFilterAttribute)?.Query;
+                var components         = (filterAttr as GdObjectFilterAttribute)?.Components;
+                var gddbBrowserContent = new GdDbBrowserPopupWindowContent( gddb, null, null, selectedObject, propertyPosition, true, GdDbBrowserWidget.EMode.ObjectsAndFolders,
                         ( sender, _, obj) =>
                         {
                             SetGDObject( property, obj );

@@ -16,22 +16,24 @@ namespace GDDB.Editor
         private readonly IReadOnlyList<GdFolder>         _folders;
         private readonly Object                          _selectedObject;
         private readonly Rect                            _activatorRect;
+        private readonly Boolean                         _showClearButton;
         private readonly GdDbBrowserWidget.EMode         _mode;
         private readonly OnSelected                      _onSelected;
         private readonly OnSelected                      _onChosed;
         private          GdDbBrowserWidget               _widget;
         private          Vector2                         _ownerWindowSize;
 
-        public GdDbBrowserPopupWindowContent( GdDb db, IReadOnlyList<ScriptableObject> objects, IReadOnlyList<GdFolder> folders, Object selectedObject, Rect activatorRect, GdDbBrowserWidget.EMode mode, OnSelected onSelected, OnSelected onChosed )
+        public GdDbBrowserPopupWindowContent( GdDb db, IReadOnlyList<ScriptableObject> objects, IReadOnlyList<GdFolder> folders, Object selectedObject, Rect activatorRect, Boolean showClearButton, GdDbBrowserWidget.EMode mode, OnSelected onSelected, OnSelected onChosed )
         {
-            _db             = db;
-            _objects        = objects;
-            _folders   = folders;
-            _selectedObject = selectedObject;
-            _activatorRect  = activatorRect;
-            _mode           = mode;
-            _onSelected     = onSelected;
-            _onChosed       = onChosed;
+            _db                   = db;
+            _objects              = objects;
+            _folders              = folders;
+            _selectedObject       = selectedObject;
+            _activatorRect        = activatorRect;
+            _showClearButton = showClearButton;
+            _mode                 = mode;
+            _onSelected           = onSelected;
+            _onChosed             = onChosed;
         }
 
         public override void OnOpen( )          //TODO add support for Unity 6 CreateGUI
@@ -46,9 +48,9 @@ namespace GDDB.Editor
             else
             {
                 if( _folders == null )
-                    _widget = new GdDbBrowserWidget( _db, _selectedObject, GdDbBrowserWidget.EMode.Folders );
+                    _widget = new GdDbBrowserWidget( _db, _selectedObject, _showClearButton, GdDbBrowserWidget.EMode.Folders );
                 else
-                    _widget = new GdDbBrowserWidget( _db, _folders, _selectedObject );
+                    _widget = new GdDbBrowserWidget( _db, _folders, _selectedObject, _showClearButton );
             }
 
             _widget.CreateGUI( editorWindow.rootVisualElement );

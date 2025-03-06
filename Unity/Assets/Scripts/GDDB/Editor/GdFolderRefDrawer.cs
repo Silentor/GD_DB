@@ -12,20 +12,22 @@ namespace GDDB.Editor
     {
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label )
         {
-            var controlId = GUIUtility.GetControlID(FocusType.Keyboard, position);
-  
+            var controlId      = GUIUtility.GetControlID(FocusType.Keyboard, position);
+            var selectedFolder = GetGDFolder( property );
+            var isAllowedNull  = IsAllowedNullReference();
+            var isValueError   = selectedFolder == null && !isAllowedNull;
+
             label    = EditorGUI.BeginProperty( position, label, property );
-            position = EditorGUI.PrefixLabel( position, controlId, label );
+            position = EditorGUI.PrefixLabel( position, controlId, label, isValueError ? Resources.PrefixLabelErrorStyle : Resources.PrefixLabelStyle );
             var propertyPosition = position;
 
             var fieldPos = position;
             fieldPos.width -= 20;
             var dropdownBtnPos = position;
             dropdownBtnPos.xMin = fieldPos.xMax;
-
-            var selectedFolder     = GetGDFolder( property );
+            
             var folderLabelContent = GetFolderControlContent( selectedFolder );
-            EditorGUI.LabelField( fieldPos, GUIContent.none, folderLabelContent, Resources.FolderBoxStyle );
+            EditorGUI.LabelField( fieldPos, GUIContent.none, folderLabelContent, isValueError ? Resources.FolderBoxErrorStyle : Resources.FolderBoxStyle );
 
             //Ping folder on click support
             if( Event.current.isMouse && Event.current.type == EventType.MouseDown && fieldPos.Contains( Event.current.mousePosition ) && selectedFolder != null )
@@ -55,7 +57,7 @@ namespace GDDB.Editor
             if ( GUI.Button( dropdownBtnPos, "\u02c5", Resources.PickerButton ) || IsPressEnter( controlId ) )
             {
                 var gddb               = GDDBEditor.DB;     
-                var gddbBrowserContent = new GdDbBrowserPopupWindowContent( gddb, null, GetQueriedFolders(), selectedFolder, propertyPosition, GdDbBrowserWidget.EMode.Folders, 
+                var gddbBrowserContent = new GdDbBrowserPopupWindowContent( gddb, null, GetQueriedFolders(), selectedFolder, propertyPosition, isAllowedNull, GdDbBrowserWidget.EMode.Folders, 
                         ( sender, folder, _) =>
                         {
                             SetGDFolder( property, folder );
@@ -100,7 +102,7 @@ namespace GDDB.Editor
 
         private void SetGDFolder( SerializedProperty property, GdFolder folder )
         {
-            if ( folder.FolderGuid != Guid.Empty )
+            if ( folder != null && folder.FolderGuid != Guid.Empty )
             {
                 var (part1, part2)  = GuidToLongs.ToLongs( folder.FolderGuid ); 
                 property.FindPropertyRelative( "Part1" ).ulongValue = part1;
@@ -116,22 +118,34 @@ namespace GDDB.Editor
 
         private IReadOnlyList<GdFolder> GetQueriedFolders( )
         {
-            var filterAttr = fieldInfo.GetCustomAttribute( typeof(GdTypeFilterAttribute) ) ;
+            var filterAttr = fieldInfo.GetCustomAttribute( typeof(GdObjectFilterAttribute) ) ;
             if ( filterAttr == null )
                 return null;
 
-            var query      = (filterAttr as GdTypeFilterAttribute)?.Query;
+            var query      = (filterAttr as GdObjectFilterAttribute)?.Query;
             var editorDB   = GDDBEditor.DB;
             var resultFolders = new List<GdFolder>();
             editorDB.FindFolders( query, resultFolders );
             return resultFolders;
         }
 
+        private Boolean IsAllowedNullReference( )
+        {
+            var filterAttr = fieldInfo.GetCustomAttribute<GdObjectFilterAttribute>( ) ;
+            if ( filterAttr == null )
+                return true;
+
+            return filterAttr.AllowNullReference;
+        }
+
         private static class Resources
         {
-            public static readonly GUIStyle  FolderBoxStyle = new ( GUI.skin.textField ) { imagePosition = ImagePosition.ImageLeft };
-            public static readonly GUIStyle  PickerButton   = EditorStyles.miniButton;
-            public static readonly Texture2D FolderIcon     = UnityEngine.Resources.Load<Texture2D>( "folder_24dp" );
+            public static readonly GUIStyle  PrefixLabelStyle      = new GUIStyle( EditorStyles.label ) ;
+            public static readonly GUIStyle  PrefixLabelErrorStyle = new GUIStyle( PrefixLabelStyle ) { normal   = { textColor = Color.red }, focused = { textColor = Color.red } };
+            public static readonly GUIStyle  FolderBoxStyle        = new ( GUI.skin.textField ) { imagePosition  = ImagePosition.ImageLeft };
+            public static readonly GUIStyle  FolderBoxErrorStyle   = new ( FolderBoxStyle ) { normal             = { textColor = Color.red}};
+            public static readonly GUIStyle  PickerButton          = EditorStyles.miniButton;
+            public static readonly Texture2D FolderIcon            = UnityEngine.Resources.Load<Texture2D>( "folder_24dp" );
         }
     }
 }

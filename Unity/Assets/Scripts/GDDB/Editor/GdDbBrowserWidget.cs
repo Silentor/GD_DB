@@ -25,7 +25,7 @@ namespace GDDB.Editor
         /// <param name="folders">Should align <see cref="objects"/> collection</param>
         /// <param name="selectedObject"></param>
         /// <param name="mode"></param>
-        public GdDbBrowserWidget( GdDb db, [NotNull] IReadOnlyList<ScriptableObject> objects, [NotNull] IReadOnlyList<GdFolder> folders, [CanBeNull] Object selectedObject ) : this( db, selectedObject, EMode.ObjectsAndFolders )
+        public GdDbBrowserWidget( GdDb db, [NotNull] IReadOnlyList<ScriptableObject> objects, [NotNull] IReadOnlyList<GdFolder> folders, [CanBeNull] Object selectedObject, Boolean showClearButton = true ) : this( db, selectedObject, showClearButton, EMode.ObjectsAndFolders )
         {
             _folders = folders ?? throw new ArgumentNullException( nameof(folders) );
             _objects = objects ?? throw new ArgumentNullException( nameof(objects) );
@@ -39,7 +39,7 @@ namespace GDDB.Editor
         /// <param name="objects"></param>
         /// <param name="selectedObject"></param>
         /// <param name="mode"></param>
-        public GdDbBrowserWidget( GdDb db, [NotNull] IReadOnlyList<GdFolder> folders, [CanBeNull] Object selectedObject ) :this( db, selectedObject, EMode.Folders )
+        public GdDbBrowserWidget( GdDb db, [NotNull] IReadOnlyList<GdFolder> folders, [CanBeNull] Object selectedObject, Boolean showClearButton = true ) :this( db, selectedObject, showClearButton, EMode.Folders )
         {
             _folders        = folders ?? throw new ArgumentNullException( nameof(folders) );
         }
@@ -51,13 +51,14 @@ namespace GDDB.Editor
         /// <param name="db"></param>
         /// <param name="selectedObject"></param>
         /// <param name="mode"></param>
-        public GdDbBrowserWidget( [NotNull] GdDb db, [CanBeNull] Object selectedObject, EMode mode = EMode.ObjectsAndFolders )
+        public GdDbBrowserWidget( [NotNull] GdDb db, [CanBeNull] Object selectedObject, Boolean showClearButton = true, EMode mode = EMode.ObjectsAndFolders )
         {
-            _db             = db ?? throw new ArgumentNullException( nameof(db) );
-            _selectedObject = selectedObject;
-            _mode           = mode;
-            _queryExecutor  = new Executor( _db );
-            _queryParser    = new Parser( _queryExecutor );
+            _db                   = db ?? throw new ArgumentNullException( nameof(db) );
+            _selectedObject       = selectedObject;
+            _showClearButton = showClearButton;
+            _mode                 = mode;
+            _queryExecutor        = new Executor( _db );
+            _queryParser          = new Parser( _queryExecutor );
         }
 
         public event Action<GdFolder, ScriptableObject> Selected;
@@ -80,6 +81,11 @@ namespace GDDB.Editor
             _queryTextBox.RegisterValueChangedCallback( evt => SearchAsync( evt.newValue, _rootFolder ) );
             _statsLbl     = content.Q<Label>( "StatsLbl" );
 
+            _clearSelectionBtn = _toolBar.Q<Button>( "ClearSelectionBtn" );
+            _clearSelectionBtn.clicked += ClearSelection;
+            if ( !_showClearButton )
+                _clearSelectionBtn.style.display = DisplayStyle.None; 
+
             root.Add( content );
 
             if( _mode == EMode.ObjectsAndFolders )
@@ -88,19 +94,29 @@ namespace GDDB.Editor
                 InitFoldersBrowser( _db, _folders, _selectedObject as GdFolder );
         }
 
-        //Init values
-        private readonly GdDb            _db;
-        private readonly IReadOnlyList<GdFolder> _folders;
-        private readonly IReadOnlyList<ScriptableObject> _objects;
-        private readonly Object          _selectedObject;
-        private readonly EMode           _mode;
 
-        private GdFolder                        _rootFolder; //Root folder for the initial search query. It can be queried further 
+        //Init values
+        private readonly GdDb                            _db;
+        private readonly IReadOnlyList<GdFolder>         _folders;
+        private readonly IReadOnlyList<ScriptableObject> _objects;
+        private readonly Object                          _selectedObject;
+        private readonly Boolean                         _showClearButton;
+        private readonly EMode                           _mode;
+
+        private readonly Executor _queryExecutor;
+        private readonly Parser   _queryParser;
+
+        private GdFolder                       _rootFolder; //Root folder for the initial search query. It can be queried further 
         private List<TreeViewItemData<Object>> _treeItems;
         private TreeView                       _treeView;
         private TextField                      _queryTextBox;
         private Label                          _statsLbl;
         private VisualElement                  _toolBar;
+        private Button                         _clearSelectionBtn;
+
+        //Search support
+        private readonly EditorWaitForSeconds _searchDelay = new ( 0.3f );
+        private          EditorCoroutine      _searchDelayCoroutine;
 
 
         private void TreeView_selectionChanged(IEnumerable<Object> items )
@@ -191,10 +207,8 @@ namespace GDDB.Editor
             ShowSearchResults( _rootFolder, selectedObjectId );
         }
 
-        private readonly EditorWaitForSeconds _searchDelay = new ( 0.3f );
-        private          EditorCoroutine      _searchDelayCoroutine;
-        private readonly Executor             _queryExecutor;
-        private readonly Parser               _queryParser;
+        
+        
 
         private void SearchAsync( String query, GdFolder rootFolder )
         {
@@ -446,6 +460,12 @@ namespace GDDB.Editor
                 result++;
             }
         }
+
+        private void ClearSelection( )
+        {
+             Chosed?.Invoke( null, null );
+        }
+
 
         private static class Resources
         {

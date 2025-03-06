@@ -8,3 +8,16 @@
 .item-disabled > #Icon {
     opacity: 0.5%;
 }
+
+.toolbar-btn {
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+    margin-right: 1px;
+    margin-bottom: 1px;
+    margin-left: 1px;
+    padding-top: 1px;
+    padding-right: 1px;
+    padding-bottom: 1px;
+    padding-left: 1px;
+}
