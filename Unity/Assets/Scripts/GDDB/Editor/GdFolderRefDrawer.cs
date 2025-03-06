@@ -13,9 +13,15 @@ namespace GDDB.Editor
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label )
         {
             var controlId      = GUIUtility.GetControlID(FocusType.Keyboard, position);
+
+            var isValueError   = false;
             var selectedFolder = GetGDFolder( property );
-            var isAllowedNull  = IsAllowedNullReference();
-            var isValueError   = selectedFolder == null && !isAllowedNull;
+            if ( Event.current.type == EventType.Repaint )          //Try to minimize heavy checks
+            {
+                var allowedFolders     = GetQueriedFolders();
+                var isAllowedNullValue = IsAllowedNullReference();
+                isValueError       = (selectedFolder == null && !isAllowedNullValue) || ( allowedFolders != null && !allowedFolders.Contains( selectedFolder ) );
+            }
 
             label    = EditorGUI.BeginProperty( position, label, property );
             position = EditorGUI.PrefixLabel( position, controlId, label, isValueError ? Resources.PrefixLabelErrorStyle : Resources.PrefixLabelStyle );
@@ -57,7 +63,7 @@ namespace GDDB.Editor
             if ( GUI.Button( dropdownBtnPos, "\u02c5", Resources.PickerButton ) || IsPressEnter( controlId ) )
             {
                 var gddb               = GDDBEditor.DB;     
-                var gddbBrowserContent = new GdDbBrowserPopupWindowContent( gddb, null, GetQueriedFolders(), selectedFolder, propertyPosition, isAllowedNull, GdDbBrowserWidget.EMode.Folders, 
+                var gddbBrowserContent = new GdDbBrowserPopupWindowContent( gddb, null, GetQueriedFolders(), selectedFolder, propertyPosition, IsAllowedNullReference(), GdDbBrowserWidget.EMode.Folders, 
                         ( sender, folder, _) =>
                         {
                             SetGDFolder( property, folder );
