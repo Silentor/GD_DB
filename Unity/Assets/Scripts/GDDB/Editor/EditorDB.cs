@@ -11,10 +11,10 @@ namespace GDDB.Editor
     /// Editor static access to cached GDB
     /// </summary>
     [InitializeOnLoad]
-    public class GDDBEditor
+    public class EditorDB
     {
 
-        static GDDBEditor( )
+        static EditorDB( )
         {
             GDAssetProcessor.GDDBAssetsChanged.Subscribe( -1000, OnGddbStructureChanged );     //Update editor GDDB instance, so it need to be first call
         }
@@ -77,7 +77,7 @@ namespace GDDB.Editor
 
         private static void OnGddbStructureChanged(IReadOnlyList<GDObject> changedObjects, IReadOnlyList<String> deletedObjects )
         {
-            Debug.Log( $"[{nameof(GDDBEditor)}]-[{nameof(OnGddbStructureChanged)}] Editor GDB instance will be recreated due to changed GDObjects assets " );
+            Debug.Log( $"[{nameof(EditorDB)}]-[{nameof(OnGddbStructureChanged)}] Editor GDB instance will be recreated due to changed GDObjects assets " );
             _isGDAssetsChanged = true;
             Updated?.Invoke();
         }
