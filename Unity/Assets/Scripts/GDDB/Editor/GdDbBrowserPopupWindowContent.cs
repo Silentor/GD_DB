@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 using Object = System.Object;
 
 namespace GDDB.Editor
@@ -36,28 +37,33 @@ namespace GDDB.Editor
             _onChosed             = onChosed;
         }
 
-        public override void OnOpen( )          //TODO add support for Unity 6 CreateGUI
+        public override VisualElement CreateGUI( )         
         {
-            if ( _mode == GdDbBrowserWidget.EMode.ObjectsAndFolders )
+            if ( _mode == GdDbBrowserWidget.EMode.Objects )
             {
                 if ( _objects == null )
-                    _widget = new GdDbBrowserWidget( _db, _selectedObject );
+                    _widget = new GdDbBrowserWidget( _db, _selectedObject, _showClearButton );
                 else
-                    _widget = new GdDbBrowserWidget( _db, _objects, _folders, _selectedObject );
+                    _widget = new GdDbBrowserWidget( _db, _objects, _folders, (ScriptableObject)_selectedObject, _showClearButton );
             }
             else
             {
                 if( _folders == null )
                     _widget = new GdDbBrowserWidget( _db, _selectedObject, _showClearButton, GdDbBrowserWidget.EMode.Folders );
                 else
-                    _widget = new GdDbBrowserWidget( _db, _folders, _selectedObject, _showClearButton );
+                    _widget = new GdDbBrowserWidget( _db, _folders, (GdFolder)_selectedObject, _showClearButton );
             }
 
-            _widget.CreateGUI( editorWindow.rootVisualElement );
             if( _onSelected != null )
                 _widget.Selected += ( folder, gdObject ) => _onSelected( this, folder, gdObject );
             if( _onChosed != null )
                 _widget.Chosed += ( folder, gdObject ) => _onChosed( this, folder, gdObject );
+
+            var result = new VisualElement();
+            result.style.width     = _activatorRect.width;
+            result.style.maxHeight = Screen.height  / 2;
+            _widget.CreateGUI( result );
+            return result;
         }
 
         public override void OnClose( )
@@ -65,14 +71,15 @@ namespace GDDB.Editor
             Closed?.Invoke();
         }
 
-        public override Vector2 GetWindowSize( )
-        {
-            return new Vector2( _activatorRect.width, 200 ); //TODO modify height based on number of items
-            
-        }
+        // public override Vector2 GetWindowSize( )
+        // {
+        //     return new Vector2( _activatorRect.width, 200 ); //TODO modify height based on number of items
+        // }
 
         public event Action Closed;
 
         public delegate void OnSelected( GdDbBrowserPopupWindowContent sender, GdFolder folder, ScriptableObject gdObject );
     }
+
+    
 }

@@ -337,7 +337,7 @@ namespace GDDB.Editor
 
             try
             {
-                foreach ( var gdObject in GDDBEditor.AllObjects.OfType<GDObject>() )
+                foreach ( var gdObject in EditorDB.AllObjects.OfType<GDObject>() )
                 {
                     if ( gdObject.Components.Any( c => c is null ) )            //Something wrong here (null ref component of missed component type)
                     {
@@ -355,7 +355,7 @@ namespace GDDB.Editor
                         }
                     }
 
-                    if( EditorUtility.DisplayCancelableProgressBar( "GDDB component fix", "Remove null components", counter / (Single)GDDBEditor.AllObjects.Count ) )
+                    if( EditorUtility.DisplayCancelableProgressBar( "GDDB component fix", "Remove null components", counter / (Single)EditorDB.AllObjects.Count ) )
                         break;
                 }
             }

@@ -25,10 +25,11 @@ namespace GDDB.Editor
         /// <param name="folders">Should align <see cref="objects"/> collection</param>
         /// <param name="selectedObject"></param>
         /// <param name="mode"></param>
-        public GdDbBrowserWidget( GdDb db, [NotNull] IReadOnlyList<ScriptableObject> objects, [NotNull] IReadOnlyList<GdFolder> folders, [CanBeNull] Object selectedObject, Boolean showClearButton = true ) : this( db, selectedObject, showClearButton, EMode.ObjectsAndFolders )
+        public GdDbBrowserWidget( GdDb db, [NotNull] IReadOnlyList<ScriptableObject> objects, [NotNull] IReadOnlyList<GdFolder> folders, [CanBeNull] ScriptableObject selectedObject, Boolean showClearButton = true ) : this( db, selectedObject, showClearButton, EMode.Objects )
         {
             _folders = folders ?? throw new ArgumentNullException( nameof(folders) );
             _objects = objects ?? throw new ArgumentNullException( nameof(objects) );
+            _selectedObject = selectedObject && objects.Contains( selectedObject ) ? selectedObject : null;     //Do not store selected object if it is not in the allowed list
         }
 
         /// <summary>
@@ -37,11 +38,12 @@ namespace GDDB.Editor
         /// <param name="db"></param>
         /// <param name="folders"></param>
         /// <param name="objects"></param>
-        /// <param name="selectedObject"></param>
+        /// <param name="selectedFolder"></param>
         /// <param name="mode"></param>
-        public GdDbBrowserWidget( GdDb db, [NotNull] IReadOnlyList<GdFolder> folders, [CanBeNull] Object selectedObject, Boolean showClearButton = true ) :this( db, selectedObject, showClearButton, EMode.Folders )
+        public GdDbBrowserWidget( GdDb db, [NotNull] IReadOnlyList<GdFolder> folders, [CanBeNull] GdFolder selectedFolder, Boolean showClearButton = true ) :this( db, selectedFolder, showClearButton, EMode.Folders )
         {
             _folders        = folders ?? throw new ArgumentNullException( nameof(folders) );
+            _selectedObject = selectedFolder != null && folders.Contains( selectedFolder ) ? selectedFolder : null;     //Do not store selected object if it is not in the allowed list
         }
 
 
@@ -51,7 +53,7 @@ namespace GDDB.Editor
         /// <param name="db"></param>
         /// <param name="selectedObject"></param>
         /// <param name="mode"></param>
-        public GdDbBrowserWidget( [NotNull] GdDb db, [CanBeNull] Object selectedObject, Boolean showClearButton = true, EMode mode = EMode.ObjectsAndFolders )
+        public GdDbBrowserWidget( [NotNull] GdDb db, [CanBeNull] Object selectedObject, Boolean showClearButton = true, EMode mode = EMode.Objects )
         {
             _db                   = db ?? throw new ArgumentNullException( nameof(db) );
             _selectedObject       = selectedObject;
@@ -79,6 +81,7 @@ namespace GDDB.Editor
             _toolBar      = content.Q<VisualElement>( "ToolBar" );
             _queryTextBox = _toolBar.Q<TextField>( "QueryTxt" );
             _queryTextBox.RegisterValueChangedCallback( evt => SearchAsync( evt.newValue, _rootFolder ) );
+            _queryTextBox.RegisterCallback<AttachToPanelEvent>( _ => _queryTextBox.Focus() );
             _statsLbl     = content.Q<Label>( "StatsLbl" );
 
             _clearSelectionBtn = _toolBar.Q<Button>( "ClearSelectionBtn" );
@@ -88,7 +91,7 @@ namespace GDDB.Editor
 
             root.Add( content );
 
-            if( _mode == EMode.ObjectsAndFolders )
+            if( _mode == EMode.Objects )
                 InitObjectsBrowser( _db, _objects, _folders, _selectedObject as ScriptableObject ); 
             else
                 InitFoldersBrowser( _db, _folders, _selectedObject as GdFolder );
@@ -107,7 +110,7 @@ namespace GDDB.Editor
         private readonly Parser   _queryParser;
 
         private GdFolder                       _rootFolder; //Root folder for the initial search query. It can be queried further 
-        private List<TreeViewItemData<Object>> _treeItems;
+        //private List<TreeViewItemData<Object>> _treeItems;
         private TreeView                       _treeView;
         private TextField                      _queryTextBox;
         private Label                          _statsLbl;
@@ -126,7 +129,7 @@ namespace GDDB.Editor
             if( selectedItem.State != ETreeItemState.Normal )
                 return;
 
-            if ( _mode == EMode.ObjectsAndFolders )
+            if ( _mode == EMode.Objects )
             {
                 if ( selectedItem.Item is ScriptableObject gdo )
                 {
@@ -150,7 +153,7 @@ namespace GDDB.Editor
             if( selectedItem.State != ETreeItemState.Normal )
                 return;
 
-            if ( _mode == EMode.ObjectsAndFolders )
+            if ( _mode == EMode.Objects )
             {
                 if ( selectedItem.Item is ScriptableObject gdo )
                 {
@@ -207,9 +210,6 @@ namespace GDDB.Editor
             ShowSearchResults( _rootFolder, selectedObjectId );
         }
 
-        
-        
-
         private void SearchAsync( String query, GdFolder rootFolder )
         {
             if ( _searchDelayCoroutine != null )                
@@ -235,7 +235,7 @@ namespace GDDB.Editor
             var objects = new List<ScriptableObject>();
             var folders = new List<GdFolder>();
 
-            if( _mode == EMode.ObjectsAndFolders )
+            if( _mode == EMode.Objects )
             {
                 var queryTokens = _queryParser.ParseObjectsQuery( query );
                 _queryExecutor.FindObjects( queryTokens, rootFolder, objects, folders );
@@ -260,7 +260,7 @@ namespace GDDB.Editor
                 return null;
 
             GdFolder rootFolder;
-            if( _mode == EMode.ObjectsAndFolders )
+            if( _mode == EMode.Objects )
             {
                 for ( int i = 0; i < objects.Count; i++ )
                 {
@@ -311,7 +311,7 @@ namespace GDDB.Editor
 
         private void ShowSearchResults( GdFolder rootFolder, Int32? selectedObjectId = null )
         {
-            if ( _mode == EMode.ObjectsAndFolders )
+            if ( _mode == EMode.Objects )
             {
                 if ( rootFolder == null )
                 {
@@ -352,6 +352,7 @@ namespace GDDB.Editor
             if ( selectedObjectId.HasValue )
             {
                 _treeView.SetSelectionByIdWithoutNotify( new []{selectedObjectId.Value} );
+                _treeView.ScrollToItemById( selectedObjectId.Value );
             }
         }
 
@@ -392,22 +393,22 @@ namespace GDDB.Editor
             var label = elem.Q<Label>( "Label" );
             if ( item.Item is GdFolder folder )
             {
-                icon.style.backgroundImage = Resources.FolderIcon;
+                icon.style.backgroundImage = GdFieldDrawerBase.GetFolderIcon( folder );
                 label.text = folder.Name;
             }
             else if ( item.Item is GDRoot root )
             {
-                icon.style.backgroundImage = Resources.DatabaseIcon;
+                icon.style.backgroundImage = GdFieldDrawerBase.GetObjectIcon( root );
                 label.text                 = $"{root.Name} ({root.Id})";
             }
             else if ( item.Item is GDObject gdo )
             {
-                icon.style.backgroundImage = Resources.GDObjectIcon;
+                icon.style.backgroundImage = GdFieldDrawerBase.GetObjectIcon( gdo );
                 label.text                 = gdo.name;
             }
             else if ( item.Item is ScriptableObject so )
             {
-                icon.style.backgroundImage = Resources.GDObjectIcon;
+                icon.style.backgroundImage = GdFieldDrawerBase.GetObjectIcon( so );
                 label.text                 = so.name;
             }
 
@@ -470,16 +471,12 @@ namespace GDDB.Editor
         private static class Resources
         {
             public static readonly VisualTreeAsset BrowserWidget = UnityEngine.Resources.Load<VisualTreeAsset>( "GdDbBrowser" );
-            public static readonly VisualTreeAsset TreeItemElem = UnityEngine.Resources.Load<VisualTreeAsset>( "GdDbBrowserTreeItem" );
-            public static readonly Texture2D FolderIcon = UnityEngine.Resources.Load<Texture2D>( "folder_24dp" );
-            public static readonly Texture2D GDObjectIcon = UnityEngine.Resources.Load<Texture2D>( "description_24dp" );
-            public static readonly Texture2D SObjectIcon = UnityEngine.Resources.Load<Texture2D>( "description_24dp" );
-            public static readonly Texture2D DatabaseIcon = UnityEngine.Resources.Load<Texture2D>( "database_24dp" );
+            public static readonly VisualTreeAsset TreeItemElem  = UnityEngine.Resources.Load<VisualTreeAsset>( "GdDbBrowserTreeItem" );
         }
 
         public enum EMode
         {
-            ObjectsAndFolders,
+            Objects,
             Folders,
         }
 
@@ -516,7 +513,7 @@ namespace GDDB.Editor
 
         private void OnEnable( )
         {
-            var db = GDDBEditor.DB;
+            var db = EditorDB.DB;
             _browser = new GdDbBrowserWidget( db, null );
             _browser.CreateGUI( rootVisualElement );
         }

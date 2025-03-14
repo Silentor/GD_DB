@@ -45,7 +45,7 @@ namespace GDDB.Editor
         {
             const Single IconSize  = 18;
 
-            if ( Event.current.type != EventType.Repaint || !IsMainListRect(rect) || GDDBEditor.DB == null )
+            if ( Event.current.type != EventType.Repaint || !IsMainListRect(rect) || EditorDB.DB == null )
                 return;
 
             var iconRect = new Rect( rect.x + rect.width, rect.y, IconSize, IconSize );
@@ -176,7 +176,7 @@ namespace GDDB.Editor
             var asset       = EditorUtility.InstanceIDToObject( instanceId );
             if ( asset )
             {
-                var editorDB = GDDBEditor.DB;
+                var editorDB = EditorDB.DB;
                 if( editorDB.AllObjects.Count == 0 )
                 {
                     itemData.DebugName = "GDDB is empty";
@@ -185,7 +185,7 @@ namespace GDDB.Editor
                 }
 
                 itemData.DebugName = asset.name;
-                var rootFolder  = GDDBEditor.DB.RootFolder;
+                var rootFolder  = EditorDB.DB.RootFolder;
                 if ( asset is DefaultAsset folderAsset )
                 {
                     var folderGuid = new Guid( AssetDatabase.AssetPathToGUID( AssetDatabase.GetAssetPath( folderAsset ) ) );

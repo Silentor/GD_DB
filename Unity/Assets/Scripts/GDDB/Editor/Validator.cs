@@ -27,7 +27,7 @@ namespace GDDB.Editor
 
         public static IReadOnlyList<ValidationReport> Validate( )
         {
-            var gddb    = GDDBEditor.DB;
+            var gddb    = EditorDB.DB;
             _reports.Clear();
 
             if (  gddb == null )                                    //No GDDB in project

@@ -1,7 +1,9 @@
 ﻿using System;
+using GDDB;
 using UnityEngine;
 
-namespace GDDB
+namespace GDDB_User
+
 {
     [CreateAssetMenu( fileName = "TestSOObject", menuName = "GDDB/TestSOObject", order = 0 )]
     public class TestSOObject : ScriptableObject
@@ -11,5 +13,9 @@ namespace GDDB
         public GDObject             GDObjectReference;
         public TestSO2Object        SOObjectReference;
         public TestSOObject         SelfReference;
+
+        public GdRef       GDObnjectRef;
+        public GdFolder    FolderTest;
+        public GdFolderRef FolderRef;
     }
 }

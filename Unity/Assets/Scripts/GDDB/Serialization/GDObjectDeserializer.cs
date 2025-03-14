@@ -265,13 +265,20 @@ namespace GDDB.Serialization
                 reader.ReadNextToken();         //Stand on next property name or EndObject
             }
 
-            var defaultConstructor = GetTypeConstructor( objectType );
-            if ( defaultConstructor == null )
+            Object obj;
+            if ( objectType.IsClass )
             {
-                throw new InvalidOperationException( $"[{nameof(GDObjectDeserializer)}]-[{nameof(ReadObject)}] Default constructor of type {objectType} is not found" );
+                var defaultConstructor = GetTypeConstructor( objectType );
+                if ( defaultConstructor == null )
+                {
+                    throw new InvalidOperationException( $"[{nameof(GDObjectDeserializer)}]-[{nameof(ReadObject)}] Default constructor of type {objectType} is not found" );
+                }
+                obj = defaultConstructor.Invoke( Array.Empty<Object>() );
             }
-
-            var obj = defaultConstructor.Invoke( Array.Empty<Object>() );
+            else
+            {
+                obj = Activator.CreateInstance( objectType );     //Structs
+            }
 
             if( reader.CurrentToken != EToken.EndObject )
                 ReadObjectProperties( reader, obj );

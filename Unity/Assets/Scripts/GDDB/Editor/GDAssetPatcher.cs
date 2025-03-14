@@ -69,7 +69,7 @@ namespace GDDB.Editor
         {
              var searchStr      = ComponentTypeRegexStr.Replace( "{class}", oldType.Type ).Replace( "{ns}", oldType.Namespace ).Replace( "{asm}", oldType.Assembly );
              var replaceStr      = ComponentTypeReplacementStr.Replace( "{class}", newType.Type ).Replace( "{ns}", newType.Namespace ).Replace( "{asm}", newType.Assembly );
-             var allObjects = GDDBEditor.AllObjects;
+             var allObjects = EditorDB.AllObjects;
 
              AssetDatabase.SaveAssets();
              AssetDatabase.Refresh( ImportAssetOptions.ForceSynchronousImport );

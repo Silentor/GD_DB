@@ -5,13 +5,13 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
 using FluentAssertions.Extensions;
 using GDDB;
 using GDDB.Serialization;
+using GeneratedGDDB.Lunch.Thought.Attraction;
+using GeneratedGDDB.Property.Cover.Position;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Assertions;
 using UnityEngine.Profiling;
 using UnityEngine.Scripting;
 using UnityEngine.UI;
@@ -22,10 +22,32 @@ namespace GDDB_User
 {
     public class Runner : MonoBehaviour
     {
+        [Tooltip("Test tooltip")]
+        public ScriptableObject RawSO;
+        public TestSOObject     RawTestSO;
+        public GDObject         RawGDO;
+
+        [Tooltip("Test tooltip")]
+        [GdObjectFilter]
+        public ScriptableObject FilteredSO;
+        [GdObjectFilter(  )]
+        public TestSOObject     FilteredSO_Descendant;
+        [GdObjectFilter]
+        public GDObject         FilteredGDO;
+        [GdObjectFilter( typeof(RequestIce2) )]
+        public RequestIce       FilteredGDO_Descendant;
+        [GdObjectFilter( typeof(UmbrellaPeace) )]
+        public GDObject         FilteredGDO_Comp;
+        [GdObjectFilter]
+        public Texture2D     FilteredTexture;
+        [GdObjectFilter]
+        public String     FilteredString;
+
+
         [GdObjectFilter( "Mobs/**/Skins*")]
         public GdFolderRef TestFolderRefernce;
 
-        [GdObjectFilter("**/*skin*")]
+        [GdObjectFilter( typeof(TestMobComponent))]
         public GdRef        TestObjectReference;
 
         public DBScriptableObject                     DB;

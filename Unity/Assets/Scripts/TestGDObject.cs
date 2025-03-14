@@ -1,7 +1,8 @@
 ﻿using System;
+using GDDB;
 using UnityEngine;
 
-namespace GDDB
+namespace GDDB_User
 {
     public class TestGDObject : GDObject
     {

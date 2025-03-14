@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using GDDB.Queries;
+using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -44,54 +45,19 @@ namespace GDDB
         /// <summary>
         /// Query objects by folders/objects path. Glob syntax
         /// </summary>
-        /// <param name="path">Query path of folders and files, supports * and ? wildcard for folder/object names</param>
+        /// <param name="query">Query path of folders and files, supports * and ? wildcard for folder/object names</param>
         /// <returns></returns>
-        public void FindObjects( String path, List<ScriptableObject> resultObjects, List<GdFolder> resultFolders = null )
+        public FindObjectResult FindObjects( String query, List<ScriptableObject> resultObjects, List<GdFolder> resultFolders = null )
         {
-            var  query = _queryParser.ParseObjectsQuery( path );
-            _queryExecutor.FindObjects( query, RootFolder, resultObjects, resultFolders );
+            var  parsedQuery = _queryParser.ParseObjectsQuery( query );
+            _queryExecutor.FindObjects( parsedQuery, RootFolder, resultObjects, resultFolders );
+            return new FindObjectResult( resultObjects, resultFolders );
         }   
 
-        public void FindObjects( String path, Type[] components, List<ScriptableObject> resultObjects, List<GdFolder> resultFolders = null )
+        public void FindFolders( String query, List<GdFolder> resultFolders )
         {
-            FindObjects( path, resultObjects, resultFolders );
-
-            if( components == null || components.Length == 0 )
-                return;
-
-            if ( resultFolders != null )
-            {
-                for ( int i = 0; i < resultObjects.Count; i++ )
-                {
-                    if ( resultObjects[ i ] is GDObject gdo && gdo.HasComponents( components ) )
-                        continue;
-                    else
-                    {
-                        resultObjects.RemoveAt( i );
-                        resultFolders.RemoveAt( i );
-                        i--;
-                    }
-                }
-            }
-            else
-            {
-                for ( int i = 0; i < resultObjects.Count; i++ )
-                {
-                    if ( resultObjects[ i ] is GDObject gdo && gdo.HasComponents( components ) )
-                        continue;
-                    else
-                    {
-                        resultObjects.RemoveAt( i );
-                        i--;
-                    }
-                }
-            }
-        }
-
-        public void FindFolders( String path, List<GdFolder> resultFolders )
-        {
-            var  query = _queryParser.ParseFoldersQuery( path );
-            _queryExecutor.FindFolders( query, RootFolder, resultFolders );
+            var  parsedQuery = _queryParser.ParseFoldersQuery( query );
+            _queryExecutor.FindFolders( parsedQuery, RootFolder, resultFolders );
         }
 
         public GdFolder GetFolder( Guid folderId )
@@ -110,31 +76,21 @@ namespace GDDB
             return GetFolder( folderRef.Guid );
         } 
         
-        // public GDObject GetObject( GdId objectId )
-        // {
-        //     var guid = objectId.GUID;
-        //     foreach ( var obj in AllObjects )
-        //     {
-        //         if( obj is GDObject gdo && gdo.Guid == guid )
-        //             return gdo;
-        //     }
-        //
-        //     return null;
-        // }
+        public GDObject GetObject( GdRef objectId )
+        {
+            var guid = objectId.Guid;
+            foreach ( var obj in AllObjects )
+            {
+                if( obj is GDObject gdo && gdo.Guid == guid )
+                    return gdo;
+            }
+        
+            return null;
+        }
 
         // public GDObject GetObject( GdType type )
         // {
         //     return AllObjects.First( o => o.Type == type );
-        // }
-
-        // public IEnumerable<GDObject> GetObjects( Int32 category1 )
-        // {
-        //     return AllObjects.Where( o => o.Type[0] == category1 );
-        // }
-        //
-        // public IEnumerable<GDObject> GetObjects( Int32 category1, Int32 category2 )
-        // {
-        //     return AllObjects.Where( o => o.Type[0] == category1 && o.Type[1] == category2 );
         // }
 
         public void Print( )
@@ -165,6 +121,101 @@ namespace GDDB
                     Debug.Log($"  {indentStr}{gdo.name}, type {obj.GetType().Name}, components {gdo.Components.Count}");
                 else
                     Debug.Log($"  {indentStr}{obj.name}, type {obj.GetType().Name}");
+            }
+        }
+
+        public readonly struct FindObjectResult
+        {
+            public readonly List<ScriptableObject> Objects;
+            public readonly List<GdFolder> Folders;
+
+            public FindObjectResult([NotNull] List<ScriptableObject> objects, [CanBeNull] List<GdFolder> folders )
+            {
+                Objects = objects ?? throw new ArgumentNullException( nameof(objects) );
+                Folders = folders;
+            }
+
+            public FindObjectResult FindObjectType<TGdObjType>( ) where TGdObjType : ScriptableObject
+            {
+                return FindObjectType( typeof(TGdObjType) );
+            }
+
+            public FindObjectResult FindObjectType( [NotNull] Type objectType )
+            {
+                if ( objectType == null ) throw new ArgumentNullException( nameof(objectType) );
+                if( !typeof(ScriptableObject).IsAssignableFrom( objectType ) )
+                    throw new ArgumentException( $"GDObject type must be derived from ScriptableObject, but was {objectType.Name}", nameof(objectType) );
+
+                if ( objectType == typeof(ScriptableObject) )
+                    return this;
+
+                if( Folders != null )
+                {
+                    for ( var i = Objects.Count - 1; i >= 0; i-- )
+                    {
+                        if ( !objectType.IsAssignableFrom( Objects[ i ].GetType() ) )
+                        {
+                            Objects.RemoveAt( i );
+                            Folders.RemoveAt( i );
+                        }
+                    }
+                }
+                else
+                {
+                    for ( var i = Objects.Count - 1; i >= 0; i-- )
+                    {
+                        if ( !objectType.IsAssignableFrom( Objects[ i ].GetType() ) )
+                        {
+                            Objects.RemoveAt( i );
+                        }                    
+                    }
+                }
+
+                return this;
+            }
+
+            public FindObjectResult FindComponents( [NotNull] IReadOnlyList<Type> components )
+            {
+                if ( components == null ) throw new ArgumentNullException( nameof(components) );
+                foreach ( var component in components )
+                {
+                    if( !typeof(GDComponent).IsAssignableFrom( component ) )
+                        throw new ArgumentException( $"GDObject type must be derived from ScriptableObject, but was {component.Name}", nameof(component) );
+                }
+
+                if ( Folders != null )
+                {
+                    for ( var i = Objects.Count - 1; i >= 0; i-- )
+                    {
+                        if ( Objects[i] is not GDObject gdo || !gdo.HasComponents( components ) )
+                        {
+                            Objects.RemoveAt( i );
+                            Folders.RemoveAt( i );
+                        }                    
+                    }
+                }
+                else
+                {
+                    for ( var i = Objects.Count - 1; i >= 0; i-- )
+                    {
+                        if ( Objects[i] is not GDObject gdo || !gdo.HasComponents( components ) )
+                        {
+                            Objects.RemoveAt( i );
+                        }                    
+                    }
+                }
+
+                return this;
+            }
+
+            public FindObjectResult FindComponents( [NotNull] params Type[] components )
+            {
+                return FindComponents( (IReadOnlyList<Type>)components );
+            }
+
+            public FindObjectResult FindComponents<TGdComp>(  )
+            {
+                return FindComponents( typeof(TGdComp) );
             }
         }
     }

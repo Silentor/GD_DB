@@ -26,7 +26,10 @@ namespace GDDB.Queries
 
         public HierarchyToken ParseObjectsQuery( String query )
         {
-            if ( String.IsNullOrEmpty( query ) )
+            if ( query == null )
+                return new AllFilesInDBToken( _executor.DB ); 
+
+            if ( query == String.Empty )
                 return null;
         
             var parts = query.Split( '/' );
@@ -75,7 +78,10 @@ namespace GDDB.Queries
 
         public HierarchyToken ParseFoldersQuery( String query )
         {
-            if ( String.IsNullOrEmpty( query ) )
+            if ( query == null )
+                return new AllFoldersInDBToken( _executor.DB ); 
+
+            if ( query == String.Empty )
                 return null;
         
             var parts  = query.Split( '/' );

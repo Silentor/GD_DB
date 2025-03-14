@@ -61,9 +61,9 @@ namespace GDDB
             return Components.Exists( c => type.IsAssignableFrom( c.GetType() ) );
         }
 
-        public Boolean HasComponents( params Type[] types )
+        public Boolean HasComponents( IReadOnlyList<Type> types )
         {
-            if( types == null || types.Length == 0 ) return Components.Count == 0;
+            if( types == null || types.Count == 0 ) return Components.Count == 0;
 
             foreach ( var t in types )
             {

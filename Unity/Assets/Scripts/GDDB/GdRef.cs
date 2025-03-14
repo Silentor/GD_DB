@@ -11,7 +11,7 @@ namespace GDDB
         [SerializeField] UInt64 Part1;
         [SerializeField] UInt64 Part2;
 
-        public Guid GUID => GuidToLongs.ToGuid( Part1, Part2 );
+        public Guid Guid => GuidToLongs.ToGuid( Part1, Part2 );
 
         public GdRef( UInt64 part1, UInt64 part2 )
         {
@@ -26,12 +26,12 @@ namespace GDDB
 
         public override String ToString( )
         {
-            return GUID.ToString();
+            return Guid.ToString();
         }
 
         public bool Equals(GdRef other)
         {
-            return GUID.Equals( other.GUID );
+            return Guid.Equals( other.Guid );
         }
 
         public override bool Equals(object? obj)
@@ -41,7 +41,7 @@ namespace GDDB
 
         public override int GetHashCode( )
         {
-            return GUID.GetHashCode();
+            return Guid.GetHashCode();
         }
 
         public static bool operator ==(GdRef left, GdRef right)
@@ -56,13 +56,13 @@ namespace GDDB
 
         public int CompareTo(GdRef other)
         {
-            return GUID.CompareTo( other.GUID );  
+            return Guid.CompareTo( other.Guid );  
         }
 
     }
 
     [StructLayout(LayoutKind.Explicit, Pack = 1)]
-    public struct GuidToLongs
+    public ref struct GuidToLongs
     {
         [FieldOffset(0)]
         public Guid   GUID;
