@@ -20,8 +20,8 @@ namespace GDDB.Editor
     {
         public GdFolder Root           { get; private set; }
 
-        public IReadOnlyList<ScriptableObject> AllObjects       =>  _allObjects;
-        public IReadOnlyList<GdFolder> AllFolders               =>  _allFolders;
+        public IReadOnlyList<GdDb.ObjectSearchIndex> AllObjects =>  _allObjects;
+        public IReadOnlyList<GdFolder>               AllFolders =>  _allFolders;
 
         /// <summary>
         /// Equivalent to Unity's Assets folder.
@@ -85,7 +85,7 @@ namespace GDDB.Editor
 
             //Add GDObjects to hierarchy
             var addedObjectCount = 0;
-            _allObjects.Capacity = gdos.Length;
+            _allObjects.Capacity      = gdos.Length;
             for ( var i = 0; i < gdos.Length; i++ )
             {
                 var gdoData  = gdos[ i ];
@@ -98,7 +98,7 @@ namespace GDDB.Editor
                 
                 var folder  = GetOrCreateFolderForSplittedPath( assetsFolder, Split( gdoData.Path ), foldersCache );
                 folder.Objects.Add( gdobject );
-                _allObjects.Add( gdobject );
+                _allObjects.Add( new GdDb.ObjectSearchIndex( Guid.ParseExact( gdos[i].Guid, "N" ), gdobject, folder ) );
                 addedObjectCount++;
             }
 
@@ -299,8 +299,8 @@ namespace GDDB.Editor
             return new ArraySegment<String>( mostCommonFolder.Array, 0, i ); 
         }
 
-        private readonly List<ScriptableObject>     _allObjects = new ();
-        private readonly List<GdFolder>             _allFolders = new ();
+        private readonly List<GdDb.ObjectSearchIndex> _allObjects = new ();
+        private readonly List<GdFolder>               _allFolders = new ();
 
         private struct GDObjectPath
         {

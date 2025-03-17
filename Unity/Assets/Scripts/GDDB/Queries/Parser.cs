@@ -27,7 +27,7 @@ namespace GDDB.Queries
         public HierarchyToken ParseObjectsQuery( String query )
         {
             if ( query == null )
-                return new AllFilesInDBToken( _executor.DB ); 
+                return new AllFilesInDBToken( _executor ); 
 
             if ( query == String.Empty )
                 return null;
@@ -46,14 +46,14 @@ namespace GDDB.Queries
             if ( _buffer.Count == 2 && _buffer[ 0 ] is AllSubfoldersRecursivelyToken &&  _buffer[ 1 ] is AllFilesToken )              
             {
                 _buffer.Clear();
-                _buffer.Add( new AllFilesInDBToken( _executor.DB ) );
+                _buffer.Add( new AllFilesInDBToken( _executor ) );
             }
 
             //Special case: If no path specified, search entire DB (like Unity search bar). If no wildcard, convert it to Contains wildcard
             if( _buffer.Count == 1 && _buffer[0] is WildcardFilesToken onlyObjName )  
             {
                 _buffer.Clear();
-                _buffer.Add( new AllFoldersInDBToken( _executor.DB ) );
+                _buffer.Add( new AllFoldersInDBToken( _executor ) );
                 if( onlyObjName.Wildcard is LiteralToken nameLiteral && nameLiteral.NextToken == null )
                     _buffer.Add( new WildcardFilesToken( new ContainsLiteralToken( nameLiteral.Literal ), _executor ) );
                 else
@@ -79,7 +79,7 @@ namespace GDDB.Queries
         public HierarchyToken ParseFoldersQuery( String query )
         {
             if ( query == null )
-                return new AllFoldersInDBToken( _executor.DB ); 
+                return new AllFoldersInDBToken( _executor ); 
 
             if ( query == String.Empty )
                 return null;
@@ -96,7 +96,7 @@ namespace GDDB.Queries
             if( _buffer.Count == 1 && _buffer[0] is WildcardSubfoldersToken onlyFolderName )  
             {
                 _buffer.Clear();
-                _buffer.Add( new AllFoldersInDBToken( _executor.DB ) );
+                _buffer.Add( new AllFoldersInDBToken( _executor ) );
                 if( onlyFolderName.Wildcard is LiteralToken nameLiteral && nameLiteral.NextToken == null )
                     _buffer.Add( new WildcardSubfoldersToken( new ContainsLiteralToken( nameLiteral.Literal ), _executor ) );
                 else

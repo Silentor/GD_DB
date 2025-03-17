@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using GDDB.Serialization;
 using UnityEditor;
 using UnityEngine;
@@ -69,7 +70,7 @@ namespace GDDB.Editor
             {
                 var loader = new GdEditorLoader();
                 _gbd               = loader.GetGameDataBase();
-                _allObjects        = loader.AllObjects;
+                _allObjects        = loader.AllObjects.Select( obj => obj.Object ).ToList();
                 _allFolders        = loader.AllFolders;
                 _isGDAssetsChanged = false;
             }

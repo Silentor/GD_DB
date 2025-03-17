@@ -33,7 +33,8 @@ namespace GDDB.Tests
               var orcSkinsFolder = GetFolder( "Skins", orcsFolder );
               orcSkinsFolder.Objects.Add( GetAsset( "Chieftan") );
 
-              var allObjects = gddbRoot.EnumerateFoldersDFS().SelectMany( folder => folder.Objects.Select( gdo => gdo ) ).ToList();
+              var allObjects = gddbRoot.EnumerateFoldersDFS().SelectMany( folder => folder.Objects.Select( 
+                      gdo => new GdDb.ObjectSearchIndex( ((GDObject)gdo).Guid, gdo, folder)) ) .ToList();
               _db = new GdDb( gddbRoot, allObjects );
           }
 
@@ -95,7 +96,7 @@ namespace GDDB.Tests
 
             //Assert
             noObjects.Count().Should().Be( 0 );
-            noObjects2.Count().Should().Be( 0 );
+            noObjects2.Count().Should().Be( _db.AllObjects.Count );   //All DB
         }
 
         [Test]

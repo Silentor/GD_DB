@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using FluentAssertions.Extensions;
@@ -107,17 +108,57 @@ namespace GDDB_User
 #endif
             UpdateDebugLabel();
 
-            var result = new List<ScriptableObject>();
-            var timer  = Stopwatch.StartNew();
-            var skins = _binaryGDDB.GetFolder( TestFolderRefernce ).Objects;
-            timer.Stop();
-
-            Debug.Log( $"Items {result.Count}, time {timer.Elapsed.TotalMicroseconds()} mks" );
-
-            foreach ( var res in skins )
+            //Benchmarks
+            for ( int i = 0; i < 3; i++ )
             {
-                Debug.Log( res.name );
+
+                //Find obj by guid
+                var timer = Stopwatch.StartNew();
+                foreach ( var obj in _binaryGDDB.AllObjects.Select( ao => ao.Object ) )
+                {
+                    if ( obj is GDObject gdo )
+                    {
+                        var obj2 = _binaryGDDB.GetObject( new GdRef( gdo.Guid ) );
+                    }
+                }
+
+                timer.Stop();
+                Debug.Log( $"Find object by guid time {timer.Elapsed.TotalMilliseconds * 1000} mks" );
+
+                //Find obj by obj type
+                //Prepare some obj types
+                //Get most common types
+                var types = _binaryGDDB.AllObjects.Select( obj => obj.Object.GetType() ).GroupBy( t => t ). OrderByDescending( tg => tg.Count() )
+                                       .Select( tg => new { tg.Key, Count = tg.Count() } ).ToArray();
+
+                var resultObjects = new List<ScriptableObject>();
+                var resultFolders = new List<GdFolder>();
+                timer.Restart();
+                _binaryGDDB.FindObjects( null, resultObjects, resultFolders ).FindObjectType( types[ 0 ].Key );
+                resultObjects.Clear();
+                resultFolders.Clear();
+                _binaryGDDB.FindObjects( null, resultObjects, resultFolders ).FindObjectType( types[ 1 ].Key );
+                resultObjects.Clear();
+                resultFolders.Clear();
+                _binaryGDDB.FindObjects( null, resultObjects, resultFolders ).FindObjectType( types[ 2 ].Key );
+                resultObjects.Clear();
+                resultFolders.Clear();
+                _binaryGDDB.FindObjects( null, resultObjects, resultFolders ).FindObjectType( types[ 3 ].Key );
+                resultObjects.Clear();
+                resultFolders.Clear();
+                _binaryGDDB.FindObjects( null, resultObjects, resultFolders ).FindObjectType( types[ 4 ].Key );
+                resultObjects.Clear();
+                resultFolders.Clear();
+                _binaryGDDB.FindObjects( null, resultObjects, resultFolders ).FindObjectType( types[ 5 ].Key );
+                resultObjects.Clear();
+                resultFolders.Clear();
+                timer.Stop();
+                Debug.Log( $"Find objects by main object type, time {timer.Elapsed.TotalMilliseconds * 1000} mks" );
+
+                yield return null;
             }
+
+
 
             //var textureFromGD = fromJsonGDB.Root.Test7.Mobs5.Folder.Objects.First( gdo => gdo.HasComponent<GDComponentChild3>() ).GetComponent<GDComponentChild3>();
             //DebugImageOutput.texture = textureFromGD.TexValue;
@@ -138,7 +179,7 @@ namespace GDDB_User
 
             //var testGetMobs = gdb.GetMobs(  );          //Source generated
 
-            
+
         }
 
         private void UpdateDebugLabel( )

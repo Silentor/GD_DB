@@ -12,7 +12,7 @@ namespace GDDB.Tests
         [Test]
         public void TestSimpleObjectPathParser( )
         {
-            var parser = new Parser( new Executor( null ) );
+            var parser = new Parser( new Queries.Executor( null ) );
             var result = parser.ParseObjectsQuery( "*" ).Flatten();
             result.Count.Should().Be( 1 );
             result[ 0 ].Should().BeOfType<AllFilesToken>(  );
@@ -36,7 +36,7 @@ namespace GDDB.Tests
         [Test]
         public void TestWildcardObjectPathParser( )
         {
-            var parser = new Parser( new Executor( null ) );
+            var parser = new Parser( new Queries.Executor( null ) );
             var result = parser.ParseObjectsQuery( "/rootFiles" ).Flatten();
             result.Count.Should().Be( 1 );
             result[ 0 ].Should().BeOfType<WildcardFilesToken>(  ).And.Subject.As<WildcardFilesToken>().Wildcard.Should().BeOfType<LiteralToken>(  ).And.Subject.As<LiteralToken>().Literal.Should().Be( "rootFiles" );
@@ -63,7 +63,7 @@ namespace GDDB.Tests
         [Test]
         public void TestShortQueryParser( )
         {
-            var parser = new Parser( new Executor( null ) );
+            var parser = new Parser( new Queries.Executor( null ) );
 
             //Object name without folders part and without wildcards - fuzzy search entire DB (Unity search bar style in Project/Hierarchy windows)
             var result = parser.ParseObjectsQuery( "test" ).Flatten();       

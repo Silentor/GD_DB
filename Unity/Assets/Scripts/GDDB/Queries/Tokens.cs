@@ -57,30 +57,19 @@ namespace GDDB.Queries
 
     public class AllFilesInDBToken : FileToken
     {
-        private readonly GdDb _db;
+        private readonly Executor _executor;
 
-        public AllFilesInDBToken( GdDb db )
+        public AllFilesInDBToken( Executor  executor )
         {
-            _db = db;
+            _executor = executor;
         }
 
         public override void ProcessFolder(  IReadOnlyList<GdFolder> input, List<ScriptableObject> output, List<GdFolder> outputFolders = null )
         {
-            if( outputFolders != null )
-            {
-                foreach ( var folder in _db.RootFolder.EnumerateFoldersDFS(  ) )
-                {
-                    foreach ( var obj in folder.Objects )
-                    {
-                        output.Add( obj );
-                        outputFolders.Add( folder );
-                    }
-                }
-            }
-            else
-            {
-                output.AddRange( _db.AllObjects );
-            }
+            var allObjectsCache = _executor.GetAllObjectsInDB();
+            if( outputFolders != null )                
+                outputFolders.AddRange( allObjectsCache.Item2 );
+            output.AddRange( allObjectsCache.Item1 );
         }
     }
 
@@ -179,16 +168,16 @@ namespace GDDB.Queries
     
     public class AllFoldersInDBToken : FolderToken
     {
-        private readonly GdDb _db;
+        private readonly Executor _executor;
 
-        public AllFoldersInDBToken( GdDb db )
+        public AllFoldersInDBToken( Executor executor )
         {
-            _db = db;
+            _executor = executor;
         }
 
         public override void ProcessFolder( IReadOnlyList<GdFolder> input, List<GdFolder> output )
         {
-            output.AddRange( _db.RootFolder.EnumerateFoldersDFS( true ) );
+            output.AddRange( _executor.GetAllFoldersInDB());
         }
     }
 

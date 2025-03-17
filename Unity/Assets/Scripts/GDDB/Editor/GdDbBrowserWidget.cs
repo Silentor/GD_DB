@@ -55,12 +55,12 @@ namespace GDDB.Editor
         /// <param name="mode"></param>
         public GdDbBrowserWidget( [NotNull] GdDb db, [CanBeNull] Object selectedObject, Boolean showClearButton = true, EMode mode = EMode.Objects )
         {
-            _db                   = db ?? throw new ArgumentNullException( nameof(db) );
-            _selectedObject       = selectedObject;
+            _db              = db ?? throw new ArgumentNullException( nameof(db) );
+            _selectedObject  = selectedObject;
             _showClearButton = showClearButton;
-            _mode                 = mode;
-            _queryExecutor        = new Executor( _db );
-            _queryParser          = new Parser( _queryExecutor );
+            _mode            = mode;
+            _queryExecutor   = new Queries.Executor( _db );
+            _queryParser     = new Parser( _queryExecutor );
         }
 
         public event Action<GdFolder, ScriptableObject> Selected;
@@ -106,8 +106,8 @@ namespace GDDB.Editor
         private readonly Boolean                         _showClearButton;
         private readonly EMode                           _mode;
 
-        private readonly Executor _queryExecutor;
-        private readonly Parser   _queryParser;
+        private readonly Queries.Executor _queryExecutor;
+        private readonly Parser           _queryParser;
 
         private GdFolder                       _rootFolder; //Root folder for the initial search query. It can be queried further 
         //private List<TreeViewItemData<Object>> _treeItems;

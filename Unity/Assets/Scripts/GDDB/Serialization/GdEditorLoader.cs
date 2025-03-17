@@ -13,7 +13,7 @@ namespace GDDB.Serialization
         /// <summary>
         /// Get all enabled GD Objects
         /// </summary>
-        public readonly IReadOnlyList<ScriptableObject> AllObjects;
+        public readonly IReadOnlyList<GdDb.ObjectSearchIndex> AllObjects;
         public readonly IReadOnlyList<GdFolder>         AllFolders;
 
         public GdEditorLoader(  )
@@ -37,7 +37,7 @@ namespace GDDB.Serialization
                 else
                 {
                     _db        = null;
-                    AllObjects = Array.Empty<ScriptableObject>();
+                    AllObjects = Array.Empty<GdDb.ObjectSearchIndex>();
                     AllFolders = Array.Empty<GdFolder>();
                     Debug.Log( $"[{nameof(GdEditorLoader)}]-[{nameof(GdEditorLoader)}] No GDDB Editor assets found, there is no game design data base in project" );
                 }

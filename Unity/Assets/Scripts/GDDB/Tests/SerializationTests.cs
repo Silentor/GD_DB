@@ -482,7 +482,7 @@ namespace GDDB.Tests
                 //Assert
                 var reader       = GetReader( backend, buffer );
                 var deserializer = new GDObjectDeserializer( reader );
-                var copyObjects  = (GDObject)deserializer.Deserialize( testAssetResolver );
+                var copyObjects  = (GDObject)deserializer.Deserialize( null, testAssetResolver );
                 var copyComp     = copyObjects.GetComponent<UnityAssetReferenceComponent>();
                 copyComp.Texture2D.Should().BeSameAs( testTexture );
                 copyComp.Material.Should().BeSameAs( testMat );
@@ -697,7 +697,7 @@ namespace GDDB.Tests
                 var deserializer = new DBDataSerializer(  );
                 var result = deserializer.Deserialize( reader, NullGdAssetResolver.Instance, out _ );
                 result.rootFolder.Objects.Count.Should().Be( 1 );
-                ( (GDObject)result.objects[ 0 ] ).Components.Count.Should().Be( 3 );
+                ( (GDObject)result.objects[ 0 ].Object ).Components.Count.Should().Be( 3 );
         }
 
         [Test]

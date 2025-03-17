@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using GDDB.Queries;
 using JetBrains.Annotations;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -17,16 +18,19 @@ namespace GDDB
 
         public         GdFolder                  RootFolder { get; }
 
-        public virtual IReadOnlyList<ScriptableObject> AllObjects { get; }
+        public virtual IReadOnlyList<ObjectSearchIndex> AllObjects { get; }
 
-        public GdDb( GdFolder dbStructure, IReadOnlyList<ScriptableObject> allObjects, UInt64 hash = 0 )
+        public GdDb( GdFolder dbStructure, IReadOnlyList<ObjectSearchIndex> allObjects, UInt64 hash = 0 )
         {
             RootFolder = dbStructure;
             //Root       = allObjects.OfType<GDRoot>().Single( );
-            AllObjects = allObjects;
-            Hash       = hash;
-            _queryExecutor = new Executor( this );
-            _queryParser   = new Parser( _queryExecutor );
+            AllObjects         = allObjects;
+            Hash               = hash;
+            _queryExecutor     = new GDDB.Queries.Executor( this );
+            _queryParser       = new Parser( _queryExecutor );
+
+            _objectSearchIndex = allObjects.ToArray();
+            Array.Sort( _objectSearchIndex );                   //Prepare gd object search index, sorted by guid
         }
 
         public IEnumerable<T> GetComponents<T>() where T : GDComponent
@@ -45,7 +49,10 @@ namespace GDDB
         /// <summary>
         /// Query objects by folders/objects path. Glob syntax
         /// </summary>
-        /// <param name="query">Query path of folders and files, supports * and ? wildcard for folder/object names</param>
+        /// <param name="query">Query path of folders and files, supports * and ? wildcard for folder/object names.
+        /// null - return ALL object (like filter is absent).
+        /// empty - return 0 objects (like filter is present but empty).
+        /// </param>
         /// <returns></returns>
         public FindObjectResult FindObjects( String query, List<ScriptableObject> resultObjects, List<GdFolder> resultFolders = null )
         {
@@ -76,15 +83,25 @@ namespace GDDB
             return GetFolder( folderRef.Guid );
         } 
         
-        public GDObject GetObject( GdRef objectId )
+        public ScriptableObject GetObject( GdRef objectId )
         {
-            var guid = objectId.Guid;
-            foreach ( var obj in AllObjects )
-            {
-                if( obj is GDObject gdo && gdo.Guid == guid )
-                    return gdo;
-            }
+            var guid  = objectId.Guid;
+            var index = Array.BinarySearch( _objectSearchIndex, new ObjectSearchIndex( guid, null, null ) );
+            if( index >= 0 )
+                return (GDObject)_objectSearchIndex[ index ].Object; 
         
+            return null;
+        }
+
+        public GdFolder GetObjectFolder( [NotNull] ScriptableObject gdobject )
+        {
+            if ( gdobject == null ) throw new ArgumentNullException( nameof(gdobject) );
+            for ( int i = 0; i < _objectSearchIndex.Length; i++ )
+            {
+                if ( _objectSearchIndex[ i ].Object == gdobject )
+                    return _objectSearchIndex[ i ].Folder;
+            }
+
             return null;
         }
 
@@ -101,8 +118,9 @@ namespace GDDB
             Debug.Log( $"DB name {Name}, Folders {foldersCount}, objects {objectsCount}" );
         }
 
-        private readonly Parser _queryParser;
-        private readonly Executor _queryExecutor;
+        private readonly Parser                     _queryParser;
+        private readonly GDDB.Queries.Executor      _queryExecutor;
+        private readonly ObjectSearchIndex[]        _objectSearchIndex;
         
         private void PrintRecursively(GdFolder folder, int indent, ref Int32 foldersCount, ref Int32 objectsCount )
         {
@@ -121,6 +139,50 @@ namespace GDDB
                     Debug.Log($"  {indentStr}{gdo.name}, type {obj.GetType().Name}, components {gdo.Components.Count}");
                 else
                     Debug.Log($"  {indentStr}{obj.name}, type {obj.GetType().Name}");
+            }
+        }
+
+        public readonly struct ObjectSearchIndex : IComparable<ObjectSearchIndex>, IEquatable<ObjectSearchIndex>
+        {
+            public readonly Guid             Guid;
+            public readonly ScriptableObject Object;
+            public readonly GdFolder         Folder;
+
+            public ObjectSearchIndex(Guid guid, ScriptableObject o, GdFolder folder )
+            {
+                Guid   = guid;
+                Object = o;
+                Folder = folder;
+            }
+
+            public int CompareTo(ObjectSearchIndex other)
+            {
+                return Guid.CompareTo( other.Guid );
+            }
+
+            public bool Equals(ObjectSearchIndex other)
+            {
+                return Guid.Equals( other.Guid );
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is ObjectSearchIndex other && Equals( other );
+            }
+
+            public override int GetHashCode( )
+            {
+                return Guid.GetHashCode();
+            }
+
+            public static bool operator ==(ObjectSearchIndex left, ObjectSearchIndex right)
+            {
+                return left.Equals( right );
+            }
+
+            public static bool operator !=(ObjectSearchIndex left, ObjectSearchIndex right)
+            {
+                return !left.Equals( right );
             }
         }
 

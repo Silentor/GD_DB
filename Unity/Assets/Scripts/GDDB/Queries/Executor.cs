@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace GDDB.Queries
@@ -82,17 +83,48 @@ namespace GDDB.Queries
             ReturnFoldersList( input );
         }
 
-
         public Boolean MatchString( String str, StringToken wildcard )
         {
             var position = 0;
             return wildcard.Match( str, position );
         }
 
+        public (IReadOnlyList<ScriptableObject>, IReadOnlyList<GdFolder>) GetAllObjectsInDB( )
+        {
+            if ( _allObjectsCache == null )
+            {
+                var allObjectsCache = new ScriptableObject[DB.AllObjects.Count];
+                var allFoldersCache = new GdFolder[allObjectsCache.Length];
+                for ( var i = 0; i < allObjectsCache.Length; i++ )
+                {
+                    allObjectsCache[ i ] = DB.AllObjects[ i ].Object;
+                    allFoldersCache[ i ] = DB.AllObjects[ i ].Folder;
+                }
+
+                _allObjectsCache           = allObjectsCache;
+                _allFoldersForObjectsCache = allFoldersCache;
+            }
+
+            return (_allObjectsCache, _allFoldersForObjectsCache);
+        }
+
+        public IReadOnlyList<GdFolder> GetAllFoldersInDB()
+        {
+            if (_allFoldersCache == null)
+            {
+                _allFoldersCache = DB.RootFolder.EnumerateFoldersDFS(true).ToArray();
+            }
+
+            return _allFoldersCache;
+        }
+
         private readonly List<List<GdFolder>>         _folderListsForRent = new (  );
         private readonly List<List<ScriptableObject>> _objectListsForRent = new (  );
-        private Int32 _rentedFoldersCount;
-        private Int32 _rentedObjectsCount;
+        private          Int32                        _rentedFoldersCount;
+        private          Int32                        _rentedObjectsCount;
+        private          ScriptableObject[]           _allObjectsCache;
+        private          GdFolder[]                   _allFoldersForObjectsCache;
+        private          GdFolder[]                   _allFoldersCache;
 
         private List<GdFolder> RentFolderList()
         {

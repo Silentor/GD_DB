@@ -12,8 +12,8 @@ namespace GDDB.Tests
     
     public class QueryHierarchyTokensTests
     {
-        private GdDb     _db;
-        private Executor _executor;
+        private GdDb             _db;
+        private Queries.Executor _executor;
 
         [SetUp]
         public void SetupDatabase()
@@ -34,9 +34,10 @@ namespace GDDB.Tests
               var orcSkinsFolder = GetFolder( "Skins", orcsFolder );
               orcSkinsFolder.Objects.Add( GetAsset( "Chieftan") );
 
-              var allObjects = gddbRoot.EnumerateFoldersDFS().SelectMany( folder => folder.Objects.Select( gdo => gdo ) ).ToList();
-              _db = new GdDb( gddbRoot, allObjects );
-              _executor = new Executor( _db );
+              var allObjects = gddbRoot.EnumerateFoldersDFS().SelectMany( folder => folder.Objects.Select( 
+                      gdo => new GdDb.ObjectSearchIndex( ((GDObject)gdo).Guid, gdo, folder)) ) .ToList();
+              _db       = new GdDb( gddbRoot, allObjects );
+              _executor = new Queries.Executor( _db );
           }
 
         private GDObject GetAsset( String name )
@@ -83,8 +84,9 @@ namespace GDDB.Tests
         [Test]
         public void TestAllFilesInDB()
         {
-            var token = HierarchyToken.Append( new AllFoldersInDBToken( _db ), new AllFilesToken() );
-            var result = FindObjects( token );
+            var queryExecutor = new Queries.Executor( _db );
+            var token         = HierarchyToken.Append( new AllFoldersInDBToken( queryExecutor ), new AllFilesToken() );
+            var result        = FindObjects( token );
             result.Count().Should().Be( 12 );
 
             token  = HierarchyToken.Append( new AllSubfoldersRecursivelyToken( ), new AllFilesToken() );
@@ -115,8 +117,9 @@ namespace GDDB.Tests
         public void TestAllFoldersTokens()
         {
             //Act
-            var folders1 = FindFolders( new AllFoldersInDBToken( _db ) ) ;
-            var folders2 = FindFolders( new AllSubfoldersRecursivelyToken() );
+            var queryExecutor = new Queries.Executor( _db );
+            var folders1      = FindFolders( new AllFoldersInDBToken( queryExecutor ) ) ;
+            var folders2      = FindFolders( new AllSubfoldersRecursivelyToken() );
 
             //Assert
             folders1.Count().Should().Be( 6 );
@@ -164,7 +167,8 @@ namespace GDDB.Tests
         public void TestWildcardFilesToken()
         {
             //Act
-            var objects1 = FindObjects( HierarchyToken.Append( new AllFoldersInDBToken( _db ), new WildcardFilesToken( StringToken.Append( new LiteralToken( "default" ), new AnyTextToken() ), _executor ) ) ) ;
+            var queryExecutor = new Queries.Executor( _db );
+            var objects1 = FindObjects( HierarchyToken.Append( new AllFoldersInDBToken( queryExecutor ), new WildcardFilesToken( StringToken.Append( new LiteralToken( "default" ), new AnyTextToken() ), _executor ) ) ) ;
 
             //Assert
             objects1.Count().Should().Be( 1 );

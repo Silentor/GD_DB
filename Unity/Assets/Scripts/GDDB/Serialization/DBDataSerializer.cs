@@ -100,7 +100,7 @@ namespace GDDB.Serialization
         //     return Deserialize( new StreamReader( jsonFile, Encoding.UTF8, false, 1024, true ), assetsResolver );
         // }
 
-        public (GdFolder rootFolder, IReadOnlyList<ScriptableObject> objects) Deserialize( ReaderBase reader, IGdAssetResolver assetsResolver, out UInt64? hash )
+        public (GdFolder rootFolder, IReadOnlyList<GdDb.ObjectSearchIndex> objects ) Deserialize( ReaderBase reader, IGdAssetResolver assetsResolver, out UInt64? hash )
         {
             _deserializeSampler.Begin();
             var       timer             = System.Diagnostics.Stopwatch.StartNew();
@@ -137,7 +137,7 @@ namespace GDDB.Serialization
                 propName = reader.ReadPropertyName();
             }
 
-            if( propName == ".aliases" && bReader != null )              //Read compression aliases if data is compressed
+            if( propName == ".aliases" && bReader != null )              //Read compression aliases if data is binary
             {
                 var aliases = new List<(Byte, SymbolData)>();
                 reader.ReadStartArray();
@@ -170,7 +170,7 @@ namespace GDDB.Serialization
             Debug.Log( $"[{nameof(DBDataSerializer)}]-[{nameof(Deserialize)}] deserialized db from {reader.GetType().Name}, objects {objectsSerializer.LoadedObjects.Count}, referenced {assetsResolver.Count} assets, time {timer.ElapsedMilliseconds} ms" );
             _deserializeSampler.End();
 
-            return (rootFolder, objectsSerializer.LoadedObjects.Select( lo => lo.GdObject ).ToArray() );
+            return (rootFolder, objectsSerializer.LoadedObjects );
         }
 
 #if UNITY_EDITOR

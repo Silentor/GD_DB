@@ -11,7 +11,7 @@ namespace GDDB.Tests
         [Test]
         public void TestAnyTextParser( )
         {
-            var parser = new Parser( new Executor( null ) );
+            var parser = new Parser( new Queries.Executor( null ) );
             var result = parser.ParseString( "*" ).Flatten();
             result.Count.Should().Be( 1 );
             result[ 0 ].Should().BeOfType<AnyTextToken>(  );
@@ -24,7 +24,7 @@ namespace GDDB.Tests
         [Test]
         public void TestSomeSymbolParser( )
         {
-            var parser = new Parser( new Executor( null ) );
+            var parser = new Parser( new Queries.Executor( null ) );
             var result = parser.ParseString( "?" ).Flatten();
             result.Count.Should().Be( 1 );
             result[ 0 ].Should().BeOfType<SomeSymbolToken>(  ).And.Subject.As<SomeSymbolToken>().SymbolsCount.Should().Be( 1 );
@@ -37,7 +37,7 @@ namespace GDDB.Tests
         [Test]
         public void TestSimpleLiteralParser( )
         {
-            var parser = new Parser( new Executor( null ) );
+            var parser = new Parser( new Queries.Executor( null ) );
             var result = parser.ParseString( "a" ).Flatten();
             result.Count.Should().Be( 1 );
             result[ 0 ].Should().BeOfType<LiteralToken>(  ).And.Subject.As<LiteralToken>().Literal.Should().Be( "a" );
@@ -54,7 +54,7 @@ namespace GDDB.Tests
         [Test]
         public void TestBasicCombinationParser( )
         {
-            var parser = new Parser( new Executor( null ) );
+            var parser = new Parser( new Queries.Executor( null ) );
             var result = parser.ParseString( "a*" ).Flatten();      //Should be optimized to LiteralAndAsterixToken
             result.Count.Should().Be( 1 );
             result[ 0 ].Should().BeOfType<LiteralAndAsterixToken>(  ).And.Subject.As<LiteralAndAsterixToken>().Literal.Should().Be( "a" );

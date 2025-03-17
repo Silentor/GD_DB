@@ -13,6 +13,15 @@ namespace GDDB.Serialization
         public UInt64 Part1;
         [FieldOffset(8)]
         public UInt64 Part2;
+
+        public SerializableGuid(Guid guid ) : this()
+        {
+            Guid = guid;
+        }
+
+        public static implicit operator Guid(SerializableGuid serializableGuid) => serializableGuid.Guid;
+
+        public static implicit operator SerializableGuid(Guid guid) => new SerializableGuid(guid);
     }
 
 #if UNITY_EDITOR

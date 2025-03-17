@@ -126,7 +126,7 @@ namespace GDDB.Serialization
                     reader.ReadStartArray();
                     while ( reader.ReadNextToken() != EToken.EndArray )
                     {
-                        var gdo     = objectSerializer.Deserialize( );
+                        var gdo     = objectSerializer.Deserialize( folder );
                         folder.Objects.Add( gdo );
                     }
                 }

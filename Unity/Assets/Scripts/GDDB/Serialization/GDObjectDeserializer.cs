@@ -25,13 +25,13 @@ namespace GDDB.Serialization
 
         private          IGdAssetResolver                           _assetResolver;
         private readonly List<UnresolvedGDObjectReference>          _unresolvedReferences = new ();
-        private readonly List<GDObjectAndGuid>                      _loadedObjects        = new ();     //To resolve gd objects cross-references
+        private readonly List<GdDb.ObjectSearchIndex>               _loadedObjects        = new ();     //To resolve gd objects cross-references
         private readonly CustomSampler                              _deserObjectSampler   = CustomSampler.Create( $"{nameof(GDObjectDeserializer)}.{nameof(Deserialize)}" );
         private readonly CustomSampler                              _resolveObjectSampler = CustomSampler.Create( $"{nameof(GDObjectDeserializer)}.{nameof(ResolveGDObjectReferences)}" );
         private readonly CustomSampler                              _getTypeConstructorSampler = CustomSampler.Create( $"{nameof(GDObjectDeserializer)}.{nameof(GetTypeConstructor)}" );
         private readonly Dictionary<Type, ConstructorInfo>          _constructorCache     = new();
 
-        public IReadOnlyList<GDObjectAndGuid> LoadedObjects => _loadedObjects;
+        public IReadOnlyList<GdDb.ObjectSearchIndex> LoadedObjects => _loadedObjects;
 
         public GDObjectDeserializer( ReaderBase reader )
         {
@@ -66,14 +66,14 @@ namespace GDDB.Serialization
         /// </summary>
         /// <param name="assetResolver"></param>
         /// <returns></returns>
-        public ScriptableObject Deserialize( IGdAssetResolver? assetResolver = null )
+        public ScriptableObject Deserialize( GdFolder gdfolder = null, IGdAssetResolver? assetResolver = null )
         {
             _assetResolver    = assetResolver ?? NullGdAssetResolver.Instance;
 
             _deserObjectSampler.Begin();
 
             _reader.SeekStartObject(  );
-            var result = ReadGDObject( _reader );
+            var result = ReadGDObject( _reader, gdfolder );
 
             _deserObjectSampler.End();
 
@@ -101,11 +101,11 @@ namespace GDDB.Serialization
                         var result = Array.CreateInstance( unresolvedReference.Field.FieldType.GetElementType(), unresolvedReference.Guids.Count );
                         for ( int i = 0; i < unresolvedReference.Guids.Count; i++ )
                         {
-                            var guid           = unresolvedReference.Guids[i];
-                            var resolvedObjectIndex = _loadedObjects.BinarySearch( new GDObjectAndGuid(){Guid = guid} );
+                            var guid                = unresolvedReference.Guids[i];
+                            var resolvedObjectIndex = _loadedObjects.BinarySearch( new GdDb.ObjectSearchIndex(guid, null, null) );
                             if ( resolvedObjectIndex >= 0 )
                             {
-                                var resolvedObject = _loadedObjects[resolvedObjectIndex].GdObject;
+                                var resolvedObject = _loadedObjects[resolvedObjectIndex].Object;
                                 result.SetValue( resolvedObject, i );
                             }
                             else
@@ -121,7 +121,7 @@ namespace GDDB.Serialization
                         for ( int i = 0; i < unresolvedReference.Guids.Count; i++ )
                         {
                             var guid                = unresolvedReference.Guids[i];
-                            var resolvedObjectIndex = _loadedObjects.BinarySearch( new GDObjectAndGuid(){Guid = guid} );
+                            var resolvedObjectIndex = _loadedObjects.BinarySearch( new GdDb.ObjectSearchIndex(guid, null, null) );
                             if ( resolvedObjectIndex >= 0 )
                             {
                                 var resolvedObject      = _loadedObjects.FirstOrDefault( gdo => gdo.Guid == guid );
@@ -137,10 +137,10 @@ namespace GDDB.Serialization
                 }
                 else                                 //Scalar target field
                 {
-                    var resolvedObjectIndex = _loadedObjects.BinarySearch( new GDObjectAndGuid(){Guid = unresolvedReference.Guid} );
+                    var resolvedObjectIndex = _loadedObjects.BinarySearch( new GdDb.ObjectSearchIndex(unresolvedReference.Guid, null, null) );
                     if ( resolvedObjectIndex >= 0 )
                     {
-                        var resolvedObject      = _loadedObjects[resolvedObjectIndex].GdObject;
+                        var resolvedObject      = _loadedObjects[resolvedObjectIndex].Object;
                         unresolvedReference.Field.SetValue( unresolvedReference.TargetObject, resolvedObject );
                     }
                     else
@@ -152,7 +152,7 @@ namespace GDDB.Serialization
             _resolveObjectSampler.End();
         }
 
-        private ScriptableObject ReadGDObject( ReaderBase reader )
+        private ScriptableObject ReadGDObject( ReaderBase reader, GdFolder folder )
         {
             reader.EnsureStartObject();
             var name = reader.ReadPropertyString( NameTag );
@@ -211,7 +211,7 @@ namespace GDDB.Serialization
                     }
 
                     reader.EnsureEndObject();          
-                    _loadedObjects.Add( new GDObjectAndGuid(){Guid = guid, GdObject = obj} );
+                    _loadedObjects.Add(  new GdDb.ObjectSearchIndex(guid, obj, folder )  );
                     return obj;
                 }
                 catch ( Exception e )
@@ -235,7 +235,7 @@ namespace GDDB.Serialization
                     }
 
                     reader.EnsureEndObject();
-                    _loadedObjects.Add( new GDObjectAndGuid(){Guid = guid, GdObject = obj} );
+                    _loadedObjects.Add( new GdDb.ObjectSearchIndex( guid, obj, folder ) );
                     return obj;
                 }
                 catch ( Exception e )
@@ -385,10 +385,10 @@ namespace GDDB.Serialization
                 var guid                = reader.GetGuidValue();
                 if ( guid == Guid.Empty )
                     return null;
-                var resolvedObjectIndex = _loadedObjects.BinarySearch( new GDObjectAndGuid(){Guid = guid} );
+                var resolvedObjectIndex = _loadedObjects.BinarySearch( new GdDb.ObjectSearchIndex(guid, null, null) );    //FIX still not sorted there
                 if( resolvedObjectIndex >= 0 )
                 {
-                    return _loadedObjects[resolvedObjectIndex].GdObject;
+                    return _loadedObjects[resolvedObjectIndex].Object;
                 }
                 else
                     return new UnresolvedGDObjectReference(){Guid = guid};
