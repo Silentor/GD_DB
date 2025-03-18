@@ -25,7 +25,7 @@ namespace GDDB.Queries
             var inputFolders = RentFolderList();
             inputFolders.Add( rootFolder );
 
-            var loopDefenerCounter = 0;
+            var loopDefenderCounter = 0;
             var currentToken = query;
             while ( currentToken != null )
             {
@@ -45,7 +45,7 @@ namespace GDDB.Queries
                     return;
                 }
 
-                if( loopDefenerCounter++ > 100 )
+                if( loopDefenderCounter++ > 100 )
                     throw new InvalidOperationException( $"[{nameof(Executor)}]-[{nameof(FindObjects)}] too many loops while processing hierarchy, probably there is a loop in hierarchy tokens" );
             }
 

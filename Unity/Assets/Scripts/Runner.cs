@@ -13,6 +13,7 @@ using GeneratedGDDB.Lunch.Thought.Attraction;
 using GeneratedGDDB.Property.Cover.Position;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.Profiling;
 using UnityEngine.Scripting;
 using UnityEngine.UI;
@@ -109,6 +110,15 @@ namespace GDDB_User
             UpdateDebugLabel();
 
             //Benchmarks
+
+            //Prepare some obj types
+            //Get most common types
+            var types = _binaryGDDB.AllObjects.Select( obj => obj.Object.GetType() ).GroupBy( t => t ). OrderByDescending( tg => tg.Count() )
+                                   .Select( tg => new { tg.Key, Count = tg.Count() } ).ToArray();
+
+            //Get folders with most objects
+            var foldersWithManyObjects = _binaryGDDB.AllObjects.Select( ao => ao.Folder ).GroupBy( f => f ).OrderByDescending( fg => fg.Count() ).Select( fg => fg.Key ).ToArray();
+
             for ( int i = 0; i < 3; i++ )
             {
 
@@ -126,11 +136,6 @@ namespace GDDB_User
                 Debug.Log( $"Find object by guid time {timer.Elapsed.TotalMilliseconds * 1000} mks" );
 
                 //Find obj by obj type
-                //Prepare some obj types
-                //Get most common types
-                var types = _binaryGDDB.AllObjects.Select( obj => obj.Object.GetType() ).GroupBy( t => t ). OrderByDescending( tg => tg.Count() )
-                                       .Select( tg => new { tg.Key, Count = tg.Count() } ).ToArray();
-
                 var resultObjects = new List<ScriptableObject>();
                 var resultFolders = new List<GdFolder>();
                 timer.Restart();
@@ -156,6 +161,31 @@ namespace GDDB_User
                 Debug.Log( $"Find objects by main object type, time {timer.Elapsed.TotalMilliseconds * 1000} mks" );
 
                 yield return null;
+
+                //Find objects by query
+                timer.Restart();
+                resultObjects.Clear();
+                resultFolders.Clear();
+                _binaryGDDB.FindObjects( $"{foldersWithManyObjects[ 0 ].GetPath()}/*", resultObjects, resultFolders );
+                Assert.IsTrue( resultObjects.Count > 0 );
+                resultObjects.Clear();
+                resultFolders.Clear();
+                _binaryGDDB.FindObjects( $"{foldersWithManyObjects[ 1 ].GetPath()}/*", resultObjects, resultFolders );
+                Assert.IsTrue( resultObjects.Count > 0 );
+                resultObjects.Clear();
+                resultFolders.Clear();
+                _binaryGDDB.FindObjects( $"{foldersWithManyObjects[ 2 ].GetPath()}/*", resultObjects, resultFolders );
+                Assert.IsTrue( resultObjects.Count > 0 );
+                resultObjects.Clear();
+                resultFolders.Clear();
+                _binaryGDDB.FindObjects( $"{foldersWithManyObjects[ 3 ].GetPath()}/*", resultObjects, resultFolders );
+                Assert.IsTrue( resultObjects.Count > 0 );
+                resultObjects.Clear();
+                resultFolders.Clear();
+                _binaryGDDB.FindObjects( $"{foldersWithManyObjects[ 4 ].GetPath()}/*", resultObjects, resultFolders );
+                Assert.IsTrue( resultObjects.Count > 0 );
+                timer.Stop();
+                Debug.Log( $"Find objects by query, time {timer.Elapsed.TotalMilliseconds * 1000} mks" );
             }
 
 

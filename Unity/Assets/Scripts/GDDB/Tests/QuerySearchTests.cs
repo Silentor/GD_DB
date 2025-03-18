@@ -73,6 +73,13 @@ namespace GDDB.Tests
             return (result, resultFolders);
         }
 
+        private IReadOnlyList<GdFolder> FindFolders( String query )
+        {
+            var result = new List<GdFolder>();
+            _db.FindFolders( query, result );
+            return result;
+        }
+
 
         // private IReadOnlyList<GdFolder> FindFolders( String query )
         // {
@@ -222,5 +229,40 @@ namespace GDDB.Tests
             //Assert
             orcSkinFolder.GetPath().Should().Be( "GdDb/Mobs/Orcs/Skins" );
         }
+
+        [Test]
+        public void TestFindFolderByFullPath( )
+        {
+            //Act
+            var folder      = FindFolders( "GdDb/Mobs/Orcs/Skins" );      
+
+            //Assert
+            folder.Count.Should().Be( 1 );
+            folder[ 0 ].GetPath().Should().Be( "GdDb/Mobs/Orcs/Skins" );
+        }
+
+        [Test]
+        public void TestFindFolderByShortPath( )
+        {
+            //Act
+            var folder      = FindFolders( "/Mobs/Orcs/Skins" );      
+
+            //Assert
+            folder.Count.Should().Be( 1 );
+            folder[ 0 ].GetPath().Should().Be( "GdDb/Mobs/Orcs/Skins" );
+        }
+
+        [Test]
+        public void TestFindFolderByShortPath2( )
+        {
+            //Act
+            var folder      = FindFolders( "Mobs/Orcs/Skins" );      
+
+            //Assert
+            folder.Count.Should().Be( 1 );
+            folder[ 0 ].GetPath().Should().Be( "GdDb/Mobs/Orcs/Skins" );
+        }
+
+
     }
 }

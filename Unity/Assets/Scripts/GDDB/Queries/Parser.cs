@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 
 namespace GDDB.Queries
 {
@@ -18,10 +19,12 @@ namespace GDDB.Queries
     {
         private readonly Executor             _executor;
         private readonly List<HierarchyToken> _buffer = new (  );
+        private          String               _rootFolderName;
 
-        public Parser( Executor executor )
+        public Parser( [NotNull] Executor executor )
         {
-            _executor = executor;
+            _executor       = executor ?? throw new ArgumentNullException( nameof(executor) );
+            _rootFolderName = executor.DB != null ? executor.DB.RootFolder.Name : String.Empty;
         }
 
         public HierarchyToken ParseObjectsQuery( String query )
@@ -37,7 +40,7 @@ namespace GDDB.Queries
             for ( int i = 0; i < parts.Length; i++ )
             {
                 if( i < parts.Length - 1 )
-                    _buffer.Add( ParseFolderToken( parts[ i ] ) );
+                    _buffer.Add( ParseFolderToken( parts[ i ], i ) );
                 else
                     _buffer.Add( ParseObjectsToken( parts[ i ] ) );                
             }
@@ -88,7 +91,7 @@ namespace GDDB.Queries
             _buffer.Clear();
             for ( int i = 0; i < parts.Length; i++ )
             {
-                _buffer.Add( ParseFolderToken( parts[ i ] ) );
+                _buffer.Add( ParseFolderToken( parts[ i ], i ) );
             }
     
             //Optimizing syntax "tree"
@@ -167,9 +170,11 @@ namespace GDDB.Queries
             return result;
         }
         
-        private FolderToken ParseFolderToken( String queryPart )
+        private FolderToken ParseFolderToken( String queryPart, Int32 index )
         {
-            if ( queryPart == String.Empty )
+            if ( index == 0 && queryPart == _rootFolderName )       //Ignore explicit root folder name (for now)
+                return new IdentityFolderToken();
+            else if ( queryPart == String.Empty )
                 return new IdentityFolderToken();
             else if( queryPart == "*" )
                 return new AllSubfoldersToken();
