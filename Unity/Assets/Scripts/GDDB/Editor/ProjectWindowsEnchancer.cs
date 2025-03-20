@@ -10,7 +10,7 @@ using Object = System.Object;
 namespace GDDB.Editor
 {
     /// <summary>
-    /// Draws validation errors and some icons in the project window
+    /// Draws validation errors and some state icons in the project window
     /// </summary>
     [InitializeOnLoad]
     public static class ProjectWindowsEnchancer 
@@ -20,25 +20,17 @@ namespace GDDB.Editor
 
         static ProjectWindowsEnchancer()
         {
-            //TypeHierarchy = new GDTypeHierarchy();
-            //GDOFinder     = new GDObjectsFinder();
-
             EditorApplication.projectWindowItemInstanceOnGUI += DrawIconsHandler;
             //EditorApplication.projectWindowItemOnGUI += DrawIcons2;
 
-            GDObjectEditor.Changed += GDObjectEditorOnChanged;
-            GDAssetProcessor.GDDBAssetsChanged.Subscribe( 1000, GbbdStructureChanged );
+            GDObjectEditor.Changed += _ => InvalidateAndRepaint();                 //Unsaved changes in GDObject can change icons or validation state
+            EditorDB.Updated       += InvalidateAndRepaint;                //React to DB changes
         }
 
-        private static void GbbdStructureChanged( IReadOnlyList<GDObject> changedObjects, IReadOnlyList<String> deletedObjects )
+        private static void InvalidateAndRepaint( )
         {
             GdTypeCache.Clear();
-        }
-
-        private static void GDObjectEditorOnChanged( GDObject obj )
-        {
-            GdTypeCache.Clear();
-            //GDOFinder.Reload();
+            EditorApplication.RepaintProjectWindow();
         }
 
         private static void DrawIconsHandler(Int32 instanceid, Rect rect )
@@ -169,6 +161,9 @@ namespace GDDB.Editor
 
         private static ItemData GetItemData( Int32 instanceId )
         {
+            if( EditorDB.DB == null )
+                return ItemData.Empty;
+
             if( GdTypeCache.TryGetValue( instanceId, out var itemData ) )
                 return itemData;
 
@@ -177,45 +172,46 @@ namespace GDDB.Editor
             if ( asset )
             {
                 var editorDB = EditorDB.DB;
-                if( editorDB.AllObjects.Count == 0 )
-                {
-                    itemData.DebugName = "GDDB is empty";
-                    GdTypeCache.Add( instanceId, itemData );
-                    return itemData;
-                }
-
                 itemData.DebugName = asset.name;
-                var rootFolder  = EditorDB.DB.RootFolder;
-                if ( asset is DefaultAsset folderAsset )
+                if ( asset is DefaultAsset folderAsset )                      //Process folders
                 {
-                    var folderGuid = new Guid( AssetDatabase.AssetPathToGUID( AssetDatabase.GetAssetPath( folderAsset ) ) );
-                    if( folderGuid == rootFolder.FolderGuid )
+                    var folderState = EditorDB.GetFolderState( folderAsset );
+                    if ( folderState != EditorDB.EEnabledState.NotInGddb )                 //Skip ordinary folder outside Gddb
                     {
-                        itemData.IsGDRootFolder = true;
-                    }
+                        if ( folderState == EditorDB.EEnabledState.DisabledSelf || folderState == EditorDB.EEnabledState.DisabledInParent )
+                            itemData.DisabledObject = true;
+                        else
+                        {
+                            var folderPath = AssetDatabase.GetAssetPath( folderAsset );
+                            var folderGuid = Guid.ParseExact( AssetDatabase.AssetPathToGUID( folderPath ), "N" );
+                            var gddbFolder = editorDB.GetFolder( folderGuid ); 
+                            if ( gddbFolder == editorDB.RootFolder )
+                                itemData.IsGDRootFolder = true;
 
-                    if ( Validator.Reports.TryFirst( r => r.Folder.EnumeratePath().Any( f => f.FolderGuid == folderGuid ), out var report ) )
-                    {
-                        itemData.InvalidGDObject         = true;
-                        itemData.InvalidGDOCustomTooltip = "There are errors in GDObjects in this folder";
+                            if ( Validator.Reports.TryFirst( r => r.Folder.EnumeratePath().Any( f => f == gddbFolder ), out var report ) )
+                            {
+                                itemData.InvalidGDObject         = true;
+                                itemData.InvalidGDOCustomTooltip = "There are errors in GDObjects in this folder";
+                            }
+                        }
                     }
                 }
-                else if( asset is GDObject gdoAsset )
+                else if( asset is ScriptableObject so )                    //Process objects
                 {
-                    if ( !gdoAsset.EnabledObject )
+                    var objState = EditorDB.GetObjectState( so );
+                    if ( objState != EditorDB.EEnabledState.NotInGddb )
                     {
-                        itemData.DisabledObject = true;
-                    }
-                    else
-                    {
-                        if ( gdoAsset is GDRoot )
+                        if( objState == EditorDB.EEnabledState.DisabledSelf || objState == EditorDB.EEnabledState.DisabledInParent )
+                            itemData.DisabledObject = true;
+
+                        if ( so is GDRoot )
                         {
                             itemData.IsGDRootObject = true;
                         }
 
-                        if ( Validator.Reports.TryFirst( r => r.GdObject == gdoAsset, out var report ))
+                        if ( Validator.Reports.TryFirst( r => r.GdObject == so, out var report ))
                         {
-                            itemData.InvalidGDObject = true;
+                            itemData.InvalidGDObject         = true;
                             itemData.InvalidGDOCustomTooltip = report.Message;
                         }
                     }
@@ -312,6 +308,8 @@ namespace GDDB.Editor
             public String  GDTypeString;
             public Single  GDObjectNameWidth;
             public Single  GDTypeStrWidth;
+
+            public static readonly ItemData Empty = new ItemData();
         }
     }
 }

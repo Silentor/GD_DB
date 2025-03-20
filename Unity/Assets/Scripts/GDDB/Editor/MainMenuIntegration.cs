@@ -37,9 +37,9 @@ namespace GDDB.Editor
         private static void PrintHierarchyToConsole( )
         {
             var  parser  = new GdDbAssetsParser();
-            if ( parser.Parse() )
+            if ( parser.Root != null )
             {
-                Debug.Log( $"Root folder: {parser.Root.GetPath()}, folder checksum {parser.Root.GetFoldersChecksum()}" );
+                Debug.Log( $"Root folder: {parser.RootFolderPath}, folder checksum {parser.Root.GetFoldersChecksum()}" );
                 var       hierarchyStr = parser.Root.ToHierarchyString();
                 using var stringReader = new System.IO.StringReader( hierarchyStr );
                 while ( stringReader.ReadLine() is { } line )

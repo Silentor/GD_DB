@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using GDDB.Queries;
 using JetBrains.Annotations;
-using UnityEditor;
 using UnityEngine;
-using UnityEngine.Assertions;
 
 namespace GDDB
 {
@@ -26,7 +23,7 @@ namespace GDDB
             //Root       = allObjects.OfType<GDRoot>().Single( );
             AllObjects         = allObjects;
             Hash               = hash;
-            _queryExecutor     = new GDDB.Queries.Executor( this );
+            _queryExecutor     = new Executor( this );
             _queryParser       = new Parser( _queryExecutor );
 
             _objectSearchIndex = allObjects.ToArray();
@@ -93,7 +90,7 @@ namespace GDDB
             return null;
         }
 
-        public GdFolder GetObjectFolder( [NotNull] ScriptableObject gdobject )
+        public GdFolder GetFolder( [NotNull] ScriptableObject gdobject )
         {
             if ( gdobject == null ) throw new ArgumentNullException( nameof(gdobject) );
             for ( int i = 0; i < _objectSearchIndex.Length; i++ )
@@ -119,7 +116,7 @@ namespace GDDB
         }
 
         private readonly Parser                     _queryParser;
-        private readonly GDDB.Queries.Executor      _queryExecutor;
+        private readonly Executor      _queryExecutor;
         private readonly ObjectSearchIndex[]        _objectSearchIndex;
         
         private void PrintRecursively(GdFolder folder, int indent, ref Int32 foldersCount, ref Int32 objectsCount )

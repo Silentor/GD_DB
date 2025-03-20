@@ -18,7 +18,7 @@ namespace GDDB.Editor
     {
         //Additional file to generate sources from
         private static readonly String  GDDBStructureFileName = "Structure.GdDbSourceGen.additionalfile";
-        private static readonly String  DefaultStructureFilePath = "Assets/Settings/";
+        private static readonly String  DefaultStructureFilePath = "Assets/Settings/Gddb";
         private static SourceGeneratorSettings Settings => SourceGeneratorSettings.instance;
 
         public static event Action SourceUpdated;
@@ -90,8 +90,11 @@ namespace GDDB.Editor
 
         public static void GenerateGDBSource( Boolean forceRegenerate = false )
         {
-            if( EditorDB.DB == null )
+            if ( EditorDB.DB == null )
+            {
+                //todo remove source gen input file if no db
                 return;
+            }
 
             var databaseHash = EditorDB.DB.RootFolder.GetFoldersChecksum();
             var generatedHash = GetGeneratedFileChecksum();

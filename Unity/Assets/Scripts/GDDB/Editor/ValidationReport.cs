@@ -1,10 +1,11 @@
 ﻿using System;
+using UnityEngine;
 
 namespace GDDB
 {
     public class ValidationReport
     {
-        public ValidationReport( GdFolder folder, GDObject gdo, String message )
+        public ValidationReport( GdFolder folder, ScriptableObject gdo, String message )
         {
             Folder    = folder;
             GdObject  = gdo;
@@ -12,14 +13,14 @@ namespace GDDB
             //IsWarning = isWarning;
         }
 
-        public GdFolder       Folder      { get; }
-        public GDObject     GdObject    { get; }
-        public String       Message     { get; }
+        public GdFolder             Folder      { get; }
+        public ScriptableObject     GdObject    { get; }
+        public String               Message     { get; }
         //public Boolean IsWarning { get; }
 
         public override String ToString( )
         {
-            return $"{Folder.GetPath()}/{GdObject.Name}: {Message}";
+            return $"{Folder.GetPath()}/{GdObject.name}: {Message}";
         }
     }
 }

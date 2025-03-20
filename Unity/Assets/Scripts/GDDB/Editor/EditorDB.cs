@@ -9,43 +9,27 @@ using GDDB;
 namespace GDDB.Editor
 {
     /// <summary>
-    /// Editor static access to cached GDB
+    /// Access to cached Gddb for editor purposes
     /// </summary>
     [InitializeOnLoad]
     public class EditorDB
     {
-
         static EditorDB( )
         {
-            GDAssetProcessor.GDDBAssetsChanged.Subscribe( -1000, OnGddbStructureChanged );     //Update editor GDDB instance, so it need to be first call
+            GDAssetProcessor.GDDBAssetsChanged.Subscribe( -1000, OnGddbStructureChanged );     //React to changes in GDObjects assets
+            FolderEditor.Updated += UpdateState;
+            UpdateState();
         }
 
-        public static IReadOnlyList<ScriptableObject> AllObjects
-        {
-            get
-            {
-                UpdateState();
-                return _allObjects;
-            }
-        }
+        public static IReadOnlyList<ScriptableObject> AllObjects => _allObjects;
 
-        public static IReadOnlyList<GdFolder> AllFolders
-        {
-            get
-            {
-                UpdateState();
-                return _allFolders;
-            }
-        }
+        public static IReadOnlyList<GdFolder> AllFolders => _allFolders;
 
-        public static GdDb DB
-        {
-            get
-            {
-                UpdateState();
-                return _gbd;
-            }
-        }
+        public static IReadOnlyList<String> DisabledFolders => _disabledFolders;
+
+        public static String RootFolderPath => _rootFolderPath;
+
+        public static GdDb DB => _gbd;
 
         public static Guid GetGDObjectGuid( ScriptableObject obj )
         {
@@ -57,30 +41,90 @@ namespace GDDB.Editor
                 return Guid.Empty;
         }
 
+        public static EEnabledState GetFolderState( UnityEngine.Object folderAsset )
+        {
+            if ( DB == null )
+                return EEnabledState.NotInGddb;
+
+            var path   = AssetDatabase.GetAssetPath( folderAsset );
+            if ( !path.StartsWith( RootFolderPath, StringComparison.Ordinal ) )
+                return EEnabledState.NotInGddb;
+
+            var labels = AssetDatabase.GetLabels( folderAsset );
+            if( Array.IndexOf( labels, GdDbAssetsParser.GddbFolderDisabledLabel ) >= 0 )
+                return EEnabledState.DisabledSelf;
+            else
+            {
+                
+                foreach ( var disabledFolder in DisabledFolders )
+                {
+                    if ( path.StartsWith( disabledFolder ) )
+                        return EEnabledState.DisabledInParent;
+                }
+            }
+
+            return EEnabledState.Enabled;
+        }
+
+        public static EEnabledState GetObjectState( ScriptableObject objectAsset )
+        {
+            if ( DB == null )
+                return EEnabledState.NotInGddb;
+
+            var path   = AssetDatabase.GetAssetPath( objectAsset );
+            if ( !path.StartsWith( RootFolderPath, StringComparison.Ordinal ) )
+                return EEnabledState.NotInGddb;
+
+            if ( objectAsset is GDObject gdo && !gdo.EnabledObject )
+                return EEnabledState.DisabledSelf;
+            else
+            {
+                foreach ( var disabledFolder in DisabledFolders )
+                {
+                    if ( path.StartsWith( disabledFolder ) )
+                        return EEnabledState.DisabledInParent;
+                }
+            }
+
+            return EEnabledState.Enabled;
+        }
+
+        /// <summary>
+        /// Editor GDDB was updated due to changed GDObjects assets (or folders)
+        /// </summary>
         public static event Action Updated;
 
+        public enum EEnabledState
+        {
+            Enabled,
+            DisabledSelf,
+            DisabledInParent,
+            NotInGddb
+        }
+
         private static GdDb                            _gbd;
-        private static Boolean                         _isGDAssetsChanged = true;
         private static IReadOnlyList<ScriptableObject> _allObjects;
         private static IReadOnlyList<GdFolder>         _allFolders;
+        private static IReadOnlyList<String>           _disabledFolders;
+        private static String _rootFolderPath;
 
         private static void UpdateState( )
         {
-            if( _isGDAssetsChanged )
-            {
-                var loader = new GdEditorLoader();
-                _gbd               = loader.GetGameDataBase();
-                _allObjects        = loader.AllObjects.Select( obj => obj.Object ).ToList();
-                _allFolders        = loader.AllFolders;
-                _isGDAssetsChanged = false;
-            }
+            Debug.Log( $"[{nameof(EditorDB)}]-[{nameof(UpdateState)}] updating editor Gddb" );
+
+            var loader = new GdEditorLoader();
+            _gbd               = loader.GetGameDataBase();
+            _allObjects        = loader.AllObjects?.Select( obj => obj.Object ).ToList();
+            _allFolders        = loader.AllFolders;
+            _disabledFolders   = loader.DisabledFolders;
+            _rootFolderPath    = loader.RootFolderPath;
+
+            Updated?.Invoke();
         }
 
         private static void OnGddbStructureChanged(IReadOnlyList<GDObject> changedObjects, IReadOnlyList<String> deletedObjects )
         {
-            Debug.Log( $"[{nameof(EditorDB)}]-[{nameof(OnGddbStructureChanged)}] Editor GDB instance will be recreated due to changed GDObjects assets " );
-            _isGDAssetsChanged = true;
-            Updated?.Invoke();
+            UpdateState();
         }
     }
 }

@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using Unity.Collections.LowLevel.Unsafe;
 using Debug = UnityEngine.Debug;
+using UnityEngine;
 
 #if UNITY_EDITOR
 using UnityEditor;
-using UnityEngine;
 #endif
 
 namespace GDDB.Editor
@@ -13,32 +12,36 @@ namespace GDDB.Editor
 #if UNITY_EDITOR
 
     /// <summary>
-    /// Creates GDDB DOM from folders and GDO assets structure. Starts from Assets/ folder
-    /// Works only in Editor
+    /// Creates GDDB DOM tree from folders and files
+    /// Uses AssetDatabase, works only in Editor
     /// </summary>
     public class GdDbAssetsParser
     {
         public GdFolder Root           { get; private set; }
 
+        public String RootFolderPath    { get; private set; }
+
         public IReadOnlyList<GdDb.ObjectSearchIndex> AllObjects =>  _allObjects;
         public IReadOnlyList<GdFolder>               AllFolders =>  _allFolders;
 
         /// <summary>
-        /// Equivalent to Unity's Assets folder.
+        /// Assets-based paths of disabled Gddb folders 
         /// </summary>
-        public static readonly Guid AssetsFolderGuid = Guid.ParseExact( "00000000-0000-0000-1000-000000000000", "D" );
+        public IReadOnlyList<String>                 DisabledFolders => _disabledFolders;
 
+        public const String GddbFolderDisabledLabel = "GddbDisabled";
 
         /// <summary>
         /// Parse physical folder structure
         /// </summary>
-        public Boolean Parse( )
+        public GdDbAssetsParser( )
         {
             var timer = System.Diagnostics.Stopwatch.StartNew();
             var disabledObjects = 0;
 
             _allObjects.Clear();
             _allFolders.Clear();
+            _disabledFolders.Clear();
 
             //Find GD Root object
             var rootsIds = AssetDatabase.FindAssets("t:GDRoot", new []{"Assets/"});   //Skip packages, consider collect GDObjects from Packages?
@@ -54,19 +57,19 @@ namespace GDDB.Editor
             if( gdroots.Count == 0 )
             {
                 Debug.LogError( $"[{nameof(GdDbAssetsParser)}] No database assets found. Please add GDRoot object to the folder with game design data files (ScriptableObjects and GDObjects)" );
-                return false;
+                return;
             }
             else if( gdroots.Count > 1 )     //todo implement several roots support
             {
                 Debug.LogError( $"[{nameof(GdDbAssetsParser)}] Multiple database assets found, only one supported. Will use {AssetDatabase.GetAssetPath( gdroots[0] )} as a root" );
             }
 
-            var rootObjectPath = AssetDatabase.GetAssetPath( gdroots[0] );
-            var rootFolderPath = System.IO.Path.GetDirectoryName( rootObjectPath );
             var rootObject     = gdroots[0];
-            var dbId = rootObject.Id;
+            var rootObjectPath = AssetDatabase.GetAssetPath( rootObject );
+            var rootFolderPath = GetDirectoryName( rootObjectPath );
+            //var dbId = rootObject.Id;
 
-            //Get all GDObjects under root
+            //Collect all GDObjects under root
             var gdoids        = AssetDatabase.FindAssets("t:ScriptableObject", new []{rootFolderPath});   //Skip packages, consider collect GDObjects from Packages?
             var gdos = new GDObjectPath[gdoids.Length];
             for ( var i = 0; i < gdoids.Length; i++ )
@@ -79,65 +82,39 @@ namespace GDDB.Editor
                           };    
             }
 
-            //Assign Assets folder guid for consistency (Unity is not counts Assets as a folder asset  )
-            var assetsFolder = new GdFolder( "Assets", AssetsFolderGuid );
-            var foldersCache = new List<(Guid, String )> { (assetsFolder.FolderGuid, assetsFolder.Name ) };
-
-            //Add GDObjects to hierarchy
-            var addedObjectCount = 0;
+            //Add GDObjects and build hierarchy
+            var rootFolder           = new GdFolder( GetFileName( rootFolderPath ), GetFolderGuid( rootFolderPath ) );
+            var rootFolderPartsCount = CharCount( rootFolderPath, '/' ) + 1;  
+            var rootFolderParentPath = GetDirectoryName( rootFolderPath );
             _allObjects.Capacity      = gdos.Length;
+            _allFolders.Add( rootFolder );
             for ( var i = 0; i < gdos.Length; i++ )
             {
                 var gdoData  = gdos[ i ];
                 var gdobject = AssetDatabase.LoadAssetAtPath<ScriptableObject>( gdoData.Path );
-                if ( gdobject is GDObject gdo && !gdo.EnabledObject )
+                if ( IsGdObjectDisabled( gdobject, gdoData.Path ) )
                 {
                     disabledObjects++;
                     continue;
                 }
                 
-                var folder  = GetOrCreateFolderForSplittedPath( assetsFolder, Split( gdoData.Path ), foldersCache );
+                var folder  = GetOrCreateFolderForSplittedPath( rootFolder, rootFolderParentPath, rootFolderPartsCount, gdoData.Path );
+                if ( folder == null )        //Disabled folder found
+                {
+                    disabledObjects++;
+                    continue;
+                }
+
                 folder.Objects.Add( gdobject );
                 _allObjects.Add( new GdDb.ObjectSearchIndex( Guid.ParseExact( gdos[i].Guid, "N" ), gdobject, folder ) );
-                addedObjectCount++;
             }
 
-            if( addedObjectCount == 0 )
-            {
-                _allObjects.Clear();
-                _allFolders.Clear();
-                Root  = assetsFolder;
-                Debug.LogWarning( $"[{nameof(GdDbAssetsParser)}] No enabled GDObjects found, impossible to parse game data base" );
-                return false;
-            }
-
-            //Calculate GDB root folder
-            foreach ( var folder in assetsFolder.EnumerateFoldersDFS(  ) )
-            {
-                if ( folder.Objects.Count > 0 || folder.SubFolders.Count > 1 )
-                {
-                    Root        = folder;
-                    Root.Parent = null;
-                    break;
-                }
-            }
-
-            CalculateDepth( Root );
-
-            _allFolders.Clear();
-            foreach ( var folder in Root.EnumerateFoldersDFS(  ) )            
-                _allFolders.Add( folder );
+            CalculateDepth( rootFolder );
+            Root           = rootFolder;
+            RootFolderPath = rootFolderPath;
 
             timer.Stop();
-            Debug.Log( $"[{nameof(GdDbAssetsParser)}]-[{nameof(Parse)}] processed {gdos.Length} GDObject assets, added {addedObjectCount} GDObjects and {_allFolders.Count} folders, disabled {disabledObjects} objects, root folder {rootFolderPath}, time {timer.ElapsedMilliseconds} ms" );
-
-            return true;
-        }
-
-        public void DebugParse( GdFolder presetHierarchy )
-        {
-            Root = presetHierarchy;
-            CalculateDepth( Root );
+            Debug.Log( $"[{nameof(GdDbAssetsParser)}] found GD database at {rootFolderPath}: processed {gdos.Length} GDObject assets, added {_allObjects.Count} GDObjects and {_allFolders.Count} folders, disabled {disabledObjects} objects, time {timer.ElapsedMilliseconds} ms" );
         }
 
         private void CalculateDepth( GdFolder root )
@@ -150,62 +127,29 @@ namespace GDDB.Editor
             }
         }
 
-        /// <summary>
-        /// Get most common folder for all GDObjects
-        /// </summary>
-        /// <param name="gdos"></param>
-        /// <returns></returns>
-        private String GetGdDbRootFolder( out GDObjectPath[] gdos )
+        private GdFolder GetOrCreateFolderForSplittedPath( GdFolder root, String rootFolderParentPath, Int32 rootFolderParts, String objectPath )
         {
-            //Get all GDObjects
-            var gdoids        = AssetDatabase.FindAssets("t:GDObject", new []{"Assets/"});   //Skip packages, consider collect GDObjects from Packages?
-            if( gdoids.Length == 0 )
-            {
-                Debug.LogError( $"[{nameof(GdDbAssetsParser)}] No GDObjects found, impossible to parse game data base" );
-                gdos = Array.Empty<GDObjectPath>();
-                return null;
-            }
+            var splittedPath = objectPath.Split( '/' );
 
-            gdos = new GDObjectPath[gdoids.Length];
-            for ( var i = 0; i < gdoids.Length; i++ )
-            {
-                var path = AssetDatabase.GUIDToAssetPath( gdoids[ i ] );
-                gdos[i] = new GDObjectPath
-                          {
-                                  Path      = path,
-                                  Guid      = gdoids[i]
-                          };    
-            }
-
-            var mostCommonFolderArray = GetDirectoryName( gdos[0].Path ).Split( '/' );
-            var mostCommonFolder      = new ArraySegment<String>( mostCommonFolderArray ); 
-            for ( var i = 1; i < gdos.Length; i++ )
-            {
-                mostCommonFolder = GetMostCommonFolder( mostCommonFolder, new PathPartsEnumerator( gdos[i].Path, true ) );    
-            }
-
-            var result = String.Join( '/', mostCommonFolder );
-
-            return result;
-        }
-
-        private GdFolder GetOrCreateFolderForSplittedPath( GdFolder root, String[] splittedObjectPath, List<(Guid, String)> foldersCache )
-        {
-            //Create folders hierarchy
+            //Create folders hierarchy for the object from the top
             var parentFolder = root;
-            for ( var i = 1; i < splittedObjectPath.Length; i++ )//Skip root folder (because root folder definitely exists)
+            for ( var i = rootFolderParts; i < splittedPath.Length - 1; i++ )  //Skip root folder and asset filename name
             {
-                var pathPart = splittedObjectPath[ i ];
-                if(  i == splittedObjectPath.Length - 1 && System.IO.Path.HasExtension( pathPart) )             //Skip asset file name
-                    continue;
-
-                var folder = parentFolder.SubFolders.Find( f => f.Name == pathPart );
+                var folderName = splittedPath[ i ];
+                var folder = parentFolder.SubFolders.Find( f => f.Name == folderName );
                 if ( folder == null )
                 {
-                    var newFolderPath = String.Concat( parentFolder.GetPath(), "/", pathPart );
-                    var newFolderGuid = GetFolderGuid( newFolderPath, foldersCache );
-                    folder = new GdFolder( pathPart, newFolderGuid, parentFolder );
-                    //_allFolders.Add( folder );
+                    var newFolderAssetsBasePath = String.Concat( rootFolderParentPath, "/", parentFolder.GetPath(), "/", folderName );
+                    //Check if new folder is disabled
+                    if ( IsFolderSelfDisabled( newFolderAssetsBasePath ) )
+                    {
+                        _disabledFolders.Add( newFolderAssetsBasePath );
+                        return null;                            //Do not create disabled folders
+                    }
+
+                    var newFolderGuid           = AssetPath2Guid( newFolderAssetsBasePath );
+                    folder = new GdFolder( folderName, newFolderGuid, parentFolder );
+                    _allFolders.Add( folder );
                 }
 
                 parentFolder = folder;
@@ -214,18 +158,9 @@ namespace GDDB.Editor
             return parentFolder;
         }
 
-        private Guid GetFolderGuid( String folderPath, List<(Guid, String)> foldersCache )
+        private Guid GetFolderGuid( String assetPath )
         {
-            Guid result;
-            var  folderData = foldersCache.Find( f => f.Item2 == folderPath );
-            if ( folderData.Item1 == Guid.Empty )
-            {
-                result = AssetPath2Guid( folderPath  );
-                foldersCache.Add( (result, folderPath) );
-            }
-            else
-                result = folderData.Item1;
-
+            var result = AssetPath2Guid( assetPath  );
             return result;
         } 
 
@@ -244,9 +179,8 @@ namespace GDDB.Editor
 
         private static Guid AssetPath2Guid( String assetPath )
         {
-            var unityGuid = AssetDatabase.GUIDFromAssetPath( assetPath );
-            var guidStr   = unityGuid.ToString( );
-            var clrGuid   = Guid.ParseExact( guidStr, "N" );
+            var unityGuid = AssetDatabase.AssetPathToGUID( assetPath );
+            var clrGuid   = Guid.ParseExact( unityGuid, "N" );
             //var clrGuid   = UnsafeUtility.As<GUID, Guid>( ref unityGuid ); do not work directly
             return clrGuid;
         }
@@ -267,7 +201,34 @@ namespace GDDB.Editor
         private static String GetDirectoryName( String path )
         {
             var lastSlashIndex = path.LastIndexOf( '/' );
-            return path.Substring( 0, lastSlashIndex );
+            return path[ ..lastSlashIndex ];
+        }
+
+        private static String GetFileName( String path )
+        {
+            var lastSlashIndex = path.LastIndexOf( '/' );
+            return path[ (lastSlashIndex + 1).. ];
+        }
+
+        private Boolean IsGdObjectDisabled( ScriptableObject gdObject, String path )
+        {
+            if ( gdObject is GDObject gdo && !gdo.EnabledObject )
+                return true;
+
+            foreach ( var disabledFolder in _disabledFolders )
+            {
+                if ( path.StartsWith( disabledFolder ) )
+                    return true;
+            }
+
+            return false;
+        }
+
+        public static Boolean IsFolderSelfDisabled( String folderPath )
+        {
+            var folderGuid = AssetDatabase.GUIDFromAssetPath( folderPath );
+            var labels     = AssetDatabase.GetLabels( folderGuid );
+            return Array.IndexOf( labels, GddbFolderDisabledLabel ) >= 0;
         }
 
         public Boolean StartsWith( IReadOnlyList<String> myFolder, IReadOnlyList<String> otherFolder )
@@ -284,7 +245,7 @@ namespace GDDB.Editor
             return true;
         }
 
-        public  ArraySegment<String> GetMostCommonFolder( ArraySegment<String> mostCommonFolder, PathPartsEnumerator anotherPath )
+        private  ArraySegment<String> GetMostCommonFolder( ArraySegment<String> mostCommonFolder, PathPartsEnumerator anotherPath )
         {
             var i = 0;
             while ( anotherPath.MoveNext() && i < mostCommonFolder.Count )
@@ -299,8 +260,9 @@ namespace GDDB.Editor
             return new ArraySegment<String>( mostCommonFolder.Array, 0, i ); 
         }
 
-        private readonly List<GdDb.ObjectSearchIndex> _allObjects = new ();
-        private readonly List<GdFolder>               _allFolders = new ();
+        private readonly List<GdDb.ObjectSearchIndex> _allObjects      = new ();
+        private readonly List<GdFolder>               _allFolders      = new ();
+        private readonly List<String>                 _disabledFolders = new();
 
         private struct GDObjectPath
         {

@@ -18,9 +18,10 @@ namespace GDDB.Editor
 
         static Validator( )
         {
-            GDAssetProcessor.GDDBAssetsChanged.Subscribe( 500, OnGDDBChanged );      //After editor GDDB updated and Before project window drawer
-            OnGDDBChanged( Array.Empty<GDObject>(), ArraySegment<String>.Empty );
+            //GDAssetProcessor.GDDBAssetsChanged.Subscribe( 500, OnGDDBChanged );      
+            EditorDB.Updated += ( ) => Validate();                      //After editor GDDB updated and Before project window drawer
             GDObjectEditor.Changed += _ => Validate();
+            Validate();
         }
 
         private static readonly List<ValidationReport> _reports = new();
@@ -29,23 +30,20 @@ namespace GDDB.Editor
         {
             var gddb    = EditorDB.DB;
             _reports.Clear();
-
-            if (  gddb == null )                                    //No GDDB in project
-                return Array.Empty<ValidationReport>();
+            if ( gddb == null )                                    //No GDDB in project
+                return    _reports;
 
             var timer            = DateTime.Now;
             int validatedCounter = 0;
+
+            DefaultBDValidations( gddb, _reports );
 
             foreach ( var folder in gddb.RootFolder.EnumerateFoldersDFS(  ) )
             {
                 foreach ( var obj in folder.Objects )
                 {
-                    if ( obj is GDObject gdo )
-                    {
-                        if ( !gdo.EnabledObject ) continue;
-                        DefaultGDOValidations( gdo, folder, _reports );
-                        validatedCounter++;
-                    }
+                    DefaultObjectValidations( obj, folder, _reports );
+                    validatedCounter++;
                 }
             }
 
@@ -59,21 +57,23 @@ namespace GDDB.Editor
             //     }
             // }
 
-            Debug.Log( $"[{nameof(Validator)}] Validation taken {validationTime.Milliseconds} ms, validated {validatedCounter} objects, errors {_reports.Count}" );
+            Debug.Log( $"[{nameof(Validator)}] Validation taken {validationTime.TotalMilliseconds} ms, validated {validatedCounter} objects, errors {_reports.Count}" );
 
             Validated?.Invoke( Reports );
 
             return Reports;
         }
 
-        private static void OnGDDBChanged(IReadOnlyList<GDObject> changedObjects, IReadOnlyList<String> deletedObjects )
+        private static void DefaultBDValidations( GdDb db, List<ValidationReport> reports )
         {
-            Validate();
+            if( EditorDB.RootFolderPath == "Assets" )
+                reports.Add( new ValidationReport( db.RootFolder, db.RootFolder.Objects.OfType<GDRoot>().First(), "Placing GDRoot object to Assets folders make all your assets like a game design data base. Its a bad idea, please select some subfolder for your game data base files." ) );
         }
 
-        private static void DefaultGDOValidations( GDObject gdo, GdFolder folder, List<ValidationReport> reports )
+        private static void DefaultObjectValidations( ScriptableObject obj, GdFolder folder, List<ValidationReport> reports )
         {
-             CheckMissedComponentsValidation( gdo, folder, reports );
+            if( obj is GDObject gdObject ) 
+                CheckMissedComponentsValidation( gdObject, folder, reports );
         }
 
         private static void CheckMissedComponentsValidation( GDObject gdo, GdFolder folder, List<ValidationReport> reports )
