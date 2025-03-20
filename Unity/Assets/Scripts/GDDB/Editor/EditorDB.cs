@@ -5,6 +5,7 @@ using GDDB.Serialization;
 using UnityEditor;
 using UnityEngine;
 using GDDB;
+using Object = System.Object;
 
 namespace GDDB.Editor
 {
@@ -14,6 +15,8 @@ namespace GDDB.Editor
     [InitializeOnLoad]
     public class EditorDB
     {
+        
+
         static EditorDB( )
         {
             GDAssetProcessor.GDDBAssetsChanged.Subscribe( -1000, OnGddbStructureChanged );     //React to changes in GDObjects assets
@@ -28,6 +31,8 @@ namespace GDDB.Editor
         public static IReadOnlyList<String> DisabledFolders => _disabledFolders;
 
         public static String RootFolderPath => _rootFolderPath;
+
+        public static Int32 DisabledObjectsCount => _disabledObjectsCount;
 
         public static GdDb DB => _gbd;
 
@@ -106,7 +111,8 @@ namespace GDDB.Editor
         private static IReadOnlyList<ScriptableObject> _allObjects;
         private static IReadOnlyList<GdFolder>         _allFolders;
         private static IReadOnlyList<String>           _disabledFolders;
-        private static String _rootFolderPath;
+        private static String                          _rootFolderPath;
+        private static Int32                             _disabledObjectsCount;
 
         private static void UpdateState( )
         {
@@ -118,6 +124,7 @@ namespace GDDB.Editor
             _allFolders        = loader.AllFolders;
             _disabledFolders   = loader.DisabledFolders;
             _rootFolderPath    = loader.RootFolderPath;
+            _disabledObjectsCount = loader.DisabledObjectsCount;
 
             Updated?.Invoke();
         }

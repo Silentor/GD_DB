@@ -26,6 +26,7 @@ namespace GDDB.Editor
                     var state   = EditorDB.GetFolderState( target );
                     var infoBox = new Box();
                     infoBox.style.flexDirection = FlexDirection.Row;
+                    infoBox.style.alignItems  = Align.Center;
                     var icon    = new Image();
                     icon.image = Resources.InfoIcon;
                     infoBox.Add( icon );
@@ -40,7 +41,8 @@ namespace GDDB.Editor
                                             _ => throw new  ArgumentOutOfRangeException(),
                                     };
                     infoLabel.style.flexShrink = 1;
-                    infoLabel.style.whiteSpace   = WhiteSpace.Normal;
+                    infoLabel.style.whiteSpace = WhiteSpace.Normal;
+                    infoLabel.style.color      = new StyleColor( Color.gray );
                     infoBox.Add( infoLabel );
                     editor.Add( infoBox );
                     

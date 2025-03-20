@@ -17,6 +17,7 @@ namespace GDDB.Serialization
         public readonly IReadOnlyList<GdFolder> AllFolders;
         public readonly IReadOnlyList<String>   DisabledFolders;
         public readonly String                  RootFolderPath;
+        public readonly Int32                   DisabledObjectsCount;
 
         public GdEditorLoader(  )
         {
@@ -27,17 +28,17 @@ namespace GDDB.Serialization
                 var parser  = new GdDbAssetsParser();
                 if ( parser.Root != null )
                 {
-                    _db             = new GdDb( parser.Root, parser.AllObjects, 0 );
-                    AllObjects      = parser.AllObjects;
-                    AllFolders      = parser.AllFolders;
-                    DisabledFolders = parser.DisabledFolders;
-                    RootFolderPath  = parser.RootFolderPath;
+                    _db                  = new GdDb( parser.Root, parser.AllObjects, 0 );
+                    AllObjects           = parser.AllObjects;
+                    AllFolders           = parser.AllFolders;
+                    DisabledFolders      = parser.DisabledFolders;
+                    RootFolderPath       = parser.RootFolderPath;
+                    DisabledObjectsCount = parser.DisabledObjectsCount;
 
                     Debug.Log( $"[{nameof(GdEditorLoader)}]-[{nameof(GdEditorLoader)}] loaded GDDB from Editor assets" );
                 }
                 else
                 {
-                    _db        = null;
                     Debug.Log( $"[{nameof(GdEditorLoader)}]-[{nameof(GdEditorLoader)}] No GDDB Editor assets found, there is no game design data base in project" );
                 }
 #endif           

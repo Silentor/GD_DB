@@ -29,6 +29,8 @@ namespace GDDB.Editor
         /// </summary>
         public IReadOnlyList<String>                 DisabledFolders => _disabledFolders;
 
+        public Int32 DisabledObjectsCount { get; }
+
         public const String GddbFolderDisabledLabel = "GddbDisabled";
 
         /// <summary>
@@ -67,7 +69,12 @@ namespace GDDB.Editor
             var rootObject     = gdroots[0];
             var rootObjectPath = AssetDatabase.GetAssetPath( rootObject );
             var rootFolderPath = GetDirectoryName( rootObjectPath );
-            //var dbId = rootObject.Id;
+
+            if ( rootFolderPath == "Assets" )
+            {
+                Debug.LogError( $"[{nameof(GdDbAssetsParser)}] Placing GDRoot object to Assets folder is not supported. Its a bad idea, mark all your assets as game design data base. Please select some subfolder for your game data base files." );
+                return;
+            }
 
             //Collect all GDObjects under root
             var gdoids        = AssetDatabase.FindAssets("t:ScriptableObject", new []{rootFolderPath});   //Skip packages, consider collect GDObjects from Packages?
@@ -110,8 +117,9 @@ namespace GDDB.Editor
             }
 
             CalculateDepth( rootFolder );
-            Root           = rootFolder;
-            RootFolderPath = rootFolderPath;
+            Root                 = rootFolder;
+            RootFolderPath       = rootFolderPath;
+            DisabledObjectsCount = disabledObjects;
 
             timer.Stop();
             Debug.Log( $"[{nameof(GdDbAssetsParser)}] found GD database at {rootFolderPath}: processed {gdos.Length} GDObject assets, added {_allObjects.Count} GDObjects and {_allFolders.Count} folders, disabled {disabledObjects} objects, time {timer.ElapsedMilliseconds} ms" );
@@ -201,12 +209,16 @@ namespace GDDB.Editor
         private static String GetDirectoryName( String path )
         {
             var lastSlashIndex = path.LastIndexOf( '/' );
+            if ( lastSlashIndex < 0 )
+                return path;
             return path[ ..lastSlashIndex ];
         }
 
         private static String GetFileName( String path )
         {
             var lastSlashIndex = path.LastIndexOf( '/' );
+            if ( lastSlashIndex < 0 )
+                return path;
             return path[ (lastSlashIndex + 1).. ];
         }
 

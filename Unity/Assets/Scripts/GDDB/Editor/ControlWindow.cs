@@ -155,8 +155,7 @@ namespace GDDB.Editor
                 return;
 
             var rootFolder   = EditorDB.DB.RootFolder;
-            var rootFullPath = AssetDatabase.GUIDToAssetPath( rootFolder.FolderGuid.ToString("N") );
-            _dbStatsLbl.text = $"GDB root folder: {rootFullPath}, objects {EditorDB.AllObjects.Count}, folders {EditorDB.AllFolders.Count}";
+            _dbStatsLbl.text = $"GDB root folder: {EditorDB.RootFolderPath}, objects {EditorDB.AllObjects.Count}, folders {EditorDB.AllFolders.Count}, disabled objects {EditorDB.DisabledObjectsCount}";
             _dbHashLbl.text  = "DB structure hash: " + rootFolder.GetFoldersChecksum( );
         }
 

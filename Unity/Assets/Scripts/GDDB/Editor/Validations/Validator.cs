@@ -57,7 +57,7 @@ namespace GDDB.Editor
             //     }
             // }
 
-            Debug.Log( $"[{nameof(Validator)}] Validation taken {validationTime.TotalMilliseconds} ms, validated {validatedCounter} objects, errors {_reports.Count}" );
+            Debug.Log( $"[{nameof(Validator)}] Validated {validatedCounter} objects, errors {_reports.Count}, time {validationTime.TotalMilliseconds} ms" );
 
             Validated?.Invoke( Reports );
 

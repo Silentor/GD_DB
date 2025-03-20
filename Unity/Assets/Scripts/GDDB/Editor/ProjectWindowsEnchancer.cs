@@ -44,119 +44,63 @@ namespace GDDB.Editor
             var itemData = GetItemData( instanceid );
             if( itemData.IsGDRootFolder )
             {
-                var oldColor = GUI.color;
+                //var oldColor = GUI.color;
                 //GUI.color = Color.red;
                 var content = new GUIContent( Styles.GDRootIcon, tooltip: "GD root folder" );
                 iconRect.x -= IconSize;
                 GUI.Label( iconRect, content );
-                GUI.color = oldColor;
+                //GUI.color = oldColor;
             }
 
             if( itemData.IsGDRootObject )
             {
-                var oldColor = GUI.color;
-                //GUI.color = Color.red;
+                //var oldColor = GUI.color;
                 var content = new GUIContent( Styles.GDRootIcon, tooltip: "GD root object" );
                 iconRect.x -= IconSize;
                 GUI.Label( iconRect, content );
-                GUI.color = oldColor;
+                //GUI.color = oldColor;
             }
 
-            if( itemData.DisabledObject )
+            switch ( itemData.Disabled )
             {
-                var oldColor = GUI.color;
-                //GUI.color = Color.red;
-                var content = new GUIContent( Styles.DisabledIcon, tooltip: "Object disabled, it is invisible for database" );
-                iconRect.x -= IconSize;
-                GUI.Label( iconRect, content );
-                GUI.color = oldColor;
+                case EDisabledState.ObjectDisabledSelf:
+                {
+                    var content = new GUIContent( Styles.DisabledIcon, tooltip: "Object disabled, it's not included to database" );
+                    iconRect.x -= IconSize;
+                    GUI.Label( iconRect, content );
+                } break;
+                case EDisabledState.ObjectDisabledInFolder:
+                {
+                    var content = new GUIContent( Styles.DisabledIcon, tooltip: "Object disabled because some parent folder disabled" );
+                    iconRect.x -= IconSize;
+                    GUI.Label( iconRect, content );
+                } break;
+                case EDisabledState.FolderDisabledSelf:
+                {
+                    var content = new GUIContent( Styles.DisabledIcon, tooltip: "Folder disabled, all it content not included to database" );
+                    iconRect.x -= IconSize;
+                    GUI.Label( iconRect, content );
+                } break;
+                case EDisabledState.FolderDisabledInParent:
+                {
+                    var content = new GUIContent( Styles.DisabledIcon, tooltip: "Folder disabled because some parent folder disabled" );
+                    iconRect.x -= IconSize;
+                    GUI.Label( iconRect, content );
+                }   break;
+                case EDisabledState.Enabled:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
 
             if( itemData.InvalidGDObject )
             {
-                var oldColor = GUI.color;
-                //GUI.color = Color.red;
+                //var oldColor = GUI.color;
                 var content = new GUIContent( Styles.InvalidGDO, tooltip: itemData.InvalidGDOCustomTooltip );
                 iconRect.x -= IconSize;
                 GUI.Label( iconRect, content );
-                GUI.color = oldColor;
+                //GUI.color = oldColor;
             }
-
-            // var asset = EditorUtility.InstanceIDToObject(instanceid) as DefaultAsset;
-            // if( asset )
-            //     GUI.Label( rect, asset.name, Styles.GDTypeStrLabel );
-            // else
-            //     GUI.Label( rect, "null", Styles.GDTypeStrLabel );
-            // //var asset = EditorUtility.InstanceIDToObject(instanceid) as GDObject;
-            //if ( !asset ) return;
-
-            //GUI.Label( rect, instanceid.ToString(), Styles.GDTypeStrLabel );
-
-            //GUI.Label( rect, "test", Styles.GDTypeStrLabel );
-            //GUI.DrawTexture( rect, EditorGUIUtility.whiteTexture );
-
-            // var itemHash = HashCode.Combine( instanceid, asset.name.GetHashCode(), asset.Type.GetHashCode() );
-            // if ( !GdTypeCache.TryGetValue( itemHash, out var itemData ) )
-            // {
-            //     itemData = new ItemData() { GDTypeString = TypeHierarchy.GetTypeString( asset.Type ),  } ;
-            //     if( asset.Type != default )
-            //         Styles.GDTypeStrLabel.CalcMinMaxWidth( new GUIContent( itemData.GDTypeString ), out _, out itemData.GDTypeStrWidth );
-            //     GUI.skin.label.CalcMinMaxWidth( new GUIContent( asset.name ), out _, out var objNameWidth );
-            //     itemData.GDObjectNameWidth = objNameWidth + 25;
-            // }
-
-            // if ( !asset.EnabledObject )
-            // {
-            //     if ( rect.width > itemData.GDObjectNameWidth + 50 )
-            //     {
-            //         if( Selection.objects.Contains( asset ) )
-            //             GUI.Label( rect, "Disabled", Styles.GDTypeStrLabelDisabledSelected );
-            //         else
-            //             GUI.Label( rect, "Disabled", Styles.GDTypeStrLabelDisabled );
-            //     }
-            //     else if( rect.width > itemData.GDObjectNameWidth )
-            //     {
-            //         if( Selection.objects.Contains( asset ) )
-            //             GUI.Label( rect, "x", Styles.GDTypeStrLabelDisabledSelected );
-            //         else
-            //             GUI.Label( rect, "x", Styles.GDTypeStrLabelDisabled );
-            //     }
-            //     return;
-            // }
-
-            // if( asset.Type == default )
-            //     return;
-            //
-            // if( rect.width <= itemData.GDObjectNameWidth )
-            //     return;
-            //
-            // var text = itemData.GDTypeString;
-            // if ( rect.width < itemData.GDObjectNameWidth + itemData.GDTypeStrWidth )
-            // {
-            //     var pixelsPerChar = itemData.GDTypeStrWidth / itemData.GDTypeString.Length;
-            //     var remainChars   = Mathf.Clamp( Mathf.RoundToInt( (rect.width - itemData.GDObjectNameWidth ) / pixelsPerChar ), 0, itemData.GDTypeString.Length );
-            //     if( remainChars == 0 )
-            //         return;
-            //     else if ( remainChars < itemData.GDTypeString.Length )
-            //         text = text.Substring( itemData.GDTypeString.Length - remainChars );
-            // }
-
-            //Validation
-            // if( !TypeHierarchy.IsTypeDefined( asset.Type ) )
-            //     GUI.Label( rect, new GUIContent( text, tooltip: "Type value is out of range"), Styles.GDTypeStrLabelError );
-            // else if( !TypeHierarchy.IsTypeInRange( asset.Type, out var category ) )
-            //     GUI.Label( rect, new GUIContent( text, tooltip: $"Type category {category.Index + 1} is out of range"), Styles.GDTypeStrLabelError );
-            // else if( GDOFinder.IsDuplicatedType( asset.Type, TypeHierarchy, out var count ) )
-            //     GUI.Label( rect, new GUIContent( text, tooltip: $"Duplicated type, found {count} types" ), Styles.GDTypeStrLabelError );
-            // else
-            // {
-            //     if( Selection.objects.Contains( asset ) )
-            //         GUI.Label( rect, text, Styles.GDTypeStrLabelSelected );
-            //     else
-            //         GUI.Label( rect, text, Styles.GDTypeStrLabel );
-            // }
-            
-            
         }
 
         private static ItemData GetItemData( Int32 instanceId )
@@ -178,8 +122,10 @@ namespace GDDB.Editor
                     var folderState = EditorDB.GetFolderState( folderAsset );
                     if ( folderState != EditorDB.EEnabledState.NotInGddb )                 //Skip ordinary folder outside Gddb
                     {
-                        if ( folderState == EditorDB.EEnabledState.DisabledSelf || folderState == EditorDB.EEnabledState.DisabledInParent )
-                            itemData.DisabledObject = true;
+                        if ( folderState == EditorDB.EEnabledState.DisabledSelf )
+                            itemData.Disabled = EDisabledState.FolderDisabledSelf;
+                        else if ( folderState == EditorDB.EEnabledState.DisabledInParent )
+                            itemData.Disabled = EDisabledState.FolderDisabledInParent;
                         else
                         {
                             var folderPath = AssetDatabase.GetAssetPath( folderAsset );
@@ -188,7 +134,7 @@ namespace GDDB.Editor
                             if ( gddbFolder == editorDB.RootFolder )
                                 itemData.IsGDRootFolder = true;
 
-                            if ( Validator.Reports.TryFirst( r => r.Folder.EnumeratePath().Any( f => f == gddbFolder ), out var report ) )
+                            if ( Validator.Reports.TryFirst( r => r.Folder.EnumeratePath().Any( f => f == gddbFolder ), out var report ) )       //todo optimize "folder is subfolder" comparison
                             {
                                 itemData.InvalidGDObject         = true;
                                 itemData.InvalidGDOCustomTooltip = "There are errors in GDObjects in this folder";
@@ -201,8 +147,10 @@ namespace GDDB.Editor
                     var objState = EditorDB.GetObjectState( so );
                     if ( objState != EditorDB.EEnabledState.NotInGddb )
                     {
-                        if( objState == EditorDB.EEnabledState.DisabledSelf || objState == EditorDB.EEnabledState.DisabledInParent )
-                            itemData.DisabledObject = true;
+                        if( objState == EditorDB.EEnabledState.DisabledSelf )
+                            itemData.Disabled = EDisabledState.ObjectDisabledSelf;
+                        else if( objState == EditorDB.EEnabledState.DisabledInParent )
+                            itemData.Disabled = EDisabledState.ObjectDisabledInFolder;
 
                         if ( so is GDRoot )
                         {
@@ -298,11 +246,11 @@ namespace GDDB.Editor
         [DebuggerDisplay("{DebugName}")]
         private struct ItemData
         {
-            public Boolean IsGDRootFolder;
-            public Boolean IsGDRootObject;
-            public Boolean DisabledObject;
-            public Boolean InvalidGDObject;
-            public String  InvalidGDOCustomTooltip;
+            public Boolean        IsGDRootFolder;
+            public Boolean        IsGDRootObject;
+            public EDisabledState Disabled;
+            public Boolean        InvalidGDObject;
+            public String         InvalidGDOCustomTooltip;
 
             public String  DebugName;
             public String  GDTypeString;
@@ -310,6 +258,15 @@ namespace GDDB.Editor
             public Single  GDTypeStrWidth;
 
             public static readonly ItemData Empty = new ItemData();
+        }
+
+        private enum EDisabledState
+        {
+            Enabled,
+            ObjectDisabledSelf,
+            ObjectDisabledInFolder,
+            FolderDisabledSelf,
+            FolderDisabledInParent
         }
     }
 }
