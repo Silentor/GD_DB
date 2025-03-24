@@ -17,7 +17,7 @@ namespace GDDB.Editor
         /// <summary>
         /// Lists are reused
         /// </summary>
-        public static readonly PriorityEvent<IReadOnlyList<GDObject>, IReadOnlyList<String>> GDDBAssetsChanged = new ();
+        public static event Action<IReadOnlyList<GDObject>, IReadOnlyList<String>> GDDBAssetsChanged;
 
         private static readonly List<GDObject>  _modifiedGDObjects = new ();
         private static readonly List<String>    _removedGDObjects = new ();

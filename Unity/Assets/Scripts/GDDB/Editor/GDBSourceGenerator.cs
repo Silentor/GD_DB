@@ -25,11 +25,11 @@ namespace GDDB.Editor
 
         static GDBSourceGenerator( )
         {
-            GDAssetProcessor.GDDBAssetsChanged.Subscribe( 5, OnGddbStructureChanged );
-            EditorApplication.focusChanged += EditorApplicationOnfocusChanged;
-            EditorApplication.playModeStateChanged += EditorApplicationOnplayModeStateChanged;
-            GDDBUpdater.BuildPreprocessing += BuildPreprocessorOnBuildPreprocessing;
-            Settings.Changed += SettingChanged;
+            EditorDB.Updated                        += EditorDB_Changed;
+            EditorApplication.focusChanged          += EditorApplicationOnfocusChanged;
+            EditorApplication.playModeStateChanged  += EditorApplicationOnplayModeStateChanged;
+            GDDBUpdater.BuildPreprocessing          += BuildPreprocessorOnBuildPreprocessing;
+            Settings.Changed                        += SettingChanged;
         }
 
         private static void SettingChanged( SourceGeneratorSettings settings )
@@ -56,7 +56,7 @@ namespace GDDB.Editor
                 GenerateGDBSource(  );
         }
 
-        private static void OnGddbStructureChanged(IReadOnlyList<GDObject> changedObjects, IReadOnlyList<String> deletedObjects )
+        private static void EditorDB_Changed( )
         {
             if( Settings.AutoGenerateOnSourceChanged )
                 GenerateGDBSource(  );

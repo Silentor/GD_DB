@@ -4,8 +4,6 @@ using System.Linq;
 using GDDB.Serialization;
 using UnityEditor;
 using UnityEngine;
-using GDDB;
-using Object = System.Object;
 
 namespace GDDB.Editor
 {
@@ -15,12 +13,10 @@ namespace GDDB.Editor
     [InitializeOnLoad]
     public class EditorDB
     {
-        
-
         static EditorDB( )
         {
-            GDAssetProcessor.GDDBAssetsChanged.Subscribe( -1000, OnGddbStructureChanged );     //React to changes in GDObjects assets
-            FolderEditor.Updated += UpdateState;
+            GDAssetProcessor.GDDBAssetsChanged += OnGddbStructureChanged;      //React to changes in GDObjects assets
+            FolderEditor.Updated               += UpdateState;
             UpdateState();
         }
 

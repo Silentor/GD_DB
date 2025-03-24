@@ -29,7 +29,7 @@ namespace GDDB.Editor.Validations
             EditorDB.Updated       += ( ) => ValidateAsync();       
             GDObjectEditor.Changed += _ => ValidateAsync( TimeSpan.FromSeconds( 0.1 ));    //To react to unsaved GDObject editor changes, but do not mess with fast typing
             
-            Validate();
+            ValidateAsync();
         }
 
         private static List<AttributeValidatorData> PrepareAttributeValidation( )
@@ -54,7 +54,7 @@ namespace GDDB.Editor.Validations
                 validators.Add( validatorData );
             }
 
-            Debug.Log( $"[{nameof(Validator)}]-[{nameof(PrepareAttributeValidation)}] time {(DateTime.Now-timer).TotalMilliseconds:N1}" );
+            //Debug.Log( $"[{nameof(Validator)}]-[{nameof(PrepareAttributeValidation)}] time {(DateTime.Now-timer).TotalMilliseconds:N1}" );
 
             return validators;
         }
@@ -87,7 +87,7 @@ namespace GDDB.Editor.Validations
 
             foreach ( var objData in gddb.AllObjects )
             {
-                //DefaultObjectValidations( objData.Object, objData.Folder, _reports );
+                DefaultObjectValidations( objData.Object, objData.Folder, _reports );
 
                 //Check validation attributes on gd object fields
                 GDObjectAttributeValidatorVisitor.Iterate( objData.Object, objData.Folder );
@@ -108,7 +108,7 @@ namespace GDDB.Editor.Validations
         {
             if( _validateAsyncCoroutine != null )
                 EditorCoroutineUtility.StopCoroutine( _validateAsyncCoroutine );
-            _validateAsyncCoroutine = EditorCoroutineUtility.StartCoroutineOwnerless( ValidateAsyncInternal() );
+            _validateAsyncCoroutine = EditorCoroutineUtility.StartCoroutineOwnerless( ValidateAsyncInternal( startDelay ) );
         }
 
         private static IEnumerator ValidateAsyncInternal( TimeSpan startDelay = default )
@@ -129,7 +129,7 @@ namespace GDDB.Editor.Validations
             {
                 timer.Start();
 
-                //DefaultObjectValidations( objData.Object, objData.Folder, _reports );
+                DefaultObjectValidations( objData.Object, objData.Folder, _reports );
 
                 try
                 {

@@ -38,19 +38,11 @@ namespace GDDB.Editor
             _settings  = new Settings();
             _favorites = new List<Type>();
             _settings.LoadFavoriteComponents( _favorites );
-
-            GDAssetProcessor.GDDBAssetsChanged.Subscribe( OnGDDBChanged);
         }
 
-        private void OnGDDBChanged(IReadOnlyList<GDObject> changedObjects, IReadOnlyList<String> removedObjects )
-        {
-            //if ( changedObjects.Contains( _target ) ) 
-                //Repaint();
-        }
 
         protected virtual void OnDisable( )
         {
-            GDAssetProcessor.GDDBAssetsChanged.Unsubscribe( OnGDDBChanged );
         }
 
         public override VisualElement CreateInspectorGUI( )

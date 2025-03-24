@@ -28,7 +28,7 @@ namespace GDDB.Editor
         static GDDBUpdater( )
         {
             EditorApplication.playModeStateChanged += EditorApplicationOnplayModeStateChanged;
-            GDAssetProcessor.GDDBAssetsChanged.Subscribe( (_, _) => _isDBDirty = true );
+            EditorDB.Updated += ( ) => _isDBDirty = true;
             GDObjectEditor.Changed += _ => _isDBDirty = true;
         }
 
