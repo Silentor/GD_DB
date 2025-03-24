@@ -36,9 +36,12 @@ namespace GDDB.Editor.Validations
         }
     }
 
-    public class RequiredAttributeValidator : BaseAttributeValidator<RequiredAttribute>
+    [CustomPropertyValidator(typeof(RequiredAttribute))]
+    public class RequiredAttributeValidator : BaseAttributeValidator
     {
-        public override void ValidateField(SerializedProperty property, ScriptableObject gdObject, GdFolder folder, List<ValidationReport> reports )
+        public override Boolean IsValidAtCollectionLevel => true;       //Its an universal Required validator, both items and collection-level
+
+        protected override void ValidateField(SerializedProperty property, ScriptableObject gdObject, GdFolder folder, List<ValidationReport> reports )
         {
             var isNull = (property.propertyType    == SerializedPropertyType.ObjectReference  && !property.objectReferenceValue) 
                          || (property.propertyType == SerializedPropertyType.ManagedReference && property.managedReferenceValue == null)
@@ -46,7 +49,10 @@ namespace GDDB.Editor.Validations
                          || (property.isArray && property.arraySize == 0 ));
 
             if( isNull )
-                reports.Add( new ValidationReport( folder, gdObject, $"Field '{fieldInfo}' marked as Required but do not has value. Property path {property.propertyPath}" ) );
+                reports.Add( new ValidationReport( folder, gdObject, property.propertyPath,
+                        property.isArray 
+                                ? $"Field '{fieldInfo}' is Required but do not has value"
+                                : $"Field '{fieldInfo}' is Required but doesn't has items") );
         }
     }
     

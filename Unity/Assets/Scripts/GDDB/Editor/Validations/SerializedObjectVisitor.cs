@@ -33,7 +33,7 @@ namespace GDDB.Editor.Validations
                 if( fieldInfo.Item1 == null )           //Some Unity internal field
                     continue;
 
-                var visitResult = VisitProperty( objProp, fieldInfo.Item1 );
+                var visitResult = VisitProperty( objProp, fieldInfo.Item1, fieldInfo.Item2 );
                 if( visitResult == EVisitResult.SkipChildren )
                     continue;
                 else if ( visitResult == EVisitResult.Stop )
@@ -68,15 +68,15 @@ namespace GDDB.Editor.Validations
             for ( int i = 0; i < collectionProp.arraySize; i++ )
             {
                 var childProp     = collectionProp.GetArrayElementAtIndex( i );
-                var visitResult = VisitProperty( childProp, fieldInfo );
+                elementKind ??= TypeFieldsCache.GetFieldType( childProp);
+                var visitResult = VisitProperty( childProp, fieldInfo, elementKind.Value );
                 if( visitResult == EVisitResult.SkipChildren )
                     continue;
                 else if ( visitResult == EVisitResult.Stop )
                     return EVisitResult.Stop;
-
-                //Manage elements with complex type
-                elementKind ??= TypeFieldsCache.GetFieldType( childProp);
+                
                 elementType ??= GetCollectionElementType( fieldInfo.FieldType );
+                //Manage elements with complex type
                 switch ( elementKind.Value )
                 {
                     case EFieldKind.EmbeddedObject:
@@ -108,7 +108,7 @@ namespace GDDB.Editor.Validations
             return null;
         }
 
-        protected virtual EVisitResult VisitProperty( SerializedProperty prop, FieldInfo fieldInfo )
+        protected virtual EVisitResult VisitProperty( SerializedProperty prop, FieldInfo fieldInfo, EFieldKind fieldKind )
         {
             Debug.Log( $"{prop.propertyPath} ({prop.name}), depth {prop.depth}, proptype {prop.propertyType}, field {fieldInfo}, value {(!prop.isArray ? prop.boxedValue : "")}" );
             return EVisitResult.Continue;
@@ -173,7 +173,7 @@ namespace GDDB.Editor.Validations
             }
         }
 
-        private enum EFieldKind
+        public enum EFieldKind
         {
             Default,
             EmbeddedObject,

@@ -26,8 +26,8 @@ namespace GDDB_User
 
         //public List<Texture2D> SomeList;
 
-        [Required, ApplyToCollection]
-        public Int32[] SomeInts;
+        [Required]
+        public String[] SomeStrings;
 
         
 

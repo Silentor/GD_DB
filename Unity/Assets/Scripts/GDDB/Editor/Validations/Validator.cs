@@ -37,29 +37,21 @@ namespace GDDB.Editor.Validations
             var timer = DateTime.Now;
 
             var validators                    = new List<AttributeValidatorData>();
-            var attribValidatorTypes              = TypeCache.GetTypesDerivedFrom( typeof(BaseAttributeValidator<>) );
-            foreach ( var attribValidatorType in attribValidatorTypes )
+            var validatorsTypes              = TypeCache.GetTypesWithAttribute<CustomPropertyValidator>(  );
+            foreach ( var validatorType in validatorsTypes )
             {
-                if( attribValidatorType.IsAbstract ) continue;
+                if( validatorType.IsAbstract ) continue;
 
-                //Find attribute validator base type with generic argument
-                var baseTypeWithAttribute = attribValidatorType.BaseType;
-                while ( baseTypeWithAttribute != null && !(baseTypeWithAttribute.IsConstructedGenericType &&
-                          baseTypeWithAttribute.GetGenericTypeDefinition() == typeof(BaseAttributeValidator<>)) )
-                {
-                    baseTypeWithAttribute = baseTypeWithAttribute.BaseType;
-                }
+                //Get validated attribute type
+                var attributeType = validatorType.GetCustomAttribute<CustomPropertyValidator>().ValidationAttributeType;
 
-                if( baseTypeWithAttribute != null )
-                {
-                    var validatorData     = new AttributeValidatorData
-                                            {
-                                                    ValidatorType = attribValidatorType,
-                                                    AttributeType     = baseTypeWithAttribute.GenericTypeArguments[0],
-                                            };
+                var validatorData     = new AttributeValidatorData
+                                        {
+                                                ValidatorType = validatorType,
+                                                AttributeType = attributeType,
+                                        };
 
-                    validators.Add( validatorData );
-                }
+                validators.Add( validatorData );
             }
 
             Debug.Log( $"[{nameof(Validator)}]-[{nameof(PrepareAttributeValidation)}] time {(DateTime.Now-timer).TotalMilliseconds:N1}" );
@@ -67,7 +59,7 @@ namespace GDDB.Editor.Validations
             return validators;
         }
 
-        private static readonly List<ValidationReport> _reports = new();
+        private static readonly List<ValidationReport>      _reports = new();
         private static readonly GDObjectValidatorVisitor    GDObjectAttributeValidatorVisitor = new ( _reports, PrepareAttributeValidation() );
 
         private static EditorCoroutine                 _validateAsyncCoroutine;

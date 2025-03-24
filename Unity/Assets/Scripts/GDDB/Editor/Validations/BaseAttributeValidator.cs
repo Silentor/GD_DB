@@ -7,28 +7,22 @@ using UnityEngine.Scripting;
 
 namespace GDDB.Editor.Validations
 {
-    [RequireDerived]
-    public abstract class BaseAttributeValidator<TAttribute> : BaseAttributeValidator where TAttribute : Attribute
+    public abstract class BaseAttributeValidator 
     {
         public FieldInfo  fieldInfo { get; private set; }
-        public TAttribute attribute { get; private set; } 
+        public Attribute  attribute { get; private set; }
 
-        //public abstract void ValidateField( ScriptableObject gdObject, GdFolder folder, TAttribute attribute, FieldInfo field, List<ValidationReport> reports );
-        public abstract void ValidateField( SerializedProperty property, ScriptableObject gdObject, GdFolder folder, List<ValidationReport> reports );
+        public virtual Boolean IsValidAtCollectionLevel => false;           //Imitate Unity drawer attributes behaviour
+        public virtual Boolean IsValidAtItemLevel       => true;            //Imitate Unity drawer attributes behaviour
 
-        internal override void ValidateFieldInternal( SerializedProperty property, Attribute attribute, FieldInfo field, ScriptableObject gdObject, GdFolder folder, List<ValidationReport> reports )
+        protected abstract void ValidateField( SerializedProperty property, ScriptableObject gdObject, GdFolder folder, List<ValidationReport> reports );
+
+        internal void ValidateFieldInternal( SerializedProperty property, Attribute attribute, FieldInfo field, ScriptableObject gdObject, GdFolder folder, List<ValidationReport> reports )
         {
             fieldInfo = field;
-            attribute = (TAttribute)attribute;
+            attribute = attribute;
             ValidateField( property, gdObject, folder, reports );
         }
     }
 
-    public abstract class BaseAttributeValidator
-    {
-        internal abstract void ValidateFieldInternal( SerializedProperty     property, Attribute attribute, FieldInfo field, ScriptableObject gdObject,
-                                                      GdFolder               folder,
-                                                      List<ValidationReport> reports );
-        
-    }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using GDDB.Validations;
 using UnityEditor;
@@ -15,7 +16,7 @@ namespace GDDB.Editor.Validations
 
         public GDObjectValidatorVisitor( List<ValidationReport> reports, IReadOnlyList<Validator.AttributeValidatorData> validatorsCache )
         {
-            _reports              = reports;
+            _reports         = reports;
             _validatorsCache = validatorsCache;
         }
 
@@ -31,25 +32,11 @@ namespace GDDB.Editor.Validations
 
             var so = new SerializedObject( gdobj );
             Iterate( so );
-
-            if ( gdobj is GDObject )
-            {
-                var componentsProp = so.FindProperty( "Components" );
-                for ( var i = 0; i < componentsProp.arraySize; i++ )
-                {
-                    var compProp = componentsProp.GetArrayElementAtIndex( i );
-                    IterateObject( compProp, compProp.managedReferenceValue.GetType() );
-                }
-            }
-
         }
 
-        protected override EVisitResult VisitProperty(SerializedProperty prop, FieldInfo fieldInfo )
+        protected override EVisitResult VisitProperty(SerializedProperty prop, FieldInfo fieldInfo, EFieldKind fieldKind )
         {
-            if( fieldInfo.DeclaringType == typeof(GDObject ) && fieldInfo.Name == "Components" )
-                return EVisitResult.SkipChildren;
-
-            var attribs = fieldInfo.GetCustomAttributes();
+            var attribs = fieldInfo.GetCustomAttributes().ToArray();
             foreach ( var attrib in attribs )
             {
                 foreach ( var validatorData in _validatorsCache )
@@ -57,12 +44,23 @@ namespace GDDB.Editor.Validations
                     if ( validatorData.AttributeType == attrib.GetType() )
                     {
                         var validator = validatorData.ValidatorInstance ?? (BaseAttributeValidator)Activator.CreateInstance( validatorData.ValidatorType );
-                        validator.ValidateFieldInternal( prop, attrib, fieldInfo, (ScriptableObject)prop.serializedObject.targetObject, _folder, _reports );
+                        if ( CheckCollectionApplicability( fieldKind, validator ) )
+                        {
+                            validator.ValidateFieldInternal( prop, attrib, fieldInfo, (ScriptableObject)prop.serializedObject.targetObject, _folder, _reports );
+                        }
                     }
                 }
             }
 
             return EVisitResult.Continue;
         }
+
+        private static Boolean CheckCollectionApplicability( EFieldKind fieldKind, BaseAttributeValidator validator )
+        {
+            if ( fieldKind == EFieldKind.Collection )
+                return validator.IsValidAtCollectionLevel;
+            return validator.IsValidAtItemLevel;
+        }
+
     }
 }
