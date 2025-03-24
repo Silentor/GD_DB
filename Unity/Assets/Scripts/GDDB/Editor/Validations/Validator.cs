@@ -26,8 +26,8 @@ namespace GDDB.Editor.Validations
 
         static Validator( )
         {
-            EditorDB.Updated += ValidateAsync;       
-            GDObjectEditor.Changed += _ => ValidateAsync();              //To react to unsaved GDObject editor changes
+            EditorDB.Updated       += ( ) => ValidateAsync();       
+            GDObjectEditor.Changed += _ => ValidateAsync( TimeSpan.FromSeconds( 0.1 ));    //To react to unsaved GDObject editor changes, but do not mess with fast typing
             
             Validate();
         }
@@ -104,18 +104,20 @@ namespace GDDB.Editor.Validations
             return Reports;
         }
 
-        public static void ValidateAsync( )
+        public static void ValidateAsync( TimeSpan startDelay = default )
         {
             if( _validateAsyncCoroutine != null )
                 EditorCoroutineUtility.StopCoroutine( _validateAsyncCoroutine );
             _validateAsyncCoroutine = EditorCoroutineUtility.StartCoroutineOwnerless( ValidateAsyncInternal() );
         }
 
-        public static IEnumerator ValidateAsyncInternal( )
+        private static IEnumerator ValidateAsyncInternal( TimeSpan startDelay = default )
         {
             var gddb    = EditorDB.DB;
             if ( gddb == null )                                    //No GDDB in project
                 yield break;
+
+            yield return new EditorWaitForSeconds( (float)startDelay.TotalSeconds );
 
             _reports.Clear();
             var timer            = Stopwatch.StartNew();
