@@ -24,6 +24,7 @@ UnityEngine.Bounds
 UnityEngine.AnimationCurve
 UnityEngine.AnimationCurve[]
 UnityEngine.Matrix4x4
+UnityEngine.Matrix4x4[]
 UnityEngine.DeviceOrientation
 UnityEngine.KeyCode
 UnityEngine.MeshColliderCookingOptions

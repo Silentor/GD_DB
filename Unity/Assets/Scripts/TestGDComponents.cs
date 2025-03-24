@@ -1,5 +1,6 @@
 using System;
 using GDDB;
+using GDDB.Validations;
 using UnityEngine;
 
 namespace GDDB_User
@@ -41,7 +42,10 @@ namespace GDDB_User
     [Serializable]
     public class TestEmbeddedClassChild  : TestEmbeddedClassParent
     {
-        public Int32 IntValue3;
+        [Required]
+        public String StrValue;
+        [Required]
+        public String StrValue2;
     }
 
     [Serializable]
@@ -75,6 +79,8 @@ namespace GDDB_User
 
     public class TestMobComponent : GDComponent
     {
+        [Tooltip("Mob's name, must be unique")]
+        [Required]
         public String Name;
     }
 

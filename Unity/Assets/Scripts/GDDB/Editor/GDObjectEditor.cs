@@ -285,7 +285,7 @@ namespace GDDB.Editor
 
         private void SerializedObjectChangedCallback( SerializedObject target )
         {
-            Debug.Log( $"[{nameof(GDObjectEditor)}]-[{nameof(SerializedObjectChangedCallback)}] changed" );
+            //Debug.Log( $"[{nameof(GDObjectEditor)}]-[{nameof(SerializedObjectChangedCallback)}] changed" );
 
             Changed?.Invoke( _target );
         }

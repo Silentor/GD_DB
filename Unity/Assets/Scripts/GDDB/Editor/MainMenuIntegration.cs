@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Net.NetworkInformation;
+using GDDB.Editor.Validations;
 using GDDB.Serialization;
+using Unity.EditorCoroutines.Editor;
 using UnityEditor;
 using UnityEngine;
 using Object = System.Object;
@@ -86,6 +88,17 @@ namespace GDDB.Editor
             while ( stringReader.ReadLine() is { } line )
             {
                 Debug.Log( line );
+            }
+        }
+
+        [MenuItem( "GDDB/Validate", priority = 5)]
+        private static void Validate( )
+        {
+            Validator.ValidateAsync();
+            Debug.Log( $"Errors {Validator.Reports.Count}" );
+            foreach ( var report in Validator.Reports )
+            {
+                Debug.LogError( report, report.GdObject );
             }
         }
     }

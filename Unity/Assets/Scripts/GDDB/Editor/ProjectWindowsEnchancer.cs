@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using GDDB.Editor.Validations;
 using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -25,6 +26,7 @@ namespace GDDB.Editor
 
             GDObjectEditor.Changed += _ => InvalidateAndRepaint();                 //Unsaved changes in GDObject can change icons or validation state
             EditorDB.Updated       += InvalidateAndRepaint;                //React to DB changes
+            Validator.Validated    += _ => InvalidateAndRepaint();
         }
 
         private static void InvalidateAndRepaint( )

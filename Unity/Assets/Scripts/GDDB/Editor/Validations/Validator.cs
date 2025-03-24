@@ -1,10 +1,17 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
+using GDDB.Validations;
+using Unity.EditorCoroutines.Editor;
 using UnityEditor;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
+using Object = System.Object;
 
-namespace GDDB.Editor
+namespace GDDB.Editor.Validations
 {
     /// <summary>
     /// Check database objects for errors. There are default and custom validations (via interface implementation)
@@ -12,19 +19,59 @@ namespace GDDB.Editor
     [InitializeOnLoad]
     public static class Validator
     {
-        public static IReadOnlyList<ValidationReport> Reports => _reports;
+        public static  IReadOnlyList<ValidationReport> Reports => _reports;
 
+        public static event Action StartValidate; 
         public static event Action<IReadOnlyList<ValidationReport>> Validated; 
 
         static Validator( )
         {
-            //GDAssetProcessor.GDDBAssetsChanged.Subscribe( 500, OnGDDBChanged );      
-            EditorDB.Updated += ( ) => Validate();                      //After editor GDDB updated and Before project window drawer
-            GDObjectEditor.Changed += _ => Validate();
+            EditorDB.Updated += ValidateAsync;       
+            GDObjectEditor.Changed += _ => ValidateAsync();              //To react to unsaved GDObject editor changes
+            
             Validate();
         }
 
+        private static List<AttributeValidatorData> PrepareAttributeValidation( )
+        {
+            var timer = DateTime.Now;
+
+            var validators                    = new List<AttributeValidatorData>();
+            var attribValidatorTypes              = TypeCache.GetTypesDerivedFrom( typeof(BaseAttributeValidator<>) );
+            foreach ( var attribValidatorType in attribValidatorTypes )
+            {
+                if( attribValidatorType.IsAbstract ) continue;
+
+                //Find attribute validator base type with generic argument
+                var baseTypeWithAttribute = attribValidatorType.BaseType;
+                while ( baseTypeWithAttribute != null && !(baseTypeWithAttribute.IsConstructedGenericType &&
+                          baseTypeWithAttribute.GetGenericTypeDefinition() == typeof(BaseAttributeValidator<>)) )
+                {
+                    baseTypeWithAttribute = baseTypeWithAttribute.BaseType;
+                }
+
+                if( baseTypeWithAttribute != null )
+                {
+                    var validatorData     = new AttributeValidatorData
+                                            {
+                                                    ValidatorType = attribValidatorType,
+                                                    AttributeType     = baseTypeWithAttribute.GenericTypeArguments[0],
+                                            };
+
+                    validators.Add( validatorData );
+                }
+            }
+
+            Debug.Log( $"[{nameof(Validator)}]-[{nameof(PrepareAttributeValidation)}] time {(DateTime.Now-timer).TotalMilliseconds:N1}" );
+
+            return validators;
+        }
+
         private static readonly List<ValidationReport> _reports = new();
+        private static readonly GDObjectValidatorVisitor    GDObjectAttributeValidatorVisitor = new ( _reports, PrepareAttributeValidation() );
+
+        private static EditorCoroutine                 _validateAsyncCoroutine;
+
 
         public static IReadOnlyList<ValidationReport> Validate( )
         {
@@ -33,35 +80,85 @@ namespace GDDB.Editor
             if ( gddb == null )                                    //No GDDB in project
                 return    _reports;
 
+            if ( _validateAsyncCoroutine != null )
+            {
+                EditorCoroutineUtility.StopCoroutine( _validateAsyncCoroutine );
+                _validateAsyncCoroutine = null;
+            }
+
+            StartValidate?.Invoke();
+
             var timer            = DateTime.Now;
             int validatedCounter = 0;
 
             DefaultBDValidations( gddb, _reports );
 
-            foreach ( var folder in gddb.RootFolder.EnumerateFoldersDFS(  ) )
+            foreach ( var objData in gddb.AllObjects )
             {
-                foreach ( var obj in folder.Objects )
-                {
-                    DefaultObjectValidations( obj, folder, _reports );
-                    validatedCounter++;
-                }
+                //DefaultObjectValidations( objData.Object, objData.Folder, _reports );
+
+                //Check validation attributes on gd object fields
+                GDObjectAttributeValidatorVisitor.Iterate( objData.Object, objData.Folder );
+
+                validatedCounter++;
             }
 
             var validationTime = DateTime.Now - timer;
 
-            // if ( _reports.Any() )
-            // {
-            //     foreach ( var report in _reports )
-            //     {
-            //         Debug.LogError( $"[{nameof(Validator)}] Error at {report.Folder.GetPath()}/{report.GdObject.Name}: {report.Message}", report.GdObject );
-            //     }
-            // }
-
-            Debug.Log( $"[{nameof(Validator)}] Validated {validatedCounter} objects, errors {_reports.Count}, time {validationTime.TotalMilliseconds} ms" );
+            Debug.Log( $"[{nameof(Validator)}]-[{nameof(Validate)}] Validated {validatedCounter} objects, errors {_reports.Count}, time {validationTime.TotalMilliseconds} ms" );
 
             Validated?.Invoke( Reports );
 
             return Reports;
+        }
+
+        public static void ValidateAsync( )
+        {
+            if( _validateAsyncCoroutine != null )
+                EditorCoroutineUtility.StopCoroutine( _validateAsyncCoroutine );
+            _validateAsyncCoroutine = EditorCoroutineUtility.StartCoroutineOwnerless( ValidateAsyncInternal() );
+        }
+
+        public static IEnumerator ValidateAsyncInternal( )
+        {
+            var gddb    = EditorDB.DB;
+            if ( gddb == null )                                    //No GDDB in project
+                yield break;
+
+            _reports.Clear();
+            var timer            = Stopwatch.StartNew();
+            int validatedCounter = 0;
+
+            DefaultBDValidations( gddb, _reports );
+
+            foreach ( var objData in gddb.AllObjects )
+            {
+                timer.Start();
+
+                //DefaultObjectValidations( objData.Object, objData.Folder, _reports );
+
+                try
+                {
+                    //Check validation attributes on gd object fields
+                    GDObjectAttributeValidatorVisitor.Iterate( objData.Object, objData.Folder );
+                }
+                catch ( Exception e )
+                {
+                    _reports.Add( new ValidationReport( objData.Folder, objData.Object, $"Exception while validated gd object, object skipped: {e}" ) );
+                }
+
+                validatedCounter++;
+
+                timer.Stop();
+
+                yield return null;
+            }
+
+            _validateAsyncCoroutine = null;
+
+            Debug.Log( $"[{nameof(ValidateAsyncInternal)}]-[{nameof(Validate)}] async Validated {validatedCounter} objects, errors {_reports.Count}, time {timer.ElapsedMilliseconds} ms" );
+
+            Validated?.Invoke( Reports );
         }
 
         private static void DefaultBDValidations( GdDb db, List<ValidationReport> reports )
@@ -88,6 +185,22 @@ namespace GDDB.Editor
                     reports.Add( new ValidationReport( folder,  gdo, $"Component at index {i} is null or missed reference" ) );
                 }
             }
+        }
+
+        // private struct TypeWithFields
+        // {
+        //     public Type        GDObjectType;
+        //     public FieldInfo[] FieldsToCheck;
+        //     public Attribute[] Attributes;
+        //     public Boolean[]   IsCollectionAttribute;
+        // }
+
+        public struct AttributeValidatorData
+        {
+            public Type                         ValidatorType;
+            public Type                         AttributeType;
+            public BaseAttributeValidator       ValidatorInstance;
+            //public TypeWithFields[]             ProcessedTypes;
         }
     }
 }

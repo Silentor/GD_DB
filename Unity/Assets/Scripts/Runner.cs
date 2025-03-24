@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using FluentAssertions.Extensions;
 using GDDB;
 using GDDB.Serialization;
 using GeneratedGDDB.Lunch.Thought.Attraction;
