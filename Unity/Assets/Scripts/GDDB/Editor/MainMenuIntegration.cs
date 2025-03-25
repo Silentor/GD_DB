@@ -51,7 +51,7 @@ namespace GDDB.Editor
             }
         }
 
-        [MenuItem( "GDDB/Load and print hierarchy..", priority = 4 )]
+        [MenuItem( "GDDB/Print hierarchy from file..", priority = 4 )]
         private static void LoadPrintHierarchyToConsole( )
         {
             var oldFolderKey       = $"{nameof(MainMenuIntegration)}.{nameof(LoadPrintHierarchyToConsole)}.OldFolder";
@@ -91,15 +91,10 @@ namespace GDDB.Editor
             }
         }
 
-        [MenuItem( "GDDB/Validate", priority = 5)]
+        [MenuItem( "GDDB/Validate...", priority = 5)]
         private static void Validate( )
         {
-            Validator.ValidateAsync();
-            Debug.Log( $"Errors {Validator.Reports.Count}" );
-            foreach ( var report in Validator.Reports )
-            {
-                Debug.LogError( report, report.GdObject );
-            }
+            ValidatorWindow.Open();
         }
     }
 }
