@@ -1,12 +1,12 @@
 <engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
     <Style src="project://database/Assets/Scripts/GDDB/Editor/Resources/ValidatorWindow.uss?fileID=7433441132597879392&amp;guid=b5f763724a5d20a4f9f7f6bdcc804dc3&amp;type=3#ValidatorWindow" />
-    <editor:Toolbar name="Toolbar">
-        <editor:ToolbarButton text="Validate" name="ValidateBtn" />
+    <editor:Toolbar name="Toolbar" style="margin-top: 1px; margin-right: 1px; margin-bottom: 1px; margin-left: 1px; padding-top: 1px; padding-right: 1px; padding-bottom: 1px; padding-left: 1px;">
+        <editor:ToolbarButton text="Validate" name="ValidateBtn" style="font-size: 13px;" />
         <editor:ToolbarSpacer style="flex-grow: 1;" />
         <engine:Label text="Found 0 error" name="Summary" />
         <editor:ToolbarSearchField name="Search" />
     </editor:Toolbar>
-    <engine:MultiColumnListView allow-add="false" allow-remove="false" show-alternating-row-backgrounds="ContentOnly" name="Reports">
+    <engine:MultiColumnListView allow-add="false" allow-remove="false" show-alternating-row-backgrounds="ContentOnly" name="Reports" view-data-key="ValidationReports">
         <engine:Columns>
             <engine:Column name="Icon" binding-path="Icon" />
             <engine:Column name="Location" title="Location" width="200px" binding-path="Location" />

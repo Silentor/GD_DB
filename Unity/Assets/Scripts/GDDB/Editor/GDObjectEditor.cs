@@ -176,7 +176,7 @@ namespace GDDB.Editor
                 removeBtn.clicked += () => RemoveComponent( componentsProp, catchId );
 
                 var scriptIcon = result.Q<Button>( "ScriptIcon" );
-                scriptIcon.style.backgroundImage =  _favorites.Contains( compType ) ? Resources.FavoriteIcon : Resources.CSharpIcon;
+                scriptIcon.style.backgroundImage =  _favorites.Contains( compType ) ? Icons.FavoriteIcon : Resources.CSharpIcon;
                 scriptIcon.clicked               += ( ) => ComponentIconClicked( scriptIcon, compType ); 
 
                 //Draw body
@@ -242,7 +242,7 @@ namespace GDDB.Editor
                     fixOnceBtn.clicked += () => FixComponentOnce( fixOnceBtn,  index, patcher );
 
                     var fixEverywhereBtn = result.Q<Button>( "FixEverywhere" );
-                    fixEverywhereBtn.clicked += () => FixComponentEverywhere( fixOnceBtn,  index, patcher );
+                    fixEverywhereBtn.clicked += () => FixComponentEverywhere( fixEverywhereBtn,  index, patcher );
 
                     //Debug.Log( $"[{nameof(GDObjectEditor)}]-[{nameof(CreateComponentGUI)}] created component editor {index} for missed component type {compTypeFromFile}" );
                 }
@@ -411,7 +411,7 @@ namespace GDDB.Editor
             else
             {
                 _favorites.Add( componentType );
-                iconButton.style.backgroundImage = Resources.FavoriteIcon;
+                iconButton.style.backgroundImage = Icons.FavoriteIcon;
             }
 
             _settings.SaveFavoriteComponents( _favorites );
@@ -435,7 +435,9 @@ namespace GDDB.Editor
 
         private void ShowSelectComponentPopup( Button sender, Action<Type> onSelectComponent )
         {
-            var searchPopupLogic = new TypeSearchPopup( _settings, _allComponents, sender.worldBound, onSelectComponent );
+            var bounds = sender.worldBound;
+            bounds.width = Mathf.Max( 300, bounds.width );        //Fix buttons are tiny
+            var searchPopupLogic = new TypeSearchPopup( _settings, _allComponents, bounds, onSelectComponent );
             searchPopupLogic.Closed   += ( ) => _settings.LoadFavoriteComponents( _favorites );
             PopupWindow.Show( sender.worldBound, searchPopupLogic );
         }
@@ -476,7 +478,6 @@ namespace GDDB.Editor
             public static VisualTreeAsset GDComponentEditorAsset = UnityEngine.Resources.Load<VisualTreeAsset>( "GDComponentEditor" );
 
             public static Texture2D CSharpIcon    = UnityEngine.Resources.Load<Texture2D>( "tag_24dp" );
-            public static Texture2D FavoriteIcon  = UnityEngine.Resources.Load<Texture2D>( "star_24dp" );
         }
     }
 }

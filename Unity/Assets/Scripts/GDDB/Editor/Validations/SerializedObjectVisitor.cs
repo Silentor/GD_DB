@@ -88,8 +88,9 @@ namespace GDDB.Editor.Validations
                     //         return EVisitResult.Stop;
                     //     break;
                     case EFieldKind.ManagedReference:
-                        if( IterateObject( childProp, childProp.managedReferenceValue.GetType() ) == EVisitResult.Stop )
-                            return EVisitResult.Stop;
+                        if( childProp.managedReferenceValue != null )
+                            if( IterateObject( childProp, childProp.managedReferenceValue.GetType() ) == EVisitResult.Stop )
+                                return EVisitResult.Stop;
                         break;
                 }
             }
