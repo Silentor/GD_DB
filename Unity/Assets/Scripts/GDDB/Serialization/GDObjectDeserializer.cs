@@ -160,7 +160,6 @@ namespace GDDB.Serialization
             var    type     = typeof(GDObject);
             var    guid     = Guid.Empty;
             var    propName = reader.ReadPropertyName();
-            String typeName = null;
             if ( propName == TypeTag )
             {
                 type = reader.ReadTypeValue(  );
@@ -173,7 +172,7 @@ namespace GDDB.Serialization
             else throw new Exception($"[{nameof(GDObjectDeserializer)}]-[{nameof(ReadGDObject)}] unknown property {propName}");
 
             if ( type == null )
-                throw new ReaderObjectException( name, null, reader, $"Cannot find the type {typeName}, object name {name}" );
+                throw new ReaderObjectException( name, null, reader, $"Cannot find the type of object name {name}, guid {guid}" );
 
             if ( typeof(GDObject).IsAssignableFrom( type ) )
             {    
