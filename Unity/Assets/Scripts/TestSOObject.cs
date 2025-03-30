@@ -5,7 +5,6 @@ using UnityEngine;
 namespace GDDB_User
 
 {
-    [CreateAssetMenu( fileName = "TestSOObject", menuName = "GDDB/TestSOObject", order = 0 )]
     public class TestSOObject : ScriptableObject
     {
         public Int32 SomeValue = 1;

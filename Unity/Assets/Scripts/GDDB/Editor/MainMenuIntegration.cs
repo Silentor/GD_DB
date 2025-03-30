@@ -11,10 +11,9 @@ namespace GDDB.Editor
 {
     public static class MainMenuIntegration
     {
-        //public const String Prefix = "Tools/GDDB/";           //Unity recommends to use "Tools" prefix for custom tools
-        public const String Prefix = "GDDB/";
+        public const String MyMenuPrefix = "Gddb/";           //Unity recommends to use "Tools" prefix for custom tools
 
-        [MenuItem( Prefix + "Open Control Window", priority = 0 )]
+        [MenuItem( MyMenuPrefix + "Open Control Window", priority = 0 )]
         private static void ShowControlWindow( )
         {
             var window = EditorWindow.GetWindow<ControlWindow>();
@@ -22,22 +21,35 @@ namespace GDDB.Editor
             window.Show();
         }
 
-        [MenuItem( Prefix + "Open Validate window...", priority = 1)]
+        [MenuItem( MyMenuPrefix + "Open Validate window...", priority = 1)]
         private static void Validate( )
         {
             ValidatorWindow.Open();
         }
         
-        [MenuItem( Prefix + "Open create GDObject wizard...", priority = 2)]
+        [MenuItem( MyMenuPrefix + "Open create GDObject wizard...", priority = 2)]
+        [MenuItem( "Assets/Create/Gddb/Open create GDObject wizard...")]
         private static void CreateGDObject( )
         {
             var wnd = EditorWindow.GetWindow<CreateGDObjectWizard>();
             wnd.titleContent = new GUIContent("Create GDObject wizard", Icons.GDObjectIcon );
         }
 
+        [MenuItem(MyMenuPrefix + "Open GdDb browser...", priority = 3)]
+        private static void OpenGddbBrowser( )
+        {
+            GDDBBrowserWindow.ShowWindow();
+        }
+
         //Mostly debug tools
 
-        [MenuItem( Prefix + "Print project hierarchy" )]
+        [MenuItem( MyMenuPrefix + "Debug stuff" )]
+        private static void DebugStuff(){}
+
+        [MenuItem( MyMenuPrefix + "Debug stuff", validate = true )]
+        private static bool DebugStuffValidate( ) { return false; }
+
+        [MenuItem( MyMenuPrefix + "Print project hierarchy" )]
         private static void PrintHierarchyToConsole( )
         {
             var  parser  = new GdDbAssetsParser();
@@ -53,7 +65,7 @@ namespace GDDB.Editor
             }
         }
 
-        [MenuItem( Prefix + "Print hierarchy from file.." )]
+        [MenuItem( MyMenuPrefix + "Print hierarchy from file.." )]
         private static void LoadPrintHierarchyToConsole( )
         {
             var oldFolderKey       = $"{nameof(MainMenuIntegration)}.{nameof(LoadPrintHierarchyToConsole)}.OldFolder";
@@ -93,7 +105,7 @@ namespace GDDB.Editor
             }
         }
 
-        [MenuItem( Prefix + "Open data file viewer" )]
+        [MenuItem( MyMenuPrefix + "Open data file viewer" )]
         private static void ShowWindow( )
         {
             var window = EditorWindow.GetWindow<DataFileViewer>();
@@ -101,7 +113,7 @@ namespace GDDB.Editor
             window.Show();
         }
 
-        [MenuItem( Prefix + "Open GDDB test generator window" )]
+        [MenuItem( MyMenuPrefix + "Open GDDB test generator window" )]
         private static void ShowGeneratorWindow( )
         {
             var window = EditorWindow.GetWindow<StressTestDBGenerator>();

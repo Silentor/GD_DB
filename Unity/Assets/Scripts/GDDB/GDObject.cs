@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace GDDB
 {
-    [CreateAssetMenu( menuName = "Create GDObject", fileName = "GDObject", order = 0 )]
+    [CreateAssetMenu( menuName = "Gddb/GDObject", fileName = "GDObject", order = 0 )]
     public class GDObject : ScriptableObject
     {
         public Boolean EnabledObject            = true;           //To temporary disable object in GD_DB queries
@@ -40,54 +40,81 @@ namespace GDDB
 
         public String Name => name;
 
-
-        [SerializeReference]
-        public List<GDComponent> Components = new List<GDComponent>();
+        public IList<GDComponent> Components => components;
 
         public T GetComponent<T>() where T : GDComponent
         {
-            return Components.Find( c => c is T ) as T;
+            return components.Find( c => c is T ) as T;
         }
 
         public Boolean HasComponent<T>() where T : GDComponent
         {
-            return Components.Exists( c => c is T );
+            for ( var i = 0; i < Components.Count; i++ )
+            {
+                var component = Components[ i ];
+                if ( component == null ) continue;
+                if ( typeof(T).IsAssignableFrom( component.GetType() ) )
+                    return true;
+            }
+
+            return false;
         }
 
         public Boolean HasComponent( Type type )
         {
+            if( !typeof(GDComponent).IsAssignableFrom( type ) ) throw new ArgumentException( $"Type {type.Name} must be derived from GDComponent" );
             if( type == null ) return Components.Count == 0;
 
-            return Components.Exists( c => type.IsAssignableFrom( c.GetType() ) );
+            for ( var i = 0; i < Components.Count; i++ )
+            {
+                var component = Components[ i ];
+                if ( component == null ) continue;
+                if ( type.IsAssignableFrom( component.GetType() ) )
+                    return true;
+            }
+
+            return false;
         }
 
         public Boolean HasComponents( IReadOnlyList<Type> types )
         {
-            if( types == null || types.Count == 0 ) return Components.Count == 0;
-
-            foreach ( var t in types )
-            {
-                if( !Components.Exists( c => t.IsAssignableFrom( c.GetType() ) ) )
-                    return false;
-            }
-
-            return true;
+            if( types == null ) return Components.Count == 0;
+            _tempList.Clear();
+            _tempList.AddRange( types );
+            return HasComponentsInternal();
         }
 
-        internal GDObject SetGuid( Guid guid )
+        public Boolean HasComponents(params Type[] types )
         {
-            _guid = guid;
-            return this;
+            if( types == null ) return Components.Count == 0;
+            _tempList.Clear();
+            _tempList.AddRange( types );
+            return HasComponentsInternal();
         }
 
+        public Boolean HasComponents<T1, T2> () where T1 : GDComponent where T2 : GDComponent
+        {
+            _tempList.Clear();
+            _tempList.Add( typeof(T1) );
+            _tempList.Add( typeof(T2) );
+            return HasComponentsInternal();
+        }
 
-        // public new static T CreateInstance<T>( ) where T : GDObject
-        // {
-        //     var result = ScriptableObject.CreateInstance<T>();
-        //     //result.name = typeof(T).Name + result.GetInstanceID().ToString();
-        //     result._guid = Guid.NewGuid();
-        //     return result;
-        // }
+        public Boolean HasComponents<T1, T2, T3> () where T1 : GDComponent where T2 : GDComponent where T3 : GDComponent
+        {
+            _tempList.Clear();
+            _tempList.Add( typeof(T1) );
+            _tempList.Add( typeof(T2) );
+            _tempList.Add( typeof(T3) );
+            return HasComponentsInternal();
+        }
+
+        public new static T CreateInstance<T>( ) where T : GDObject
+        {
+            var result = ScriptableObject.CreateInstance<T>();
+            result._guid = Guid.NewGuid();
+            return result;
+        }
 
         /// <summary>
         /// Creeate instance of given type (scriptable object or GDObject) and cast result to T type
@@ -120,7 +147,56 @@ namespace GDDB
             return result;
         }
 
+        public static GDObject CreateInstance( )
+        {
+            var result = ScriptableObject.CreateInstance<GDObject>();
+            result.SetGuid( Guid.NewGuid() );
+            return result;
+        }
+
+        internal const String ComponentPropName = nameof(components); 
+
+        [SerializeReference]
+        [SerializeField]
+        private List<GDComponent> components = new ();
+
         private Guid _guid;
+        private readonly List<Type> _tempList = new ();
+
+        private Boolean HasComponentsInternal(  )
+        {
+            if( _tempList == null || _tempList.Count == 0 ) return Components.Count == 0;
+            var expectedCount = _tempList.Count;
+            if ( Components.Count < expectedCount ) return false;
+
+            var actualCount = 0;
+            for ( var i = 0; i < Components.Count; i++ )
+            {
+                var component = Components[ i ];
+                if ( component == null ) continue;                  //Error in GDObject
+
+                for ( var j = 0; j < _tempList.Count; j++ )
+                {
+                    var t = _tempList[ j ];
+                    if ( t.IsAssignableFrom( component.GetType() ) )
+                    {
+                        actualCount++;
+                        if ( actualCount == expectedCount )
+                            return true;
+                        _tempList.RemoveAt( j );
+                        break;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        internal GDObject SetGuid( Guid guid )
+        {
+            _guid = guid;
+            return this;
+        }
 
 #if UNITY_EDITOR
         private Guid EditorGetAssetGuid( )

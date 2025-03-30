@@ -185,6 +185,21 @@ namespace GDDB.Tests
         public Flags[]      FlagsArray ;
     }
 
+    public class Component1 : GDComponent
+    {
+        public Int32 Field1 = 42;
+    }
+
+    public class Component2 : GDComponent
+    {
+        public Int32 Field2 = 42;
+    }
+
+    public class Component1_Child : Component1
+    {
+        public Int32 Field1_Child = 42;
+    }
+
     public enum DefaultEnum
     {
         Zero,

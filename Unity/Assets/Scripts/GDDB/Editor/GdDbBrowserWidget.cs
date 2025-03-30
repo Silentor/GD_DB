@@ -499,14 +499,13 @@ namespace GDDB.Editor
 
     }
 
-    public class GDDBBrowserTestWindow : EditorWindow
+    public class GDDBBrowserWindow : EditorWindow
     {
         private GdDbBrowserWidget _browser;
 
-        [MenuItem("GDDB/Show GdDb Browser")]
         public static void ShowWindow( )
         {
-            var window = GetWindow<GDDBBrowserTestWindow>();
+            var window = GetWindow<GDDBBrowserWindow>();
             window.titleContent = new GUIContent( "GdDb Browser" );
             window.Show();
         }

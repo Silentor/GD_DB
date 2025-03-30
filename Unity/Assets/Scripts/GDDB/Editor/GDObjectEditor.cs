@@ -96,7 +96,7 @@ namespace GDDB.Editor
         
             //GD Object custom properties
             var properties   = gdoVisualTree.Q<VisualElement>( "Properties" );
-            var compsProp    = serializedObject.FindProperty( nameof(GDObject.Components) );
+            var compsProp    = serializedObject.FindProperty( GDObject.ComponentPropName );
             
             var gdObjectProp = serializedObject.GetIterator();
             for (var enterChildren = true; gdObjectProp.NextVisible(enterChildren); enterChildren = false)
@@ -151,7 +151,7 @@ namespace GDDB.Editor
         private void RecreateComponents( )
         {
             _componentsContainer.Clear();
-            var componentsProp = serializedObject.FindProperty( nameof(GDObject.Components) );
+            var componentsProp = serializedObject.FindProperty( GDObject.ComponentPropName );
             CreateComponents( componentsProp );
         }
 
@@ -370,7 +370,7 @@ namespace GDDB.Editor
                 var nullRefIdIndex = patcher.ComponentIds.FindIndex( cid => cid == ManagedReferenceUtility.RefIdNull );
                 if ( nullRefIdIndex >= 0 )
                 {
-                    var componentsProp = new SerializedObject( gdObject ).FindProperty( nameof(GDObject.Components) );
+                    var componentsProp = new SerializedObject( gdObject ).FindProperty( GDObject.ComponentPropName );
                     componentsProp.DeleteArrayElementAtIndex( nullRefIdIndex );
                     isChanged = componentsProp.serializedObject.ApplyModifiedProperties();
                 }

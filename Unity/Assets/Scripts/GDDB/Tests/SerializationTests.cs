@@ -239,7 +239,7 @@ namespace GDDB.Tests
                             IntField  = 1,
                             IntField2 = 2
                     };
-            var testObj = ScriptableObject.CreateInstance<GDObject>();
+            var testObj = GDObject.CreateInstance<GDObject>();
             testObj.Components.Add( collComp );
 
             //Act

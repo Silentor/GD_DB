@@ -170,7 +170,7 @@ namespace GDDB.Editor.Validations
         private static void CheckMissedComponentsValidation( GDObject gdo, GdFolder folder, List<ValidationReport> reports )
         {
             var so        = new SerializedObject( gdo );
-            var compsProp = so.FindProperty( "Components" );
+            var compsProp = so.FindProperty( GDObject.ComponentPropName );
             for ( int i = 0; i < compsProp.arraySize; i++ )
             {
                 var compProp = compsProp.GetArrayElementAtIndex( i );

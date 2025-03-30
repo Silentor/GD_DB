@@ -52,7 +52,7 @@ namespace GDDB.Serialization
             //Reserved fields for some types
             var declaredType = field.DeclaringType;
             if ( declaredType == typeof(GDObject)
-                 && (field.Name == nameof(GDObject.EnabledObject) || field.Name == nameof(GDObject.Components)) )
+                 && (field.Name == nameof(GDObject.EnabledObject) || field.Name == GDObject.ComponentPropName ) )
                 return false;
 
             var fieldType = field.FieldType;

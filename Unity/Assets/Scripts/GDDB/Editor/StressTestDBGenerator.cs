@@ -149,7 +149,7 @@ namespace GDDB.Editor
 
                 if ( go is GDObject gdo )
                 {
-                    gdo.Components = new List<GDComponent>();
+                    gdo.Components.Clear();
 
                     var componentsCount = rnd.Next( 1, settings.MaxComponentsPerObject + 1 );
                     for ( var i = 0; i < componentsCount; i++ )
@@ -202,7 +202,7 @@ namespace GDDB.Editor
                  go.name       = $"{baseName}_{counter++:00}";
                  if ( go is GDObject gdo )
                  {
-                     gdo.Components = new List<GDComponent>();
+                     gdo.Components.Clear();
                      foreach ( var componentType in gdComponentTypes )
                      {
                          var component         = (GDComponent)Activator.CreateInstance( componentType );      

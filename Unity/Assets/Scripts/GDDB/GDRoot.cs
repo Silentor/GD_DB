@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace GDDB
 {
-    [CreateAssetMenu( menuName = "Create GDRoot", fileName = "GDRoot", order = 0 )]
+    [CreateAssetMenu( menuName = "Gddb/GDRoot", fileName = "GDRoot", order = 0 )]
     public class GDRoot : GDObject
     {
         public String   Id        = "UniqueName";
