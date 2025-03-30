@@ -28,14 +28,20 @@ namespace GDDB.Editor
 
         private GDObject        _target;
         private VisualElement   _componentsContainer;
-        private Settings        _settings;
+        private TypeSearchSettings        _settings;
         private List<Type>      _favorites;
         private VisualElement   _root;
+        private static readonly Type[]   _allComponents;
+
+        static GDObjectEditor( )
+        {
+            _allComponents = TypeCache.GetTypesDerivedFrom<GDComponent>().Where( t => !t.IsAbstract ).ToArray();
+        }
 
         protected virtual void OnEnable( )
         {
             _target    = (GDObject)target;
-            _settings  = new Settings();
+            _settings  = new TypeSearchSettings( nameof(GDComponent) );
             _favorites = new List<Type>();
             _settings.LoadFavoriteComponents( _favorites );
         }
@@ -429,8 +435,7 @@ namespace GDDB.Editor
 
         private void ShowSelectComponentPopup( Button sender, Action<Type> onSelectComponent )
         {
-            var searchPopupLogic = new GDComponentSearchPopup( _settings );
-            searchPopupLogic.Selected += onSelectComponent;
+            var searchPopupLogic = new TypeSearchPopup( _settings, _allComponents, sender.worldBound, onSelectComponent );
             searchPopupLogic.Closed   += ( ) => _settings.LoadFavoriteComponents( _favorites );
             PopupWindow.Show( sender.worldBound, searchPopupLogic );
         }

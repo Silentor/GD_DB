@@ -48,7 +48,7 @@ namespace GDDB.Editor
             {
                 //var oldColor = GUI.color;
                 //GUI.color = Color.red;
-                var content = new GUIContent( Styles.GDRootIcon, tooltip: "GD root folder" );
+                var content = new GUIContent( Icons.GDRootIcon, tooltip: "GD root folder" );
                 iconRect.x -= IconSize;
                 GUI.Label( iconRect, content );
                 //GUI.color = oldColor;
@@ -57,7 +57,7 @@ namespace GDDB.Editor
             if( itemData.IsGDRootObject )
             {
                 //var oldColor = GUI.color;
-                var content = new GUIContent( Styles.GDRootIcon, tooltip: "GD root object" );
+                var content = new GUIContent( Icons.GDRootIcon, tooltip: "GD root object" );
                 iconRect.x -= IconSize;
                 GUI.Label( iconRect, content );
                 //GUI.color = oldColor;
@@ -67,25 +67,25 @@ namespace GDDB.Editor
             {
                 case EDisabledState.ObjectDisabledSelf:
                 {
-                    var content = new GUIContent( Styles.DisabledIcon, tooltip: "Object disabled, it's not included to database" );
+                    var content = new GUIContent( Resources.DisabledIcon, tooltip: "Object disabled, it's not included to database" );
                     iconRect.x -= IconSize;
                     GUI.Label( iconRect, content );
                 } break;
                 case EDisabledState.ObjectDisabledInFolder:
                 {
-                    var content = new GUIContent( Styles.DisabledIcon, tooltip: "Object disabled because some parent folder disabled" );
+                    var content = new GUIContent( Resources.DisabledIcon, tooltip: "Object disabled because some parent folder disabled" );
                     iconRect.x -= IconSize;
                     GUI.Label( iconRect, content );
                 } break;
                 case EDisabledState.FolderDisabledSelf:
                 {
-                    var content = new GUIContent( Styles.DisabledIcon, tooltip: "Folder disabled, all it content not included to database" );
+                    var content = new GUIContent( Resources.DisabledIcon, tooltip: "Folder disabled, all it content not included to database" );
                     iconRect.x -= IconSize;
                     GUI.Label( iconRect, content );
                 } break;
                 case EDisabledState.FolderDisabledInParent:
                 {
-                    var content = new GUIContent( Styles.DisabledIcon, tooltip: "Folder disabled because some parent folder disabled" );
+                    var content = new GUIContent( Resources.DisabledIcon, tooltip: "Folder disabled because some parent folder disabled" );
                     iconRect.x -= IconSize;
                     GUI.Label( iconRect, content );
                 }   break;
@@ -98,7 +98,7 @@ namespace GDDB.Editor
             if( itemData.InvalidGDObject )
             {
                 //var oldColor = GUI.color;
-                var content = new GUIContent( Styles.InvalidGDO, tooltip: itemData.InvalidGDOCustomTooltip );
+                var content = new GUIContent( Icons.ErrorIcon, tooltip: itemData.InvalidGDOCustomTooltip );
                 iconRect.x -= IconSize;
                 GUI.Label( iconRect, content );
                 //GUI.color = oldColor;
@@ -192,7 +192,7 @@ namespace GDDB.Editor
             return true;
         }
 
-        private static class Styles
+        private static class Resources
         {
             public static readonly GUIStyle GDTypeStrLabel = new (EditorStyles.label)
                                                              {
@@ -238,11 +238,8 @@ namespace GDDB.Editor
                                                                              fontStyle = FontStyle.Italic
                                                                      };
 
-            public static readonly Texture2D GDRootIcon = Resources.Load<Texture2D>( "database_24dp" );
-            public static readonly Texture2D DisabledIcon = Resources.Load<Texture2D>( "visibility_off_24dp" );
-            public static readonly Texture2D InvalidGDO = Resources.Load<Texture2D>( "error_24dp" );
-
-
+            
+            public static readonly Texture2D DisabledIcon = UnityEngine.Resources.Load<Texture2D>( "visibility_off_24dp" );
         }
 
         [DebuggerDisplay("{DebugName}")]

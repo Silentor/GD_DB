@@ -80,23 +80,43 @@ namespace GDDB
             return this;
         }
 
-        public new static T CreateInstance<T>( ) where T : GDObject
+
+        // public new static T CreateInstance<T>( ) where T : GDObject
+        // {
+        //     var result = ScriptableObject.CreateInstance<T>();
+        //     //result.name = typeof(T).Name + result.GetInstanceID().ToString();
+        //     result._guid = Guid.NewGuid();
+        //     return result;
+        // }
+
+        /// <summary>
+        /// Creeate instance of given type (scriptable object or GDObject) and cast result to T type
+        /// </summary>
+        /// <param name="type"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static T CreateInstance<T>( Type type ) where T : ScriptableObject
         {
-            var result = ScriptableObject.CreateInstance<T>();
-            //result.name = typeof(T).Name + result.GetInstanceID().ToString();
-            result._guid = Guid.NewGuid();
-            return result;
+            return (T)CreateInstance( type );
         }
 
-
-        public new static GDObject CreateInstance( Type type )
+        /// <summary>
+        /// Create gd object of given type (scriptable object or GDObject)
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public new static ScriptableObject CreateInstance( Type type )
         {
-            if( !typeof(GDObject).IsAssignableFrom( type ) )
-                throw new ArgumentException( $"Type {type.Name} must be derived from GDObject" );
+            if( !typeof(ScriptableObject).IsAssignableFrom( type ) )
+                throw new ArgumentException( $"Type {type.Name} must be derived from ScriptableObject" );
 
-            var result = (GDObject)ScriptableObject.CreateInstance( type );
-            //result.name  = type.Name + result.GetInstanceID().ToString();
-            result._guid = Guid.NewGuid();
+            var result = ScriptableObject.CreateInstance( type );
+            if( result is GDObject gdo )
+            {
+                gdo.SetGuid( Guid.NewGuid() );
+                return gdo;
+            }
             return result;
         }
 
@@ -105,7 +125,7 @@ namespace GDDB
 #if UNITY_EDITOR
         private Guid EditorGetAssetGuid( )
         {
-            if ( UnityEditor.AssetDatabase.TryGetGUIDAndLocalFileIdentifier( this, out var guid, out long localId ) )
+            if ( UnityEditor.AssetDatabase.TryGetGUIDAndLocalFileIdentifier( this, out var guid, out _ ) )
             {
                 return Guid.ParseExact( guid, "N" );
             }

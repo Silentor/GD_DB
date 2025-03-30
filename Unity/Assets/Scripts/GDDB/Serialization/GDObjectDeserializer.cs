@@ -177,7 +177,7 @@ namespace GDDB.Serialization
 
             if ( typeof(GDObject).IsAssignableFrom( type ) )
             {    
-                var obj       = GDObject.CreateInstance( type ).SetGuid( guid );
+                var obj       = GDObject.CreateInstance<GDObject>( type ).SetGuid( guid );
                 obj.hideFlags = HideFlags.HideAndDontSave;
                 obj.name      = name;
 

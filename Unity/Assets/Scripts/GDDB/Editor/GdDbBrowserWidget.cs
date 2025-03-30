@@ -13,8 +13,8 @@ using Object = System.Object;
 namespace GDDB.Editor
 {
     /// <summary>
-    /// Widget for browsing Gddb objects and/or folders. Can be embedded to popup window or editor window
-    /// </summary>
+    /// Widget for browsing Gddb objects and/or folders. Used to select object of folder from DB. Can be embedded to popup window <see cref="GdDbBrowserPopup"/> or editor window
+    /// </summary>                                                                                                                  
     public class GdDbBrowserWidget
     {
         /// <summary>

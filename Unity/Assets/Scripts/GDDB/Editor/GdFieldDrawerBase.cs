@@ -65,7 +65,7 @@ namespace GDDB.Editor
             if ( GUI.Button( dropdownBtnPos, "\u02c5", Resources.PickerButton ) || IsPressEnter( controlId ) )
             {
                 var gddb    = EditorDB.DB;
-                var gddbBrowserContent = new GdDbBrowserPopupWindowContent( gddb, allowedObjects, allowedFolders, currentObject, propertyPosition, allowNullObject, GdDbBrowserWidget.EMode.Objects, 
+                var gddbBrowserContent = new GdDbBrowserPopup( gddb, allowedObjects, allowedFolders, currentObject, propertyPosition, allowNullObject, GdDbBrowserWidget.EMode.Objects, 
                         ( sender, folder, obj ) =>
                         {
                             onSelected?.Invoke( obj );
@@ -140,7 +140,7 @@ namespace GDDB.Editor
             if ( GUI.Button( dropdownBtnPos, "\u02c5", Resources.PickerButton ) || IsPressEnter( controlId ) )
             {
                 var gddb    = EditorDB.DB;
-                var gddbBrowserContent = new GdDbBrowserPopupWindowContent( gddb, null, allowedFolders, currentFolder, propertyPosition, allowNullObject, GdDbBrowserWidget.EMode.Folders, 
+                var gddbBrowserContent = new GdDbBrowserPopup( gddb, null, allowedFolders, currentFolder, propertyPosition, allowNullObject, GdDbBrowserWidget.EMode.Folders, 
                         ( sender, folder, obj ) =>
                         {
                             onSelected?.Invoke( folder );
@@ -187,15 +187,15 @@ namespace GDDB.Editor
         public static Texture2D GetObjectIcon( ScriptableObject selectedObject )
         {
             if ( selectedObject is GDRoot )
-                return Resources.GDRootIcon;
+                return Icons.GDRootIcon;
             else if ( selectedObject is GDObject )
-                return Resources.GDObjectIcon;
-            return Resources.SObjectIcon;
+                return Icons.GDObjectIcon;
+            return Icons.SObjectIcon;
         }
 
         public static Texture2D GetFolderIcon( GdFolder selectedFolder )
         {
-            return Resources.FolderIcon;
+            return Icons.FolderIcon;
         }
 
 
@@ -207,7 +207,7 @@ namespace GDDB.Editor
         public delegate void OnGdObjectSelected( ScriptableObject gdObject );
         public delegate void OnGdFolderSelected( GdFolder gdFolder );
 
-        public static class Resources
+        private static class Resources
         {
             public static readonly GUIStyle  PrefixLabelStyle      = new GUIStyle( EditorStyles.label ) ;
             public static readonly GUIStyle  PrefixLabelErrorStyle = new GUIStyle( PrefixLabelStyle ) { normal   = { textColor = Color.red }, focused = { textColor = Color.red } };
@@ -215,10 +215,7 @@ namespace GDDB.Editor
             public static readonly GUIStyle  FieldErrorStyle   = new ( FieldStyle ) { normal             = { textColor = Color.red}};
             public static readonly GUIStyle  PickerButton          = EditorStyles.miniButton;
 
-            public static readonly Texture2D GDRootIcon = UnityEngine.Resources.Load<Texture2D>( "database_24dp" );
-            public static readonly Texture2D GDObjectIcon = UnityEngine.Resources.Load<Texture2D>( "description_24dp" );
-            public static readonly Texture2D SObjectIcon = (Texture2D)EditorGUIUtility.IconContent( EditorGUIUtility.isProSkin ? "d_ScriptableObject Icon" : "ScriptableObject Icon" ).image;
-            public static readonly Texture2D FolderIcon = (Texture2D)EditorGUIUtility.IconContent( EditorGUIUtility.isProSkin ? "d_Folder Icon" : "Folder Icon" ).image;
+            
         }
     }
 }

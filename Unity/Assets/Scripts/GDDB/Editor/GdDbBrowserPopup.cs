@@ -10,7 +10,7 @@ namespace GDDB.Editor
     /// <summary>
     /// Adapter for <see cref="GdDbBrowserWidget"/> to use as PopupWindow content
     /// </summary>
-    public class GdDbBrowserPopupWindowContent : PopupWindowContent
+    public class GdDbBrowserPopup : PopupWindowContent
     {
         private readonly GdDb                            _db;
         private readonly IReadOnlyList<ScriptableObject> _objects;
@@ -24,7 +24,7 @@ namespace GDDB.Editor
         private          GdDbBrowserWidget               _widget;
         private          Vector2                         _ownerWindowSize;
 
-        public GdDbBrowserPopupWindowContent( GdDb db, IReadOnlyList<ScriptableObject> objects, IReadOnlyList<GdFolder> folders, Object selectedObject, Rect activatorRect, Boolean showClearButton, GdDbBrowserWidget.EMode mode, OnSelected onSelected, OnSelected onChosed )
+        public GdDbBrowserPopup( GdDb db, IReadOnlyList<ScriptableObject> objects, IReadOnlyList<GdFolder> folders, Object selectedObject, Rect activatorRect, Boolean showClearButton, GdDbBrowserWidget.EMode mode, OnSelected onSelected, OnSelected onChosed )
         {
             _db                   = db;
             _objects              = objects;
@@ -71,14 +71,9 @@ namespace GDDB.Editor
             Closed?.Invoke();
         }
 
-        // public override Vector2 GetWindowSize( )
-        // {
-        //     return new Vector2( _activatorRect.width, 200 ); //TODO modify height based on number of items
-        // }
-
         public event Action Closed;
 
-        public delegate void OnSelected( GdDbBrowserPopupWindowContent sender, GdFolder folder, ScriptableObject gdObject );
+        public delegate void OnSelected( GdDbBrowserPopup sender, GdFolder folder, ScriptableObject gdObject );
     }
 
     

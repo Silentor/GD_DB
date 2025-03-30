@@ -1,0 +1,30 @@
+.toolbar {
+    flex-grow: 1;
+    height: 22px;
+    min-height: 22px;
+    max-height: 22px;
+    background-color: var(--unity-colors-alternated_rows-background);
+    border-left-color: rgb(140, 140, 140);
+    border-right-color: rgb(140, 140, 140);
+    border-top-color: rgb(140, 140, 140);
+    border-bottom-color: rgb(140, 140, 140);
+    border-top-width: 1px;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+    border-left-width: 1px;
+    border-top-left-radius: 1px;
+    border-top-right-radius: 1px;
+    border-bottom-right-radius: 1px;
+    border-bottom-left-radius: 1px;
+    margin-top: 2px;
+    margin-right: 0;
+    margin-bottom: 0;
+    margin-left: 0;
+}
+
+.toolbtn {
+    max-height: 20px;
+    max-width: 20px;
+    min-width: 20px;
+    min-height: 20px;
+}

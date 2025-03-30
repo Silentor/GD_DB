@@ -146,15 +146,19 @@ namespace GDDB.Editor
                 if( gdType != typeof(GDObject) )
                     FillObjectValues( go, rnd );
                 go.name       = objectNames[ rnd.Next( objectNames.Count ) ];
-                go.Components = new List<GDComponent>();
 
-                var componentsCount = rnd.Next( 1, settings.MaxComponentsPerObject + 1 );
-                for ( var i = 0; i < componentsCount; i++ )
+                if ( go is GDObject gdo )
                 {
-                    var componentType = _gdComponents[ rnd.Next( _gdComponents.Length ) ];
-                    var component     = (GDComponent)Activator.CreateInstance( componentType );
-                    FillObjectValues( component, rnd );
-                    go.Components.Add( component );
+                    gdo.Components = new List<GDComponent>();
+
+                    var componentsCount = rnd.Next( 1, settings.MaxComponentsPerObject + 1 );
+                    for ( var i = 0; i < componentsCount; i++ )
+                    {
+                        var componentType = _gdComponents[ rnd.Next( _gdComponents.Length ) ];
+                        var component     = (GDComponent)Activator.CreateInstance( componentType );
+                        FillObjectValues( component, rnd );
+                        gdo.Components.Add( component );
+                    }
                 }
 
                 AssetDatabase.CreateAsset( go, Path.Join( folderPath, $"{go.name}.asset" ) );
@@ -196,17 +200,20 @@ namespace GDDB.Editor
                  if( gdObjectType != typeof(GDObject) )
                     FillObjectValues( go, rnd );
                  go.name       = $"{baseName}_{counter++:00}";
-                 go.Components = new List<GDComponent>();
-                 foreach ( var componentType in gdComponentTypes )
+                 if ( go is GDObject gdo )
                  {
-                     var component         = (GDComponent)Activator.CreateInstance( componentType );      
-                     FillObjectValues( component, rnd );
-                     go.Components.Add( component );
-                 }
+                     gdo.Components = new List<GDComponent>();
+                     foreach ( var componentType in gdComponentTypes )
+                     {
+                         var component         = (GDComponent)Activator.CreateInstance( componentType );      
+                         FillObjectValues( component, rnd );
+                         gdo.Components.Add( component );
+                     }
 
-                 //Some items in catalog may have additional component
-                 if( rnd.NextDouble() < 0.1f )
-                     go.Components.Add( (GDComponent)Activator.CreateInstance( _gdComponents[rnd.Next( _gdComponents.Length )] ) );
+                     //Some items in catalog may have additional component
+                     if( rnd.NextDouble() < 0.1f )
+                         gdo.Components.Add( (GDComponent)Activator.CreateInstance( _gdComponents[rnd.Next( _gdComponents.Length )] ) );
+                 }
 
                  AssetDatabase.CreateAsset( go, Path.Join( folderPath, $"{go.name}.asset" ) );
                  objectsCount++;

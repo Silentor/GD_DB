@@ -8,7 +8,7 @@ using Object = System.Object;
 
 namespace GDDB.Editor
 {
-    public class Settings
+    public class TypeSearchSettings
     {
         public Int32 MaxMRUViewItems                = 10;
         public Int32 MaxMRUStoreItems               = 20;
@@ -16,9 +16,10 @@ namespace GDDB.Editor
         public Int32 MaxFavoriteStoreItems          = 20;
 
 
-        public Settings( )
+        public TypeSearchSettings( String key )
         {
-            _settingsPrefix = $"{Application.identifier}.GDDB.Editor.Settings.";
+            key ??= "";
+            _settingsPrefix = $"{Application.identifier}.GDDB.Editor.TypeSearchSettings.{key}.";
             _mruKey = $"{_settingsPrefix}MRUComponents";
             _favKey = $"{_settingsPrefix}FavoriteComponents";
             _listModeKey = $"{_settingsPrefix}SearchListMode";
@@ -31,9 +32,9 @@ namespace GDDB.Editor
             set => EditorPrefs.SetString( _lastSearchStringKey, value );
         }
 
-        public GDComponentSearchPopup.EListMode SearchListMode
+        public TypeSearchWidget.EListMode SearchListMode
         {
-            get => (GDComponentSearchPopup.EListMode)EditorPrefs.GetInt( _listModeKey, 0 );
+            get => (TypeSearchWidget.EListMode)EditorPrefs.GetInt( _listModeKey, 0 );
             set => EditorPrefs.SetInt( _listModeKey, (Int32)value );
         }
 

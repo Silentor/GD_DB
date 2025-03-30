@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <Style src="project://database/Assets/Scripts/GDDB/Editor/Resources/CreateGDObjectWizard.uss?fileID=7433441132597879392&amp;guid=f74b3a582b7bf034384027365ebc9d62&amp;type=3#CreateGDObjectWizard" />
+    <ui:VisualElement name="GDObject" style="flex-grow: 1;">
+        <ui:Label text="Select type of GDObject" />
+    </ui:VisualElement>
+    <ui:VisualElement name="Buttons" class="toolbar" style="flex-direction: row;">
+        <ui:Label text="Will be created new GDObject" name="InfoLabel" style="flex-grow: 1;" />
+        <ui:Button text="Create" name="CreateBtn" style="max-width: 50px; align-self: flex-end;" />
+    </ui:VisualElement>
+</ui:UXML>

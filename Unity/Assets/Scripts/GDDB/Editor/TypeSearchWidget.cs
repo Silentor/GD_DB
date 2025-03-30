@@ -8,47 +8,26 @@ using Object = System.Object;
 
 namespace GDDB.Editor
 {
-    public class GDComponentSearchPopup : PopupWindowContent
+    public class TypeSearchWidget
     {
-        public GDComponentSearchPopup(   Settings settings )
+        public TypeSearchWidget(   TypeSearchSettings settings, IReadOnlyList<Type> types )
         {
-            _settings       = settings;
+            _settings   = settings;
+            _allTypes = types.Select(  t => new Item
+                                          {
+                                                  Namespace     = t.Namespace == null ? Array.Empty<String>() : t.Namespace.Split( '.' ).ToList(),
+                                                  ComponentName = t.Name,
+                                                  Type          = t
+                                          } ).ToList();
         }
 
-        public IReadOnlyList<Item> AllComponents => _allComponents;
+        public Type SelectedType { get; private  set; }
 
-        public Int32 SelectedItem
+
+        public VisualElement CreateGUI( )
         {
-            get => _selectedViewItem;
-            set
-            {
-                _resultsList.ScrollToItem( value );
-                _selectedViewItem = value;
-                UpdateSelectedItem();
-            }
-        }
-
-        public override void OnGUI(Rect rect )
-        {
-            //see OnOpen
-        }
-
-        public override Vector2 GetWindowSize( )
-        {
-            var baseSize = base.GetWindowSize();
-            baseSize.y = 400;
-            return baseSize;
-        }
-
-        public override void OnOpen( )
-        {
-            base.OnOpen();
-
-            var asset    = UnityEngine.Resources.Load<VisualTreeAsset>( "GDComponentSearchPopup" );
-            var instance = asset.Instantiate();
-            editorWindow.rootVisualElement.Add( instance );
-
-            _itemAsset = UnityEngine.Resources.Load<VisualTreeAsset>( "GDComponentSearchPopupItem" );
+            var instance = Resources.Window.Instantiate();
+            _itemAsset = Resources.Item;
 
             _searchToolBtn = instance.Q<Button>( "SearchBtn" );
             _searchToolBtn.clicked += SearchToolBtn_Clicked;
@@ -71,24 +50,14 @@ namespace GDDB.Editor
             _resultsList.unbindItem  = ResultsList_UnbindItem;
             _resultsList.itemsSource = _resultsToList;
 
-            //Prepare all components cache
-            var allComponentTypes   = TypeCache.GetTypesDerivedFrom( typeof(GDComponent) );
-            var allProperComponents = allComponentTypes.Where( t => !t.IsAbstract ).OrderBy( t => t.Name ).ToArray();
-            _allComponents = allProperComponents.Select( t => new Item
-                                                              {
-                                                                      Namespace     = t.Namespace == null ? Array.Empty<String>() : t.Namespace.Split( '.' ).ToList(),
-                                                                      ComponentName = t.Name,
-                                                                      Type          = t
-                                                              } ).ToList();
-
             //Restore prev state
             var types = new List<Type>();
             _settings.LoadMRUComponents( types );
-            _mru.AddRange( types.Where( t => _allComponents.Any( a => a.Type == t ) ) );             
+            _mru.AddRange( types.Where( t => _allTypes.Any( a => a.Type == t ) ) );             
             _settings.LoadFavoriteComponents( types );
-            _favorites.AddRange( types.Where( t => _allComponents.Any( a => a.Type == t ) ) );
+            _favorites.AddRange( types.Where( t => _allTypes.Any( a => a.Type == t ) ) );
 
-            _lastSearchResult  = new Result() { SearchString = _settings.LastSearchString, Items = _allComponents.ToList() };
+            _lastSearchResult  = new Result() { SearchString = _settings.LastSearchString, Items = _allTypes.ToList() };
             _searchField.SetValueWithoutNotify( _settings.LastSearchString );
 
             if ( _settings.SearchListMode == EListMode.Recommended )
@@ -98,16 +67,8 @@ namespace GDDB.Editor
 
             //To support keyboard navigation
             instance.RegisterCallback<KeyDownEvent>( Widget_KeyDown, TrickleDown.TrickleDown );
-        }
 
-        public override void OnClose( )
-        {
-            base.OnClose();
-
-            _settings.SaveMRUComponents( _mru.ToArray() );
-            _settings.SaveFavoriteComponents( _favorites.ToArray() );
-
-            Closed?.Invoke();
+            return instance;
         }
 
         /// <summary>
@@ -115,14 +76,9 @@ namespace GDDB.Editor
         /// </summary>
         public event Action<Type> Selected; 
 
-        /// <summary>
-        /// When popup closed
-        /// </summary>
-        public event Action Closed;
-
         private readonly List<ResultItem>    _resultsToList = new ();
         private          ListView            _resultsList;
-        private          IReadOnlyList<Item> _allComponents;
+        private readonly IReadOnlyList<Item> _allTypes;
         private          VisualTreeAsset     _itemAsset;
         private          Label               _resultsLabel;
         private          Result              _lastSearchResult;
@@ -131,7 +87,7 @@ namespace GDDB.Editor
         private          Button              _resultsBtn;
         private          Button              _searchToolBtn;
         private          Button              _recommendedToolBtn;
-        private readonly Settings            _settings;
+        private readonly TypeSearchSettings  _settings;
         private          Int32               _selectedViewItem;
 
         private readonly List<Type> _mru       = new();
@@ -159,7 +115,7 @@ namespace GDDB.Editor
             
             if ( !resultItem.IsNamespace )
             {
-                label.tooltip = String.Join( ".", resultItem.Component.Namespace.Append( resultItem.Component.ComponentName ) );
+                label.tooltip = String.Join( ".", resultItem.Item.Namespace.Append( resultItem.Item.ComponentName ) );
                 e.Q<VisualElement>( "OpenNamespaceIcon" ).style.display = DisplayStyle.None;
             }
             else
@@ -184,7 +140,7 @@ namespace GDDB.Editor
         {
             if ( !resultItem.IsNamespace )          //Select component, add component to GDObject
             {
-                SelectComponent( resultItem );
+                SelectType( resultItem );
             }
             else                                    //Show classes from selected namespace 
             {
@@ -206,13 +162,14 @@ namespace GDDB.Editor
             //Add/remove item from Favorite list
             if ( !resultItem.IsNamespace )
             {
-                _favorites.Remove( resultItem.Component.Type );
+                _favorites.Remove( resultItem.Item.Type );
                 if( !resultItem.IsFavorite )
-                    _favorites.Insert( 0, resultItem.Component.Type );
+                    _favorites.Insert( 0, resultItem.Item.Type );
                 if ( _settings.SearchListMode == EListMode.Recommended )
                     ProcessRecommended();
                 else
                     ProcessSearch();
+                _settings.SaveFavoriteComponents( _favorites );
             }
         }
 
@@ -245,32 +202,43 @@ namespace GDDB.Editor
 
             if ( evt.keyCode == KeyCode.DownArrow  )
             {
-                SelectedItem = SelectedItem < 0 ? 0 : Math.Clamp( SelectedItem + 1, 0, _resultsToList.Count - 1 );
+                SelectedViewItem = SelectedViewItem < 0 ? 0 : Math.Clamp( SelectedViewItem + 1, 0, _resultsToList.Count - 1 );
             }
             else if ( evt.keyCode == KeyCode.UpArrow  )
             {
-                SelectedItem = SelectedItem < 0 ? _resultsToList.Count - 1 : Math.Clamp( SelectedItem - 1, 0, _resultsToList.Count - 1 );
+                SelectedViewItem = SelectedViewItem < 0 ? _resultsToList.Count - 1 : Math.Clamp( SelectedViewItem - 1, 0, _resultsToList.Count - 1 );
             }
             else if ( evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter )
             {
-                if ( SelectedItem >= 0 && SelectedItem < _resultsToList.Count )
-                    SelectComponent( _resultsToList[ SelectedItem ] );
+                if ( SelectedViewItem >= 0 && SelectedViewItem < _resultsToList.Count )
+                    SelectType( _resultsToList[ SelectedViewItem ] );
             }
             else if ( evt.keyCode == KeyCode.RightArrow )
             {
-                if ( SelectedItem >= 0 && SelectedItem < _resultsToList.Count )
+                if ( SelectedViewItem >= 0 && SelectedViewItem < _resultsToList.Count )
                 {
-                    var item = _resultsToList[ SelectedItem ];
+                    var item = _resultsToList[ SelectedViewItem ];
                     if( item.IsNamespace )
                         InspectNamespace( item.Namespace );
                 }
             }
             else if ( evt.keyCode == KeyCode.LeftArrow )
             {
-                if ( SelectedItem >= 0 && SelectedItem < _resultsToList.Count )
+                if ( SelectedViewItem >= 0 && SelectedViewItem < _resultsToList.Count )
                 {
                     ReturnInspectNamespace();
                 }
+            }
+        }
+
+        private Int32 SelectedViewItem
+        {
+            get => _selectedViewItem;
+            set
+            {
+                _resultsList.ScrollToItem( value );
+                _selectedViewItem = value;
+                UpdateSelectedItem();
             }
         }
 
@@ -301,24 +269,24 @@ namespace GDDB.Editor
             var favoriteItems = new List<ResultItem>();
             foreach ( var favCompType in _favorites )
             {
-                var favItem = _allComponents.First( i => i.Type == favCompType );
+                var favItem = _allTypes.First( i => i.Type == favCompType );
                 favoriteItems.Add( new ResultItem()
                                    {
-                                           Component = favItem,
+                                           Item = favItem,
                                            Label = favItem.ComponentName,
-                                           Icon = Resources.FavoriteIcon,
+                                           Icon = Icons.FavoriteIcon,
                                            IsFavorite = true,
                                    } );
             }
             var mruItems = new List<ResultItem>();
             foreach ( var mruCompType in _mru )
             {
-                var mruItem = _allComponents.First( i => i.Type == mruCompType );
+                var mruItem = _allTypes.First( i => i.Type == mruCompType );
                 mruItems.Add( new ResultItem()
                               {
-                                      Component  = mruItem,
+                                      Item  = mruItem,
                                       Label      = mruItem.ComponentName,
-                                      Icon       = Resources.RecentIcon,
+                                      Icon       = Icons.RecentIcon,
                               } );
             }
 
@@ -326,19 +294,19 @@ namespace GDDB.Editor
             _resultsToList.AddRange( favoriteItems );
             _resultsToList.AddRange( mruItems );
             _resultsList.RefreshItems();
-            SelectedItem = -1;
+            SelectedViewItem = -1;
         }
 
 
         private Result SearchItems( String searchString )
         {
             if ( String.IsNullOrWhiteSpace( searchString ) )
-                return new Result() { SearchString = searchString, Items = _allComponents.ToList() };
+                return new Result() { SearchString = searchString, Items = _allTypes.ToList() };
             else
                 return new Result()
                        {
                                SearchString = searchString,
-                               Items = _allComponents.Where( i =>
+                               Items = _allTypes.Where( i =>
                                        i.ComponentName.Contains( searchString, StringComparison.OrdinalIgnoreCase ) ).ToList()
                        };
         }
@@ -350,10 +318,10 @@ namespace GDDB.Editor
                 result.View = result.Items.Where( i => IsNamespaceBeginWith( i.Namespace, result.InspectNamespace ) )
                                     .Select( i => new ResultItem()
                                                   {
-                                                          Component = i, 
-                                                          Label = i.ComponentName, 
-                                                          Namespace = i.Namespace.Skip( result.InspectNamespace.Count ).ToList(),
-                                                          Icon = _favorites.Contains( i.Type ) ? Resources.FavoriteIcon : Resources.CSharpIcon,
+                                                          Item  = i, 
+                                                          Label      = i.ComponentName, 
+                                                          Namespace  = i.Namespace.Skip( result.InspectNamespace.Count ).ToList(),
+                                                          Icon       = GetTypeIcon( i.Type ),
                                                           IsFavorite = _favorites.Contains( i.Type )
                                                   } ).ToList();
             }
@@ -361,10 +329,10 @@ namespace GDDB.Editor
             {
                 result.View = result.Items.Select( i => new ResultItem()
                                                         {
-                                                                Component = i, 
+                                                                Item = i, 
                                                                 Label = i.ComponentName, 
                                                                 Namespace = i.Namespace,
-                                                                Icon = _favorites.Contains( i.Type ) ? Resources.FavoriteIcon : Resources.CSharpIcon,
+                                                                Icon = GetTypeIcon( i.Type ),
                                                                 IsFavorite = _favorites.Contains( i.Type )
                                                         } ).ToList();
             }
@@ -385,6 +353,17 @@ namespace GDDB.Editor
             }
         }
 
+        private Texture2D GetTypeIcon( Type type )
+        {
+            return _favorites.Contains( type ) 
+                    ? Icons.FavoriteIcon 
+                    : typeof(GDObject).IsAssignableFrom( type ) 
+                            ? Icons.GDObjectIcon 
+                            : typeof(ScriptableObject).IsAssignableFrom( type ) 
+                                    ? Icons.SObjectIcon 
+                                    : Resources.CSharpIcon;
+        }
+
         private void CompactSearchResultView( Result result )
         {
             if ( result.View.Count > 20 )
@@ -399,7 +378,7 @@ namespace GDDB.Editor
                         var groupedItem   = new ResultItem()
                                             {
                                                     IsNamespace = true, 
-                                                    Icon = Resources.NamespaceIcon,
+                                                    Icon = Icons.NamespaceIcon,
                                                     SubitemsCount = mostCommonNamespace.Count(),
                                                     Label       = $"{mostCommonNamespace.Key} ({mostCommonNamespace.Count()})",
                                                     Namespace   = new List<String>(){ mostCommonNamespace.Key },
@@ -434,7 +413,7 @@ namespace GDDB.Editor
                 _backNamespaceIcon.style.display = DisplayStyle.None;
             }
 
-            SelectedItem = -1;
+            SelectedViewItem = -1;
             _resultsToList.Clear();
             _resultsToList.AddRange( result.View );
             _resultsList.Rebuild();
@@ -467,12 +446,13 @@ namespace GDDB.Editor
             _resultsList.RefreshItems();
         }
 
-        private void SelectComponent( ResultItem item )
+        private void SelectType( ResultItem item )
         {
+            _mru.Remove( item.Item.Type );
+            _mru.Insert( 0, item.Item.Type );
+            _settings.SaveMRUComponents( _mru );
+            SelectedType = item.Type;
             Selected?.Invoke( item.Type );
-            _mru.Remove( item.Component.Type );
-            _mru.Insert( 0, item.Component.Type );
-            editorWindow.Close();
         }
 
         private void InspectNamespace( IReadOnlyList<String> ns )
@@ -528,7 +508,7 @@ namespace GDDB.Editor
         }
 
         /// <summary>
-        /// Search popup visual item  (component or namespace)
+        /// Search popup visual item  (type or namespace)
         /// </summary>
         public struct ResultItem
         {
@@ -546,10 +526,10 @@ namespace GDDB.Editor
             public Int32                 SubitemsCount;
             public IReadOnlyList<String> Namespace;              //Local to currently inspected namespace
 
-            //Component item
+            //Type item
             public Boolean IsFavorite;
-            public Item    Component;
-            public Type    Type => Component.Type;
+            public Item    Item;
+            public Type    Type => Item.Type;
 
             public String UseRichTextTags( String substring, String label )
             {
@@ -576,7 +556,7 @@ namespace GDDB.Editor
             public readonly List<String>     InspectNamespace = new();
         }
 
-        public enum EListMode
+        public enum   EListMode
         {
              Search,
              Recommended
@@ -584,11 +564,10 @@ namespace GDDB.Editor
 
         private static class Resources
         {
-            public static Texture2D CSharpIcon = UnityEngine.Resources.Load<Texture2D>( "tag_24dp" );
-            public static Texture2D NamespaceIcon = UnityEngine.Resources.Load<Texture2D>( "list_alt_24dp" );
-            public static Texture2D FavoriteIcon = UnityEngine.Resources.Load<Texture2D>( "star_24dp" );
-            public static Texture2D RecentIcon = UnityEngine.Resources.Load<Texture2D>( "history_24dp" );
+            public static readonly VisualTreeAsset Window = UnityEngine.Resources.Load<VisualTreeAsset>( "TypeSearchWidget" );
+            public static readonly VisualTreeAsset Item = UnityEngine.Resources.Load<VisualTreeAsset>( "TypeSearchItem" );
 
+            public static readonly Texture2D CSharpIcon = UnityEngine.Resources.Load<Texture2D>( "tag_24dp" );
             public const  String SelectedItemClass     = "search-popup__item-selected";
             public const String SearchPopupBtnToggled = "search-popup__toolbtn-toggled";
         }
