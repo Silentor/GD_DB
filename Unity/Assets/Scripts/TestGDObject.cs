@@ -29,8 +29,6 @@ namespace GDDB_User
         [Required]
         public String[] SomeStrings;
 
-        
-
         [Required]
         private TextAsset _privateAsset;
 

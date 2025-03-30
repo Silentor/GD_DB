@@ -89,6 +89,19 @@ namespace GDDB.Editor.Validations
             {
                 DefaultObjectValidations( objData.Object, objData.Folder, _reports );
 
+                //Check interface validation
+                if( objData.Object is IValidable validableObj )
+                {
+                    try
+                    {
+                        validableObj.Validate( objData.Folder, gddb, _reports );
+                    }
+                    catch ( Exception e )
+                    {
+                        _reports.Add( new ValidationReport( objData.Folder, objData.Object, $"Exception while validated gd object, object skipped: {e}" ) );
+                    }
+                } 
+
                 //Check validation attributes on gd object fields
                 GDObjectAttributeValidatorVisitor.Iterate( objData.Object, objData.Folder );
 
@@ -130,6 +143,19 @@ namespace GDDB.Editor.Validations
                 timer.Start();
 
                 DefaultObjectValidations( objData.Object, objData.Folder, _reports );
+
+                //Check interface validation
+                if( objData.Object is IValidable validableObj )
+                {
+                    try
+                    {
+                        validableObj.Validate( objData.Folder, gddb, _reports );
+                    }
+                    catch ( Exception e )
+                    {
+                        _reports.Add( new ValidationReport( objData.Folder, objData.Object, $"Exception while validated gd object, object skipped: {e}" ) );
+                    }
+                } 
 
                 try
                 {
