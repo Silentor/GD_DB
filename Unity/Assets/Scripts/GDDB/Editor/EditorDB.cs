@@ -15,7 +15,7 @@ namespace GDDB.Editor
     {
         static EditorDB( )
         {
-            GDAssetProcessor.GDDBAssetsChanged += OnGddbStructureChanged;      //React to changes in GDObjects assets
+            AssetsWatcher.GddbAssetsChanged += OnGddbStructureChanged;      //React to changes in GDObjects assets
             FolderEditor.Updated               += UpdateState;
             UpdateState();
         }
@@ -125,7 +125,7 @@ namespace GDDB.Editor
             Updated?.Invoke();
         }
 
-        private static void OnGddbStructureChanged(IReadOnlyList<GDObject> changedObjects, IReadOnlyList<String> deletedObjects )
+        private static void OnGddbStructureChanged( )
         {
             UpdateState();
         }
