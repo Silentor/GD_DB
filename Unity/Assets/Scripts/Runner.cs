@@ -96,7 +96,7 @@ namespace GDDB_User
             db = DB ? DB : Resources.Load<DBScriptableObject>( "DefaultGDDB" );
             var     aloader   = new GdScriptableObjectLoader( db );
             _soGDDB   = aloader.GetGameDataBase();
-            Debug.Log( $"Loaded db from SO, loaded hash {_soGDDB.Hash}" );
+            Debug.Log( $"Loaded db from SO, loaded hash {_soGDDB.Hash}, checksum {_soGDDB.RootFolder.GetFoldersChecksum()}" );
 
             yield return StartCoroutine( LoadDBViaJsonNetAsync() );
 

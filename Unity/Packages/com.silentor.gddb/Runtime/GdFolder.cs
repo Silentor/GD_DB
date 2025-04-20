@@ -96,25 +96,6 @@ namespace Gddb
             return Parent.GetRootFolder();
         }
 
-        /// <summary>
-        /// Get hash of folders tree structure (ignore objects)
-        /// </summary>
-        /// <returns></returns>
-        public UInt64 GetFoldersChecksum( )
-        {
-            var      result   = 0ul;
-            foreach ( var folder in EnumerateFoldersDFS(  ) )
-            {
-                unchecked
-                {
-                    var folderHash = (UInt64)folder.FolderGuid.GetHashCode() + GetStringChecksum( folder.GetPath() )/* + (UInt64)Objects.Count*/;
-                    result += folderHash;
-                }
-            }
-
-            return result;
-        }
-
         public String ToHierarchyString( )
         {
             var result = new StringBuilder();
@@ -148,21 +129,6 @@ namespace Gddb
             return true;
         }
 
-        private UInt64 GetStringChecksum( string text )
-        {
-            if ( String.IsNullOrEmpty( text ) )
-                return 0;
-
-            unchecked
-            {
-                var hash = 0ul;
-                foreach (var c in text)
-                {
-                    hash = hash * 3 + c;
-                }
-                return hash;
-            }
-        }
 
         private void ToHierarchyString( Int32 indent, StringBuilder result )
         {
