@@ -120,7 +120,7 @@ namespace Gddb.Editor
                 File.WriteAllText( sourceFilePath, buffer.ToString() );
                 AssetDatabase.Refresh( ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport );
 
-                Debug.Log( $"[{nameof(GDBSourceGenerator)}]-[{nameof(GenerateGDBSource)}] Updated source generator structure file {sourceFilePath}" );
+                Debug.Log( $"[{nameof(GDBSourceGenerator)}]-[{nameof(GenerateGDBSource)}] Updated source generator input file {sourceFilePath}" );
                 SourceUpdated?.Invoke();
 
                 return;

@@ -25,15 +25,13 @@ namespace Gddb.Editor
         private VisualElement _gettingStartedBlock;
         private Button        _removeSourceBtn;
 
-
-        private void Awake( )
+        private void OnEnable( )
         {
-            //Debug.Log( $"[{nameof(ControlWindow)}]-[{nameof(OnEnable)}] " );
-            Validator.Validated += OnValidated;
+            Validator.Validated              += OnValidated;
             GDBSourceGenerator.SourceUpdated += UpdateSourceGenInfo;
-            EditorDB.Updated += OnEditorDBUpdated;
+            EditorDB.Updated                 += OnEditorDBUpdated;
         }
-        
+
         private void OnDestroy( )
         {
             Validator.Validated              -= OnValidated;
