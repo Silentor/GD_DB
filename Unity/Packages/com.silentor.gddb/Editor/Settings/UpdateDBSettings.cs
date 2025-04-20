@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Gddb.Editor
 {
-    [FilePath("ProjectSettings/GDDB/UpdateDBSettings.asset", FilePathAttribute.Location.ProjectFolder)]
+    [FilePath("ProjectSettings/Gddb/UpdateDBSettings.asset", FilePathAttribute.Location.ProjectFolder)]
     public class UpdateDBSettings : ScriptableSingleton<UpdateDBSettings>
     {
         public Boolean AutoUpdateOnRun          = true;

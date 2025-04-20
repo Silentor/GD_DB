@@ -5,6 +5,9 @@
   "description": "Converts your bunch of ScriptableObject game design data files into a database",
   "unity": "2021.2",
   "license": "MIT",
+  "dependencies": {
+	  "com.unity.nuget.newtonsoft-json": "3.2.1"
+  },
   "keywords": [
     "editor",
     "runtime",

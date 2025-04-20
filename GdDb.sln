@@ -4,7 +4,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GdDbSourceGen", "Generator\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestProj", "TestProj\TestProj.csproj", "{9A013ABC-38C4-4634-8DA6-D930BD65EEB8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GDDB", "GDDB\GDDB.csproj", "{F9951971-34D0-4E5B-9D3D-8A2EB296B04A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gddb", "Gddb\Gddb.csproj", "{F9951971-34D0-4E5B-9D3D-8A2EB296B04A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestDeserializing", "TestDeserializing\TestDeserializing.csproj", "{CB83DCDC-CAAE-4B5A-BC1F-BBDA0FBC10CD}"
 EndProject

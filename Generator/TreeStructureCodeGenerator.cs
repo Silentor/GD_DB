@@ -87,7 +87,7 @@ namespace Gddb.SourceGenerator
 
                         //Generate code for GDDB assembly only, because this code heavily depends on gddb types
                         var assemblyName = pair.Right;
-                        if( assemblyName == null || assemblyName != "GDDB")
+                        if( assemblyName == null || assemblyName != "Gddb")
                             return;
 
                         var json = pair.Left;
