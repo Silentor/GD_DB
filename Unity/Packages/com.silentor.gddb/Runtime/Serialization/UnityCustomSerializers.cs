@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace Gddb.Serialization
 {
+# if UNITY_2021_2_OR_NEWER
     public class Vector3Serializer : TypeCustomSerializer<Vector3>
     {
         public override void Serialize(  WriterBase writer, Vector3 obj )
@@ -376,5 +377,6 @@ namespace Gddb.Serialization
             return result;
         }
     }
+#endif
 }
 

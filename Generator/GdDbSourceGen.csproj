@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
-        <RootNamespace>GDDB.SourceGenerator</RootNamespace>
+        <RootNamespace>Gddb.SourceGenerator</RootNamespace>
         <LangVersion>12</LangVersion>
         <Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
@@ -20,7 +20,7 @@
     </PropertyGroup>
     
     <PropertyGroup>
-        <UnitySourceGenPath>..\Unity\Assets\Scripts\GDDB\SourceGen\</UnitySourceGenPath>
+        <UnitySourceGenPath>..\Unity\Packages\com.silentor.gddb\Runtime\SourceGen\</UnitySourceGenPath>
     </PropertyGroup>
 
     <ItemGroup>
@@ -39,61 +39,62 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Include="..\Unity\Assets\Scripts\GDDB\Crossplatform\UnityAttributes.cs">
+        <!-- Cannot include entire Gddb folder because it uses NetStandart 2.1 features -->
+      <Compile Include="..\Unity\Packages\com.silentor.gddb\Runtime\Crossplatform\UnityAttributes.cs">
         <Link>Crossplatform\UnityAttributes.cs</Link>
       </Compile>
-      <Compile Include="..\Unity\Assets\Scripts\GDDB\Crossplatform\UnityObject.cs">
+      <Compile Include="..\Unity\Packages\com.silentor.gddb\Runtime\Crossplatform\UnityObject.cs">
         <Link>Crossplatform\UnityObject.cs</Link>
       </Compile>
-        <Compile Include="..\Unity\Assets\Scripts\GDDB\Crossplatform\UnityProfiling.cs">
+        <Compile Include="..\Unity\Packages\com.silentor.gddb\Runtime\Crossplatform\UnityProfiling.cs">
             <Link>Crossplatform\UnityProfiling.cs</Link>
         </Compile>
-        <Compile Include="..\Unity\Assets\Scripts\GDDB\Crossplatform\UnityAssertions.cs">
+        <Compile Include="..\Unity\Packages\com.silentor.gddb\Runtime\Crossplatform\UnityAssertions.cs">
             <Link>Crossplatform\UnityAssertions.cs</Link>
         </Compile>
-        <Compile Include="..\Unity\Assets\Scripts\GDDB\Crossplatform\UnityInterfaces.cs">
+        <Compile Include="..\Unity\Packages\com.silentor.gddb\Runtime\Crossplatform\UnityInterfaces.cs">
             <Link>Crossplatform\UnityInterfaces.cs</Link>
         </Compile>
-        <Compile Include="..\Unity\Assets\Scripts\GDDB\Crossplatform\UnityDebug.cs">
+        <Compile Include="..\Unity\Packages\com.silentor.gddb\Runtime\Crossplatform\UnityDebug.cs">
             <Link>Crossplatform\UnityDebug.cs</Link>
         </Compile>
-      <Compile Include="..\Unity\Assets\Scripts\GDDB\GdFolder.cs">
+      <Compile Include="..\Unity\Packages\com.silentor.gddb\Runtime\GdFolder.cs">
         <Link>GDDB\GdFolder.cs</Link>
       </Compile>
-      <Compile Include="..\Unity\Assets\Scripts\GDDB\GDObject.cs">
+      <Compile Include="..\Unity\Packages\com.silentor.gddb\Runtime\GDObject.cs">
         <Link>GDDB\GDObject.cs</Link>
       </Compile>
-      <Compile Include="..\Unity\Assets\Scripts\GDDB\GdObjectInfo.cs">
+      <Compile Include="..\Unity\Packages\com.silentor.gddb\Runtime\GdObjectInfo.cs">
         <Link>GDDB\GdObjectInfo.cs</Link>
       </Compile>
-      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\Exceptions.cs">
+      <Compile Include="..\Unity\Packages\com.silentor.gddb\Runtime\Serialization\Exceptions.cs">
         <Link>GDDB\Exceptions.cs</Link>
       </Compile>
-      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\FolderSerializer.cs">
+      <Compile Include="..\Unity\Packages\com.silentor.gddb\Runtime\Serialization\FolderSerializer.cs">
         <Link>GDDB\FolderSerializer.cs</Link>
       </Compile>
-      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\GDObjectDeserializer.cs">
+      <Compile Include="..\Unity\Packages\com.silentor.gddb\Runtime\Serialization\GDObjectDeserializer.cs">
         <Link>GDDB\GDObjectDeserializer.cs</Link>
       </Compile>
-      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\GDObjectSerializationCommon.cs">
+      <Compile Include="..\Unity\Packages\com.silentor.gddb\Runtime\Serialization\GDObjectSerializationCommon.cs">
         <Link>GDDB\GDObjectSerializationCommon.cs</Link>
       </Compile>
-      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\IGdAssetResolver.cs">
+      <Compile Include="..\Unity\Packages\com.silentor.gddb\Runtime\Serialization\IGdAssetResolver.cs">
         <Link>GDDB\IGdAssetResolver.cs</Link>
       </Compile>
-      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\Low\JsonNetReader.cs">
+      <Compile Include="..\Unity\Packages\com.silentor.gddb\Runtime\Serialization\Low\JsonNetReader.cs">
         <Link>GDDB\JsonNetReader.cs</Link>
       </Compile>
-      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\Low\ReaderBase.cs">
+      <Compile Include="..\Unity\Packages\com.silentor.gddb\Runtime\Serialization\Low\ReaderBase.cs">
         <Link>GDDB\ReaderBase.cs</Link>
       </Compile>
-      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\Low\Token.cs">
+      <Compile Include="..\Unity\Packages\com.silentor.gddb\Runtime\Serialization\Low\Token.cs">
         <Link>GDDB\Token.cs</Link>
       </Compile>
-      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\Low\WriterBase.cs">
+      <Compile Include="..\Unity\Packages\com.silentor.gddb\Runtime\Serialization\Low\WriterBase.cs">
         <Link>GDDB\WriterBase.cs</Link>
       </Compile>
-      <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\TypeCustomSerializer.cs">
+      <Compile Include="..\Unity\Packages\com.silentor.gddb\Runtime\Serialization\TypeCustomSerializer.cs">
         <Link>GDDB\TypeCustomSerializer.cs</Link>
       </Compile>
     </ItemGroup>

@@ -28,9 +28,16 @@ namespace UnityEngine
       public int order { get; set; }
     }
 
-   public sealed class SerializeField : Attribute
-  {
-  }
+    public sealed class SerializeField : Attribute
+    {
+    }
+
+    public class PropertyAttribute : Attribute
+    {
+        public PropertyAttribute()
+        {
+        }
+    }
 
 #endif
 }
