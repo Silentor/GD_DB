@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace GDDB.Serialization
+namespace Gddb.Serialization
 {
     public class Vector3Serializer : TypeCustomSerializer<Vector3>
     {

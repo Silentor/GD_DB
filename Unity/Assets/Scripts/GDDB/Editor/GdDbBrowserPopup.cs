@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using Object = System.Object;
 
-namespace GDDB.Editor
+namespace Gddb.Editor
 {
     /// <summary>
     /// Adapter for <see cref="GdDbBrowserWidget"/> to use as PopupWindow content

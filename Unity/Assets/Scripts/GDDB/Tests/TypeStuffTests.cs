@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Reflection;
 using FluentAssertions;
-using GDDB.Editor;
-using GDDB.Serialization;
+using Gddb.Editor;
+using Gddb.Serialization;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace GDDB.Tests
+namespace Gddb.Tests
 {
     public class TypeStuffTests
     {

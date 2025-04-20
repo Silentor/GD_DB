@@ -7,7 +7,7 @@ using Object = System.Object;
 using UnityEngine.Scripting;
 #endif
 
-namespace GDDB.Serialization
+namespace Gddb.Serialization
 {
 #if UNITY_2021_2_OR_NEWER
     [RequireDerived]

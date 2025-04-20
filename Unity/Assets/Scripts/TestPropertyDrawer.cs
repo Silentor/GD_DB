@@ -1,4 +1,4 @@
-using GDDB;
+using Gddb;
 using UnityEngine;
 
 namespace Client

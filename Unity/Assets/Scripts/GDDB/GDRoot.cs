@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace GDDB
+namespace Gddb
 {
     [CreateAssetMenu( menuName = "Gddb/GDRoot", fileName = "GDRoot", order = 0 )]
     public class GDRoot : GDObject

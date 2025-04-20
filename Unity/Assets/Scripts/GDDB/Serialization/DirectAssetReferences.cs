@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace GDDB.Serialization
+namespace Gddb.Serialization
 {
     /// <summary>
     /// Simple asset resolver - just serializable list of assets

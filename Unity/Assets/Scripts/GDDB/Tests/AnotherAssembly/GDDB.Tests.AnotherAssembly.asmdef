@@ -2,7 +2,7 @@
     "name": "GDDB.Tests.AnotherAssembly",
     "rootNamespace": "GDDB.Tests",
     "references": [
-        "GDDB"
+        "GUID:143657c3878a4d14fa823dce00523f26"
     ],
     "includePlatforms": [
         "Editor"

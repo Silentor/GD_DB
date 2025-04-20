@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Reflection;
-using GDDB;
+using Gddb;
 
 namespace UnityEngine
 {

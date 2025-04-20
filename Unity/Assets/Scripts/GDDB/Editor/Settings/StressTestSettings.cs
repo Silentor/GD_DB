@@ -2,7 +2,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace GDDB.Editor
+namespace Gddb.Editor
 {
     [FilePath("ProjectSettings/GDDB/StressTestSettings.asset", FilePathAttribute.Location.ProjectFolder)]
     public class StressTestSettings : ScriptableSingleton<StressTestSettings>

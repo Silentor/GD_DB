@@ -5,7 +5,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
-namespace GDDB.Editor
+namespace Gddb.Editor
 {
     [CustomPropertyDrawer( typeof(GDObject), true )]
     public class GdObjectDrawer : PropertyDrawer

@@ -9,7 +9,7 @@ using UnityEngine.UIElements;
 using Object = System.Object;
 using PopupWindow = UnityEditor.PopupWindow;
 
-namespace GDDB.Editor
+namespace Gddb.Editor
 {
     /// <summary>
     /// Very simple wizard to select a GDObject type and create an instance of it in current folder in Project window.

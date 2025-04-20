@@ -4,7 +4,7 @@ using System.IO;
 using System.Text;
 using UnityEngine.Assertions;
 
-namespace GDDB.Serialization
+namespace Gddb.Serialization
 {
     public class BinaryWriter : WriterBase
     {

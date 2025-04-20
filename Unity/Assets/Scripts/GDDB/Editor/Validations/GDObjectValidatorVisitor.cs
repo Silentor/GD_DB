@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using GDDB.Validations;
+using Gddb.Validations;
 using UnityEditor;
 using UnityEngine;
 
-namespace GDDB.Editor.Validations
+namespace Gddb.Editor.Validations
 {
     public class GDObjectValidatorVisitor : SerializedObjectVisitor
     {

@@ -11,7 +11,7 @@ using UnityEngine.UIElements;
 using Object = System.Object;
 using Random = System.Random;
 
-namespace GDDB.Editor
+namespace Gddb.Editor
 {
     public class StressTestDBGenerator : EditorWindow
     {

@@ -2,9 +2,10 @@
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using Gddb;
 using Newtonsoft.Json.Linq;
 
-namespace GDDB.SourceGenerator;
+namespace Gddb.SourceGenerator;
 
 public class CodeEmitter
 {
@@ -42,9 +43,9 @@ public class CodeEmitter
         sb.AppendLine( "using System;" );
         sb.AppendLine( "using System.Collections;" );
         sb.AppendLine( "using System.Collections.Generic;" );
-        sb.AppendLine( "using GDDB;" );
+        sb.AppendLine( "using Gddb;" );
         sb.AppendLine( );
-        sb.AppendLine( "namespace GDDB.Generated" );
+        sb.AppendLine( "namespace Gddb.Generated" );
         sb.AppendLine( "{" );
         sb.AppendLine( );
         foreach ( var folder in allFolders )
@@ -63,7 +64,7 @@ public class CodeEmitter
 
         var sb = new StringBuilder();
         sb.AppendLine( String.Format( FileHeader, treeFilePath, generationTime, hash ));
-        sb.AppendLine( "namespace GDDB" );
+        sb.AppendLine( "namespace Gddb" );
         sb.AppendLine( "{" );
         sb.AppendLine( "  using Generated;" );
         sb.AppendLine( "  public partial class GdDb" );
@@ -80,7 +81,7 @@ public class CodeEmitter
     {
         var sb = new StringBuilder();
         sb.AppendLine( String.Format( FileHeader, treeFilePath, DateTime.Now ));
-        sb.AppendLine( $"namespace GDDB" );
+        sb.AppendLine( $"namespace Gddb" );
         sb.AppendLine( "{" );
         sb.AppendLine( GeneratedTypeAttribute );
         sb.AppendLine( "  public static class GdDbExtensions" );

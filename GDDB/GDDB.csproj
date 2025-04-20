@@ -41,11 +41,26 @@
         <Compile Include="..\Unity\Assets\Scripts\GDDB\GdDb.cs">
             <Link>GDDB\GdDb.cs</Link>
         </Compile>
-        <Compile Include="..\Unity\Assets\Scripts\GDDB\GdId.cs">
-            <Link>GDDB\GdId.cs</Link>
+        <Compile Include="..\Unity\Assets\Scripts\GDDB\GdFolderRef.cs">
+          <Link>GDDB\GdFolderRef.cs</Link>
+        </Compile>
+        <Compile Include="..\Unity\Assets\Scripts\GDDB\GdObjectInfo.cs">
+          <Link>GDDB\GdObjectInfo.cs</Link>
+        </Compile>
+        <Compile Include="..\Unity\Assets\Scripts\GDDB\GdRef.cs">
+            <Link>GDDB\GdRef.cs</Link>
         </Compile>
         <Compile Include="..\Unity\Assets\Scripts\GDDB\GDObject.cs">
             <Link>GDDB\GDObject.cs</Link>
+        </Compile>
+        <Compile Include="..\Unity\Assets\Scripts\GDDB\Queries\Executor.cs">
+          <Link>GDDB\Executor.cs</Link>
+        </Compile>
+        <Compile Include="..\Unity\Assets\Scripts\GDDB\Queries\Parser.cs">
+          <Link>GDDB\Parser.cs</Link>
+        </Compile>
+        <Compile Include="..\Unity\Assets\Scripts\GDDB\Queries\Tokens.cs">
+          <Link>GDDB\Tokens.cs</Link>
         </Compile>
         <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\DBDataSerializer.cs">
           <Link>GDDB\DBDataSerializer.cs</Link>

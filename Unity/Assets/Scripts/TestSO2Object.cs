@@ -1,5 +1,5 @@
 ﻿using System;
-using GDDB;
+using Gddb;
 using UnityEngine;
 
 namespace GDDB_User

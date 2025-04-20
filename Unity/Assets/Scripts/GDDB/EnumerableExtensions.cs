@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace GDDB
+namespace Gddb
 {
     public static class EnumerableExtensions
     {

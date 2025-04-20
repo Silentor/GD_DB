@@ -1,7 +1,7 @@
 ﻿using UnityEditor;
 using UnityEngine;
 
-namespace GDDB.Editor
+namespace Gddb.Editor
 {
     public static class Icons
     {

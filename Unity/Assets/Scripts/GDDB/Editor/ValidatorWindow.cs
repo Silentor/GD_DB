@@ -1,15 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using GDDB.Editor.Validations;
-using GDDB.Validations;
+using Gddb.Editor.Validations;
+using Gddb.Validations;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Object = System.Object;
 
-namespace GDDB.Editor
+namespace Gddb.Editor
 {
     public class ValidatorWindow : EditorWindow
     {

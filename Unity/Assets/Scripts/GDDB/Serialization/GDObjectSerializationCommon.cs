@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
-namespace GDDB.Serialization
+namespace Gddb.Serialization
 {
     public class GDObjectSerializationCommon
     {

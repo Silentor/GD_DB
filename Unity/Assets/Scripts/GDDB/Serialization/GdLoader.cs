@@ -1,4 +1,4 @@
-﻿namespace GDDB.Serialization
+﻿namespace Gddb.Serialization
 {
     public abstract class GdLoader
     {

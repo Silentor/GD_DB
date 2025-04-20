@@ -2,14 +2,16 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using GDDB.Serialization;
+using Gddb.Serialization;
 using Newtonsoft.Json;
 using UnityEngine;
-using BinaryReader = GDDB.Serialization.BinaryReader;
-using BinaryWriter = GDDB.Serialization.BinaryWriter;
+using BinaryReader = Gddb.Serialization.BinaryReader;
+using BinaryWriter = Gddb.Serialization.BinaryWriter;
 using Object = System.Object;
+using Serialization_BinaryReader = Gddb.Serialization.BinaryReader;
+using Serialization_BinaryWriter = Gddb.Serialization.BinaryWriter;
 
-namespace GDDB.Tests
+namespace Gddb.Tests
 {
     public class BaseSerializationTests
     {
@@ -119,7 +121,7 @@ namespace GDDB.Tests
 
         private WriterBase GetBinaryWriter( MemoryStream buffer )
         {
-            return new BinaryWriter( buffer );
+            return new Serialization_BinaryWriter( buffer );
         }
 
         private ReaderBase GetJsonNetReader( String buffer, Boolean supportMultipleContent )
@@ -129,7 +131,7 @@ namespace GDDB.Tests
 
         private ReaderBase GetBinaryReader( Byte[] buffer )
         {
-            return new BinaryReader( buffer );
+            return new Serialization_BinaryReader( buffer );
         }
 
         protected void SaveToFile( EBackend backend, String fileName, Object buffer )

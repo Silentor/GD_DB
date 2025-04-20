@@ -1,7 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
-using GDDB;
-using GDDB.Serialization;
+using Gddb;
+using Gddb.Serialization;
 //using GDDB.Generated;
 using Newtonsoft.Json.Linq;
 
@@ -31,9 +31,9 @@ var str     = System.IO.File.ReadAllText(file.FullName);
 var loader = new GdFileLoader( str );
 var db     = loader.GetGameDataBase();
 var obj    = db.AllObjects[ 0 ];
-Console.WriteLine( obj.name );
+Console.WriteLine( obj.Name );
 //Console.WriteLine( db.RootFolder.Name );
-Console.WriteLine( db.Root.Folder.Name );
+//Console.WriteLine( db.Root.Folder.Name );
 //db.Root.Folder2.
 //var humans = db.Root.Mobs.Humans.ParentFolder;
 //var elves  = db.GetGDInfo().GetMobs().GetElves().ToArray();

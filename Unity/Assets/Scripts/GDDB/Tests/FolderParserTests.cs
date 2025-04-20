@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using GDDB.Editor;
+using Gddb.Editor;
 using NUnit.Framework;
 
-namespace GDDB.Tests
+namespace Gddb.Tests
 {
     public class FolderParserTests
     {

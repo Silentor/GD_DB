@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using GDDB.Serialization;
+using Gddb.Serialization;
 using JetBrains.Annotations;
 using NUnit.Framework;
 using UnityEditor;
@@ -11,12 +11,12 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UIElements;
-using BinaryWriter = GDDB.Serialization.BinaryWriter;
+using BinaryWriter = Gddb.Serialization.BinaryWriter;
 using Object = System.Object;
 using PopupWindow = UnityEditor.PopupWindow;
 using Random = UnityEngine.Random;
 
-namespace GDDB.Editor
+namespace Gddb.Editor
 {
     [CustomEditor( typeof(GDObject), true )]
     public class GDObjectEditor : UnityEditor.Editor

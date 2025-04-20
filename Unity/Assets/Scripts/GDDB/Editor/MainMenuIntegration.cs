@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Net.NetworkInformation;
-using GDDB.Editor.Validations;
-using GDDB.Serialization;
+using Gddb.Editor.Validations;
+using Gddb.Serialization;
 using Unity.EditorCoroutines.Editor;
 using UnityEditor;
 using UnityEngine;
 using Object = System.Object;
 
-namespace GDDB.Editor
+namespace Gddb.Editor
 {
     public static class MainMenuIntegration
     {

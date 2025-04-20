@@ -7,7 +7,7 @@ using UnityEditor.Compilation;
 using UnityEngine;
 using Object = System.Object;
 
-namespace GDDB.Editor
+namespace Gddb.Editor
 {
     /// <summary>
     /// Watch for changes of GDDB structure in Asset Database 

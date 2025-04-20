@@ -2,7 +2,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace GDDB.Editor
+namespace Gddb.Editor
 {
     [FilePath("ProjectSettings/GDDB/UpdateDBSettings.asset", FilePathAttribute.Location.ProjectFolder)]
     public class UpdateDBSettings : ScriptableSingleton<UpdateDBSettings>

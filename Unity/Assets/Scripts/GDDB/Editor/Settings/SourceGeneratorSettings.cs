@@ -2,7 +2,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace GDDB.Editor
+namespace Gddb.Editor
 {
     [FilePath("ProjectSettings/GDDB/SourceGenSettings.asset", FilePathAttribute.Location.ProjectFolder)]
     public class SourceGeneratorSettings : ScriptableSingleton<SourceGeneratorSettings>

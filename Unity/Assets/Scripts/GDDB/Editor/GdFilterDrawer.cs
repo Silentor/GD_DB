@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
-namespace GDDB.Editor
+namespace Gddb.Editor
 {
     [CustomPropertyDrawer( typeof(GdObjectFilterAttribute) )]
     public class GdFilterDrawer : PropertyDrawer

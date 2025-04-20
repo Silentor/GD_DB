@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using FluentAssertions;
-using GDDB.Queries;
+using Gddb.Queries;
 using NUnit.Framework;
 
-namespace GDDB.Tests
+namespace Gddb.Tests
 {
     
     public class QueryStringParserTests

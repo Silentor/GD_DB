@@ -6,7 +6,7 @@ using UnityEditor;
 using UnityEngine;
 using Object = System.Object;
 
-namespace GDDB.Editor
+namespace Gddb.Editor
 {
     public class TypeSearchSettings
     {

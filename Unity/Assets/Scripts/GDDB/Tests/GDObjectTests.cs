@@ -4,7 +4,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace GDDB.Tests
+namespace Gddb.Tests
 {
     public class GDObjectTests
     {

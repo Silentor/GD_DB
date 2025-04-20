@@ -4,14 +4,14 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using GDDB.Validations;
+using Gddb.Validations;
 using Unity.EditorCoroutines.Editor;
 using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 using Object = System.Object;
 
-namespace GDDB.Editor.Validations
+namespace Gddb.Editor.Validations
 {
     /// <summary>
     /// Check database objects for errors. There are default and custom validations (via interface implementation)
@@ -181,6 +181,11 @@ namespace GDDB.Editor.Validations
             Validated?.Invoke( Reports );
         }
 
+        /// <summary>
+        /// Database wide validations
+        /// </summary>
+        /// <param name="db"></param>
+        /// <param name="reports"></param>
         private static void DefaultBDValidations( GdDb db, List<ValidationReport> reports )
         {
             if( EditorDB.RootFolderPath == "Assets" )

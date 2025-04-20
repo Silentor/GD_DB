@@ -1,7 +1,7 @@
 ﻿using System;
 using Object = UnityEngine.Object;
 
-namespace GDDB.Serialization
+namespace Gddb.Serialization
 {
     /// <summary>
     /// Responsible for resolving Unity project assets referenced from GDObjects

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace GDDB.Editor
+namespace Gddb.Editor
 {
     public class PriorityEvent
     {

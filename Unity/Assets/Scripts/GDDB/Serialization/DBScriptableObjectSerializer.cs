@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace GDDB.Serialization
+namespace Gddb.Serialization
 {
     /// <summary>
     /// Serialize folders tree to one unity asset
@@ -51,7 +51,7 @@ namespace GDDB.Serialization
 
 #endif
 
-        public GdFolder Deserialize( DBScriptableObject dbso, List<GdDb.ObjectSearchIndex> allObjects )
+        public GdFolder Deserialize( DBScriptableObject dbso, List<GdObjectInfo> allObjects )
         {
             if ( dbso.Folders.Count == 0 )
                 return null;
@@ -67,7 +67,7 @@ namespace GDDB.Serialization
             return rootFolder;
         }
 
-        private GdFolder LoadFolder( List<SerializableFolder> folders, ref Int32 index, GdFolder parent, List<GdDb.ObjectSearchIndex> allObjects  )
+        private GdFolder LoadFolder( List<SerializableFolder> folders, ref Int32 index, GdFolder parent, List<GdObjectInfo> allObjects  )
         {
             var myData = folders[ index ];
             var depth = myData.Depth;
@@ -78,7 +78,7 @@ namespace GDDB.Serialization
             folder.Depth = depth;
             folder.Objects.AddRange( myData.Objects );
             for ( int i = 0; i < myData.Objects.Count; i++ )                
-                allObjects.Add( new GdDb.ObjectSearchIndex( myData.ObjectIds[i] , myData.Objects[i], folder ) );
+                allObjects.Add( new GdObjectInfo( myData.ObjectIds[i] , myData.Objects[i], folder ) );
 
             index++;
             if( index >= folders.Count )

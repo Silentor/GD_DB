@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace GDDB.Serialization
+namespace Gddb.Serialization
 {
     public enum EToken : Byte
     {

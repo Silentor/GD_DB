@@ -5,7 +5,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
-namespace GDDB.Editor
+namespace Gddb.Editor
 {
     [CustomPropertyDrawer( typeof(GdFolderRef) )]
     public class GdFolderRefDrawer : PropertyDrawer

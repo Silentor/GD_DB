@@ -1,7 +1,7 @@
 ﻿using System;
 using Newtonsoft.Json;
 
-namespace GDDB.Serialization
+namespace Gddb.Serialization
 {
     public class ReaderComponentException : Exception
     {

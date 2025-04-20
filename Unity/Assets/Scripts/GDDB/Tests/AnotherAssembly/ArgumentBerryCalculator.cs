@@ -1,5 +1,5 @@
-using GDDB;
-namespace GDDB.Tests.AnotherAssembly
+using Gddb;
+namespace Gddb.Tests.AnotherAssembly
 {
     public class TypeFromAnotherAssembly : GDComponent
     {

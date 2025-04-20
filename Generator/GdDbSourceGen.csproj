@@ -63,6 +63,9 @@
       <Compile Include="..\Unity\Assets\Scripts\GDDB\GDObject.cs">
         <Link>GDDB\GDObject.cs</Link>
       </Compile>
+      <Compile Include="..\Unity\Assets\Scripts\GDDB\GdObjectInfo.cs">
+        <Link>GDDB\GdObjectInfo.cs</Link>
+      </Compile>
       <Compile Include="..\Unity\Assets\Scripts\GDDB\Serialization\Exceptions.cs">
         <Link>GDDB\Exceptions.cs</Link>
       </Compile>

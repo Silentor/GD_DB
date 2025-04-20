@@ -6,7 +6,7 @@ using System.Reflection;
 using Object = System.Object;
 using UnityEngine;
 
-namespace GDDB.Serialization
+namespace Gddb.Serialization
 {
     public class GDObjectSerializer : GDObjectSerializationCommon
     {

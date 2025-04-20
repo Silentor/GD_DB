@@ -5,7 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
 
-namespace GDDB.Editor
+namespace Gddb.Editor
 {
     public class GDAssetPatcher
     {

@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using GDDB.Queries;
+using Gddb.Queries;
 using JetBrains.Annotations;
 using UnityEngine;
 
-namespace GDDB
+namespace Gddb
 {
     public partial class GdDb
     {
@@ -15,9 +15,9 @@ namespace GDDB
 
         public         GdFolder                  RootFolder { get; }
 
-        public virtual IReadOnlyList<ObjectSearchIndex> AllObjects { get; }
+        public virtual IReadOnlyList<GdObjectInfo> AllObjects { get; }
 
-        public GdDb( GdFolder dbStructure, IReadOnlyList<ObjectSearchIndex> allObjects, UInt64 hash = 0 )
+        public GdDb( GdFolder dbStructure, IReadOnlyList<GdObjectInfo> allObjects, UInt64 hash = 0 )
         {
             RootFolder = dbStructure;
             //Root       = allObjects.OfType<GDRoot>().Single( );
@@ -83,7 +83,7 @@ namespace GDDB
         public ScriptableObject GetObject( GdRef objectId )
         {
             var guid  = objectId.Guid;
-            var index = Array.BinarySearch( _objectSearchIndex, new ObjectSearchIndex( guid, null, null ) );
+            var index = Array.BinarySearch( _objectSearchIndex, new GdObjectInfo( guid, null, null ) );
             if( index >= 0 )
                 return (GDObject)_objectSearchIndex[ index ].Object; 
         
@@ -117,7 +117,7 @@ namespace GDDB
 
         private readonly Parser                     _queryParser;
         private readonly Executor      _queryExecutor;
-        private readonly ObjectSearchIndex[]        _objectSearchIndex;
+        private readonly GdObjectInfo[]        _objectSearchIndex;
         
         private void PrintRecursively(GdFolder folder, int indent, ref Int32 foldersCount, ref Int32 objectsCount )
         {
@@ -136,50 +136,6 @@ namespace GDDB
                     Debug.Log($"  {indentStr}{gdo.name}, type {obj.GetType().Name}, components {gdo.Components.Count}");
                 else
                     Debug.Log($"  {indentStr}{obj.name}, type {obj.GetType().Name}");
-            }
-        }
-
-        public readonly struct ObjectSearchIndex : IComparable<ObjectSearchIndex>, IEquatable<ObjectSearchIndex>
-        {
-            public readonly Guid             Guid;
-            public readonly ScriptableObject Object;
-            public readonly GdFolder         Folder;
-
-            public ObjectSearchIndex(Guid guid, ScriptableObject o, GdFolder folder )
-            {
-                Guid   = guid;
-                Object = o;
-                Folder = folder;
-            }
-
-            public int CompareTo(ObjectSearchIndex other)
-            {
-                return Guid.CompareTo( other.Guid );
-            }
-
-            public bool Equals(ObjectSearchIndex other)
-            {
-                return Guid.Equals( other.Guid );
-            }
-
-            public override bool Equals(object obj)
-            {
-                return obj is ObjectSearchIndex other && Equals( other );
-            }
-
-            public override int GetHashCode( )
-            {
-                return Guid.GetHashCode();
-            }
-
-            public static bool operator ==(ObjectSearchIndex left, ObjectSearchIndex right)
-            {
-                return left.Equals( right );
-            }
-
-            public static bool operator !=(ObjectSearchIndex left, ObjectSearchIndex right)
-            {
-                return !left.Equals( right );
             }
         }
 

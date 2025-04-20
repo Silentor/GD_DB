@@ -2,14 +2,15 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using GDDB.Serialization;
+using Gddb.Serialization;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
-using BinaryReader = GDDB.Serialization.BinaryReader;
+using BinaryReader = Gddb.Serialization.BinaryReader;
 using Object = System.Object;
+using Serialization_BinaryReader = Gddb.Serialization.BinaryReader;
 
-namespace GDDB.Editor
+namespace Gddb.Editor
 {
     public class DataFileViewer : EditorWindow
     {
@@ -70,7 +71,7 @@ namespace GDDB.Editor
             if ( System.IO.File.Exists( filePath ) )
             {
                 using var fileStream = new FileStream( filePath, FileMode.Open, FileAccess.Read );
-                var reader = new BinaryReader( fileStream );
+                var reader = new Serialization_BinaryReader( fileStream );
                 var data = LoadFile( reader );
                 UpdateContent( data );
             }

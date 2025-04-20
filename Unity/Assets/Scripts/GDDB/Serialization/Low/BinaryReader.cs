@@ -7,7 +7,7 @@ using UnityEngine.Assertions;
 using UnityEngine.Profiling;
 using Object = System.Object;
 
-namespace GDDB.Serialization
+namespace Gddb.Serialization
 {
     public sealed class BinaryReader : ReaderBase
     {

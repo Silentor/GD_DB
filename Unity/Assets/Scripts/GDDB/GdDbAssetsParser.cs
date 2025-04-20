@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace GDDB.Editor
+namespace Gddb.Editor
 {
 #if UNITY_EDITOR
 
@@ -21,7 +21,7 @@ namespace GDDB.Editor
 
         public String RootFolderPath    { get; private set; }
 
-        public IReadOnlyList<GdDb.ObjectSearchIndex> AllObjects =>  _allObjects;
+        public IReadOnlyList<GdObjectInfo> AllObjects =>  _allObjects;
         public IReadOnlyList<GdFolder>               AllFolders =>  _allFolders;
 
         /// <summary>
@@ -113,7 +113,7 @@ namespace GDDB.Editor
                 }
 
                 folder.Objects.Add( gdobject );
-                _allObjects.Add( new GdDb.ObjectSearchIndex( Guid.ParseExact( gdos[i].Guid, "N" ), gdobject, folder ) );
+                _allObjects.Add( new GdObjectInfo( Guid.ParseExact( gdos[i].Guid, "N" ), gdobject, folder ) );
             }
 
             CalculateDepth( rootFolder );
@@ -272,7 +272,7 @@ namespace GDDB.Editor
             return new ArraySegment<String>( mostCommonFolder.Array, 0, i ); 
         }
 
-        private readonly List<GdDb.ObjectSearchIndex> _allObjects      = new ();
+        private readonly List<GdObjectInfo> _allObjects      = new ();
         private readonly List<GdFolder>               _allFolders      = new ();
         private readonly List<String>                 _disabledFolders = new();
 

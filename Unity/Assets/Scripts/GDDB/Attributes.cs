@@ -4,7 +4,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Animations;
 
-namespace GDDB
+namespace Gddb
 {
     /// <summary>
     /// To restrict gd object or gd folder property to specific items 

@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using FluentAssertions;
-using GDDB.Serialization;
+using Gddb.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
@@ -16,7 +16,7 @@ using Object = System.Object;
 
 //[assembly:TestRunCallback(typeof(GDDB.Tests.SerializationTests))]
 
-namespace GDDB.Tests
+namespace Gddb.Tests
 {
 
     public class SerializationTests : BaseSerializationTests, ITestRunCallback                               

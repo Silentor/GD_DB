@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 
-namespace GDDB.Serialization
+namespace Gddb.Serialization
 {
     public abstract class ReaderBase
     {

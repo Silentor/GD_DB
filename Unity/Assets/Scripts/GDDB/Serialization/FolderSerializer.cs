@@ -2,7 +2,7 @@
 using System;
 using UnityEngine.Profiling;
 
-namespace GDDB.Serialization
+namespace Gddb.Serialization
 {
     public class FolderSerializer
     {

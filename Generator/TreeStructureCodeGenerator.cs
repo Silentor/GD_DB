@@ -2,11 +2,12 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 using System.Text;
-using GDDB.Serialization;
+using Gddb;
+using Gddb.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace GDDB.SourceGenerator
+namespace Gddb.SourceGenerator
 {
     [Generator]
     public class TreeStructureCodeGenerator : IIncrementalGenerator

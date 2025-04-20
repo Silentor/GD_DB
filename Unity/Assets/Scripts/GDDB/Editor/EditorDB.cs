@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using GDDB.Serialization;
+using Gddb.Serialization;
 using UnityEditor;
 using UnityEngine;
 
-namespace GDDB.Editor
+namespace Gddb.Editor
 {
     /// <summary>
     /// Access to cached Gddb for editor purposes

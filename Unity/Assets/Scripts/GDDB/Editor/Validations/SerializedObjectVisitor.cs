@@ -5,7 +5,7 @@ using System.Reflection;
 using UnityEditor;
 using Debug = UnityEngine.Debug;
 
-namespace GDDB.Editor.Validations
+namespace Gddb.Editor.Validations
 {
     /// <summary>
     /// Iterate serialized object using serProp.NextVisible() but also provide you with exact FieldInfo

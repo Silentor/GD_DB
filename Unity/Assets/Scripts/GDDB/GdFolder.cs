@@ -7,7 +7,7 @@ using System.Text;
 using JetBrains.Annotations;
 using UnityEngine;
 
-namespace GDDB
+namespace Gddb
 {
     [DebuggerDisplay("Path {GetPath()}, folders {SubFolders.Count}, objects {Objects.Count}")]
     public class GdFolder : IEquatable<GdFolder>

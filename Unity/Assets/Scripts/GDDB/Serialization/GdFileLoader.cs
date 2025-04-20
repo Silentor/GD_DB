@@ -3,7 +3,7 @@ using System.IO;
 using Newtonsoft.Json;
 using UnityEngine;
 
-namespace GDDB.Serialization
+namespace Gddb.Serialization
 {
     /// <summary>
     /// GD DB loader from data stream or buffer

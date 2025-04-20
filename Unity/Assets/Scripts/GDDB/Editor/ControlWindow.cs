@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using GDDB.Editor.Validations;
-using GDDB.Serialization;
-using GDDB.Validations;
+using Gddb.Editor.Validations;
+using Gddb.Serialization;
+using Gddb.Validations;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Object = System.Object;
 
-namespace GDDB.Editor
+namespace Gddb.Editor
 {
     public class ControlWindow : EditorWindow
     {

@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace GDDB.Tests
+namespace Gddb.Tests
 {
     public class TestObjectWithReference : GDObject
     {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace GDDB.Queries
+namespace Gddb.Queries
 {
     /// <summary>
     /// Glob-like query parser and executor for GDDB. For query syntax see <see cref="Parser"/>

@@ -1,7 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
-using GDDB;
-using GDDB.Serialization;
+using Gddb;
+using Gddb.Serialization;
 
 //var json = System.IO.File.ReadAllText("../../../../Unity/Library/GDDBTreeStructure.json");
 var json = System.IO.File.ReadAllText("DefaultGDDB.json");

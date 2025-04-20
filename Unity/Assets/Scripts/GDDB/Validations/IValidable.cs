@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace GDDB.Validations
+namespace Gddb.Validations
 {
     /// <summary>
     /// Added to GDObjects that need to be validated. This way validation code added to gd object code. There are other ways to validate gdobjects without adding validation code to gd object itself

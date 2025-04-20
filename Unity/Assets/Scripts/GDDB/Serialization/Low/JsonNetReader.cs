@@ -4,7 +4,7 @@ using System.Reflection;
 using Newtonsoft.Json;
 using UnityEngine.Profiling;
 
-namespace GDDB.Serialization
+namespace Gddb.Serialization
 {
     public sealed class JsonNetReader : ReaderBase
     {

@@ -3,7 +3,7 @@ using System;
 using System.Runtime.InteropServices;
 using UnityEngine;
 
-namespace GDDB
+namespace Gddb
 {
     /// <summary>
     /// Reference to a gd folder. Autoresolved inside GDDB, but needs manually resolved if used outside.

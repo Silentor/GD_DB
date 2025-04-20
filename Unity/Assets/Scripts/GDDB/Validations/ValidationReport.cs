@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace GDDB.Validations
+namespace Gddb.Validations
 {
     public class ValidationReport
     {

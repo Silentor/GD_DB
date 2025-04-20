@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using GDDB.Editor.Validations;
+using Gddb.Editor.Validations;
 using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 using Object = System.Object;
 
-namespace GDDB.Editor
+namespace Gddb.Editor
 {
     /// <summary>
     /// Draws validation errors and some state icons in the project window

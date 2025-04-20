@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using GDDB;
-using GDDB.Validations;
+using Gddb;
+using Gddb.Validations;
 using UnityEngine;
 
 namespace GDDB_User

@@ -5,15 +5,17 @@ using System.Reflection;
 using System.Security;
 using System.Text;
 using FluentAssertions;
-using GDDB.Serialization;
+using Gddb.Serialization;
 using Newtonsoft.Json;
 using NUnit.Framework;
 using UnityEngine;
-using BinaryReader = GDDB.Serialization.BinaryReader;
-using BinaryWriter = GDDB.Serialization.BinaryWriter;
+using BinaryReader = Gddb.Serialization.BinaryReader;
+using BinaryWriter = Gddb.Serialization.BinaryWriter;
 using Object = System.Object;
+using Serialization_BinaryReader = Gddb.Serialization.BinaryReader;
+using Serialization_BinaryWriter = Gddb.Serialization.BinaryWriter;
 
-namespace GDDB.Tests
+namespace Gddb.Tests
 {
     public class LowLevelSerializerTests : BaseSerializationTests
     {
@@ -470,7 +472,7 @@ namespace GDDB.Tests
             // Write
             backend = EBackend.Binary;
             var buffer     = GetBuffer( backend );
-            var serializer = (BinaryWriter)GetWriter( backend, buffer );
+            var serializer = (Serialization_BinaryWriter)GetWriter( backend, buffer );
             serializer.SetAlias( 0, EToken.PropertyName, "TestAliasPropName" );
             serializer.SetAlias( 1, EToken.String, "TestAliasValue" );
             serializer.WriteStartObject();
@@ -503,7 +505,7 @@ namespace GDDB.Tests
 
             { 
                 //Read with alias processing, should read aliased property name
-                var deserializer = (BinaryReader)GetReader( backend, buffer );
+                var deserializer = (Serialization_BinaryReader)GetReader( backend, buffer );
                 deserializer.SetAlias( 0, EToken.PropertyName, "TestAliasPropName" );
                 deserializer.SetAlias( 1, EToken.String,       "TestAliasValue" );
                 deserializer.ReadStartObject();
@@ -839,7 +841,7 @@ namespace GDDB.Tests
             LogBuffer( buffer );
 
             // Read and assert
-            var deserializer = (BinaryReader)GetReader( backend, buffer );
+            var deserializer = (Serialization_BinaryReader)GetReader( backend, buffer );
             deserializer.Index.Should().Be( 0 );            
             deserializer.ReadStartObject();
             deserializer.Index.Should().Be( 1 );

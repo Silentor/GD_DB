@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
-using GDDB.Validations;
+using Gddb.Validations;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Scripting;
 
-namespace GDDB.Editor.Validations
+namespace Gddb.Editor.Validations
 {
     public abstract class BaseAttributeValidator 
     {

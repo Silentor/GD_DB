@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Text;
 using Newtonsoft.Json;
 
-namespace GDDB.Serialization
+namespace Gddb.Serialization
 {
     public class JsonNetWriter : WriterBase
     {

@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using GDDB.Editor;
+using Gddb.Editor;
 using UnityEngine;
 
-namespace GDDB.Serialization
+namespace Gddb.Serialization
 {
     /// <summary>
     /// GD DB loader from AssetDatabase in Unity Editor. Used as fast loader for editor play mode without parsing saved DB
@@ -13,7 +13,7 @@ namespace GDDB.Serialization
         /// <summary>
         /// Get all enabled GD Objects
         /// </summary>
-        public readonly IReadOnlyList<GdDb.ObjectSearchIndex>   AllObjects;
+        public readonly IReadOnlyList<GdObjectInfo>   AllObjects;
         public readonly IReadOnlyList<GdFolder> AllFolders;
         public readonly IReadOnlyList<String>   DisabledFolders;
         public readonly String                  RootFolderPath;

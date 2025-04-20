@@ -1,10 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using GDDB;
+using Gddb;
 using UnityEngine;
 
-namespace GDDB.Tests
+namespace Gddb.Tests
 {
    
     public class NotSerializableContentComponent : GDComponent

@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
-using GDDB.Editor;
-using GDDB.Queries;
+using Gddb.Editor;
+using Gddb.Queries;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace GDDB.Tests
+namespace Gddb.Tests
 {
     
     public class QueryHierarchyTokensTests
@@ -35,7 +35,7 @@ namespace GDDB.Tests
               orcSkinsFolder.Objects.Add( GetAsset( "Chieftan") );
 
               var allObjects = gddbRoot.EnumerateFoldersDFS().SelectMany( folder => folder.Objects.Select( 
-                      gdo => new GdDb.ObjectSearchIndex( ((GDObject)gdo).Guid, gdo, folder)) ) .ToList();
+                      gdo => new GdObjectInfo( ((GDObject)gdo).Guid, gdo, folder)) ) .ToList();
               _db       = new GdDb( gddbRoot, allObjects );
               _executor = new Queries.Executor( _db );
           }

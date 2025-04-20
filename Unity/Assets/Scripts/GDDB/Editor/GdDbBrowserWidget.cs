@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using GDDB.Queries;
+using Gddb.Queries;
 using JetBrains.Annotations;
 using Unity.EditorCoroutines.Editor;
 using UnityEditor;
@@ -10,7 +10,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using Object = System.Object;
 
-namespace GDDB.Editor
+namespace Gddb.Editor
 {
     /// <summary>
     /// Widget for browsing Gddb objects and/or folders. Used to select object of folder from DB. Can be embedded to popup window <see cref="GdDbBrowserPopup"/> or editor window

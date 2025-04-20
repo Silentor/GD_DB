@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-namespace GDDB.Queries
+namespace Gddb.Queries
 {
     public abstract class HierarchyToken
     {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace GDDB.Editor.Validations
+namespace Gddb.Editor.Validations
 {
     [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
     public class CustomPropertyValidator : Attribute

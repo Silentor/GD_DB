@@ -4,7 +4,7 @@ using System.Linq;
 using JetBrains.Annotations;
 using UnityEngine;
 
-namespace GDDB.Serialization
+namespace Gddb.Serialization
 {
     /// <summary>
     /// GD DB loader from Scriptable Object format 
@@ -18,7 +18,7 @@ namespace GDDB.Serialization
             var timer = new System.Diagnostics.Stopwatch();
 
             var serializer = new DBScriptableObjectSerializer();
-            var allObjects = new List<GdDb.ObjectSearchIndex>();
+            var allObjects = new List<GdObjectInfo>();
             var rootFolder = serializer.Deserialize( database, allObjects );
 
             _db = new GdDb( rootFolder, allObjects, database.Hash );

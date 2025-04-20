@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
-using GDDB.Queries;
+using Gddb.Queries;
 using NUnit.Framework;
 
-namespace GDDB.Tests
+namespace Gddb.Tests
 {
     
     public class QueryPathParserTests

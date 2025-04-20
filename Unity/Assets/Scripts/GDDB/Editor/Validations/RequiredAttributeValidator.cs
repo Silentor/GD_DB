@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using GDDB.Validations;
+using Gddb.Validations;
 using UnityEngine;
 
-namespace GDDB.Editor.Validations
+namespace Gddb.Editor.Validations
 {
     using UnityEditor;
 

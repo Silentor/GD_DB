@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 
-namespace GDDB.Serialization
+namespace Gddb.Serialization
 {
     /*
     public class SimpleTextWriter : WriterBase

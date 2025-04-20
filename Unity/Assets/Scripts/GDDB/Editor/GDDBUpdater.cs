@@ -2,16 +2,17 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
-using GDDB.Editor.Validations;
-using GDDB.Serialization;
+using Gddb.Editor.Validations;
+using Gddb.Serialization;
 using Newtonsoft.Json;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
-using BinaryWriter = GDDB.Serialization.BinaryWriter;
+using BinaryWriter = Gddb.Serialization.BinaryWriter;
+using Serialization_BinaryWriter = Gddb.Serialization.BinaryWriter;
 
-namespace GDDB.Editor
+namespace Gddb.Editor
 {
     /// <summary>
     /// Update GDDB files before build of play mode enter
@@ -134,7 +135,7 @@ namespace GDDB.Editor
                 var rootFolder      = editorDB.RootFolder;
                 var assetReferencer = ScriptableObject.CreateInstance<DirectAssetReferences>();
                 var buffer          = new MemoryStream();
-                var writer          = new BinaryWriter( buffer );
+                var writer          = new Serialization_BinaryWriter( buffer );
                 serializer.Serialize( writer, rootFolder, assetReferencer );
                 File.WriteAllBytes( settings.BinaryDBPath, buffer.ToArray() );
                 var log = $"Saved GDDB to binary format to {settings.BinaryDBPath}, file size {buffer.Length} bytes";

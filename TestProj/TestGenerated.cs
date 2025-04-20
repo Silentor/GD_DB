@@ -1,9 +1,9 @@
 ﻿using System.Collections;
-using GDDB;
+using Gddb;
 
 #nullable enable
 
-namespace GDDB;
+namespace Gddb;
 
 //public partial class GdDb
 //{

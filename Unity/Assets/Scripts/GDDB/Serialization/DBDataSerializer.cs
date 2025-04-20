@@ -5,7 +5,7 @@ using System.Reflection;
 using UnityEngine;
 using UnityEngine.Profiling;
 
-namespace GDDB.Serialization
+namespace Gddb.Serialization
 {
     public class DBDataSerializer
     {
@@ -100,7 +100,7 @@ namespace GDDB.Serialization
         //     return Deserialize( new StreamReader( jsonFile, Encoding.UTF8, false, 1024, true ), assetsResolver );
         // }
 
-        public (GdFolder rootFolder, IReadOnlyList<GdDb.ObjectSearchIndex> objects ) Deserialize( ReaderBase reader, IGdAssetResolver assetsResolver, out UInt64? hash )
+        public (GdFolder rootFolder, IReadOnlyList<GdObjectInfo> objects ) Deserialize( ReaderBase reader, IGdAssetResolver assetsResolver, out UInt64? hash )
         {
             _deserializeSampler.Begin();
             var       timer             = System.Diagnostics.Stopwatch.StartNew();

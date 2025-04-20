@@ -4,11 +4,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text;
-using GDDB.Serialization;
+using Gddb.Serialization;
 using UnityEditor;
 using UnityEngine;
 
-namespace GDDB.Editor
+namespace Gddb.Editor
 {
     /// <summary>
     /// Trigger GDB source generation by updating json additional file. Source code generation makes DB folder access simpler. Trigger events: GD assets changed, play mode entered, build started etc

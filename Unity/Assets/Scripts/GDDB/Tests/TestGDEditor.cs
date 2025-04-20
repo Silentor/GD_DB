@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace GDDB.Tests
+namespace Gddb.Tests
 {
     // public class TestGDEditor : GdLoader
     // {

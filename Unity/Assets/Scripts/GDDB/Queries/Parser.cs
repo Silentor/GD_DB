@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using JetBrains.Annotations;
 
-namespace GDDB.Queries
+namespace Gddb.Queries
 {
     /// <summary>
     /// Parses glob-like path and string queries to tokens. * - zero or more symbols, ? - exactly one symbol, ** - current folder and all subfolders recursively
