@@ -15,13 +15,27 @@ namespace Gddb
 
         public          String           Name => Object.name;
 
-        public GdObjectInfo(Guid guid, ScriptableObject o, GdFolder folder )
+        public GdObjectInfo(Guid guid, ScriptableObject obj, GdFolder folder )
         {
-            Assert.IsNotNull( o );
+            Assert.IsNotNull( obj );
+            Assert.IsNotNull( folder );
+
             Guid   = guid;
-            Object = o;
+            Object = obj;
             Folder = folder;
         }
+
+        private GdObjectInfo( Guid guid )
+        {
+            Guid = guid;
+            Object = null;
+            Folder = null;
+        }
+
+        /// <summary>
+        /// For search by guid
+        /// </summary>
+        public static implicit operator GdObjectInfo( Guid guid ) => new ( guid );
 
         public int CompareTo(GdObjectInfo other)
         {

@@ -83,7 +83,7 @@ namespace Gddb
         public ScriptableObject GetObject( GdRef objectId )
         {
             var guid  = objectId.Guid;
-            var index = Array.BinarySearch( _objectSearchIndex, new GdObjectInfo( guid, null, null ) );
+            var index = Array.BinarySearch( _objectSearchIndex, guid );
             if( index >= 0 )
                 return (GDObject)_objectSearchIndex[ index ].Object; 
         
@@ -115,8 +115,8 @@ namespace Gddb
             Debug.Log( $"DB name {Name}, Folders {foldersCount}, objects {objectsCount}" );
         }
 
-        private readonly Parser                     _queryParser;
-        private readonly Executor      _queryExecutor;
+        private readonly Parser                 _queryParser;
+        private readonly Executor               _queryExecutor;
         private readonly GdObjectInfo[]        _objectSearchIndex;
         
         private void PrintRecursively(GdFolder folder, int indent, ref Int32 foldersCount, ref Int32 objectsCount )

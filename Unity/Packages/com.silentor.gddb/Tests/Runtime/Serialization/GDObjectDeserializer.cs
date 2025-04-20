@@ -100,7 +100,7 @@ namespace Gddb.Serialization
                         for ( int i = 0; i < unresolvedReference.Guids.Count; i++ )
                         {
                             var guid                = unresolvedReference.Guids[i];
-                            var resolvedObjectIndex = _loadedObjects.BinarySearch( new GdObjectInfo(guid, null, null) );
+                            var resolvedObjectIndex = _loadedObjects.BinarySearch( guid );
                             if ( resolvedObjectIndex >= 0 )
                             {
                                 var resolvedObject = _loadedObjects[resolvedObjectIndex].Object;
@@ -119,7 +119,7 @@ namespace Gddb.Serialization
                         for ( int i = 0; i < unresolvedReference.Guids.Count; i++ )
                         {
                             var guid                = unresolvedReference.Guids[i];
-                            var resolvedObjectIndex = _loadedObjects.BinarySearch( new GdObjectInfo(guid, null, null) );
+                            var resolvedObjectIndex = _loadedObjects.BinarySearch( guid );
                             if ( resolvedObjectIndex >= 0 )
                             {
                                 var resolvedObject      = _loadedObjects.FirstOrDefault( gdo => gdo.Guid == guid );
@@ -135,7 +135,7 @@ namespace Gddb.Serialization
                 }
                 else                                 //Scalar target field
                 {
-                    var resolvedObjectIndex = _loadedObjects.BinarySearch( new GdObjectInfo(unresolvedReference.Guid, null, null) );
+                    var resolvedObjectIndex = _loadedObjects.BinarySearch( unresolvedReference.Guid );
                     if ( resolvedObjectIndex >= 0 )
                     {
                         var resolvedObject      = _loadedObjects[resolvedObjectIndex].Object;
@@ -207,8 +207,8 @@ namespace Gddb.Serialization
                         ReadObjectProperties( reader, obj );
                     }
 
-                    reader.EnsureEndObject();          
-                    _loadedObjects.Add(  new GdObjectInfo(guid, obj, folder )  );
+                    reader.EnsureEndObject();
+                    _loadedObjects.Add( new GdObjectInfo(guid, obj, folder ) );
                     return obj;
                 }
                 catch ( Exception e )
@@ -232,7 +232,7 @@ namespace Gddb.Serialization
                     }
 
                     reader.EnsureEndObject();
-                    _loadedObjects.Add( new GdObjectInfo( guid, obj, folder ) );
+                    _loadedObjects.Add( new GdObjectInfo(guid, obj, folder ) );
                     return obj;
                 }
                 catch ( Exception e )
@@ -382,7 +382,7 @@ namespace Gddb.Serialization
                 var guid                = reader.GetGuidValue();
                 if ( guid == Guid.Empty )
                     return null;
-                var resolvedObjectIndex = _loadedObjects.BinarySearch( new GdObjectInfo(guid, null, null) );    //FIX still not sorted there
+                var resolvedObjectIndex = _loadedObjects.IndexOf( guid );    //todo test performance for many references
                 if( resolvedObjectIndex >= 0 )
                 {
                     return _loadedObjects[resolvedObjectIndex].Object;
@@ -486,6 +486,17 @@ namespace Gddb.Serialization
 
             return con;
         }
+
+        private static void AddSortedObject( List<GdObjectInfo> list, GdObjectInfo obj, ReaderBase reader )
+        {
+            var index = list.BinarySearch( obj );
+            if ( index < 0 )
+                list.Insert( ~index, obj );
+            else
+                throw new ReaderObjectException( obj.Name, obj.Object.GetType(), reader,
+                        $"[{nameof(GDObjectDeserializer)}]-[{nameof(AddSortedObject)}] Duplicate object {obj.Name} with guid {obj.Guid} in the loaded objects list" );
+        }
+
 
         private struct UnresolvedGDObjectReference
         {

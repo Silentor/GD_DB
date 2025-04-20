@@ -1,0 +1,18 @@
+{
+  "name": "com.silentor.gddb",
+  "version": "0.1.0",
+  "displayName": "Game design data base",
+  "description": "Converts your bunch of ScriptableObject game design data files into a database",
+  "unity": "2021.2",
+  "license": "MIT",
+  "keywords": [
+    "editor",
+    "runtime",
+    "gamedesign",
+    "database"
+  ],
+  "author": {
+    "name": "Silentor",
+    "url": "https://github.com/Silentor"
+  }
+}
