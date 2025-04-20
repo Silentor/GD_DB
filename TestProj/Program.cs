@@ -2,10 +2,8 @@
 
 using Gddb;
 using Gddb.Serialization;
-//using GDDB.Generated;
-using Newtonsoft.Json.Linq;
 
-var file     = new System.IO.FileInfo("GDDBTreeStructure.json");
+var file     = new System.IO.FileInfo("Structure.GdDbSourceGen.additionalfile");
 var str     = System.IO.File.ReadAllText(file.FullName);
 //using var strReader = new System.IO.StringReader( str );
 //using var jsonReader = new Newtonsoft.Json.JsonTextReader( strReader );
@@ -33,7 +31,7 @@ var db     = loader.GetGameDataBase();
 var obj    = db.AllObjects[ 0 ];
 Console.WriteLine( obj.Name );
 Console.WriteLine( db.RootFolder.Name );
-Console.WriteLine( db.Root.Folder.Name );
+Console.WriteLine( db.Root.AlarmRegretTin.CalculatorBook.Folder.Name );
 //db.Root.Folder2.
 //var humans = db.Root.Mobs.Humans.ParentFolder;
 //var elves  = db.GetGDInfo().GetMobs().GetElves().ToArray();

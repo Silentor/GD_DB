@@ -296,7 +296,7 @@ namespace GDDB_User
             if( prop != null )
                 return $"{prop.PropertyType.FullName}";
 
-            return "???";
+            return "null";
         }
 
         public void LoadDBViaJsonNet( )
