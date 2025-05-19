@@ -12,15 +12,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 98136f227e4944749dd8b59ce7415e6e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AutoUpdateOnRun: 1
-  AutoUpdateOnBuild: 1
   ValidateDBOnBuild: 1
-  UpdateScriptableObjectDB: 1
-  ScriptableObjectDBPath: Assets/Resources/DefaultGDDB.asset
-  UpdateBinaryDB: 1
-  BinaryDBPath: Assets/StreamingAssets/DefaultGDDB.bin
-  UpdateJsonDB: 1
-  JsonDBPath: Assets/StreamingAssets/DefaultGDDB.json
-  JsonDBEditorIndent: 4
-  JsonDBPlayerIndent: 0
   AssetsReferencePath: Assets/Resources/DefaultGDDBAssetsRef.asset
+  ScriptableDBSettings:
+    UpdateOnEditorRun: 1
+    UpdateOnPlayerBuild: 1
+    Path: Assets/Resources/DefaultGDDB.asset
+  JsonDBSettings:
+    UpdateOnEditorRun: 0
+    UpdateOnPlayerBuild: 0
+    Path: Assets/StreamingAssets/DefaultGDDB.json
+    IndentOnEditorRun: 4
+    IndentOnDevelopmentPlayerBuild: 0
+    IndentOnReleasePlayerBuild: 4
+  BinDBSettings:
+    UpdateOnEditorRun: 0
+    UpdateOnPlayerBuild: 0
+    Path: Assets/StreamingAssets/DefaultGDDB.bin

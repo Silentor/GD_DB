@@ -5,6 +5,7 @@ using System.Text;
 using Gddb.Editor.Validations;
 using Gddb.Serialization;
 using Newtonsoft.Json;
+using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -35,18 +36,29 @@ namespace Gddb.Editor
 
         private static void EditorApplicationOnplayModeStateChanged( PlayModeStateChange state )
         {
-            if ( state == PlayModeStateChange.ExitingEditMode )
+            if ( state == PlayModeStateChange.ExitingEditMode && EditorDB.DB != null )
             {
                 var settings = UpdateDBSettings.instance;
-                if ( settings.AutoUpdateOnRun )
+
+                if ( settings.ScriptableDBSettings.UpdateOnEditorRun )
                 {
                     AssetDatabase.SaveAssets();
-                    var editorDB = EditorDB.DB;
-                    UpdateScriptableObjectDB( settings, editorDB );
-                    UpdateJsonDB( settings, editorDB );
-                    UpdateBinaryDB( settings, editorDB );
-                    _isDBDirty = false;
+                    UpdateScriptableObjectDB( settings.ScriptableDBSettings, EditorDB.DB );
                 }
+
+                if ( settings.JsonDBSettings.UpdateOnEditorRun )
+                {
+                    AssetDatabase.SaveAssets();
+                    UpdateJsonDB( settings.JsonDBSettings, settings.AssetsReferencePath, EditorDB.DB );
+                }
+
+                if ( settings.BinDBSettings.UpdateOnEditorRun )
+                {
+                    AssetDatabase.SaveAssets();
+                    UpdateBinaryDB( settings.BinDBSettings, settings.AssetsReferencePath, EditorDB.DB );
+                }
+
+                _isDBDirty = false;
             }
         }
 
@@ -54,8 +66,12 @@ namespace Gddb.Editor
         {
             BuildPreprocessing?.Invoke();
 
-            var settings   = UpdateDBSettings.instance;
+            //Nothing to do if no GDDB present
+            if( EditorDB.DB == null )
+                return;
 
+            var settings   = UpdateDBSettings.instance;
+            
             //Validate DB before build and abort build if errors found
             if ( settings.ValidateDBOnBuild )
             {
@@ -70,37 +86,40 @@ namespace Gddb.Editor
                 }
             }
 
-            if ( settings.AutoUpdateOnBuild )
+            try
             {
-                AssetDatabase.SaveAssets();
-                var editorDB   = EditorDB.DB;
-
-                if ( editorDB.AllObjects.Any() )
+                if ( settings.ScriptableDBSettings.UpdateOnEditorRun )
                 {
-                    try
-                    {
-                        UpdateScriptableObjectDB( settings, editorDB, force: true );
-                        UpdateJsonDB( settings, editorDB, force: true );
-                        UpdateBinaryDB( settings, editorDB, force: true );
-                    }
-                    catch ( Exception e )
-                    {
-                        Debug.LogError( $"[{nameof(GDDBUpdater)}]-[{nameof(OnPreprocessBuild)}] Exception {e} while saving GDDB. Build aborted." );
-                        throw new BuildFailedException( e );
-                    }
-                }
-                else
-                {
-                    Debug.LogWarning( $"[{nameof(GDDBUpdater)}]-[{nameof(OnPreprocessBuild)}] No GDDB detected, there is nothing to update" );
+                    AssetDatabase.SaveAssets();
+                    UpdateScriptableObjectDB( settings.ScriptableDBSettings, EditorDB.DB, true );
                 }
 
+                if ( settings.JsonDBSettings.UpdateOnEditorRun )
+                {
+                    AssetDatabase.SaveAssets();
+                    UpdateJsonDB( settings.JsonDBSettings, settings.AssetsReferencePath, EditorDB.DB, true );
+                }
+
+                if ( settings.BinDBSettings.UpdateOnEditorRun )
+                {
+                    AssetDatabase.SaveAssets();
+                    UpdateBinaryDB( settings.BinDBSettings, settings.AssetsReferencePath, EditorDB.DB, true );
+                }
+            }
+            catch( Exception ex )
+            {
+                Debug.LogError( $"[{nameof(GDDBUpdater)}]-[{nameof(OnPreprocessBuild)}] Exception {ex.GetType().Name} while saving Gddb. Build aborted: {ex}" );
+                throw new BuildFailedException( ex );
             }
         }
 
-        public static Boolean UpdateJsonDB(UpdateDBSettings settings, GdDb editorDB, Boolean force = false )
+        public static Boolean UpdateJsonDB(UpdateDBSettings.JsonDbSettings settings, string assetsReferencePath, GdDb editorDB, Boolean force = false )
         {
-            if ( settings.UpdateJsonDB && !String.IsNullOrEmpty( settings.JsonDBPath ) 
-                && (_isDBDirty || force || !File.Exists( settings.JsonDBPath ) || (!string.IsNullOrEmpty(settings.AssetsReferencePath) && !File.Exists( settings.AssetsReferencePath ))) )
+            Assert.IsTrue( !String.IsNullOrEmpty( settings.Path ), "JSON DB output path is not defined" );
+
+            var isDBInvalid = force || _isDBDirty || !File.Exists( settings.Path );
+            var isAssetsReferenceInvalid = force || (!string.IsNullOrEmpty(assetsReferencePath) && !File.Exists( assetsReferencePath ));
+            if ( isDBInvalid || isAssetsReferenceInvalid ) 
             {
                 var serializer      = new DBDataSerializer();
                 var rootFolder      = editorDB.RootFolder;
@@ -109,13 +128,13 @@ namespace Gddb.Editor
                 var indent          = !BuildPipeline.isBuildingPlayer;
                 var writer          = new JsonNetWriter( buffer, indent );
                 serializer.Serialize( writer, rootFolder, assetReferencer );
-                File.WriteAllText( settings.JsonDBPath, buffer.ToString() );
-                var jsonLog = $"Saved GDDB to json format to {settings.JsonDBPath}";
-                if ( !String.IsNullOrEmpty( settings.AssetsReferencePath ) )
+                File.WriteAllText( settings.Path, buffer.ToString() );
+                var jsonLog = $"Saved GDDB to json format to {settings.Path}";
+                if ( !String.IsNullOrEmpty( assetsReferencePath ) )
                 {
-                    AssetDatabase.CreateAsset( assetReferencer, settings.AssetsReferencePath );
+                    AssetDatabase.CreateAsset( assetReferencer, assetsReferencePath );
                     AssetDatabase.Refresh( ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport );
-                    jsonLog += $", and assets reference to {settings.AssetsReferencePath}";
+                    jsonLog += $", and assets reference to {assetsReferencePath}";
                 }
                     
                 Debug.Log( $"[{nameof(GDDBUpdater)}]-[{nameof(UpdateJsonDB)}] " + jsonLog );
@@ -126,10 +145,13 @@ namespace Gddb.Editor
             return false;
         }
         
-        public static Boolean UpdateBinaryDB(UpdateDBSettings settings, GdDb editorDB, Boolean force = false )
+        public static Boolean UpdateBinaryDB( UpdateDBSettings.DbSettings settings, string assetsReferencePath, GdDb editorDB, Boolean force = false )
         {
-            if ( settings.UpdateBinaryDB && !String.IsNullOrEmpty( settings.BinaryDBPath ) 
-                && (_isDBDirty || force || !File.Exists( settings.BinaryDBPath ) || (!string.IsNullOrEmpty(settings.AssetsReferencePath) && !File.Exists( settings.AssetsReferencePath ))) )
+            Assert.IsTrue( !String.IsNullOrEmpty( settings.Path ), "Binary DB output path is not defined" );
+
+            var isDBInvalid = force || _isDBDirty || !File.Exists( settings.Path );
+            var isAssetsReferenceInvalid = force || (!string.IsNullOrEmpty(assetsReferencePath) && !File.Exists( assetsReferencePath ));
+            if ( isDBInvalid || isAssetsReferenceInvalid ) 
             {
                 var serializer      = new DBDataSerializer();
                 var rootFolder      = editorDB.RootFolder;
@@ -137,13 +159,13 @@ namespace Gddb.Editor
                 var buffer          = new MemoryStream();
                 var writer          = new Serialization_BinaryWriter( buffer );
                 serializer.Serialize( writer, rootFolder, assetReferencer );
-                File.WriteAllBytes( settings.BinaryDBPath, buffer.ToArray() );
-                var log = $"Saved GDDB to binary format to {settings.BinaryDBPath}, file size {buffer.Length} bytes";
-                if ( !String.IsNullOrEmpty( settings.AssetsReferencePath ) )
+                File.WriteAllBytes( settings.Path, buffer.ToArray() );
+                var log = $"Saved GDDB to binary format to {settings.Path}, file size {buffer.Length} bytes";
+                if ( !String.IsNullOrEmpty( assetsReferencePath ) )
                 {
-                    AssetDatabase.CreateAsset( assetReferencer, settings.AssetsReferencePath );
+                    AssetDatabase.CreateAsset( assetReferencer, assetsReferencePath );
                     AssetDatabase.Refresh( ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport );
-                    log += $", and assets reference to {settings.AssetsReferencePath}";
+                    log += $", and assets reference to {assetsReferencePath}";
                 }
                     
                 Debug.Log( $"[{nameof(GDDBUpdater)}]-[{nameof(UpdateBinaryDB)}] " + log );
@@ -154,15 +176,17 @@ namespace Gddb.Editor
             return false;
         }
 
-        public static void UpdateScriptableObjectDB(UpdateDBSettings settings, GdDb editorDB, Boolean force = false )
+        public static void UpdateScriptableObjectDB(UpdateDBSettings.DbSettings settings, GdDb editorDB, Boolean force = false )
         {
-            if ( settings.UpdateScriptableObjectDB && !String.IsNullOrEmpty( settings.ScriptableObjectDBPath )
-                && (_isDBDirty || force|| !AssetDatabase.LoadAssetAtPath<DBScriptableObject>( settings.ScriptableObjectDBPath ) ) )
+            Assert.IsTrue( !String.IsNullOrEmpty( settings.Path ), "Scriptable Object DB output path is not defined" );
+
+            var isDBInvalid = force || _isDBDirty || !File.Exists( settings.Path );
+            if ( isDBInvalid ) 
             {
                 var serializer = new DBScriptableObjectSerializer();
                 var rootFolder = editorDB.RootFolder;
                 var asset      = serializer.Serialize( rootFolder );
-                var path       = settings.ScriptableObjectDBPath;
+                var path       = settings.Path;
 
                 try
                 {

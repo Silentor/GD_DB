@@ -30,6 +30,9 @@ namespace Gddb.Editor
 
         public static Int32 DisabledObjectsCount => _disabledObjectsCount;
 
+        /// <summary>
+        /// Null if no Gddb found
+        /// </summary>
         public static GdDb DB => _gbd;
 
         public static Guid GetGDObjectGuid( ScriptableObject obj )

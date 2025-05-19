@@ -111,10 +111,10 @@ namespace Gddb.Editor
 
         private void SaveGDDBToSO( UpdateDBSettings updateSettings )
         {
-            if ( String.IsNullOrEmpty( updateSettings.ScriptableObjectDBPath ) ) throw new InvalidOperationException( "Output path is empty" );
+            if ( String.IsNullOrEmpty( updateSettings.ScriptableDBSettings.Path ) ) throw new InvalidOperationException( "Output path is empty" );
 
-            GDDBUpdater.UpdateScriptableObjectDB( updateSettings, EditorDB.DB );
-            var result = AssetDatabase.LoadAssetAtPath<DBScriptableObject>( updateSettings.ScriptableObjectDBPath  );
+            GDDBUpdater.UpdateScriptableObjectDB( updateSettings.ScriptableDBSettings, EditorDB.DB, true );
+            var result = AssetDatabase.LoadAssetAtPath<DBScriptableObject>( updateSettings.ScriptableDBSettings.Path  );
             if( result )
                 EditorGUIUtility.PingObject( result );
 
@@ -123,20 +123,20 @@ namespace Gddb.Editor
 
         private void SaveGDDBToJson( UpdateDBSettings updateSettings )
         {
-            if ( String.IsNullOrEmpty( updateSettings.JsonDBPath ) ) throw new InvalidOperationException( "Output path is empty" );
+            if ( String.IsNullOrEmpty( updateSettings.JsonDBSettings.Path ) ) throw new InvalidOperationException( "Output path is empty" );
 
-            GDDBUpdater.UpdateJsonDB( updateSettings, EditorDB.DB, true );
-            EditorUtility.RevealInFinder( updateSettings.JsonDBPath );
+            GDDBUpdater.UpdateJsonDB( updateSettings.JsonDBSettings, updateSettings.AssetsReferencePath, EditorDB.DB, true );
+            EditorUtility.RevealInFinder( updateSettings.JsonDBSettings.Path );
 
             if ( Validator.Reports.Count > 0 ) Debug.LogError( $"[{nameof(ControlWindow)}] GDDB validation errors detected, count {Validator.Reports.Count}" );
         }
         
         private void SaveGDDBToBinary( UpdateDBSettings updateSettings )
         {
-            if ( String.IsNullOrEmpty( updateSettings.BinaryDBPath ) ) throw new InvalidOperationException( "Output path is empty" );
+            if ( String.IsNullOrEmpty( updateSettings.BinDBSettings.Path ) ) throw new InvalidOperationException( "Output path is empty" );
 
-            GDDBUpdater.UpdateBinaryDB( updateSettings, EditorDB.DB, true );
-            EditorUtility.RevealInFinder( updateSettings.BinaryDBPath );
+            GDDBUpdater.UpdateBinaryDB( updateSettings.BinDBSettings, updateSettings.AssetsReferencePath, EditorDB.DB, true );
+            EditorUtility.RevealInFinder( updateSettings.BinDBSettings.Path );
 
             if ( Validator.Reports.Count > 0 ) Debug.LogError( $"[{nameof(ControlWindow)}] GDDB validation errors detected, count {Validator.Reports.Count}" );
         }
